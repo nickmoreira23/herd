@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 // TEMPORARY ENDPOINT — DELETE AFTER MIGRATION
 // Accepts a .tar.gz upload and extracts it to public/uploads/
 
-const RESTORE_SECRET = process.env.CRON_SECRET || "restore-secret";
+const RESTORE_SECRET = "herd-migrate-2026-temp";
 
 export async function POST(request: Request) {
   // Auth check
