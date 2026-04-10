@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { TierPageClient } from "@/components/tiers/tier-page-client";
 import { toNumber } from "@/lib/utils";
+import { connection } from "next/server";
 
 export default async function TiersPage() {
+  await connection();
   const tiers = await prisma.subscriptionTier.findMany({
     orderBy: { sortOrder: "asc" },
     include: {

@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { toNumber } from "@/lib/utils";
 import { PackageWizardShell } from "@/components/packages/wizard/package-wizard-shell";
+import { connection } from "next/server";
 
 export default async function NewPackagePage() {
+  await connection();
   // Fetch active tiers with redemption rules for credit cost computation
   const tiers = await prisma.subscriptionTier.findMany({
     where: { status: "ACTIVE" },

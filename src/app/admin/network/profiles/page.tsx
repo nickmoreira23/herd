@@ -2,8 +2,10 @@ import Link from "next/link"
 import { Plus } from "lucide-react"
 import { prisma } from "@/lib/prisma"
 import { ProfileTable } from "@/components/network/profiles/profile-table"
+import { connection } from "next/server";
 
 export default async function ProfilesPage() {
+  await connection();
   const profiles = await prisma.networkProfile.findMany({
     include: {
       profileType: { select: { id: true, displayName: true, color: true } },

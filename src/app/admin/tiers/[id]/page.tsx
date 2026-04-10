@@ -2,12 +2,14 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { TierDetailClient } from "@/components/tiers/tier-detail-client";
 import { toNumber } from "@/lib/utils";
+import { connection } from "next/server";
 
 export default async function EditTierPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await connection();
   const { id } = await params;
 
   // "new" is handled by the /new route, skip it here

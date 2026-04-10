@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { OperationTable } from "@/components/operations/operation-table";
 import { formatNumber, formatCurrency, toNumber } from "@/lib/utils";
+import { connection } from "next/server";
 
 export default async function ExpensesPage() {
+  await connection();
   const categories = await prisma.opexCategory.findMany({
     orderBy: { sortOrder: "asc" },
     include: {

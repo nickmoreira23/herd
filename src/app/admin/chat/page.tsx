@@ -2,8 +2,10 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { ChatLayout } from "@/components/chat/chat-layout";
+import { connection } from "next/server";
 
 export default async function ChatPage() {
+  await connection();
   const session = await auth();
   const userId = (session?.user as { id?: string } | undefined)?.id;
   if (!userId) redirect("/login");

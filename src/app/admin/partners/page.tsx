@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { PartnerPageClient } from "@/components/partners/partner-page-client";
 import { toNumber } from "@/lib/utils";
+import { connection } from "next/server";
 
 export default async function PartnersPage() {
+  await connection();
   const [partners, tiers] = await Promise.all([
     prisma.partnerBrand.findMany({
       orderBy: { name: "asc" },

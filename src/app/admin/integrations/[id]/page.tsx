@@ -1,12 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { IntegrationDetailClient } from "@/components/integrations/integration-detail-client";
+import { connection } from "next/server";
 
 export default async function IntegrationDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await connection();
   const { id } = await params;
 
   const integration = await prisma.integration.findUnique({

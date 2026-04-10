@@ -2,8 +2,10 @@ import { prisma } from "@/lib/prisma";
 import { toNumber, formatCurrency, formatPercent } from "@/lib/utils";
 import { calculateBlendedRevenue } from "@/lib/financial-engine";
 import { Badge } from "@/components/ui/badge";
+import { connection } from "next/server";
 
 export default async function DashboardPage() {
+  await connection();
   const [
     productCount,
     activeProducts,

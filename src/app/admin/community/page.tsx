@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { CommunityTable } from "@/components/community/community-table";
 import { formatNumber } from "@/lib/utils";
+import { connection } from "next/server";
 
 export default async function CommunityPage() {
+  await connection();
   const benefits = await prisma.communityBenefit.findMany({
     orderBy: { sortOrder: "asc" },
     include: { _count: { select: { tierAssignments: true } } },

@@ -2,12 +2,14 @@ import { notFound } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { ProfileTypeForm } from "@/components/network/profile-types/profile-type-form"
 import type { WizardField } from "@/lib/validations/network"
+import { connection } from "next/server";
 
 export default async function EditProfileTypePage({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
+  await connection();
   const { id } = await params
 
   const profileType = await prisma.networkProfileType.findUnique({ where: { id } })

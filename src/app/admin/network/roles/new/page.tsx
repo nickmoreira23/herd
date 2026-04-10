@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/prisma"
 import { RoleForm } from "@/components/network/roles/role-form"
+import { connection } from "next/server";
 
 export default async function NewRolePage() {
+  await connection();
   const roles = await prisma.networkRole.findMany({
     select: { id: true, displayName: true, slug: true },
     orderBy: { displayName: "asc" },

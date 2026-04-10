@@ -1,12 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { KnowledgeTableView } from "@/components/knowledge/tables/knowledge-table-view";
+import { connection } from "next/server";
 
 export default async function KnowledgeTableDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await connection();
   const { id } = await params;
 
   const table = await prisma.knowledgeTable.findUnique({

@@ -1,12 +1,14 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { FormResponsesTable } from "@/components/knowledge/forms/responses/form-responses-table";
+import { connection } from "next/server";
 
 export default async function FormResponsesPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await connection();
   const { id } = await params;
 
   const form = await prisma.knowledgeForm.findUnique({

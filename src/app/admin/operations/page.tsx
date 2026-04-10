@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { toNumber } from "@/lib/utils";
 import { OperationsClient } from "@/components/operations/operations-client";
+import { connection } from "next/server";
 
 export default async function OperationsPage() {
+  await connection();
   const milestoneLevels = await prisma.opexMilestoneLevel.findMany({
     orderBy: { sortOrder: "asc" },
   });

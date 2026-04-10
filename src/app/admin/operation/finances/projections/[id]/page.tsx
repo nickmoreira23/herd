@@ -3,12 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { FinancialPageClient } from "@/components/financials/financial-page-client";
 import { getFinancialDefaults } from "../../data";
 import type { FinancialInputs } from "@/lib/financial-engine";
+import { connection } from "next/server";
 
 export default async function EditProjectionPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await connection();
   const { id } = await params;
 
   if (id === "new") return notFound();

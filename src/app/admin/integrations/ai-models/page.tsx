@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { IntegrationsPageClient } from "@/components/integrations/integrations-page-client";
+import { connection } from "next/server";
 
 export default async function AIModelsIntegrationsPage() {
+  await connection();
   const integrations = await prisma.integration.findMany({
     where: { category: "AI_MODELS" },
     orderBy: { name: "asc" },

@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { KnowledgeAppTable } from "@/components/knowledge/apps/knowledge-app-table";
 import { KnowledgeAppsEmpty } from "@/components/knowledge/apps/knowledge-apps-empty";
+import { connection } from "next/server";
 
 export default async function KnowledgeAppsPage() {
+  await connection();
   const apps = await prisma.knowledgeApp.findMany({
     orderBy: { createdAt: "desc" },
     include: {

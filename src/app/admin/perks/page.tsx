@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { PerkTable } from "@/components/perks/perk-table";
 import { formatNumber } from "@/lib/utils";
+import { connection } from "next/server";
 
 export default async function PerksPage() {
+  await connection();
   const perks = await prisma.perk.findMany({
     orderBy: { sortOrder: "asc" },
     include: { _count: { select: { tierAssignments: true } } },

@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { KnowledgeVideoTable } from "@/components/knowledge/videos/knowledge-video-table";
 import { KnowledgeVideosEmpty } from "@/components/knowledge/videos/knowledge-videos-empty";
+import { connection } from "next/server";
 
 export default async function KnowledgeVideosPage() {
+  await connection();
   const [videos, folders] = await Promise.all([
     prisma.knowledgeVideo.findMany({
       orderBy: { uploadedAt: "desc" },

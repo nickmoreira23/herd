@@ -3,12 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { FinancialPageClient } from "@/components/financials/financial-page-client";
 import { getFinancialDefaults } from "../data";
 import type { FinancialInputs } from "@/lib/financial-engine";
+import { connection } from "next/server";
 
 export default async function EditModelPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await connection();
   const { id } = await params;
 
   // "new" is handled by the /new route, skip it here

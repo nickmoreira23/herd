@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { KnowledgeFormList } from "@/components/knowledge/forms/knowledge-form-list";
+import { connection } from "next/server";
 
 export default async function KnowledgeFormsPage() {
+  await connection();
   const forms = await prisma.knowledgeForm.findMany({
     orderBy: { createdAt: "desc" },
   });

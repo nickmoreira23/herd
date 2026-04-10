@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { EventDetailClient } from "@/components/events/event-detail-client";
 import type { CalendarEventRow } from "@/components/events/types";
 import EventDetailLoading from "./loading";
+import { connection } from "next/server";
 
 interface EventDetailPageProps {
   params: Promise<{ id: string }>;
@@ -48,6 +49,7 @@ async function EventContent({ id }: { id: string }) {
 export default async function EventDetailPage({
   params,
 }: EventDetailPageProps) {
+  await connection();
   const { id } = await params;
 
   return (

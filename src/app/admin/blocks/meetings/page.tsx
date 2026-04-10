@@ -3,8 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { MeetingsListClient } from "@/components/meetings/meetings-list-client";
 import type { MeetingRow } from "@/components/meetings/types";
 import MeetingsLoading from "./loading";
+import { connection } from "next/server";
 
 async function MeetingsContent() {
+  await connection();
   const meetings = await prisma.meeting.findMany({
     orderBy: { createdAt: "desc" },
     include: { participants: true },

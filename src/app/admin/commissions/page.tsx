@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { CommissionPageClient } from "@/components/commissions/commission-page-client";
 import { toNumber } from "@/lib/utils";
+import { connection } from "next/server";
 
 export default async function CommissionsPage() {
+  await connection();
   const [structures, tiers] = await Promise.all([
     prisma.commissionStructure.findMany({
       orderBy: { createdAt: "desc" },

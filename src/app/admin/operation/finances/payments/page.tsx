@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { LedgerTab } from "@/components/network/promoters/tabs/ledger-tab";
+import { connection } from "next/server";
 
 export default async function PaymentsPage() {
+  await connection();
   const [earned, held, released, clawedBack, total, partners] = await Promise.all([
     prisma.commissionLedgerEntry.aggregate({ where: { entryType: "EARNED" }, _sum: { amount: true }, _count: true }),
     prisma.commissionLedgerEntry.aggregate({ where: { entryType: "HELD" }, _sum: { amount: true }, _count: true }),

@@ -1,12 +1,14 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { FormBuilder } from "@/components/knowledge/forms/builder/form-builder";
+import { connection } from "next/server";
 
 export default async function FormBuilderPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await connection();
   const { id } = await params;
 
   const form = await prisma.knowledgeForm.findUnique({

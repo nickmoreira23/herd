@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { KnowledgeTableList } from "@/components/knowledge/tables/knowledge-table-list";
 import { KnowledgeTablesEmpty } from "@/components/knowledge/tables/knowledge-tables-empty";
+import { connection } from "next/server";
 
 export default async function KnowledgeTablesPage() {
+  await connection();
   const [tables, airtableIntegration] = await Promise.all([
     prisma.knowledgeTable.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.integration.findUnique({

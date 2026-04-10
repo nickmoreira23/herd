@@ -1,12 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { KnowledgeAppDetailClient } from "@/components/knowledge/apps/knowledge-app-detail-client";
+import { connection } from "next/server";
 
 export default async function KnowledgeAppDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await connection();
   const { id } = await params;
 
   const app = await prisma.knowledgeApp.findUnique({

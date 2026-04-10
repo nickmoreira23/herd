@@ -2,12 +2,14 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { AgentDetailClient } from "@/components/agents/agent-detail-client";
 import { toNumber } from "@/lib/utils";
+import { connection } from "next/server";
 
 export default async function EditAgentPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await connection();
   const { id } = await params;
 
   if (id === "new") return notFound();

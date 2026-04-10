@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { SettingsForm } from "@/components/settings/settings-form";
+import { connection } from "next/server";
 
 export default async function SettingsPage() {
+  await connection();
   const settings = await prisma.setting.findMany({
     orderBy: { key: "asc" },
   });

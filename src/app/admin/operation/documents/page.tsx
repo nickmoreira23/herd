@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { DocumentTable } from "@/components/operations/document-table";
 import { formatNumber } from "@/lib/utils";
+import { connection } from "next/server";
 
 export default async function DocumentsPage() {
+  await connection();
   const documents = await prisma.document.findMany({
     orderBy: { uploadedAt: "desc" },
   });

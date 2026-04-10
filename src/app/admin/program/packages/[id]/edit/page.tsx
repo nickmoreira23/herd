@@ -2,12 +2,14 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { PackageDetailClient } from "@/components/packages/package-detail-client";
 import { toNumber } from "@/lib/utils";
+import { connection } from "next/server";
 
 export default async function PackageEditPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await connection();
   const { id } = await params;
 
   const [pkg, allTiers] = await Promise.all([

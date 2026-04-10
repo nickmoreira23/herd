@@ -2,12 +2,14 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { PackageDetailView } from "@/components/packages/package-detail-view";
 import { toNumber } from "@/lib/utils";
+import { connection } from "next/server";
 
 export default async function PackageDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await connection();
   const { id } = await params;
 
   const pkg = await prisma.package.findUnique({

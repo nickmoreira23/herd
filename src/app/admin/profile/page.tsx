@@ -2,8 +2,10 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { ProfileClient } from "@/components/profile/profile-client";
+import { connection } from "next/server";
 
 export default async function ProfilePage() {
+  await connection();
   const session = await auth();
   const userId = (session?.user as { id?: string } | undefined)?.id;
 

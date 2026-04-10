@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { BusinessHoursForm } from "@/components/organization/business-hours-form";
+import { connection } from "next/server";
 
 export default async function BusinessHoursPage() {
+  await connection();
   const settings = await prisma.setting.findMany({
     orderBy: { key: "asc" },
   });

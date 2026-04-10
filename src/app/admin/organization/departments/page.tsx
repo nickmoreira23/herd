@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { DepartmentTree } from "@/components/organization/department-tree";
+import { connection } from "next/server";
 
 export default async function DepartmentsPage() {
+  await connection();
   const [departments, profiles] = await Promise.all([
     prisma.department.findMany({
       include: {

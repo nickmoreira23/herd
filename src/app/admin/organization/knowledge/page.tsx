@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { KnowledgeDocumentTable } from "@/components/knowledge/knowledge-document-table";
 import { KnowledgeDocumentsEmpty } from "@/components/knowledge/knowledge-documents-empty";
+import { connection } from "next/server";
 
 export default async function KnowledgeDocumentsPage() {
+  await connection();
   const [documents, folders] = await Promise.all([
     prisma.knowledgeDocument.findMany({
       orderBy: { uploadedAt: "desc" },

@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { UserTable } from "@/components/organization/user-table";
+import { connection } from "next/server";
 
 export default async function UsersPage() {
+  await connection();
   const users = await prisma.networkProfile.findMany({
     include: {
       profileType: { select: { id: true, displayName: true, slug: true, color: true, networkType: true } },

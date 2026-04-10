@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ProductTable } from "@/components/products/product-table";
 import {
@@ -8,6 +9,7 @@ import {
 } from "@/lib/utils";
 
 export default async function ProductsPage() {
+  await connection();
   const [products, tiers, redemptionRules] = await Promise.all([
     prisma.product.findMany({ orderBy: { name: "asc" } }),
     prisma.subscriptionTier.findMany({

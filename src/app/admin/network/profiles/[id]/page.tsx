@@ -4,12 +4,14 @@ import { prisma } from "@/lib/prisma"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Edit } from "lucide-react"
+import { connection } from "next/server";
 
 export default async function ProfileDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
+  await connection();
   const { id } = await params
 
   const profile = await prisma.networkProfile.findUnique({

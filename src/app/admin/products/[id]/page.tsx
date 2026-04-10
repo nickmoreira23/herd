@@ -2,12 +2,14 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { toNumber } from "@/lib/utils";
 import { ProductDetailClient } from "@/components/products/product-detail-client";
+import { connection } from "next/server";
 
 export default async function EditProductPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await connection();
   const { id } = await params;
   if (id === "new") return notFound();
 

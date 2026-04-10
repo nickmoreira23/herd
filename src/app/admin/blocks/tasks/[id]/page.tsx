@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { TaskDetailClient } from "@/components/tasks/task-detail-client";
 import type { TaskRow } from "@/components/tasks/types";
 import TaskDetailLoading from "./loading";
+import { connection } from "next/server";
 
 interface TaskDetailPageProps {
   params: Promise<{ id: string }>;
@@ -36,6 +37,7 @@ async function TaskContent({ id }: { id: string }) {
 }
 
 export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
+  await connection();
   const { id } = await params;
 
   return (

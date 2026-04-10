@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { AgentTable } from "@/components/agents/agent-table";
 import { toNumber, formatNumber, formatCurrency } from "@/lib/utils";
+import { connection } from "next/server";
 
 export default async function AgentsPage() {
+  await connection();
   const agents = await prisma.agent.findMany({
     orderBy: { sortOrder: "asc" },
     include: {

@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { CommissionPageClient } from "@/components/network/promoters/commission-page-client";
 import { toNumber } from "@/lib/utils";
+import { connection } from "next/server";
 
 export default async function CommissionsPage() {
+  await connection();
   const [structures, tiers, plans, d2dPartners, agreements, ledgerSummary] = await Promise.all([
     // Legacy structures (for simulator backward compat)
     prisma.commissionStructure.findMany({

@@ -2,8 +2,10 @@ import Link from "next/link"
 import { Plus } from "lucide-react"
 import { prisma } from "@/lib/prisma"
 import { RoleTable } from "@/components/network/roles/role-table"
+import { connection } from "next/server";
 
 export default async function RolesPage() {
+  await connection();
   const roles = await prisma.networkRole.findMany({
     include: {
       parentRole: { select: { id: true, displayName: true } },

@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { PackagesClient } from "@/components/packages/packages-client";
+import { connection } from "next/server";
 
 export default async function PackagesPage() {
+  await connection();
   const packages = await prisma.package.findMany({
     orderBy: [{ fitnessGoal: "asc" }, { sortOrder: "asc" }],
     include: {

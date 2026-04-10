@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { KnowledgeFeedTable } from "@/components/knowledge/feeds/knowledge-feed-table";
 import { KnowledgeFeedsEmpty } from "@/components/knowledge/feeds/knowledge-feeds-empty";
+import { connection } from "next/server";
 
 export default async function KnowledgeFeedsPage() {
+  await connection();
   const feeds = await prisma.knowledgeRSSFeed.findMany({
     orderBy: { createdAt: "desc" },
     include: {

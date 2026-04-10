@@ -1,12 +1,14 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { CommunityDetailClient } from "@/components/community/community-detail-client";
+import { connection } from "next/server";
 
 export default async function EditCommunityPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await connection();
   const { id } = await params;
   if (id === "new") return notFound();
 

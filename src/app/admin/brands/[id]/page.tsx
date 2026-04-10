@@ -2,12 +2,14 @@ import { prisma } from "@/lib/prisma";
 import { toNumber } from "@/lib/utils";
 import { notFound } from "next/navigation";
 import { PartnerDetailClient } from "@/components/brands/partner-detail-client";
+import { connection } from "next/server";
 
 export default async function PartnerDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await connection();
   const { id } = await params;
 
   const [partner, tiers] = await Promise.all([

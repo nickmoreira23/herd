@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { IntegrationsPageClient } from "@/components/integrations/integrations-page-client";
+import { connection } from "next/server";
 
 export default async function MeetingsIntegrationsPage() {
+  await connection();
   const integrations = await prisma.integration.findMany({
     where: { category: "MEETINGS" },
     orderBy: { name: "asc" },

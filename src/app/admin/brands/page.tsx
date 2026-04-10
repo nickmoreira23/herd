@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { PartnerTable } from "@/components/brands/partner-table";
 import { toNumber } from "@/lib/utils";
+import { connection } from "next/server";
 
 export default async function PartnersPage() {
+  await connection();
   const partners = await prisma.partnerBrand.findMany({
     orderBy: { name: "asc" },
     include: {

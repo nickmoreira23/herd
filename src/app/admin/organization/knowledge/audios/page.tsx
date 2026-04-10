@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { KnowledgeAudioTable } from "@/components/knowledge/audios/knowledge-audio-table";
 import { KnowledgeAudiosEmpty } from "@/components/knowledge/audios/knowledge-audios-empty";
+import { connection } from "next/server";
 
 export default async function KnowledgeAudiosPage() {
+  await connection();
   const [audios, folders] = await Promise.all([
     prisma.knowledgeAudio.findMany({
       orderBy: { uploadedAt: "desc" },

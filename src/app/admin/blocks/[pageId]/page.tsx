@@ -3,12 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { PageEditor } from "@/components/landing-page/editor/page-editor";
 import type { LandingPageData, SectionData, PageStyles, SectionLayout, ComponentNode } from "@/types/landing-page";
 import { DEFAULT_PAGE_STYLES, DEFAULT_SECTION_LAYOUT } from "@/lib/landing-page/defaults";
+import { connection } from "next/server";
 
 export default async function PageEditorPage({
   params,
 }: {
   params: Promise<{ pageId: string }>;
 }) {
+  await connection();
   const { pageId } = await params;
 
   const page = await prisma.landingPage.findUnique({

@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { KnowledgeImageTable } from "@/components/knowledge/images/knowledge-image-table";
 import { KnowledgeImagesEmpty } from "@/components/knowledge/images/knowledge-images-empty";
+import { connection } from "next/server";
 
 export default async function KnowledgeImagesPage() {
+  await connection();
   const [images, folders] = await Promise.all([
     prisma.knowledgeImage.findMany({
       orderBy: { uploadedAt: "desc" },

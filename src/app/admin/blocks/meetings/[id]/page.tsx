@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { MeetingDetailClient } from "@/components/meetings/meeting-detail-client";
 import type { MeetingRow } from "@/components/meetings/types";
 import MeetingDetailLoading from "./loading";
+import { connection } from "next/server";
 
 interface MeetingDetailPageProps {
   params: Promise<{ id: string }>;
@@ -36,6 +37,7 @@ async function MeetingContent({ id }: { id: string }) {
 }
 
 export default async function MeetingDetailPage({ params }: MeetingDetailPageProps) {
+  await connection();
   const { id } = await params;
 
   return (

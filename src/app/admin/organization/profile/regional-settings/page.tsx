@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { RegionalSettingsForm } from "@/components/organization/regional-settings-form";
+import { connection } from "next/server";
 
 export default async function RegionalSettingsPage() {
+  await connection();
   const settings = await prisma.setting.findMany({
     orderBy: { key: "asc" },
   });

@@ -3,8 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { TasksClient } from "@/components/tasks/tasks-client";
 import type { TaskRow } from "@/components/tasks/types";
 import TasksLoading from "./loading";
+import { connection } from "next/server";
 
 async function TasksContent() {
+  await connection();
   const [tasks, integrations] = await Promise.all([
     prisma.task.findMany({
       orderBy: { createdAt: "desc" },

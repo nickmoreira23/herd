@@ -7,12 +7,14 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { ArrowLeft, Shield } from "lucide-react"
+import { connection } from "next/server";
 
 export default async function EditRolePage({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
+  await connection();
   const { id } = await params
 
   const [role, allRoles, permissions] = await Promise.all([

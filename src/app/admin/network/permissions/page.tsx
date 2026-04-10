@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/prisma"
 import { Badge } from "@/components/ui/badge"
+import { connection } from "next/server";
 
 export default async function PermissionsPage() {
+  await connection();
   const permissions = await prisma.networkPermission.findMany({
     orderBy: [{ resource: "asc" }, { action: "asc" }],
   })
