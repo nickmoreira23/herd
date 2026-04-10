@@ -18,6 +18,16 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "500mb",
     },
   },
+  async rewrites() {
+    return [
+      {
+        // Serve uploaded files from the volume via API route
+        // (Next.js standalone doesn't serve runtime-added public/ files)
+        source: "/uploads/:path*",
+        destination: "/api/uploads/:path*",
+      },
+    ];
+  },
   async redirects() {
     return [
       { source: "/admin/commissions", destination: "/admin/network/promoters", permanent: true },

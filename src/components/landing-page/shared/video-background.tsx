@@ -20,6 +20,11 @@ interface VideoBackgroundProps {
  * - preload="metadata" (not "auto") to avoid unnecessary bandwidth
  * - prefers-reduced-motion: hides video, poster CSS background shows instead
  * - saveData: skip video autoplay on metered connections
+ *
+ * YouTube backgrounds:
+ * - Editor: poster image only (to avoid perf issues)
+ * - Published: YouTube iframe embed with autoplay, muted, loop, no controls,
+ *   scaled up to hide letterboxing and UI chrome
  */
 export function VideoBackground({ background, isEditor = false }: VideoBackgroundProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -30,7 +35,7 @@ export function VideoBackground({ background, isEditor = false }: VideoBackgroun
     background.posterUrl ||
     (background.youtubeId ? youTubeThumbnailUrl(background.youtubeId) : undefined);
 
-  // Determine if we should attempt video playback
+  // Determine if we should attempt video playback (published mode only)
   useEffect(() => {
     if (isEditor) {
       setShouldPlay(false);
@@ -51,36 +56,38 @@ export function VideoBackground({ background, isEditor = false }: VideoBackgroun
       return;
     }
 
-    if (settings.autoplay && background.videoUrl) {
+    // Play if autoplay is enabled and there's a video source (direct or YouTube)
+    if (settings.autoplay && (background.videoUrl || background.youtubeId)) {
       setShouldPlay(true);
     }
-  }, [isEditor, settings.autoplay, background.videoUrl]);
+  }, [isEditor, settings.autoplay, background.videoUrl, background.youtubeId]);
 
-  // YouTube backgrounds always show poster (can't embed as true background)
+  // ─── YouTube backgrounds ─────────────────────────────────────────
   if (background.youtubeId) {
-    return (
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          zIndex: 0,
-          overflow: "hidden",
-        }}
-        aria-hidden="true"
-      >
-        {posterUrl && (
-          <img
-            src={posterUrl}
-            alt=""
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              display: "block",
-            }}
-          />
-        )}
-        {isEditor && (
+    // Editor: show poster with badge (no iframe for performance)
+    if (isEditor) {
+      return (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 0,
+            overflow: "hidden",
+          }}
+          aria-hidden="true"
+        >
+          {posterUrl && (
+            <img
+              src={posterUrl}
+              alt=""
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block",
+              }}
+            />
+          )}
           <div
             style={{
               position: "absolute",
@@ -99,12 +106,91 @@ export function VideoBackground({ background, isEditor = false }: VideoBackgroun
             <Play style={{ width: 10, height: 10 }} />
             YouTube BG
           </div>
+        </div>
+      );
+    }
+
+    // Published: render YouTube iframe as background video
+    // Build embed URL with background-friendly params
+    const ytParams = new URLSearchParams({
+      autoplay: settings.autoplay ? "1" : "0",
+      mute: "1", // Must be muted for autoplay — browser policy
+      loop: settings.loop ? "1" : "0",
+      playlist: background.youtubeId, // Required for YouTube loop to work
+      controls: "0",
+      showinfo: "0",
+      rel: "0",
+      modestbranding: "1",
+      iv_load_policy: "3", // Hide annotations
+      disablekb: "1",
+      fs: "0",
+      playsinline: "1",
+    });
+    const ytEmbedUrl = `https://www.youtube.com/embed/${background.youtubeId}?${ytParams.toString()}`;
+
+    return (
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          zIndex: 0,
+          overflow: "hidden",
+        }}
+        aria-hidden="true"
+      >
+        {/* Poster image as immediate fallback while iframe loads */}
+        {posterUrl && (
+          <img
+            src={posterUrl}
+            alt=""
+            style={{
+              position: "absolute",
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              display: "block",
+              zIndex: 0,
+            }}
+          />
         )}
+
+        {shouldPlay && (
+          <iframe
+            src={ytEmbedUrl}
+            allow="autoplay; encrypted-media"
+            style={{
+              // Scale up the iframe to crop out YouTube's UI chrome and
+              // eliminate letterboxing — ensures full cover like object-fit: cover
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              width: "120%",
+              height: "120%",
+              transform: "translate(-50%, -50%)",
+              border: "none",
+              pointerEvents: "none", // Clicks pass through to section content
+              zIndex: 1,
+            }}
+            tabIndex={-1}
+            loading="lazy"
+          />
+        )}
+
+        {/* Hide iframe when user prefers reduced motion */}
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
+              @media (prefers-reduced-motion: reduce) {
+                iframe { display: none !important; }
+              }
+            `,
+          }}
+        />
       </div>
     );
   }
 
-  // Self-hosted / direct video
+  // ─── Self-hosted / direct video ──────────────────────────────────
   if (background.videoUrl) {
     // Editor: show poster with badge
     if (isEditor) {
@@ -165,7 +251,7 @@ export function VideoBackground({ background, isEditor = false }: VideoBackgroun
       );
     }
 
-    // Published: render actual video element
+    // Published: render actual <video> element
     return (
       <div
         style={{
