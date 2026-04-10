@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import type { SubscriptionTier } from "@/types";
 import { TierCard } from "./tier-card";
 import { TierComparison } from "./tier-comparison";
 import { TierCreateSheet } from "./tier-create-sheet";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 interface TierPageClientProps {
@@ -23,6 +23,119 @@ const DEFAULT_SETTINGS = {
   commissionResidual: 6,
   commissionBonus: 50,
 };
+
+// ─── Horizontal carousel with scroll-snap ────────────────────────
+function TierCarousel({
+  tiers,
+  onDuplicate,
+  onArchive,
+  onDelete,
+  onEmpty,
+}: {
+  tiers: SubscriptionTier[];
+  onDuplicate: (t: SubscriptionTier) => void;
+  onArchive: (t: SubscriptionTier) => void;
+  onDelete: (t: SubscriptionTier) => void;
+  onEmpty: () => void;
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateScrollButtons = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+
+  const scroll = useCallback((direction: "left" | "right") => {
+    const el = scrollRef.current;
+    if (!el) return;
+    // Scroll by one card width + gap
+    const cardWidth = el.querySelector<HTMLElement>("[data-tier-card]")?.offsetWidth ?? 380;
+    el.scrollBy({ left: direction === "left" ? -cardWidth - 16 : cardWidth + 16, behavior: "smooth" });
+  }, []);
+
+  // Check scroll state on mount and after scroll
+  const handleRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      (scrollRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+      if (node) {
+        updateScrollButtons();
+        // Use ResizeObserver to update when container resizes
+        const observer = new ResizeObserver(updateScrollButtons);
+        observer.observe(node);
+        return () => observer.disconnect();
+      }
+    },
+    [updateScrollButtons]
+  );
+
+  if (tiers.length === 0) {
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        <p className="text-sm">No plans yet.</p>
+        <Button size="sm" variant="outline" className="mt-3" onClick={onEmpty}>
+          <Plus className="mr-1.5 h-3.5 w-3.5" />
+          Create your first plan
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative h-full">
+      {/* Left arrow */}
+      {canScrollLeft && (
+        <button
+          onClick={() => scroll("left")}
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-background/90 border shadow-md backdrop-blur-sm hover:bg-muted transition-colors"
+          aria-label="Scroll left"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+      )}
+      {/* Right arrow */}
+      {canScrollRight && (
+        <button
+          onClick={() => scroll("right")}
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-background/90 border shadow-md backdrop-blur-sm hover:bg-muted transition-colors"
+          aria-label="Scroll right"
+        >
+          <ChevronRight className="h-5 w-5" />
+        </button>
+      )}
+
+      {/* Scrollable container */}
+      <div
+        ref={handleRef}
+        onScroll={updateScrollButtons}
+        className="flex gap-4 h-full overflow-x-auto pb-4 snap-x snap-mandatory scroll-smooth"
+        style={{
+          scrollbarWidth: "thin",
+          scrollbarColor: "hsl(var(--border)) transparent",
+        }}
+      >
+        {tiers.map((tier) => (
+          <div
+            key={tier.id}
+            data-tier-card
+            className="snap-start shrink-0"
+            style={{ width: "min(380px, 85vw)" }}
+          >
+            <TierCard
+              tier={tier}
+              onDuplicate={onDuplicate}
+              onArchive={onArchive}
+              onDelete={onDelete}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export function TierPageClient({ initialTiers }: TierPageClientProps) {
   const [tiers, setTiers] = useState<SubscriptionTier[]>(initialTiers);
@@ -172,31 +285,13 @@ export function TierPageClient({ initialTiers }: TierPageClientProps) {
         </TabsList>
 
         <TabsContent value="list" className="mt-4 flex-1 min-h-0">
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 h-full" style={{ paddingBottom: 24 }}>
-            {sortedTiers.map((tier) => (
-              <TierCard
-                key={tier.id}
-                tier={tier}
-                onDuplicate={handleDuplicate}
-                onArchive={handleArchive}
-                onDelete={handleDelete}
-              />
-            ))}
-            {tiers.length === 0 && (
-              <div className="text-center py-12 text-muted-foreground col-span-full">
-                <p className="text-sm">No plans yet.</p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="mt-3"
-                  onClick={() => setShowCreate(true)}
-                >
-                  <Plus className="mr-1.5 h-3.5 w-3.5" />
-                  Create your first plan
-                </Button>
-              </div>
-            )}
-          </div>
+          <TierCarousel
+            tiers={sortedTiers}
+            onDuplicate={handleDuplicate}
+            onArchive={handleArchive}
+            onDelete={handleDelete}
+            onEmpty={() => setShowCreate(true)}
+          />
         </TabsContent>
 
         <TabsContent value="compare" className="mt-4">
