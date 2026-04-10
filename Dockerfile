@@ -61,8 +61,12 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Ensure uploads directory exists and is owned by nextjs (volume mount may create root-owned files)
+RUN mkdir -p /app/public/uploads && chown -R nextjs:nodejs /app/public/uploads
+
 USER nextjs
 
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+# Fix volume permissions at startup (handles root-owned lost+found from ext4 volumes)
+CMD ["sh", "-c", "chmod -R 755 /app/public/uploads 2>/dev/null || true; node server.js"]
