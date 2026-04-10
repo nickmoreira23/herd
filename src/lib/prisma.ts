@@ -7,7 +7,9 @@ const globalForPrisma = globalThis as unknown as {
 
 function getClient(): PrismaClient | null {
   if (!globalForPrisma.prisma) {
-    const connectionString = process.env.DATABASE_URL || process.env.DIRECT_URL;
+    // PrismaPg manages its own pool — use DIRECT_URL (session connection)
+    // to avoid double-pooling through PgBouncer transaction mode.
+    const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL;
     if (!connectionString) return null; // Build time — no DB available
     const adapter = new PrismaPg(connectionString);
     globalForPrisma.prisma = new PrismaClient({ adapter });
