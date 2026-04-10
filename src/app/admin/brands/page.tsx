@@ -1,0 +1,39 @@
+import { prisma } from "@/lib/prisma";
+import { PartnerTable } from "@/components/brands/partner-table";
+import { toNumber } from "@/lib/utils";
+
+export default async function PartnersPage() {
+  const partners = await prisma.partnerBrand.findMany({
+    orderBy: { name: "asc" },
+    include: {
+      tierAssignments: {
+        include: { tier: true },
+      },
+    },
+  });
+
+  // Serialize Decimals
+  const serializedPartners = partners.map((p) => ({
+    ...p,
+    kickbackValue: p.kickbackValue ? toNumber(p.kickbackValue) : null,
+    tierAssignments: p.tierAssignments.map((a) => ({
+      ...a,
+      discountPercent: toNumber(a.discountPercent),
+      tier: {
+        ...a.tier,
+        monthlyPrice: toNumber(a.tier.monthlyPrice),
+        quarterlyPrice: toNumber(a.tier.quarterlyPrice),
+        annualPrice: toNumber(a.tier.annualPrice),
+        monthlyCredits: toNumber(a.tier.monthlyCredits),
+        partnerDiscountPercent: toNumber(a.tier.partnerDiscountPercent),
+        apparelBudget: a.tier.apparelBudget ? toNumber(a.tier.apparelBudget) : null,
+      },
+    })),
+  }));
+
+  return (
+    <PartnerTable
+      initialPartners={serializedPartners as never}
+    />
+  );
+}

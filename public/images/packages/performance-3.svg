@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#CE93D8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8E24AA;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.15" />
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0.02" />
+    </linearGradient>
+  </defs>
+  <rect width="600" height="400" fill="url(#bg)" rx="0"/>
+  <circle cx="120" cy="80" r="150" fill="url(#accent)"/>
+  <circle cx="500" cy="300" r="110" fill="url(#accent)"/>
+  <circle cx="300" cy="350" r="60" fill="url(#accent)"/>
+  <g transform="translate(265, 148)" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9">
+    <polygon points="35,0 45,25 70,25 50,42 58,70 35,53 12,70 20,42 0,25 25,25"/>
+  </g>
+  <circle cx="200" cy="90" r="5" fill="white" opacity="0.2"/>
+  <circle cx="450" cy="150" r="3" fill="white" opacity="0.25"/>
+  <circle cx="100" cy="250" r="4" fill="white" opacity="0.15"/>
+  <circle cx="500" cy="330" r="3" fill="white" opacity="0.2"/>
+</svg>

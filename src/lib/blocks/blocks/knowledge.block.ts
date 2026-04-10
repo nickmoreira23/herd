@@ -1,0 +1,243 @@
+import type { BlockManifest } from "../manifest";
+
+export const knowledgeBlock: BlockManifest = {
+  name: "knowledge",
+  displayName: "Knowledge Base",
+  description:
+    "Comprehensive knowledge management system with multiple content types: documents (PDF, DOCX, TXT), images, videos, audio (with transcription), web links (with crawling), RSS feeds (with auto-sync), structured tables (like Airtable), forms (with builder and responses), and external app integrations (health wearables, Airtable, Gmail). Each content type has its own CRUD endpoints and specialized processing pipelines.",
+  domain: "knowledge",
+  types: [
+    "document",
+    "image",
+    "video",
+    "audio",
+    "link",
+    "table",
+    "form",
+    "rss",
+    "app_data",
+  ],
+  capabilities: [
+    "read",
+    "create",
+    "update",
+    "delete",
+    "scrape",
+    "crawl",
+    "transcribe",
+    "sync",
+    "process",
+  ],
+  models: [
+    "KnowledgeDocument",
+    "KnowledgeImage",
+    "KnowledgeVideo",
+    "KnowledgeAudio",
+    "KnowledgeLink",
+    "KnowledgeLinkPage",
+    "KnowledgeTable",
+    "KnowledgeTableField",
+    "KnowledgeTableRecord",
+    "KnowledgeForm",
+    "KnowledgeFormSection",
+    "KnowledgeFormField",
+    "KnowledgeFormResponse",
+    "KnowledgeRSSFeed",
+    "KnowledgeRSSEntry",
+    "KnowledgeApp",
+    "KnowledgeAppDataPoint",
+    "KnowledgeFolder",
+  ],
+  dependencies: ["integrations"],
+  paths: {
+    components: "src/components/knowledge/",
+    pages: "src/app/admin/organization/knowledge/",
+    api: "src/app/api/knowledge/",
+    lib: "src/lib/knowledge/",
+    validators: "src/lib/validators/knowledge-document.ts",
+    provider: "src/lib/chat/providers/knowledge.provider.ts",
+  },
+  actions: [
+    // Documents
+    {
+      name: "list_documents",
+      description: "List knowledge base documents with optional folder filter",
+      method: "GET",
+      endpoint: "/api/knowledge/documents",
+      parametersSchema: {
+        type: "object",
+        properties: {
+          folderId: { type: "string", description: "Folder UUID filter" },
+        },
+      },
+      responseDescription: "Array of document objects with stats",
+    },
+    {
+      name: "create_document",
+      description: "Create a new knowledge base document",
+      method: "POST",
+      endpoint: "/api/knowledge/documents",
+      parametersSchema: {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          fileType: {
+            type: "string",
+            enum: ["PDF", "DOCX", "TXT", "MD", "CSV"],
+          },
+          fileName: { type: "string" },
+          fileUrl: { type: "string" },
+          content: { type: "string" },
+          folderId: { type: "string" },
+        },
+        required: ["name", "fileType"],
+      },
+      requiredFields: ["name", "fileType"],
+      responseDescription: "Created document object",
+    },
+    {
+      name: "delete_document",
+      description: "Delete a knowledge base document",
+      method: "DELETE",
+      endpoint: "/api/knowledge/documents/{id}",
+      parametersSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "Document UUID" },
+        },
+        required: ["id"],
+      },
+      requiredFields: ["id"],
+      responseDescription: "Confirmation of deletion",
+    },
+    // Links
+    {
+      name: "list_links",
+      description: "List knowledge base web links",
+      method: "GET",
+      endpoint: "/api/knowledge/links",
+      parametersSchema: { type: "object", properties: {} },
+      responseDescription: "Array of link objects with page counts",
+    },
+    {
+      name: "create_link",
+      description: "Add a web link to the knowledge base for scraping",
+      method: "POST",
+      endpoint: "/api/knowledge/links",
+      parametersSchema: {
+        type: "object",
+        properties: {
+          url: { type: "string", description: "URL to scrape" },
+          name: { type: "string" },
+          scrapeMode: {
+            type: "string",
+            enum: ["SINGLE", "FULL_SITE"],
+            description: "SINGLE for one page, FULL_SITE to crawl the whole site",
+          },
+          maxPages: {
+            type: "number",
+            description: "Max pages to crawl (1-1000, default 100)",
+          },
+        },
+        required: ["url"],
+      },
+      requiredFields: ["url"],
+      responseDescription: "Created link object",
+    },
+    // RSS Feeds
+    {
+      name: "list_feeds",
+      description: "List RSS feeds in the knowledge base",
+      method: "GET",
+      endpoint: "/api/knowledge/feeds",
+      parametersSchema: { type: "object", properties: {} },
+      responseDescription: "Array of RSS feed objects with entry counts",
+    },
+    {
+      name: "create_feed",
+      description: "Add an RSS feed to the knowledge base",
+      method: "POST",
+      endpoint: "/api/knowledge/feeds",
+      parametersSchema: {
+        type: "object",
+        properties: {
+          feedUrl: { type: "string", description: "RSS feed URL" },
+          name: { type: "string" },
+          frequency: {
+            type: "string",
+            enum: ["HOURLY", "DAILY", "WEEKLY"],
+          },
+          maxEntriesPerSync: { type: "number", description: "1-100, default 20" },
+        },
+        required: ["feedUrl"],
+      },
+      requiredFields: ["feedUrl"],
+      responseDescription: "Created feed object",
+    },
+    {
+      name: "sync_feed",
+      description: "Manually trigger sync for a specific RSS feed",
+      method: "POST",
+      endpoint: "/api/knowledge/feeds/{id}/sync",
+      parametersSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "Feed UUID" },
+        },
+        required: ["id"],
+      },
+      requiredFields: ["id"],
+      responseDescription: "Sync results with new entries count",
+    },
+    // Tables
+    {
+      name: "list_tables",
+      description: "List structured data tables in the knowledge base",
+      method: "GET",
+      endpoint: "/api/knowledge/tables",
+      parametersSchema: { type: "object", properties: {} },
+      responseDescription: "Array of table objects with field and record counts",
+    },
+    {
+      name: "create_table",
+      description: "Create a new structured data table",
+      method: "POST",
+      endpoint: "/api/knowledge/tables",
+      parametersSchema: {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          description: { type: "string" },
+        },
+        required: ["name"],
+      },
+      requiredFields: ["name"],
+      responseDescription: "Created table object",
+    },
+    // Forms
+    {
+      name: "list_forms",
+      description: "List forms in the knowledge base",
+      method: "GET",
+      endpoint: "/api/knowledge/forms",
+      parametersSchema: { type: "object", properties: {} },
+      responseDescription: "Array of form objects with response counts",
+    },
+    {
+      name: "create_form",
+      description: "Create a new form",
+      method: "POST",
+      endpoint: "/api/knowledge/forms",
+      parametersSchema: {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          description: { type: "string" },
+        },
+        required: ["name"],
+      },
+      requiredFields: ["name"],
+      responseDescription: "Created form object",
+    },
+  ],
+};

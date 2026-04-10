@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#FB8C00;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#D84315;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.15" />
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0.02" />
+    </linearGradient>
+  </defs>
+  <rect width="600" height="400" fill="url(#bg)" rx="0"/>
+  <circle cx="120" cy="80" r="150" fill="url(#accent)"/>
+  <circle cx="500" cy="300" r="110" fill="url(#accent)"/>
+  <circle cx="300" cy="350" r="60" fill="url(#accent)"/>
+  <g transform="translate(255, 145)" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.9">
+    <path d="M40 5 L40 65"/>
+    <path d="M25 5 L55 5"/>
+    <path d="M25 65 L55 65"/>
+    <path d="M20 15 L20 55"/>
+    <path d="M60 15 L60 55"/>
+    <path d="M10 20 L10 50"/>
+    <path d="M70 20 L70 50"/>
+  </g>
+  <circle cx="200" cy="90" r="5" fill="white" opacity="0.2"/>
+  <circle cx="450" cy="150" r="3" fill="white" opacity="0.25"/>
+  <circle cx="100" cy="250" r="4" fill="white" opacity="0.15"/>
+  <circle cx="500" cy="330" r="3" fill="white" opacity="0.2"/>
+</svg>
