@@ -9,7 +9,16 @@ function getClient(): PrismaClient {
   if (!globalForPrisma.prisma) {
     const connectionString = process.env.DATABASE_URL || process.env.DIRECT_URL;
     if (!connectionString) {
-      throw new Error("DATABASE_URL or DIRECT_URL environment variable is required");
+      // During Next.js build, env vars aren't available.
+      // Return a dummy client that throws clear errors at runtime if actually called.
+      return new Proxy({} as PrismaClient, {
+        get(_t, p) {
+          if (typeof p === "symbol" || p === "then") return undefined;
+          return () => {
+            throw new Error(`Database not configured: missing DATABASE_URL (tried to call prisma.${String(p)})`);
+          };
+        },
+      });
     }
     const adapter = new PrismaPg(connectionString);
     globalForPrisma.prisma = new PrismaClient({ adapter });
@@ -19,7 +28,6 @@ function getClient(): PrismaClient {
 
 // Lazy initialization — only create the client when first accessed at runtime,
 // not at build time when environment variables aren't available.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const prisma = new Proxy({} as PrismaClient, {
   get(_target, prop, receiver) {
     const client = getClient();
