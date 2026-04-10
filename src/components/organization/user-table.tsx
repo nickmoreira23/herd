@@ -21,7 +21,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Search, SlidersHorizontal } from "lucide-react";
+import { Plus, Search, SlidersHorizontal, Copy, Check, KeyRound, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
 // Type for the user data returned from the API with includes
@@ -101,6 +101,7 @@ const EMPTY_FORM = {
   phone: "",
   profileTypeId: "",
   roleIds: [] as string[],
+  password: "",
 };
 
 export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps) {
@@ -115,6 +116,18 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
   const [editingUser, setEditingUser] = useState<UserRow | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Temporary password display after creation
+  const [tempPasswordInfo, setTempPasswordInfo] = useState<{
+    name: string;
+    email: string;
+    password: string;
+  } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  // Password reset state for edit mode
+  const [showResetPassword, setShowResetPassword] = useState(false);
 
   const networkFilter = NETWORK_OPTIONS.find((n) => n.value === networkValue)?.filterKey ?? "ALL";
   const statusFilter = STATUS_OPTIONS.find((s) => s.value === statusValue)?.filterKey ?? "ALL";
@@ -155,6 +168,8 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
   const openCreate = useCallback(() => {
     setEditingUser(null);
     setForm(EMPTY_FORM);
+    setShowResetPassword(false);
+    setShowPassword(false);
     setModalOpen(true);
   }, []);
 
@@ -167,7 +182,10 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
       phone: user.phone || "",
       profileTypeId: user.profileType.id,
       roleIds: user.profileRoles.map((pr) => pr.role.id),
+      password: "",
     });
+    setShowResetPassword(false);
+    setShowPassword(false);
     setModalOpen(true);
   }, []);
 
@@ -180,30 +198,57 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
     try {
       const url = editingUser ? `/api/users/${editingUser.id}` : "/api/users";
       const method = editingUser ? "PATCH" : "POST";
+
+      const payload: Record<string, unknown> = {
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email,
+        phone: form.phone || null,
+        profileTypeId: form.profileTypeId,
+        roleIds: form.roleIds,
+      };
+
+      // Include password for creation or reset
+      if (!editingUser && form.password.trim()) {
+        payload.password = form.password.trim();
+      }
+      if (editingUser && showResetPassword && form.password.trim()) {
+        payload.password = form.password.trim();
+      }
+
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          firstName: form.firstName,
-          lastName: form.lastName,
-          email: form.email,
-          phone: form.phone || null,
-          profileTypeId: form.profileTypeId,
-          roleIds: form.roleIds,
-        }),
+        body: JSON.stringify(payload),
       });
+
       if (!res.ok) {
         const json = await res.json();
         toast.error(json.error || "Failed to save");
         return;
       }
-      toast.success(editingUser ? "User updated" : "User created");
+
+      const json = await res.json();
+
+      if (!editingUser && json.data?.temporaryPassword) {
+        // Show the temporary password dialog
+        setTempPasswordInfo({
+          name: `${form.firstName} ${form.lastName}`.trim(),
+          email: form.email,
+          password: json.data.temporaryPassword,
+        });
+      } else if (editingUser && showResetPassword && form.password.trim()) {
+        toast.success("Password has been reset");
+      } else {
+        toast.success(editingUser ? "User updated" : "User created");
+      }
+
       setModalOpen(false);
       await refreshUsers();
     } finally {
       setSaving(false);
     }
-  }, [form, editingUser, refreshUsers]);
+  }, [form, editingUser, showResetPassword, refreshUsers]);
 
   const handleToggleStatus = useCallback(
     async (user: UserRow) => {
@@ -250,6 +295,14 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
         (r) => !r.networkType || r.networkType === selectedProfileType.networkType
       )
     : roles;
+
+  const handleCopyPassword = useCallback(() => {
+    if (!tempPasswordInfo) return;
+    navigator.clipboard.writeText(tempPasswordInfo.password);
+    setCopied(true);
+    toast.success("Password copied to clipboard");
+    setTimeout(() => setCopied(false), 2000);
+  }, [tempPasswordInfo]);
 
   return (
     <div className="space-y-6">
@@ -371,7 +424,7 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
             <DialogDescription>
               {editingUser
                 ? "Update this user's details, profile type, and roles."
-                : "Add a new user to the network."}
+                : "Add a new user to the network. A temporary password will be generated so they can log in."}
             </DialogDescription>
           </DialogHeader>
 
@@ -415,6 +468,80 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
                 className="mt-1"
               />
             </div>
+
+            {/* Password field — create mode */}
+            {!editingUser && (
+              <div>
+                <Label>
+                  Password{" "}
+                  <span className="text-muted-foreground font-normal">(optional — a temp password is generated if left blank)</span>
+                </Label>
+                <div className="relative mt-1">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    value={form.password}
+                    onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                    placeholder="Leave blank for auto-generated"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Password reset — edit mode */}
+            {editingUser && (
+              <div>
+                {!showResetPassword ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowResetPassword(true)}
+                  >
+                    <KeyRound className="mr-1.5 h-3.5 w-3.5" />
+                    Reset Password
+                  </Button>
+                ) : (
+                  <div>
+                    <Label>New Password</Label>
+                    <div className="relative mt-1">
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        value={form.password}
+                        onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                        placeholder="Enter new password"
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((v) => !v)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowResetPassword(false);
+                        setForm((f) => ({ ...f, password: "" }));
+                      }}
+                      className="text-xs text-muted-foreground hover:text-foreground mt-1"
+                    >
+                      Cancel password reset
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div>
               <Label>Profile Type</Label>
               <Select
@@ -495,6 +622,65 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
                 : editingUser
                   ? "Save Changes"
                   : "Create User"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Temporary Password Dialog — shown after user creation */}
+      <Dialog
+        open={!!tempPasswordInfo}
+        onOpenChange={(open) => {
+          if (!open) {
+            setTempPasswordInfo(null);
+            setCopied(false);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>User Created</DialogTitle>
+            <DialogDescription>
+              Share these login credentials with <strong>{tempPasswordInfo?.name}</strong>.
+              This password will not be shown again.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs text-muted-foreground">Email</Label>
+              <p className="text-sm font-medium">{tempPasswordInfo?.email}</p>
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Temporary Password</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <code className="flex-1 rounded-md bg-muted px-3 py-2 text-sm font-mono select-all">
+                  {tempPasswordInfo?.password}
+                </code>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleCopyPassword}
+                  className="shrink-0"
+                >
+                  {copied ? (
+                    <Check className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              onClick={() => {
+                setTempPasswordInfo(null);
+                setCopied(false);
+              }}
+            >
+              Done
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,11 +1,12 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     Credentials({
-      name: "Admin Login",
+      name: "Login",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
@@ -14,11 +15,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const email = credentials?.email as string;
         const password = credentials?.password as string;
 
-        if (
+        if (!email || !password) return null;
+
+        // ── 1. Super-admin shortcut (env-based) ──────────────────────
+        const isSuperAdmin =
           email === process.env.ADMIN_EMAIL &&
-          password === process.env.ADMIN_PASSWORD
-        ) {
-          // Look up or create user as NetworkProfile with Administrator type
+          password === process.env.ADMIN_PASSWORD;
+
+        if (isSuperAdmin) {
+          // Look up or create the admin NetworkProfile
           let user = await prisma.networkProfile.findUnique({
             where: { email },
             include: {
@@ -30,11 +35,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           });
 
           if (!user) {
-            // Find the Administrator profile type
             const adminType = await prisma.networkProfileType.findUnique({
               where: { slug: "admin" },
             });
-            // Find the super_admin role
             const superAdminRole = await prisma.networkRole.findUnique({
               where: { slug: "super_admin" },
             });
@@ -60,26 +63,58 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             });
           }
 
-          // Update last login
           await prisma.networkProfile.update({
             where: { id: user.id },
             data: { lastLogin: new Date() },
           });
-
-          // Determine the "role" label for the session from assigned roles
-          const primaryRole =
-            user.profileRoles?.[0]?.role?.slug ?? "user";
 
           return {
             id: user.id,
             email: user.email,
             name: `${user.firstName}${user.lastName ? " " + user.lastName : ""}`.trim(),
             image: user.avatarUrl,
-            role: primaryRole,
+            role: user.profileRoles?.[0]?.role?.slug ?? "super_admin",
           };
         }
 
-        return null;
+        // ── 2. Regular user login (password hash in DB) ──────────────
+        const user = await prisma.networkProfile.findUnique({
+          where: { email },
+          include: {
+            profileType: { select: { displayName: true, slug: true } },
+            profileRoles: {
+              include: { role: { select: { slug: true, displayName: true } } },
+            },
+          },
+        });
+
+        if (!user || !user.passwordHash) return null;
+
+        const valid = await bcrypt.compare(password, user.passwordHash);
+        if (!valid) return null;
+
+        if (user.status === "SUSPENDED" || user.status === "TERMINATED") {
+          return null;
+        }
+
+        // Activate pending users on first login
+        const updates: Record<string, unknown> = { lastLogin: new Date() };
+        if (user.status === "PENDING") {
+          updates.status = "ACTIVE";
+          updates.onboardedAt = new Date();
+        }
+        await prisma.networkProfile.update({
+          where: { id: user.id },
+          data: updates,
+        });
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: `${user.firstName}${user.lastName ? " " + user.lastName : ""}`.trim(),
+          image: user.avatarUrl,
+          role: user.profileRoles?.[0]?.role?.slug ?? "user",
+        };
       },
     }),
   ],

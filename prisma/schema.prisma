@@ -1748,6 +1748,7 @@ model NetworkProfile {
   lastName        String
   email           String        @unique
   phone           String?
+  passwordHash    String?
   avatarUrl       String?
   parentId        String?       @db.Uuid
   onboardedAt     DateTime?

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-utils";
+import bcrypt from "bcryptjs";
 
 export async function GET(
   _request: Request,
@@ -52,6 +53,11 @@ export async function PATCH(
         where: { id: body.profileTypeId },
       });
       if (pt) allowedFields.networkType = pt.networkType;
+    }
+
+    // Handle password reset
+    if (body.password && typeof body.password === "string" && body.password.trim()) {
+      allowedFields.passwordHash = await bcrypt.hash(body.password.trim(), 10);
     }
 
     const user = await prisma.networkProfile.update({

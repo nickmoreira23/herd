@@ -1,5 +1,19 @@
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-utils";
+import bcrypt from "bcryptjs";
+import crypto from "crypto";
+
+/** Generate a readable temporary password: 3 words + 2 digits */
+function generateTempPassword(): string {
+  const words = [
+    "alpha", "bravo", "cedar", "delta", "ember", "frost", "grain", "honey",
+    "ivory", "jetty", "knoll", "lunar", "maple", "north", "ocean", "prism",
+    "quartz", "ridge", "solar", "terra", "ultra", "vivid", "woven", "xenon",
+  ];
+  const pick = () => words[crypto.randomInt(words.length)];
+  const digits = crypto.randomInt(10, 99);
+  return `${pick()}-${pick()}-${digits}`;
+}
 
 export async function GET() {
   try {
@@ -27,7 +41,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { firstName, lastName, email, phone, profileTypeId, roleIds } = body;
+    const { firstName, lastName, email, phone, profileTypeId, roleIds, password } = body;
 
     if (!firstName || !email || !profileTypeId) {
       return apiError("First name, email, and profile type are required", 400);
@@ -46,12 +60,17 @@ export async function POST(request: Request) {
       return apiError("Invalid profile type", 400);
     }
 
+    // Use provided password or generate a temporary one
+    const plainPassword = password?.trim() || generateTempPassword();
+    const passwordHash = await bcrypt.hash(plainPassword, 10);
+
     const user = await prisma.networkProfile.create({
       data: {
         firstName,
         lastName: lastName || "",
         email,
         phone: phone || null,
+        passwordHash,
         networkType: profileType.networkType,
         profileTypeId,
         status: "PENDING",
@@ -67,7 +86,8 @@ export async function POST(request: Request) {
       },
     });
 
-    return apiSuccess(user, 201);
+    // Return the plaintext password so the admin can share it with the user
+    return apiSuccess({ ...user, temporaryPassword: plainPassword }, 201);
   } catch (e) {
     console.error("POST /api/users error:", e);
     return apiError("Failed to create user", 500);
