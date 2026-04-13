@@ -4,10 +4,10 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 
-COPY package.json package-lock.json ./
+COPY package.json ./
 COPY prisma ./prisma/
 COPY prisma.config.ts ./
-RUN npm ci
+RUN npm install
 
 # Stage 2: Build the application
 FROM node:20-slim AS builder
