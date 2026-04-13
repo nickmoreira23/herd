@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { KnowledgeLinkTable } from "@/components/knowledge/links/knowledge-link-table";
+import { LinkTable } from "@/components/links/link-table";
 import { KnowledgeLinksEmpty } from "@/components/knowledge/links/knowledge-links-empty";
 import { connection } from "next/server";
 
@@ -30,7 +30,7 @@ export default async function KnowledgeLinksPage() {
   }
 
   return (
-    <KnowledgeLinkTable
+    <LinkTable
       initialLinks={serialized}
       initialStats={stats}
     />

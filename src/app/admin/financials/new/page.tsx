@@ -2,7 +2,7 @@ import { FinancialPageClient } from "@/components/financials/financial-page-clie
 import { getFinancialDefaults } from "../data";
 
 export default async function NewModelPage() {
-  const { tierData, commissionData, salesRepData, samplerData, partnerData, overheadData, opexData } =
+  const { tierData, commissionData, salesRepData, partnerData, overheadData, opexData } =
     await getFinancialDefaults();
 
   return (
@@ -10,7 +10,6 @@ export default async function NewModelPage() {
       tierData={tierData}
       commissionData={commissionData}
       salesRepData={salesRepData}
-      samplerData={samplerData}
       partnerData={partnerData}
       overheadData={overheadData}
       opexData={opexData}

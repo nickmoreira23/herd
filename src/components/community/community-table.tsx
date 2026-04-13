@@ -132,7 +132,7 @@ export function CommunityTable({ initialBenefits, stats }: CommunityTableProps) 
   const columns = useMemo(
     () =>
       getCommunityColumns({
-        onOpen: (b) => router.push(`/admin/community/${b.id}`),
+        onOpen: (b) => router.push(`/admin/blocks/community/${b.id}`),
         onDelete: handleDelete,
       }),
     [handleDelete, router]
@@ -149,7 +149,7 @@ export function CommunityTable({ initialBenefits, stats }: CommunityTableProps) 
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button size="sm" onClick={() => router.push("/admin/community/new")}>
+          <Button size="sm" onClick={() => router.push("/admin/blocks/community/new")}>
             <Plus className="mr-1 h-3 w-3" />
             Add Benefit
           </Button>
@@ -238,7 +238,7 @@ export function CommunityTable({ initialBenefits, stats }: CommunityTableProps) 
       {viewMode === "grid" ? (
         <CommunityCardGrid
           benefits={filteredBenefits}
-          onOpen={(b) => router.push(`/admin/community/${b.id}`)}
+          onOpen={(b) => router.push(`/admin/blocks/community/${b.id}`)}
         />
       ) : (
         <DataTable

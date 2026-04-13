@@ -220,7 +220,7 @@ export function PerkDetailClient({
         }
         const json = await res.json();
         toast.success("Perk created");
-        router.push(`/admin/perks/${json.data.id}`);
+        router.push(`/admin/blocks/perks/${json.data.id}`);
       } finally {
         setSaving(false);
       }
@@ -275,7 +275,7 @@ export function PerkDetailClient({
       toast.success("Perk duplicated");
       setDuplicateOpen(false);
       setDuplicateName("");
-      router.push(`/admin/perks/${newPerk.data.id}`);
+      router.push(`/admin/blocks/perks/${newPerk.data.id}`);
     } catch {
       toast.error("Something went wrong");
     } finally {
@@ -295,7 +295,7 @@ export function PerkDetailClient({
       }
       toast.success("Perk deleted");
       setDeleteOpen(false);
-      router.push("/admin/perks");
+      router.push("/admin/blocks/perks");
       router.refresh();
     } catch {
       toast.error("Something went wrong");
@@ -342,7 +342,7 @@ export function PerkDetailClient({
       <div className="flex items-center justify-between shrink-0 border-b py-3 px-4">
         <nav className="flex items-center gap-2 text-sm">
           <Link
-            href="/admin/perks"
+            href="/admin/blocks/perks"
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
             Perks

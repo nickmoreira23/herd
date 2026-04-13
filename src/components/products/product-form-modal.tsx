@@ -16,7 +16,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   formatPercent,
+  formatCurrency,
   calculateMargin,
+  calculateLandedCost,
   getMarginColorClass,
 } from "@/lib/utils";
 
@@ -41,6 +43,8 @@ export function ProductFormModal({
     redemptionType: "Members Store" as string,
     retailPrice: "",
     costOfGoods: "",
+    shippingCost: "",
+    handlingCost: "",
     imageUrl: "",
     weightOz: "",
     tags: "",
@@ -50,6 +54,7 @@ export function ProductFormModal({
 
   useEffect(() => {
     if (product) {
+      const p = product as Record<string, unknown>;
       setForm({
         name: product.name,
         sku: product.sku,
@@ -58,6 +63,8 @@ export function ProductFormModal({
         redemptionType: product.redemptionType || "Members Store",
         retailPrice: String(product.retailPrice),
         costOfGoods: String(product.costOfGoods),
+        shippingCost: String((p.shippingCost as number) ?? 0),
+        handlingCost: String((p.handlingCost as number) ?? 0),
         imageUrl: product.imageUrl || "",
         weightOz: product.weightOz ? String(product.weightOz) : "",
         tags: product.tags.join(", "),
@@ -72,6 +79,8 @@ export function ProductFormModal({
         redemptionType: "Members Store",
         retailPrice: "",
         costOfGoods: "",
+        shippingCost: "",
+        handlingCost: "",
         imageUrl: "",
         weightOz: "",
         tags: "",
@@ -82,7 +91,10 @@ export function ProductFormModal({
 
   const retail = parseFloat(form.retailPrice) || 0;
   const cogs = parseFloat(form.costOfGoods) || 0;
+  const shippingNum = parseFloat(form.shippingCost) || 0;
+  const handlingNum = parseFloat(form.handlingCost) || 0;
   const margin = retail > 0 ? calculateMargin(cogs, retail) : 0;
+  const landedCost = calculateLandedCost(cogs, shippingNum, handlingNum);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -96,6 +108,8 @@ export function ProductFormModal({
         redemptionType: form.redemptionType,
         retailPrice: parseFloat(form.retailPrice),
         costOfGoods: parseFloat(form.costOfGoods),
+        shippingCost: parseFloat(form.shippingCost) || 0,
+        handlingCost: parseFloat(form.handlingCost) || 0,
         imageUrl: form.imageUrl || undefined,
         weightOz: form.weightOz ? parseFloat(form.weightOz) : undefined,
         tags: form.tags
@@ -229,14 +243,48 @@ export function ProductFormModal({
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="shippingCost">Shipping Cost</Label>
+              <Input
+                id="shippingCost"
+                type="number"
+                step="0.01"
+                value={form.shippingCost}
+                onChange={(e) =>
+                  setForm({ ...form, shippingCost: e.target.value })
+                }
+                placeholder="0.00"
+              />
+            </div>
+            <div>
+              <Label htmlFor="handlingCost">Handling / Fulfillment</Label>
+              <Input
+                id="handlingCost"
+                type="number"
+                step="0.01"
+                value={form.handlingCost}
+                onChange={(e) =>
+                  setForm({ ...form, handlingCost: e.target.value })
+                }
+                placeholder="0.00"
+              />
+            </div>
+          </div>
+
           {retail > 0 && cogs > 0 && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 flex-wrap">
               <span className="text-sm text-muted-foreground">
-                Margin (at retail):
+                Margin:{" "}
+                <Badge className={getMarginColorClass(margin)} variant="outline">
+                  {formatPercent(margin)}
+                </Badge>
               </span>
-              <Badge className={getMarginColorClass(margin)} variant="outline">
-                {formatPercent(margin)}
-              </Badge>
+              {(shippingNum > 0 || handlingNum > 0) && (
+                <span className="text-sm text-muted-foreground">
+                  Landed: <strong>{formatCurrency(landedCost)}</strong>
+                </span>
+              )}
             </div>
           )}
 

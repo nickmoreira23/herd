@@ -74,7 +74,7 @@ export function DocumentTable({ initialDocuments, stats }: DocumentTableProps) {
   }, [documents, categoryFilter, statusFilter, search]);
 
   const refreshDocuments = useCallback(async () => {
-    const res = await fetch("/api/documents");
+    const res = await fetch("/api/operations/documents");
     const json = await res.json();
     if (json.data) setDocuments(json.data);
   }, []);
@@ -92,7 +92,7 @@ export function DocumentTable({ initialDocuments, stats }: DocumentTableProps) {
 
   const handleToggleActive = useCallback(
     async (doc: DocumentRow) => {
-      const res = await fetch(`/api/documents/${doc.id}`, {
+      const res = await fetch(`/api/operations/documents/${doc.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive: !doc.isActive }),
@@ -108,7 +108,7 @@ export function DocumentTable({ initialDocuments, stats }: DocumentTableProps) {
   const handleDelete = useCallback(
     async (doc: DocumentRow) => {
       if (!confirm(`Delete "${doc.name}"?`)) return;
-      const res = await fetch(`/api/documents/${doc.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/operations/documents/${doc.id}`, { method: "DELETE" });
       if (res.ok) {
         await refreshDocuments();
         toast.success("Deleted");

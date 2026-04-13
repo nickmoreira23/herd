@@ -31,8 +31,8 @@ Key concepts:
 - `src/components/brands/partner-status-badge.tsx`
 
 ### Pages
-- `src/app/admin/brands/page.tsx` — List
-- `src/app/admin/brands/[id]/page.tsx` — Detail
+- `src/app/admin/blocks/partners/page.tsx` — List
+- `src/app/admin/blocks/partners/[id]/page.tsx` — Detail
 
 ### API Routes
 - `src/app/api/partners/route.ts` — GET + POST

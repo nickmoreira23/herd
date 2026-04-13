@@ -31,19 +31,18 @@ export function PLStatement({ multiplier, periodLabel }: PLStatementProps) {
 
   const m = multiplier;
 
-  const samplerSpend = (inputs.samplerChannel?.monthlyMarketingSpend ?? 0) * m;
   const totalRevenue = results.mrr * m;
-  const productCost = results.totalProductCost * m;
+  // totalProductCost includes fulfillment+shipping, so break out the components
   const fulfillmentCost = results.totalFulfillmentCost * m;
-  const totalCOGS = (results.totalProductCost + results.totalFulfillmentCost) * m;
+  const productOnlyCost = (results.totalProductCost - results.totalFulfillmentCost) * m;
+  const totalCOGS = results.totalProductCost * m; // already includes fulfillment
   const grossProfit = results.grossMarginDollars * m;
   const commissionExpense = results.totalCommissionExpense * m;
   const overheadMonthly = resolveOverhead(inputs.operationalOverhead, 0);
   const overhead = overheadMonthly * m;
-  const totalOpEx = (results.totalCommissionExpense + (inputs.samplerChannel?.monthlyMarketingSpend ?? 0) + overheadMonthly) * m;
+  const totalOpEx = (results.totalCommissionExpense + overheadMonthly) * m;
   const kickbackRevenue = results.totalKickbackRevenue * m;
-  const breakageProfit = results.totalBreakageProfit * m;
-  const totalOtherIncome = (results.totalKickbackRevenue + results.totalBreakageProfit) * m;
+  const totalOtherIncome = results.totalKickbackRevenue * m;
   const netIncome = results.netMarginDollars * m;
 
   return (
@@ -78,7 +77,7 @@ export function PLStatement({ multiplier, periodLabel }: PLStatementProps) {
         totalLabel="Total COGS"
         variant="expense"
       >
-        <LineItem label="Product Costs" value={-productCost} />
+        <LineItem label="Product Costs (Credits & Apparel)" value={-productOnlyCost} />
         <LineItem label="Fulfillment & Shipping" value={-fulfillmentCost} />
       </PLSection>
 
@@ -103,7 +102,6 @@ export function PLStatement({ multiplier, periodLabel }: PLStatementProps) {
         variant="expense"
       >
         <LineItem label="Sales Commissions" value={-commissionExpense} />
-        <LineItem label="Sampler Channel Spend" value={-samplerSpend} />
         <LineItem
           label={inputs.operationalOverhead.mode === "milestone-scaled" ? "Operational Overhead (scaled)" : "Operational Overhead"}
           value={-overhead}
@@ -111,15 +109,26 @@ export function PLStatement({ multiplier, periodLabel }: PLStatementProps) {
       </PLSection>
 
       {/* Other Income Section */}
-      <PLSection
-        label="Other Income"
-        total={totalOtherIncome}
-        totalLabel="Total Other Income"
-        variant="income"
-      >
-        <LineItem label="Partner Kickbacks" value={kickbackRevenue} />
-        <LineItem label="Credit Breakage" value={breakageProfit} />
-      </PLSection>
+      {totalOtherIncome > 0 && (
+        <PLSection
+          label="Other Income"
+          total={totalOtherIncome}
+          totalLabel="Total Other Income"
+          variant="income"
+        >
+          <LineItem label="Partner Kickbacks" value={kickbackRevenue} />
+        </PLSection>
+      )}
+
+      {/* Breakage note — informational, already reflected in reduced COGS */}
+      {results.totalBreakageProfit > 0 && (
+        <div className="rounded-lg border bg-muted/20 px-4 py-2 text-[11px] text-muted-foreground flex items-center gap-2">
+          <span className="text-muted-foreground/60">ℹ</span>
+          <span>
+            Credit breakage savings of <strong className="text-foreground">{formatCurrency(results.totalBreakageProfit * m)}</strong> already reflected in reduced COGS ({formatPercent(100 - inputs.creditRedemptionRate * 100)} unredeemed)
+          </span>
+        </div>
+      )}
 
       {/* Net Income Highlight — same styling as Gross Profit */}
       <div className="rounded-lg border bg-muted/30 px-4 py-3 flex items-center justify-between">
@@ -133,6 +142,32 @@ export function PLStatement({ multiplier, periodLabel }: PLStatementProps) {
           </span>
         </div>
       </div>
+
+      {/* Profit Split Section (only show when parties are defined) */}
+      {results.profitSplit.parties.length > 0 && (
+        <>
+          <PLSection
+            label="Profit Distribution"
+            total={results.profitSplit.parties.reduce((s, p) => s + p.monthlyAmount * m, 0)}
+            totalLabel={`Distributed (${results.profitSplit.totalDistributedPercent}%)`}
+            variant="income"
+          >
+            {results.profitSplit.parties.map((party) => (
+              <LineItem
+                key={party.id}
+                label={`${party.name || "Unnamed"} (${party.percent}%)`}
+                value={party.monthlyAmount * m}
+              />
+            ))}
+            {results.profitSplit.undistributedPercent > 0 && (
+              <LineItem
+                label={`Undistributed (${results.profitSplit.undistributedPercent}%)`}
+                value={netIncome > 0 ? netIncome * (results.profitSplit.undistributedPercent / 100) : 0}
+              />
+            )}
+          </PLSection>
+        </>
+      )}
     </div>
   );
 }

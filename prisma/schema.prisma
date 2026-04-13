@@ -54,6 +54,12 @@ enum PauseCreditBehavior {
   FORFEIT
 }
 
+enum CancelCreditBehavior {
+  FORFEIT
+  GRACE_PERIOD
+  KEEP_FOREVER
+}
+
 // ========================
 // AI Agent Enums
 // ========================
@@ -106,6 +112,12 @@ enum AgentToolAuthType {
   OAUTH2
   BEARER_TOKEN
   CUSTOM_HEADER
+}
+
+enum AgentRole {
+  ORCHESTRATOR
+  SPECIALIST
+  BLOCK
 }
 
 // ========================
@@ -205,6 +217,14 @@ model Product {
   retailPrice    Decimal  @db.Decimal(10, 2)
   memberPrice    Decimal  @db.Decimal(10, 2)
   costOfGoods    Decimal  @db.Decimal(10, 2)
+
+  // Cost components for advanced metrics
+  shippingCost           Decimal  @default(0) @db.Decimal(10, 2)
+  handlingCost           Decimal  @default(0) @db.Decimal(10, 2)
+  paymentProcessingPct   Decimal  @default(0) @db.Decimal(5, 2)   // e.g. 2.90 = 2.9%
+  paymentProcessingFlat  Decimal  @default(0) @db.Decimal(10, 2)  // e.g. 0.30 flat fee
+  mapPrice               Decimal? @db.Decimal(10, 2)               // minimum advertised price
+
   imageUrl       String?
   isActive       Boolean  @default(true)
   weightOz       Decimal? @db.Decimal(8, 2)
@@ -297,6 +317,26 @@ model Agent {
   // Response format
   responseFormat  String?  // "text" | "json" | "structured"
 
+  // Role & Scope
+  role              AgentRole @default(BLOCK)
+  scope             String?
+  isSystem          Boolean   @default(false)
+
+  // Runtime behavior
+  confirmationTier  String    @default("none")
+  autoNavigate      Boolean   @default(false)
+  historyWindow     Int       @default(30)
+
+  // Multimodal capabilities
+  acceptsImages            Boolean @default(false)
+  acceptsAudio             Boolean @default(false)
+  acceptsVideo             Boolean @default(false)
+  acceptsDocuments         Boolean @default(false)
+  canGenerateImages        Boolean @default(false)
+  canGenerateAudio         Boolean @default(false)
+  canGenerateVideo         Boolean @default(false)
+  canGeneratePresentations Boolean @default(false)
+
   // Metadata
   version   String   @default("1.0")
   tags      String[]
@@ -308,6 +348,7 @@ model Agent {
   knowledgeItems AgentKnowledgeItem[]
   skills         AgentSkill[]
   tools          AgentTool[]
+  conversations  ChatConversation[]
 }
 
 model AgentTierAccess {
@@ -455,6 +496,8 @@ model SubscriptionTier {
   pauseAllowed           Boolean  @default(false)
   pauseMaxMonths         Int      @default(0)
   pauseCreditBehavior    PauseCreditBehavior @default(FROZEN)
+  cancelCreditBehavior   CancelCreditBehavior @default(FORFEIT)
+  cancelCreditGraceDays  Int      @default(0)   // only used when cancelCreditBehavior = GRACE_PERIOD
   winbackDays            Int      @default(0)   // 0 = no win-back
   winbackBonusCredits    Decimal  @default(0) @db.Decimal(10, 2)
   exitSurveyRequired     Boolean  @default(false)
@@ -1024,7 +1067,8 @@ model KnowledgeDocument {
   textContent  String?
   uploadedAt   DateTime                @default(now())
   processedAt  DateTime?
-  updatedAt    DateTime                @updatedAt
+  updatedAt      DateTime                @updatedAt
+  sourceFeature  String?
 
   folder KnowledgeFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
 
@@ -1050,7 +1094,8 @@ model KnowledgeImage {
   textContent  String?                 // Claude Vision description
   uploadedAt   DateTime                @default(now())
   processedAt  DateTime?
-  updatedAt    DateTime                @updatedAt
+  updatedAt      DateTime                @updatedAt
+  sourceFeature  String?
 
   folder KnowledgeFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
 
@@ -1076,7 +1121,8 @@ model KnowledgeVideo {
   textContent  String?                 // transcript with speaker labels
   uploadedAt   DateTime                @default(now())
   processedAt  DateTime?
-  updatedAt    DateTime                @updatedAt
+  updatedAt      DateTime                @updatedAt
+  sourceFeature  String?
 
   folder KnowledgeFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
 
@@ -1104,7 +1150,8 @@ model KnowledgeAudio {
   metadata          Json?              // integration-specific data (summary, mindMap, etc.)
   uploadedAt   DateTime                @default(now())
   processedAt  DateTime?
-  updatedAt    DateTime                @updatedAt
+  updatedAt      DateTime                @updatedAt
+  sourceFeature  String?
 
   folder KnowledgeFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
 
@@ -1135,6 +1182,7 @@ model KnowledgeLink {
   createdAt       DateTime                @default(now())
   processedAt     DateTime?
   updatedAt       DateTime                @updatedAt
+  sourceFeature   String?
 
   pages KnowledgeLinkPage[]
 }
@@ -1177,6 +1225,7 @@ model KnowledgeTable {
   sourceImportedAt DateTime?
   createdAt        DateTime                @default(now())
   updatedAt        DateTime                @updatedAt
+  sourceFeature    String?
 
   fields  KnowledgeTableField[]
   records KnowledgeTableRecord[]
@@ -1246,6 +1295,7 @@ model KnowledgeForm {
   processedAt     DateTime?
   createdAt       DateTime                @default(now())
   updatedAt       DateTime                @updatedAt
+  sourceFeature   String?
 
   sections  KnowledgeFormSection[]
   responses KnowledgeFormResponse[]
@@ -1349,6 +1399,7 @@ model KnowledgeApp {
   errorMessage     String?
   createdAt        DateTime                @default(now())
   updatedAt        DateTime                @updatedAt
+  sourceFeature    String?
 
   dataPoints KnowledgeAppDataPoint[]
   syncLogs   KnowledgeAppSyncLog[]
@@ -1426,6 +1477,7 @@ model KnowledgeRSSFeed {
   processedAt       DateTime?
   createdAt         DateTime                @default(now())
   updatedAt         DateTime                @updatedAt
+  sourceFeature     String?
 
   entries  KnowledgeRSSEntry[]
   syncLogs KnowledgeRSSSyncLog[]
@@ -1539,6 +1591,7 @@ model Integration {
   webhookEvents     IntegrationWebhookEvent[]
   syncLogs          IntegrationSyncLog[]
   memberConnections MemberConnection[]
+  messageChannels   MessageChannel[]
 }
 
 // Per-member connection to an integration (OAuth tokens, user-level auth)
@@ -1776,6 +1829,8 @@ model NetworkProfile {
   headOfDepartments   Department[] @relation("DepartmentHead")
   conversations       ChatConversation[]
   memberConnections   MemberConnection[]
+  messageThreadsAsContact  MessageThread[] @relation("ThreadContact")
+  messageThreadsAsAssignee MessageThread[] @relation("ThreadAssignee")
 
   @@map("network_profiles")
 }
@@ -2062,14 +2117,17 @@ model ChatConversation {
   title     String?
   model     String   @default("claude-sonnet-4-20250514")
   userId    String   @db.Uuid
+  agentId   String?  @db.Uuid
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   user     NetworkProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agent    Agent?         @relation(fields: [agentId], references: [id], onDelete: SetNull)
   messages ChatMessage[]
 
   @@index([userId])
   @@index([updatedAt])
+  @@index([agentId])
   @@map("chat_conversations")
 }
 
@@ -2081,6 +2139,8 @@ model ChatMessage {
   model          String?
   sources        Json?    // knowledge items referenced [{type, id, name}]
   artifacts      Json?    // ArtifactMeta[] for rich card rendering
+  attachments    Json?    // [{ type, url, mimeType, metadata }]
+  mediaOutputs   Json?    // [{ type, url, metadata }]
   createdAt      DateTime @default(now())
 
   conversation ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
@@ -2467,4 +2527,169 @@ model Task {
   @@index([dueDate])
   @@index([sourceIntegration])
   @@map("tasks")
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Foundation Services
+// ═══════════════════════════════════════════════════════════════════
+
+model FoundationServiceConfig {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  service   String   @unique
+  configJson String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("foundation_service_config")
+}
+
+model VoiceJob {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  operation        String    // "transcribe" | "synthesize" | "voice_session"
+  provider         String    // "deepgram" | "elevenlabs" | etc.
+  status           String    @default("pending") // pending | processing | completed | failed
+  inputRef         String?
+  resultJson       String?
+  outputUrl        String?
+  audioDurationSec Float?
+  costCents        Int?
+  errorMessage     String?
+  sourceType       String?   // "meeting" | "audio" | "agent" | "api"
+  sourceId         String?
+  createdAt        DateTime  @default(now())
+  completedAt      DateTime?
+
+  @@index([status])
+  @@index([operation])
+  @@index([sourceType, sourceId])
+  @@map("voice_jobs")
+}
+
+model VideoJob {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  operation        String    // "transcribe" | "generate" | "process" | "upload"
+  provider         String    // "deepgram" | "runway" | "heygen" | "ffmpeg" | "local"
+  status           String    @default("pending") // pending | processing | completed | failed
+  inputRef         String?
+  resultJson       String?
+  outputUrl        String?
+  videoDurationSec Float?
+  costCents        Int?
+  errorMessage     String?
+  sourceType       String?   // "knowledge" | "agent" | "api"
+  sourceId         String?
+  createdAt        DateTime  @default(now())
+  completedAt      DateTime?
+
+  @@index([status])
+  @@index([operation])
+  @@index([sourceType, sourceId])
+  @@map("video_jobs")
+}
+
+// ─── Messages Block ─────────────────────────────────────────────────
+
+enum MessageChannelType {
+  INTERNAL
+  EMAIL
+  SMS
+  WHATSAPP
+  INSTAGRAM
+  FACEBOOK
+  SLACK
+  INTERCOM
+  LINKEDIN
+  X_TWITTER
+  CUSTOM
+}
+
+enum MessageThreadStatus {
+  OPEN
+  CLOSED
+  ARCHIVED
+  SNOOZED
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum MessageStatus {
+  PENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+model MessageChannel {
+  id            String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String
+  channelType   MessageChannelType
+  integrationId String?            @db.Uuid
+  isActive      Boolean            @default(true)
+  configJson    String?
+  webhookSecret String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  integration Integration?    @relation(fields: [integrationId], references: [id], onDelete: SetNull)
+  threads     MessageThread[]
+
+  @@unique([channelType, integrationId])
+  @@map("message_channels")
+}
+
+model MessageThread {
+  id               String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  channelId        String              @db.Uuid
+  contactId        String?             @db.Uuid
+  externalThreadId String?
+  subject          String?
+  status           MessageThreadStatus @default(OPEN)
+  priority         Int                 @default(0)
+  tags             String[]
+  assigneeId       String?             @db.Uuid
+  lastMessageAt    DateTime?
+  closedAt         DateTime?
+  metadata         Json?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  channel  MessageChannel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  contact  NetworkProfile? @relation("ThreadContact", fields: [contactId], references: [id], onDelete: SetNull)
+  assignee NetworkProfile? @relation("ThreadAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  messages Message[]
+
+  @@index([channelId])
+  @@index([contactId])
+  @@index([status])
+  @@index([lastMessageAt])
+  @@index([externalThreadId])
+  @@map("message_threads")
+}
+
+model Message {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  threadId         String           @db.Uuid
+  direction        MessageDirection
+  status           MessageStatus    @default(SENT)
+  senderName       String?
+  senderEmail      String?
+  senderExternalId String?
+  content          String
+  contentType      String           @default("text")
+  attachments      Json?
+  externalId       String?
+  metadata         Json?
+  sentAt           DateTime         @default(now())
+  createdAt        DateTime         @default(now())
+
+  thread MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([threadId])
+  @@index([sentAt])
+  @@index([externalId])
+  @@map("messages")
 }

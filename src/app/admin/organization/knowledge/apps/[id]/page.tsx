@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import { KnowledgeAppDetailClient } from "@/components/knowledge/apps/knowledge-app-detail-client";
+import { AppDetailClient } from "@/components/apps/app-detail-client";
 import { connection } from "next/server";
 
 export default async function KnowledgeAppDetailPage({
@@ -38,5 +38,5 @@ export default async function KnowledgeAppDetailPage({
   // Remove the _count field since we've flattened it
   delete serialized._count;
 
-  return <KnowledgeAppDetailClient app={serialized} />;
+  return <AppDetailClient app={serialized} />;
 }

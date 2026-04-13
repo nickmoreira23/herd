@@ -200,7 +200,7 @@ export async function processCompletedMeeting(
     // 2. Transcribe
     let transcriptText = "";
     if (config.autoTranscribe) {
-      const { transcribeAudio } = await import("@/lib/knowledge/audio-transcriber");
+      const { transcribeAudio } = await import("@/lib/audios/audio-transcriber");
       transcriptText = await transcribeAudio(tmpPath);
     }
 

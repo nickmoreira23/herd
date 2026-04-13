@@ -12,7 +12,7 @@ export const partnersBlock: BlockManifest = {
   dependencies: ["tiers"],
   paths: {
     components: "src/components/brands/",
-    pages: "src/app/admin/brands/",
+    pages: "src/app/admin/blocks/partners/",
     api: "src/app/api/partners/",
     validators: "src/lib/validators/partner.ts",
     provider: "src/lib/chat/providers/partner.provider.ts",

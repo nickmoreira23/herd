@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { KnowledgeFormList } from "@/components/knowledge/forms/knowledge-form-list";
+import { FormList } from "@/components/forms/form-list";
 import { connection } from "next/server";
 
 export default async function KnowledgeFormsPage() {
@@ -37,5 +37,5 @@ export default async function KnowledgeFormsPage() {
     totalResponses: forms.reduce((sum, f) => sum + f.responseCount, 0),
   };
 
-  return <KnowledgeFormList initialForms={serialized} initialStats={stats} />;
+  return <FormList initialForms={serialized} initialStats={stats} />;
 }

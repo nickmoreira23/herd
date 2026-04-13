@@ -8,6 +8,21 @@ import { communityBlock } from "./blocks/community.block";
 import { perksBlock } from "./blocks/perks.block";
 import { partnersBlock } from "./blocks/partners.block";
 import { subscriptionsBlock } from "./blocks/subscriptions.block";
+import { pagesBlock } from "./blocks/pages.block";
+// Knowledge-type blocks (first-class)
+import { documentsBlock } from "./blocks/documents.block";
+import { imagesBlock } from "./blocks/images.block";
+import { videosBlock } from "./blocks/videos.block";
+import { audiosBlock } from "./blocks/audios.block";
+import { tablesBlock } from "./blocks/tables.block";
+import { formsBlock } from "./blocks/forms.block";
+import { linksBlock } from "./blocks/links.block";
+import { feedsBlock } from "./blocks/feeds.block";
+import { appsBlock } from "./blocks/apps.block";
+// Foundation blocks
+import { voiceBlock } from "./blocks/voice.block";
+// Operations blocks
+import { messagesBlock } from "./blocks/messages.block";
 
 // ─── All registered blocks ────────────────────────────────────────
 // To add a new block, create a manifest and add it here.
@@ -22,6 +37,21 @@ const blocks: BlockManifest[] = [
   perksBlock,
   partnersBlock,
   subscriptionsBlock,
+  pagesBlock,
+  // Knowledge-type blocks (first-class)
+  documentsBlock,
+  imagesBlock,
+  videosBlock,
+  audiosBlock,
+  tablesBlock,
+  formsBlock,
+  linksBlock,
+  feedsBlock,
+  appsBlock,
+  // Foundation blocks
+  voiceBlock,
+  // Operations blocks
+  messagesBlock,
 ];
 
 // ─── Lookup Maps ──────────────────────────────────────────────────

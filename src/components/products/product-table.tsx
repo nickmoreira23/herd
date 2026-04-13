@@ -217,7 +217,7 @@ export function ProductTable({ initialProducts, tiers, stats, redemptionRules = 
   const columns = useMemo(
     () =>
       getProductColumns({
-        onOpen: (p) => router.push(`/admin/products/${p.id}`),
+        onOpen: (p) => router.push(`/admin/blocks/products/${p.id}`),
         onDelete: handleDelete,
         onToggleActive: handleToggleActive,
         onInlineUpdate: handleInlineUpdate,
@@ -240,7 +240,7 @@ export function ProductTable({ initialProducts, tiers, stats, redemptionRules = 
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button size="sm" onClick={() => router.push("/admin/products/new")}>
+            <Button size="sm" onClick={() => router.push("/admin/blocks/products/new")}>
               <Plus className="mr-1 h-3 w-3" />
               Add Product
             </Button>
@@ -389,7 +389,7 @@ export function ProductTable({ initialProducts, tiers, stats, redemptionRules = 
         {viewMode === "grid" ? (
           <ProductCardGrid
             products={filteredProducts}
-            onOpen={(p) => router.push(`/admin/products/${p.id}`)}
+            onOpen={(p) => router.push(`/admin/blocks/products/${p.id}`)}
           />
         ) : (
           <DataTable

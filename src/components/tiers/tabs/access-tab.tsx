@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Shield } from "lucide-react";
+import { InfoTip } from "../info-tip";
 import type { TierFormState } from "../tier-detail-client";
 
 interface AccessTabProps {
@@ -24,7 +25,7 @@ export function AccessTab({ form, updateForm, onBlurSave }: AccessTabProps) {
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label className="text-xs">Max Members</Label>
+            <Label className="text-xs">Max Members <InfoTip text="Maximum number of subscribers allowed on this plan at once. Leave empty for unlimited." /></Label>
             <Input
               type="number"
               value={form.maxMembers}
@@ -35,7 +36,7 @@ export function AccessTab({ form, updateForm, onBlurSave }: AccessTabProps) {
             <p className="text-[10px] text-muted-foreground">Leave empty for unlimited</p>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Minimum Age</Label>
+            <Label className="text-xs">Minimum Age <InfoTip text="Minimum age required to subscribe to this plan. Leave empty for no age restriction." /></Label>
             <Input
               type="number"
               value={form.minimumAge}
@@ -56,7 +57,7 @@ export function AccessTab({ form, updateForm, onBlurSave }: AccessTabProps) {
               }}
             />
             <div>
-              <span className="text-sm font-medium">Invite Only</span>
+              <span className="text-sm font-medium">Invite Only <InfoTip text="When enabled, new members can only join this plan with a valid invitation code. Useful for exclusive or beta plans." /></span>
               <p className="text-[10px] text-muted-foreground">Requires an invitation code to join</p>
             </div>
           </label>
@@ -69,14 +70,14 @@ export function AccessTab({ form, updateForm, onBlurSave }: AccessTabProps) {
               }}
             />
             <div>
-              <span className="text-sm font-medium">Rep Channel Only</span>
+              <span className="text-sm font-medium">Rep Channel Only <InfoTip text="Restricts this plan to sales rep distribution only. Members cannot self-enroll; a rep must assign them." /></span>
               <p className="text-[10px] text-muted-foreground">Can only be sold by sales reps</p>
             </div>
           </label>
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-xs">Geo Restrictions</Label>
+          <Label className="text-xs">Geo Restrictions <InfoTip text="Limit plan availability to specific countries using ISO codes. Leave empty to allow worldwide access." /></Label>
           <Input
             value={form.geoRestriction}
             onChange={(e) => updateForm("geoRestriction", e.target.value)}

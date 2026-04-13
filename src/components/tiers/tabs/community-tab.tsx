@@ -26,6 +26,7 @@ interface TierAssignmentRow {
 
 interface CommunityTabProps {
   tierId: string;
+  onBenefitSaved?: () => void;
 }
 
 const PLATFORM_LABELS: Record<string, string> = {
@@ -35,7 +36,7 @@ const PLATFORM_LABELS: Record<string, string> = {
   "in-person": "In-Person",
 };
 
-export function CommunityTab({ tierId }: CommunityTabProps) {
+export function CommunityTab({ tierId, onBenefitSaved }: CommunityTabProps) {
   const [allBenefits, setAllBenefits] = useState<CommunityBenefitInfo[]>([]);
   const [enabledIds, setEnabledIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -95,12 +96,14 @@ export function CommunityTab({ tierId }: CommunityTabProps) {
         });
         if (!res.ok) {
           toast.error("Failed to save");
+        } else {
+          onBenefitSaved?.();
         }
       } catch {
         toast.error("Failed to save");
       }
     },
-    [tierId, allBenefits]
+    [tierId, allBenefits, onBenefitSaved]
   );
 
   const toggleBenefit = useCallback(
@@ -178,7 +181,7 @@ export function CommunityTab({ tierId }: CommunityTabProps) {
         {allBenefits.length === 0 && (
           <div className="text-sm text-muted-foreground text-center py-8">
             No community benefits configured yet. Add benefits from the{" "}
-            <Link href="/admin/community" className="text-brand underline">
+            <Link href="/admin/blocks/community" className="text-brand underline">
               Community
             </Link>{" "}
             page.

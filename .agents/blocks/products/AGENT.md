@@ -40,9 +40,9 @@ Products are assigned to tiers via packages and are searchable from the AI chat.
 - `src/components/products/inline-edit-cell.tsx` — Inline table editing
 
 ### Pages
-- `src/app/admin/products/page.tsx` — List page
-- `src/app/admin/products/[id]/page.tsx` — Detail page
-- `src/app/admin/products/new/page.tsx` — Create page
+- `src/app/admin/blocks/products/page.tsx` — List page
+- `src/app/admin/blocks/products/[id]/page.tsx` — Detail page
+- `src/app/admin/blocks/products/new/page.tsx` — Create page
 
 ### API Routes
 - `src/app/api/products/route.ts` — GET (list with filters) + POST (create)

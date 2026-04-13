@@ -80,7 +80,7 @@ function LibraryTab({
   useEffect(() => {
     setLoading(true);
     const endpoint =
-      mediaType === "image" ? "/api/knowledge/images" : "/api/knowledge/videos";
+      mediaType === "image" ? "/api/images" : "/api/videos";
     fetch(endpoint)
       .then((res) => res.json())
       .then((json) => {
@@ -276,8 +276,8 @@ function UploadTab({
     try {
       const endpoint =
         mediaType === "image"
-          ? "/api/knowledge/images/upload"
-          : "/api/knowledge/videos/upload";
+          ? "/api/images/upload"
+          : "/api/videos/upload";
 
       // Step 1: Upload the file
       const formData = new FormData();
@@ -291,7 +291,7 @@ function UploadTab({
 
       // Step 2: Create the KB record
       const recordEndpoint =
-        mediaType === "image" ? "/api/knowledge/images" : "/api/knowledge/videos";
+        mediaType === "image" ? "/api/images" : "/api/videos";
       const name = file.name.replace(/\.[^/.]+$/, "");
       const body: Record<string, unknown> = {
         name,
@@ -319,8 +319,8 @@ function UploadTab({
       // Step 3: Fire-and-forget processing
       const processEndpoint =
         mediaType === "image"
-          ? `/api/knowledge/images/${recordJson.data.id}/process`
-          : `/api/knowledge/videos/${recordJson.data.id}/process`;
+          ? `/api/images/${recordJson.data.id}/process`
+          : `/api/videos/${recordJson.data.id}/process`;
       fetch(processEndpoint, { method: "POST" }).catch(() => {});
 
       toast.success(`${mediaType === "image" ? "Image" : "Video"} uploaded`);

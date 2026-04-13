@@ -33,8 +33,12 @@ const nextConfig: NextConfig = {
       { source: "/admin/commissions", destination: "/admin/network/promoters", permanent: true },
       { source: "/admin/channels/:path*", destination: "/admin/network/:path*", permanent: true },
       { source: "/admin/operation/milestones", destination: "/admin/program/milestones", permanent: true },
-      { source: "/admin/partners", destination: "/admin/brands", permanent: true },
-      { source: "/admin/partners/:path*", destination: "/admin/brands/:path*", permanent: true },
+      // Blocks migration — old standalone routes → /admin/blocks/
+      { source: "/admin/products/:path*", destination: "/admin/blocks/products/:path*", permanent: true },
+      { source: "/admin/brands/:path*", destination: "/admin/blocks/partners/:path*", permanent: true },
+      { source: "/admin/partners/:path*", destination: "/admin/blocks/partners/:path*", permanent: true },
+      { source: "/admin/perks/:path*", destination: "/admin/blocks/perks/:path*", permanent: true },
+      { source: "/admin/community/:path*", destination: "/admin/blocks/community/:path*", permanent: true },
     ];
   },
 };

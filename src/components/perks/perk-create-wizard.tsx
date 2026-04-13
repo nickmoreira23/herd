@@ -47,7 +47,7 @@ export function PerkCreateWizard({ allTiers }: PerkCreateWizardProps) {
       <div className="flex items-center justify-between shrink-0 border-b py-3 px-4">
         <nav className="flex items-center gap-2 text-sm">
           <Link
-            href="/admin/perks"
+            href="/admin/blocks/perks"
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
             Perks

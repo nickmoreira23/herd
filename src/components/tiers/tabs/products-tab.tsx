@@ -51,9 +51,10 @@ type ScopeTab = "CATEGORY" | "SUB_CATEGORY" | "SKU";
 // ─── Main Component ──────────────────────────────────────────
 interface ProductsTabProps {
   tierId: string;
+  onBenefitSaved?: () => void;
 }
 
-export function ProductsTab({ tierId }: ProductsTabProps) {
+export function ProductsTab({ tierId, onBenefitSaved }: ProductsTabProps) {
   const [rules, setRules] = useState<RedemptionRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [dbCategories, setDbCategories] = useState<string[]>([]);
@@ -116,6 +117,7 @@ export function ProductsTab({ tierId }: ProductsTabProps) {
         return;
       }
       toast.success("Rule added");
+      onBenefitSaved?.();
       await fetchRules();
     } catch {
       toast.error("Failed to add rule");
@@ -135,6 +137,7 @@ export function ProductsTab({ tierId }: ProductsTabProps) {
         return;
       }
       toast.success("Rule removed");
+      onBenefitSaved?.();
     } catch {
       toast.error("Failed to remove rule");
       await fetchRules();
@@ -160,6 +163,7 @@ export function ProductsTab({ tierId }: ProductsTabProps) {
         return;
       }
       toast.success("Discount updated");
+      onBenefitSaved?.();
     } catch {
       toast.error("Failed to update discount");
       await fetchRules();

@@ -34,9 +34,9 @@ Key concepts:
 - `src/components/agents/tabs/` — 8 tab components (overview, model-prompt, knowledge, skills, tools, limits, tiers, settings)
 
 ### Pages
-- `src/app/admin/agents/page.tsx` — List with stats
-- `src/app/admin/agents/new/page.tsx` — Create
-- `src/app/admin/agents/[id]/page.tsx` — Edit
+- `src/app/admin/blocks/agents/page.tsx` — List with stats
+- `src/app/admin/blocks/agents/new/page.tsx` — Create
+- `src/app/admin/blocks/agents/[id]/page.tsx` — Edit
 
 ### API Routes
 - `src/app/api/agents/route.ts` — GET (list) + POST (create)

@@ -6,6 +6,7 @@ import { ChevronRight } from "lucide-react";
 
 const routeLabels: Record<string, string> = {
   admin: "Dashboard",
+  agents: "Agents",
   products: "Products",
   tiers: "Plans",
   commissions: "Commissions",
@@ -13,6 +14,8 @@ const routeLabels: Record<string, string> = {
   financials: "Finances",
   new: "New Model",
   settings: "Settings",
+  orchestrator: "Orchestrator",
+  specialists: "Specialists",
 };
 
 export function Breadcrumbs() {

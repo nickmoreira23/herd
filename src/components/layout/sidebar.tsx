@@ -36,14 +36,14 @@ import {
   UserCog,
   Plug,
   Sun,
-  Heart,
   Moon,
-  Workflow,
+  Lightbulb,
   Scale,
   Target,
   Dumbbell,
   Apple,
   MessageSquare,
+  Layers,
   type LucideIcon,
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
@@ -84,6 +84,7 @@ type NavItem = NavLink | NavGroup;
 const navItems: NavItem[] = [
   { type: "link", href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { type: "link", href: "/admin/chat", label: "Chat", icon: MessageSquare },
+  { type: "link", href: "/admin/agents", label: "Agents", icon: Bot },
   {
     type: "group",
     label: "Organization",
@@ -114,24 +115,14 @@ const navItems: NavItem[] = [
     label: "Program",
     icon: Gem,
     children: [
-      { type: "link", href: "/admin/program/benefits", label: "Benefits", icon: Heart },
       { type: "link", href: "/admin/tiers", label: "Plans", icon: CreditCard },
       { type: "link", href: "/admin/program/packages", label: "Packages", icon: Boxes },
       { type: "link", href: "/admin/program/milestones", label: "Milestones", icon: Flag },
     ],
   },
-  {
-    type: "group",
-    label: "Operation",
-    icon: Workflow,
-    children: [
-      { type: "link", href: "/admin/operation/legal", label: "Legal", icon: Scale },
-      { type: "link", href: "/admin/operation/marketing", label: "Marketing", icon: Megaphone },
-      { type: "link", href: "/admin/operation/sales", label: "Sales", icon: Target },
-      { type: "link", href: "/admin/operation/finances", label: "Finances", icon: BarChart3 },
-    ],
-  },
+  { type: "link", href: "/admin/solutions", label: "Solutions", icon: Lightbulb },
   { type: "link", href: "/admin/blocks", label: "Blocks", icon: Blocks },
+  { type: "link", href: "/admin/foundations", label: "Foundation", icon: Layers },
   { type: "link", href: "/admin/integrations", label: "Integrations", icon: Plug },
 ];
 
@@ -222,10 +213,9 @@ export function Sidebar() {
     const initial = new Set<string>();
     const activeSubPanel = getSubPanelIdForPath(pathname);
     if (pathname.startsWith("/admin/organization") || activeSubPanel === "users") initial.add("Organization");
-    if (["/admin/products", "/admin/agents", "/admin/brands", "/admin/perks", "/admin/community"].some((p) => pathname.startsWith(p))) initial.add("Program");
+    if (pathname.startsWith("/admin/foundations")) initial.add("Foundations");
     if (pathname.startsWith("/admin/tiers") || pathname.startsWith("/admin/program")) initial.add("Program");
     if (pathname.startsWith("/admin/network")) initial.add("Network");
-    if (pathname.startsWith("/admin/operation")) initial.add("Operation");
     if (initial.size === 0 && pathname === "/admin") initial.add("Program");
     return initial;
   });

@@ -28,8 +28,8 @@ Statuses: DRAFT → ACTIVE (or ARCHIVED)
 - `src/components/perks/perk-presets.ts` — Preset templates
 
 ### Pages
-- `src/app/admin/perks/page.tsx` — List
-- `src/app/admin/perks/[id]/page.tsx` — Detail
+- `src/app/admin/blocks/perks/page.tsx` — List
+- `src/app/admin/blocks/perks/[id]/page.tsx` — Detail
 
 ### API Routes
 - `src/app/api/perks/route.ts` — GET + POST

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { KnowledgeAudioTable } from "@/components/knowledge/audios/knowledge-audio-table";
+import { AudioTable } from "@/components/audios/audio-table";
 import { KnowledgeAudiosEmpty } from "@/components/knowledge/audios/knowledge-audios-empty";
 import { connection } from "next/server";
 
@@ -36,7 +36,7 @@ export default async function KnowledgeAudiosPage() {
   }
 
   return (
-    <KnowledgeAudioTable
+    <AudioTable
       initialAudios={serializedAudios}
       initialFolders={serializedFolders}
     />

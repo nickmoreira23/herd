@@ -66,7 +66,7 @@ export function DocumentUploadModal({ open, onOpenChange, onComplete }: Document
       // Upload file
       const formData = new FormData();
       formData.append("file", file);
-      const uploadRes = await fetch("/api/documents/upload", {
+      const uploadRes = await fetch("/api/operations/documents/upload", {
         method: "POST",
         body: formData,
       });
@@ -74,7 +74,7 @@ export function DocumentUploadModal({ open, onOpenChange, onComplete }: Document
       const uploadJson = await uploadRes.json();
 
       // Create document record
-      const docRes = await fetch("/api/documents", {
+      const docRes = await fetch("/api/operations/documents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

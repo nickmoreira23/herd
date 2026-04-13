@@ -28,7 +28,6 @@ export default async function EditModelPage({
       tierData={defaults.tierData}
       commissionData={defaults.commissionData}
       salesRepData={defaults.salesRepData}
-      samplerData={defaults.samplerData}
       partnerData={defaults.partnerData}
       overheadData={defaults.overheadData}
       opexData={defaults.opexData}

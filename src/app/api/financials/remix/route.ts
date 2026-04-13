@@ -19,7 +19,8 @@ The schema for FinancialInputs is:
       "monthlyCredits": number,
       "apparelCOGSPerMonth": number,
       "subscriberPercent": number (0-100, all tiers must sum to 100),
-      "churnRateMonthly": number (0-100)
+      "churnRateMonthly": number (0-100),
+      "minimumCommitMonths": number (minimum contract months before subscriber can cancel, default 1)
     }
   ],
   "billingCycleDistribution": {
@@ -36,6 +37,7 @@ The schema for FinancialInputs is:
   "commissionStructure": {
     "flatBonusPerSale": number,
     "residualPercent": number (0-100),
+    "residualDelayMonths": number (0-12, months after sale before residual starts, default 0),
     "tierBonuses": [{ "tierId": string, "flatBonus": number }],
     "percentHittingAccelerator": number (0-100),
     "acceleratorMultiplier": number
@@ -45,12 +47,8 @@ The schema for FinancialInputs is:
     "salesPerRepPerMonth": number,
     "monthlyGrowthRate": number (0-100, e.g. 10 = 10% monthly growth)
   },
-  "samplerChannel": {
-    "monthlyMarketingSpend": number,
-    "costPerSampler": number,
-    "conversionRate": number (0-100),
-    "monthlyGrowthRate": number (0-100)
-  },
+  "chargebackPercent": number (0-100, percentage of new subscribers that chargeback, default 0),
+  "chargebackFee": number ($ fee per chargeback incident, typically 15-25, default 15),
   "partnerKickbacks": [
     {
       "partnerId": string,
@@ -63,7 +61,14 @@ The schema for FinancialInputs is:
     "mode": "fixed" | "milestone-scaled",
     "fixedMonthly": number,
     "opexData": optional (do not modify — this is loaded from the Operations page)
-  }
+  },
+  "profitSplitParties": [
+    {
+      "id": string (uuid),
+      "name": string (party name, e.g. "HERD", "Partner A"),
+      "percent": number (0-100, all parties should ideally sum to 100)
+    }
+  ]
 }
 
 Rules:
@@ -74,6 +79,12 @@ Rules:
 - All percentage fields that are 0-100 should stay in that range (not 0.0-1.0).
 - creditRedemptionRate, avgCOGSToMemberPriceRatio, and breakageRate are 0.0-1.0 decimals.
 - For operationalOverhead: you may change mode and fixedMonthly, but NEVER modify opexData (it's managed by the Operations page).
+- For profitSplitParties: each party has a unique "id" (UUID string), a "name", and a "percent" (0-100). All parties' percents should ideally sum to 100. Preserve existing party IDs when modifying.
+- residualDelayMonths (in commissionStructure): integer 0-12, represents months after a sale before the rep starts earning residual commissions. 0 means residual starts immediately.
+- minimumCommitMonths (per tier): integer 1-24, represents the minimum contract period before subscribers can cancel. Churn only starts after this period expires.
+- chargebackPercent: 0-100, percentage of new subscribers that will chargeback. Chargebacks reduce net new subscribers and incur costs.
+- chargebackFee: $ per chargeback incident (processor fee).
+- The samplerChannel field is DEPRECATED. Always set it to { monthlyMarketingSpend: 0, costPerSampler: 0, conversionRate: 0, monthlyGrowthRate: 0 } or omit it.
 - Return the complete FinancialInputs object, not a partial one.`;
 
 export async function POST(request: Request) {
@@ -133,7 +144,7 @@ export async function POST(request: Request) {
     }
 
     // Basic validation: ensure required top-level fields exist
-    if (!newInputs.tiers || !newInputs.salesRepChannel || !newInputs.samplerChannel) {
+    if (!newInputs.tiers || !newInputs.salesRepChannel) {
       return apiError("AI returned incomplete inputs. Please try again.", 500);
     }
 

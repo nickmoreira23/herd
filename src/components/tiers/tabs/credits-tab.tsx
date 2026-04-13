@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { CreditCard, Coins, Gift } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { InfoTip } from "../info-tip";
 import type { TierFormState } from "../tier-detail-client";
 
 interface CreditsTabProps {
@@ -39,7 +40,7 @@ export function CreditsTab({ form, updateForm, onBlurSave }: CreditsTabProps) {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-xs">Monthly Credits ($)</Label>
+              <Label className="text-xs">Monthly Credits ($) <InfoTip text="Dollar value of credits issued to the member each billing cycle." /></Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
                 <Input
@@ -53,7 +54,7 @@ export function CreditsTab({ form, updateForm, onBlurSave }: CreditsTabProps) {
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Credit Expiration (days)</Label>
+              <Label className="text-xs">Credit Expiration (days) <InfoTip text="Days before unused credits expire. 0 = credits never expire." /></Label>
               <Input
                 type="number"
                 value={form.creditExpirationDays}
@@ -64,7 +65,7 @@ export function CreditsTab({ form, updateForm, onBlurSave }: CreditsTabProps) {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-xs">Issuing Timing</Label>
+              <Label className="text-xs">Issuing Timing <InfoTip text="On Payment: credits issued when payment clears. Fixed Date: issued on a set day each month." /></Label>
               <Select
                 value={form.creditIssuing}
                 onValueChange={(val) => {
@@ -82,7 +83,7 @@ export function CreditsTab({ form, updateForm, onBlurSave }: CreditsTabProps) {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Expiry Behavior</Label>
+              <Label className="text-xs">Expiry Behavior <InfoTip text="What happens when credits expire. Forfeit: lost. Convert: become store credit. Donate: donated to charity." /></Label>
               <Select
                 value={form.creditExpiry}
                 onValueChange={(val) => {
@@ -111,7 +112,7 @@ export function CreditsTab({ form, updateForm, onBlurSave }: CreditsTabProps) {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-xs">Rollover Months</Label>
+              <Label className="text-xs">Rollover Months <InfoTip text="How many months unused credits carry forward. 0 = credits do not roll over between billing cycles." /></Label>
               <Input
                 type="number"
                 value={form.rolloverMonths}
@@ -122,7 +123,7 @@ export function CreditsTab({ form, updateForm, onBlurSave }: CreditsTabProps) {
               <p className="text-[10px] text-muted-foreground">0 means no rollover allowed</p>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Rollover Cap ($)</Label>
+              <Label className="text-xs">Rollover Cap ($) <InfoTip text="Maximum dollar value of credits that can roll over between cycles. Leave empty for no cap." /></Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
                 <Input
@@ -148,7 +149,7 @@ export function CreditsTab({ form, updateForm, onBlurSave }: CreditsTabProps) {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-xs">Annual Bonus Credits ($)</Label>
+              <Label className="text-xs">Annual Bonus Credits ($) <InfoTip text="Extra credits awarded as a one-time bonus for choosing annual billing." /></Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
                 <Input
@@ -163,7 +164,7 @@ export function CreditsTab({ form, updateForm, onBlurSave }: CreditsTabProps) {
               <p className="text-[10px] text-muted-foreground">Extra credits for annual plan subscribers</p>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Referral Credit ($)</Label>
+              <Label className="text-xs">Referral Credit ($) <InfoTip text="Credit given to a member when they successfully refer someone who subscribes." /></Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
                 <Input
@@ -180,7 +181,7 @@ export function CreditsTab({ form, updateForm, onBlurSave }: CreditsTabProps) {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-xs">Partner Discount %</Label>
+              <Label className="text-xs">Partner Discount % <InfoTip text="Default discount percentage applied to partner product purchases for members on this plan." /></Label>
               <Input
                 type="number"
                 step="0.1"

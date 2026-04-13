@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-utils";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
-import { getAudioDuration } from "@/lib/knowledge/audio-transcriber";
+import { getAudioDuration } from "@/lib/audios/audio-transcriber";
 
 const ALLOWED_MIME_TYPES: Record<string, string> = {
   "audio/webm": "WEBM",

@@ -4,28 +4,22 @@ import { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus,
-  List,
-  LayoutGrid,
-  Calendar as CalendarIcon,
   Video,
   Mic,
   Clock,
   Users,
   Sparkles,
-  Loader2,
   MoreHorizontal,
   Eye,
   Trash2,
   ChevronLeft,
   ChevronRight,
   Bot,
+  Calendar as CalendarIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { PageHeader } from "@/components/layout/page-header";
-import { DataTable } from "@/components/ui/data-table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,13 +29,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { getMeetingColumns } from "./meeting-columns";
 import { NewMeetingDialog } from "./new-meeting-dialog";
-import { BlockAgentPanel } from "@/components/shared/block-agent-panel";
-import { UpcomingMeetings } from "./upcoming-meetings";
-import { MeetingInsights } from "./meeting-insights";
+import { BlockListPage } from "@/components/shared/block-list-page";
+import type { FilterDef } from "@/components/shared/block-list-page/types";
 import type { MeetingRow } from "./types";
-
-type ViewMode = "list" | "card" | "calendar";
-type TypeFilter = "all" | "VIRTUAL" | "IN_PERSON";
 
 interface MeetingsListClientProps {
   initialMeetings: MeetingRow[];
@@ -234,6 +224,31 @@ function MeetingCard({
   );
 }
 
+// ─── Card Grid ──────────────────────────────────────────────────────
+
+function MeetingCardGrid({
+  meetings,
+  onView,
+  onDelete,
+}: {
+  meetings: MeetingRow[];
+  onView: (m: MeetingRow) => void;
+  onDelete: (m: MeetingRow) => void;
+}) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {meetings.map((meeting) => (
+        <MeetingCard
+          key={meeting.id}
+          meeting={meeting}
+          onView={onView}
+          onDelete={onDelete}
+        />
+      ))}
+    </div>
+  );
+}
+
 // ─── Calendar View ──────────────────────────────────────────────────
 
 function CalendarView({
@@ -310,7 +325,6 @@ function CalendarView({
         </div>
         <div className="space-y-0.5">
           {dayMeetings.slice(0, 3).map((m) => {
-            const status = STATUS_CONFIG[m.status] || STATUS_CONFIG.SCHEDULED;
             const timeStr = m.startedAt || m.scheduledAt;
             return (
               <button
@@ -387,27 +401,6 @@ export function MeetingsListClient({ initialMeetings }: MeetingsListClientProps)
   const router = useRouter();
   const [meetings, setMeetings] = useState<MeetingRow[]>(initialMeetings);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
-  const [search, setSearch] = useState("");
-
-  // Filtered meetings
-  const filtered = useMemo(() => {
-    let result = meetings;
-    if (typeFilter !== "all") {
-      result = result.filter((m) => m.meetingType === typeFilter);
-    }
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      result = result.filter(
-        (m) =>
-          m.title.toLowerCase().includes(q) ||
-          m.description?.toLowerCase().includes(q) ||
-          m.keyTopics?.some((t) => t.toLowerCase().includes(q))
-      );
-    }
-    return result;
-  }, [meetings, typeFilter, search]);
 
   const handleView = useCallback(
     (meeting: MeetingRow) => {
@@ -450,145 +443,91 @@ export function MeetingsListClient({ initialMeetings }: MeetingsListClientProps)
     onSummarize: handleSummarize,
   });
 
-  // Count by type
+  // Count by type for filter options
   const virtualCount = meetings.filter((m) => m.meetingType === "VIRTUAL").length;
   const inPersonCount = meetings.filter((m) => m.meetingType === "IN_PERSON").length;
 
-  return (
+  // ── Filters ───────────────────────────────────────────────────────
+
+  const filters: FilterDef<MeetingRow>[] = [
+    {
+      key: "meetingType",
+      label: "All Meetings",
+      options: [
+        { value: "VIRTUAL", label: `Virtual (${virtualCount})` },
+        { value: "IN_PERSON", label: `In-Person (${inPersonCount})` },
+      ],
+      filterFn: (item, value) => item.meetingType === value,
+    },
+  ];
+
+  // ── Header Actions ────────────────────────────────────────────────
+
+  const headerActions = (
     <>
-      <PageHeader
-        title="Meetings"
-        description="Record, transcribe, and analyze meetings"
-        action={
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push("/admin/blocks/meetings/agent-settings")}
-            >
-              <Bot className="h-4 w-4 mr-1.5" />
-              Agent Settings
-            </Button>
-            <Button size="sm" onClick={() => setDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-1.5" />
-              New Meeting
-            </Button>
-          </div>
-        }
-      />
-
-      <div className="px-4 space-y-4">
-        {/* Upcoming Meetings from Connected Calendars */}
-        <UpcomingMeetings />
-
-        {/* Cross-Meeting Intelligence Dashboard */}
-        <MeetingInsights />
-
-        {/* Toolbar: filters + view switcher */}
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            {/* Type filter tabs */}
-            <div className="flex items-center rounded-lg bg-muted p-[3px]">
-              {[
-                { value: "all" as TypeFilter, label: "All", count: meetings.length },
-                { value: "VIRTUAL" as TypeFilter, label: "Virtual", count: virtualCount },
-                { value: "IN_PERSON" as TypeFilter, label: "In-Person", count: inPersonCount },
-              ].map((tab) => (
-                <button
-                  key={tab.value}
-                  onClick={() => setTypeFilter(tab.value)}
-                  className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
-                    typeFilter === tab.value
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {tab.label}
-                  {tab.count > 0 && (
-                    <span className="ml-1.5 text-[10px] text-muted-foreground">
-                      {tab.count}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-
-            {/* Search */}
-            <Input
-              placeholder="Search meetings..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-56 h-8 text-xs"
-            />
-          </div>
-
-          {/* View switcher */}
-          <div className="flex items-center rounded-lg bg-muted p-[3px]">
-            {[
-              { value: "list" as ViewMode, icon: List, label: "List" },
-              { value: "card" as ViewMode, icon: LayoutGrid, label: "Cards" },
-              { value: "calendar" as ViewMode, icon: CalendarIcon, label: "Calendar" },
-            ].map((v) => (
-              <button
-                key={v.value}
-                onClick={() => setViewMode(v.value)}
-                title={v.label}
-                className={`rounded-md p-1.5 transition-colors ${
-                  viewMode === v.value
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <v.icon className="h-3.5 w-3.5" />
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Views */}
-        {viewMode === "list" && (
-          <DataTable
-            data={filtered}
-            columns={columns}
-            emptyMessage={
-              typeFilter !== "all"
-                ? `No ${typeFilter === "VIRTUAL" ? "virtual" : "in-person"} meetings yet.`
-                : "No meetings yet. Click 'New Meeting' to get started."
-            }
-            onRowClick={handleView}
-          />
-        )}
-
-        {viewMode === "card" && (
-          filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-sm text-muted-foreground">
-              <p>No meetings to display.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filtered.map((meeting) => (
-                <MeetingCard
-                  key={meeting.id}
-                  meeting={meeting}
-                  onView={handleView}
-                  onDelete={handleDelete}
-                />
-              ))}
-            </div>
-          )
-        )}
-
-        {viewMode === "calendar" && (
-          <CalendarView meetings={filtered} onView={handleView} />
-        )}
-      </div>
-
-      <NewMeetingDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        onMeetingCreated={handleMeetingCreated}
-      />
-      <BlockAgentPanel blockName="meetings" blockDisplayName="Meetings" />
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => router.push("/admin/blocks/meetings/agent-settings")}
+      >
+        <Bot className="h-4 w-4 mr-1.5" />
+        Agent Settings
+      </Button>
+      <Button size="sm" onClick={() => setDialogOpen(true)}>
+        <Plus className="h-4 w-4 mr-1.5" />
+        New Meeting
+      </Button>
     </>
+  );
+
+  // ── Modals ────────────────────────────────────────────────────────
+
+  const modals = (
+    <NewMeetingDialog
+      open={dialogOpen}
+      onOpenChange={setDialogOpen}
+      onMeetingCreated={handleMeetingCreated}
+    />
+  );
+
+  // ── Render ────────────────────────────────────────────────────────
+
+  return (
+    <BlockListPage<MeetingRow>
+      blockName="meetings"
+      title="Meetings"
+      description="Record, transcribe, and analyze meetings"
+      data={meetings}
+      getId={(m) => m.id}
+      columns={columns}
+      onRowClick={handleView}
+      searchPlaceholder="Search meetings..."
+      searchFn={(m, q) =>
+        m.title.toLowerCase().includes(q) ||
+        (m.description?.toLowerCase().includes(q) ?? false) ||
+        (m.keyTopics?.some((t) => t.toLowerCase().includes(q)) ?? false)
+      }
+      filters={filters}
+      additionalViews={[
+        {
+          type: "card" as const,
+          render: (data) => (
+            <MeetingCardGrid
+              meetings={data}
+              onView={handleView}
+              onDelete={handleDelete}
+            />
+          ),
+        },
+        {
+          type: "calendar" as const,
+          render: (data) => (
+            <CalendarView meetings={data} onView={handleView} />
+          ),
+        },
+      ]}
+      headerActions={headerActions}
+      modals={modals}
+    />
   );
 }

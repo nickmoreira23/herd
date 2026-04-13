@@ -12,7 +12,7 @@ export const communityBlock: BlockManifest = {
   dependencies: ["tiers"],
   paths: {
     components: "src/components/community/",
-    pages: "src/app/admin/community/",
+    pages: "src/app/admin/blocks/community/",
     api: "src/app/api/community/",
     validators: "src/lib/validators/community.ts",
     provider: "src/lib/chat/providers/community.provider.ts",

@@ -56,7 +56,7 @@ export default function PlaudOverview({
       .catch(() => setError("Network error"));
 
     // Check how many are already imported
-    fetch("/api/knowledge/audios?sourceIntegration=plaud&countOnly=true")
+    fetch("/api/audios?sourceIntegration=plaud&countOnly=true")
       .then((r) => r.json())
       .then((json) => {
         if (typeof json.data?.count === "number") setImportedCount(json.data.count);
@@ -111,7 +111,7 @@ export default function PlaudOverview({
     setImporting(false);
 
     // Refresh imported count
-    fetch("/api/knowledge/audios?sourceIntegration=plaud&countOnly=true")
+    fetch("/api/audios?sourceIntegration=plaud&countOnly=true")
       .then((r) => r.json())
       .then((json) => {
         if (typeof json.data?.count === "number") setImportedCount(json.data.count);

@@ -4,7 +4,18 @@ import { useState, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import type { Product } from "@/types";
 import { PRODUCT_CATEGORIES, SUB_CATEGORIES, REDEMPTION_TYPES } from "@/types";
-import { formatPercent, calculateMargin, getMarginColorClass, formatCurrency } from "@/lib/utils";
+import {
+  formatPercent,
+  formatCurrency,
+  calculateMargin,
+  calculateMarkup,
+  calculateLandedCost,
+  calculateTrueGrossMargin,
+  calculateContributionMargin,
+  getMarginColorClass,
+  getMarkupColorClass,
+  getContributionColorClass,
+} from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -67,6 +78,12 @@ export interface ProductFormState {
   retailPrice: string;
   memberPrice: string;
   costOfGoods: string;
+  // Cost components for advanced metrics
+  shippingCost: string;
+  handlingCost: string;
+  paymentProcessingPct: string;
+  paymentProcessingFlat: string;
+  mapPrice: string;
   imageUrl: string;
   weightOz: string;
   tags: string;
@@ -111,6 +128,11 @@ function productToForm(product: Product): ProductFormState {
     retailPrice: String(product.retailPrice),
     memberPrice: String(product.memberPrice),
     costOfGoods: String(product.costOfGoods),
+    shippingCost: String((p.shippingCost as number) ?? 0),
+    handlingCost: String((p.handlingCost as number) ?? 0),
+    paymentProcessingPct: String((p.paymentProcessingPct as number) ?? 0),
+    paymentProcessingFlat: String((p.paymentProcessingFlat as number) ?? 0),
+    mapPrice: p.mapPrice != null ? String(p.mapPrice) : "",
     imageUrl: (p.imageUrl as string) || "",
     weightOz: p.weightOz != null ? String(p.weightOz) : "",
     tags: ((product.tags as string[]) || []).join(", "),
@@ -132,6 +154,11 @@ function formToPayload(form: ProductFormState) {
     retailPrice: parseFloat(form.retailPrice) || 0,
     memberPrice: parseFloat(form.memberPrice) || 0,
     costOfGoods: parseFloat(form.costOfGoods) || 0,
+    shippingCost: parseFloat(form.shippingCost) || 0,
+    handlingCost: parseFloat(form.handlingCost) || 0,
+    paymentProcessingPct: parseFloat(form.paymentProcessingPct) || 0,
+    paymentProcessingFlat: parseFloat(form.paymentProcessingFlat) || 0,
+    mapPrice: form.mapPrice ? parseFloat(form.mapPrice) : null,
     imageUrl: form.imageUrl || undefined,
     weightOz: form.weightOz ? parseFloat(form.weightOz) : undefined,
     tags: form.tags
@@ -259,7 +286,19 @@ export function ProductDetailClient({
   const retailNum = parseFloat(form.retailPrice) || 0;
   const costNum = parseFloat(form.costOfGoods) || 0;
   const memberNum = parseFloat(form.memberPrice) || 0;
-  const margin = retailNum > 0 ? calculateMargin(costNum, memberNum) : 0;
+  const shippingNum = parseFloat(form.shippingCost) || 0;
+  const handlingNum = parseFloat(form.handlingCost) || 0;
+  const procPctNum = parseFloat(form.paymentProcessingPct) || 0;
+  const procFlatNum = parseFloat(form.paymentProcessingFlat) || 0;
+
+  const memberMargin = retailNum > 0 ? calculateMargin(costNum, memberNum) : 0;
+  const grossMarginAtRetail = retailNum > 0 ? calculateMargin(costNum, retailNum) : 0;
+  const markup = costNum > 0 ? calculateMarkup(costNum, retailNum) : 0;
+  const landedCost = calculateLandedCost(costNum, shippingNum, handlingNum);
+  const trueGrossMargin = retailNum > 0 ? calculateTrueGrossMargin(retailNum, landedCost) : 0;
+  const contributionMargin = retailNum > 0
+    ? calculateContributionMargin(retailNum, costNum, shippingNum, handlingNum, procPctNum, procFlatNum)
+    : 0;
 
   const handleSave = useCallback(async () => {
     if (!form.name.trim()) return;
@@ -284,7 +323,7 @@ export function ProductDetailClient({
         }
         const json = await res.json();
         toast.success("Product created");
-        router.push(`/admin/products/${json.data.id}`);
+        router.push(`/admin/blocks/products/${json.data.id}`);
       } finally {
         setSaving(false);
       }
@@ -341,7 +380,7 @@ export function ProductDetailClient({
       toast.success("Product duplicated");
       setDuplicateOpen(false);
       setDuplicateName("");
-      router.push(`/admin/products/${newProduct.data.id}`);
+      router.push(`/admin/blocks/products/${newProduct.data.id}`);
     } catch {
       toast.error("Something went wrong");
     } finally {
@@ -361,7 +400,7 @@ export function ProductDetailClient({
       }
       toast.success("Product deleted");
       setDeleteOpen(false);
-      router.push("/admin/products");
+      router.push("/admin/blocks/products");
       router.refresh();
     } catch {
       toast.error("Something went wrong");
@@ -467,7 +506,7 @@ export function ProductDetailClient({
       <div className="flex items-center justify-between shrink-0 border-b py-3 px-4">
         <nav className="flex items-center gap-2 text-sm">
           <Link
-            href="/admin/products"
+            href="/admin/blocks/products"
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
             Products
@@ -656,6 +695,7 @@ export function ProductDetailClient({
           {/* Pricing */}
           <CollapsibleSection title="Pricing" description="Set retail, member, and cost pricing for this product.">
             <div className="space-y-4">
+              {/* Row 1: Retail / Member / COGS */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="product-retail">Retail Price</Label>
@@ -701,17 +741,132 @@ export function ProductDetailClient({
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 text-sm">
-                <span className="text-muted-foreground">
-                  Member Price: <strong>{formatCurrency(memberNum)}</strong>
-                </span>
-                <span className="text-muted-foreground">
-                  Margin:{" "}
-                  <Badge className={`${getMarginColorClass(margin)} text-[11px] px-1.5 py-0`}>
-                    {formatPercent(margin)}
-                  </Badge>
-                </span>
+              {/* Row 2: Shipping / Handling / MAP */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="product-shipping">Shipping Cost</Label>
+                  <InputGroup className="mt-2">
+                    <InputGroupAddon align="inline-start">$</InputGroupAddon>
+                    <InputGroupInput
+                      id="product-shipping"
+                      type="number"
+                      step="0.01"
+                      value={form.shippingCost}
+                      onChange={(e) => updateForm("shippingCost", e.target.value)}
+                      placeholder="0.00"
+                    />
+                  </InputGroup>
+                </div>
+                <div>
+                  <Label htmlFor="product-handling">Handling / Fulfillment</Label>
+                  <InputGroup className="mt-2">
+                    <InputGroupAddon align="inline-start">$</InputGroupAddon>
+                    <InputGroupInput
+                      id="product-handling"
+                      type="number"
+                      step="0.01"
+                      value={form.handlingCost}
+                      onChange={(e) => updateForm("handlingCost", e.target.value)}
+                      placeholder="0.00"
+                    />
+                  </InputGroup>
+                </div>
+                <div>
+                  <Label htmlFor="product-map">MAP Price</Label>
+                  <InputGroup className="mt-2">
+                    <InputGroupAddon align="inline-start">$</InputGroupAddon>
+                    <InputGroupInput
+                      id="product-map"
+                      type="number"
+                      step="0.01"
+                      value={form.mapPrice}
+                      onChange={(e) => updateForm("mapPrice", e.target.value)}
+                      placeholder="Optional"
+                    />
+                  </InputGroup>
+                </div>
               </div>
+
+              {/* Row 3: Processing Fee % / Processing Flat Fee */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="product-proc-pct">Processing Fee %</Label>
+                  <InputGroup className="mt-2">
+                    <InputGroupInput
+                      id="product-proc-pct"
+                      type="number"
+                      step="0.01"
+                      value={form.paymentProcessingPct}
+                      onChange={(e) => updateForm("paymentProcessingPct", e.target.value)}
+                      placeholder="2.90"
+                    />
+                    <InputGroupAddon align="inline-end">%</InputGroupAddon>
+                  </InputGroup>
+                </div>
+                <div>
+                  <Label htmlFor="product-proc-flat">Processing Flat Fee</Label>
+                  <InputGroup className="mt-2">
+                    <InputGroupAddon align="inline-start">$</InputGroupAddon>
+                    <InputGroupInput
+                      id="product-proc-flat"
+                      type="number"
+                      step="0.01"
+                      value={form.paymentProcessingFlat}
+                      onChange={(e) => updateForm("paymentProcessingFlat", e.target.value)}
+                      placeholder="0.30"
+                    />
+                  </InputGroup>
+                </div>
+              </div>
+
+              {/* Computed metrics summary */}
+              {retailNum > 0 && costNum > 0 && (
+                <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+                  <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm">
+                    <span className="text-muted-foreground">
+                      Gross Margin (Retail):{" "}
+                      <Badge className={`${getMarginColorClass(grossMarginAtRetail)} text-[11px] px-1.5 py-0`}>
+                        {formatPercent(grossMarginAtRetail)}
+                      </Badge>
+                    </span>
+                    <span className="text-muted-foreground">
+                      Markup:{" "}
+                      <Badge className={`${getMarkupColorClass(markup)} text-[11px] px-1.5 py-0`}>
+                        {formatPercent(markup)}
+                      </Badge>
+                    </span>
+                    <span className="text-muted-foreground">
+                      Landed Cost:{" "}
+                      <strong>{formatCurrency(landedCost)}</strong>
+                      {shippingNum === 0 && handlingNum === 0 && (
+                        <span className="text-xs text-muted-foreground/60 ml-1">(COGS only)</span>
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm">
+                    <span className="text-muted-foreground">
+                      True Gross Margin:{" "}
+                      <Badge className={`${getMarginColorClass(trueGrossMargin)} text-[11px] px-1.5 py-0`}>
+                        {formatPercent(trueGrossMargin)}
+                      </Badge>
+                    </span>
+                    <span className="text-muted-foreground">
+                      Contribution Margin:{" "}
+                      <Badge className={`${getContributionColorClass(contributionMargin)} text-[11px] px-1.5 py-0`}>
+                        {formatCurrency(contributionMargin)}
+                      </Badge>
+                    </span>
+                    {memberNum > 0 && (
+                      <span className="text-muted-foreground">
+                        Member Margin:{" "}
+                        <Badge className={`${getMarginColorClass(memberMargin)} text-[11px] px-1.5 py-0`}>
+                          {formatPercent(memberMargin)}
+                        </Badge>
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </CollapsibleSection>
 
@@ -1059,6 +1214,11 @@ const DEFAULT_FORM: ProductFormState = {
   retailPrice: "",
   memberPrice: "",
   costOfGoods: "",
+  shippingCost: "0",
+  handlingCost: "0",
+  paymentProcessingPct: "0",
+  paymentProcessingFlat: "0",
+  mapPrice: "",
   imageUrl: "",
   weightOz: "",
   tags: "",

@@ -12,7 +12,7 @@ export const perksBlock: BlockManifest = {
   dependencies: ["tiers"],
   paths: {
     components: "src/components/perks/",
-    pages: "src/app/admin/perks/",
+    pages: "src/app/admin/blocks/perks/",
     api: "src/app/api/perks/",
     validators: "src/lib/validators/perk.ts",
     provider: "src/lib/chat/providers/perk.provider.ts",

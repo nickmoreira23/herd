@@ -9,6 +9,12 @@ export const createProductSchema = z.object({
   retailPrice: z.coerce.number().positive("Retail price must be positive"),
   memberPrice: z.coerce.number().positive().optional(),
   costOfGoods: z.coerce.number().nonnegative("COGS must be non-negative"),
+  // Cost components for advanced metrics
+  shippingCost: z.coerce.number().nonnegative().optional(),
+  handlingCost: z.coerce.number().nonnegative().optional(),
+  paymentProcessingPct: z.coerce.number().nonnegative().max(100).optional(),
+  paymentProcessingFlat: z.coerce.number().nonnegative().optional(),
+  mapPrice: z.coerce.number().positive().optional().nullable(),
   imageUrl: z.string().url().optional().or(z.literal("")),
   isActive: z.boolean().optional(),
   weightOz: z.coerce.number().nonnegative().optional(),
@@ -38,6 +44,11 @@ export const bulkImportRowSchema = z.object({
   retailPrice: z.coerce.number().positive(),
   memberPrice: z.coerce.number().positive().optional(),
   costOfGoods: z.coerce.number().nonnegative(),
+  shippingCost: z.coerce.number().nonnegative().optional(),
+  handlingCost: z.coerce.number().nonnegative().optional(),
+  paymentProcessingPct: z.coerce.number().nonnegative().max(100).optional(),
+  paymentProcessingFlat: z.coerce.number().nonnegative().optional(),
+  mapPrice: z.coerce.number().positive().optional().nullable(),
 });
 
 export const bulkActionSchema = z.object({

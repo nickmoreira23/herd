@@ -2,25 +2,15 @@
 
 import { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Plus,
-  List,
-  Columns3,
-  Calendar,
-  RefreshCw,
-  Loader2,
-} from "lucide-react";
+import { Plus, RefreshCw, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/components/layout/page-header";
-import { DataTable } from "@/components/ui/data-table";
+import { BlockListPage } from "@/components/shared/block-list-page";
 import { getTaskColumns } from "./task-columns";
 import { TaskFilterBar, type TaskFilters } from "./task-filter-bar";
 import { CreateTaskDialog } from "./create-task-dialog";
 import { TaskKanbanView } from "./task-kanban-view";
 import { TaskCalendarView } from "./task-calendar-view";
 import type { TaskRow, TaskStatus } from "./types";
-
-type ViewMode = "list" | "kanban" | "calendar";
 
 interface TasksClientProps {
   initialTasks: TaskRow[];
@@ -35,7 +25,6 @@ interface TasksClientProps {
 export function TasksClient({ initialTasks, integrations }: TasksClientProps) {
   const router = useRouter();
   const [tasks, setTasks] = useState<TaskRow[]>(initialTasks);
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [filters, setFilters] = useState<TaskFilters>({
     status: [],
     priority: [],
@@ -54,7 +43,7 @@ export function TasksClient({ initialTasks, integrations }: TasksClientProps) {
     [integrations]
   );
 
-  // Client-side filtering
+  // Client-side filtering (pre-filter before passing to BlockListPage)
   const filteredTasks = useMemo(() => {
     let result = tasks;
 
@@ -141,98 +130,74 @@ export function TasksClient({ initialTasks, integrations }: TasksClientProps) {
     onDelete: handleDelete,
   });
 
-  return (
-    <>
-      <PageHeader
-        title="Tasks"
-        description="Manage and track tasks from all your tools"
-        action={
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSync}
-              disabled={syncing}
-            >
-              {syncing ? (
-                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4 mr-1.5" />
-              )}
-              Sync Tasks
-            </Button>
-            <Button size="sm" onClick={() => setDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-1.5" />
-              New Task
-            </Button>
-          </div>
-        }
-      />
+  const headerActions = (
+    <div className="flex gap-2">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleSync}
+        disabled={syncing}
+      >
+        {syncing ? (
+          <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+        ) : (
+          <RefreshCw className="h-4 w-4 mr-1.5" />
+        )}
+        Sync Tasks
+      </Button>
+      <Button size="sm" onClick={() => setDialogOpen(true)}>
+        <Plus className="h-4 w-4 mr-1.5" />
+        New Task
+      </Button>
+    </div>
+  );
 
-      <div className="px-4 space-y-4">
-        {/* Filter bar + view switcher */}
-        <div className="flex items-center justify-between gap-4">
+  return (
+    <BlockListPage<TaskRow>
+      blockName="tasks"
+      title="Tasks"
+      description="Manage and track tasks from all your tools"
+      data={filteredTasks}
+      getId={(t) => t.id}
+      columns={columns}
+      onRowClick={handleView}
+      headerActions={headerActions}
+      afterToolbar={
+        <div className="px-4 pb-4">
           <TaskFilterBar
             filters={filters}
             onFiltersChange={setFilters}
             sources={availableSources}
           />
-
-          {/* View switcher */}
-          <div className="flex items-center rounded-lg bg-muted p-[3px]">
-            {[
-              { value: "list" as ViewMode, icon: List, label: "List" },
-              { value: "kanban" as ViewMode, icon: Columns3, label: "Kanban" },
-              {
-                value: "calendar" as ViewMode,
-                icon: Calendar,
-                label: "Calendar",
-              },
-            ].map((v) => (
-              <button
-                key={v.value}
-                onClick={() => setViewMode(v.value)}
-                title={v.label}
-                className={`rounded-md p-1.5 transition-colors ${
-                  viewMode === v.value
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <v.icon className="h-3.5 w-3.5" />
-              </button>
-            ))}
-          </div>
         </div>
-
-        {/* Views */}
-        {viewMode === "list" && (
-          <DataTable
-            data={filteredTasks}
-            columns={columns}
-            emptyMessage="No tasks yet. Click 'New Task' to get started."
-            onRowClick={handleView}
-          />
-        )}
-
-        {viewMode === "kanban" && (
-          <TaskKanbanView
-            tasks={filteredTasks}
-            onView={handleView}
-            onStatusChange={handleStatusChange}
-          />
-        )}
-
-        {viewMode === "calendar" && (
-          <TaskCalendarView tasks={filteredTasks} onView={handleView} />
-        )}
-      </div>
-
-      <CreateTaskDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        onTaskCreated={handleTaskCreated}
-      />
-    </>
+      }
+      additionalViews={[
+        {
+          type: "kanban" as const,
+          render: (data) => (
+            <TaskKanbanView
+              tasks={data}
+              onView={handleView}
+              onStatusChange={handleStatusChange}
+            />
+          ),
+        },
+        {
+          type: "calendar" as const,
+          render: (data) => (
+            <TaskCalendarView tasks={data} onView={handleView} />
+          ),
+        },
+      ]}
+      modals={
+        <CreateTaskDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          onTaskCreated={handleTaskCreated}
+        />
+      }
+      emptyTitle="No tasks found"
+      emptyDescription="Create a task or sync from your project management tools."
+    />
   );
 }

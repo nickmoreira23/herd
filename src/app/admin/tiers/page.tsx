@@ -2,23 +2,32 @@ import { prisma } from "@/lib/prisma";
 import { TierPageClient } from "@/components/tiers/tier-page-client";
 import { toNumber } from "@/lib/utils";
 import { connection } from "next/server";
+import { BENEFIT_BLOCKS_SETTING_KEY, DEFAULT_BENEFIT_BLOCKS } from "@/lib/blocks/block-meta";
 
 export default async function TiersPage() {
   await connection();
-  const tiers = await prisma.subscriptionTier.findMany({
-    orderBy: { sortOrder: "asc" },
-    include: {
-      redemptionRules: true,
-      agentAccess: {
-        where: { isEnabled: true },
-        include: { agent: { select: { id: true, name: true, category: true, icon: true } } },
+
+  const [tiers, benefitBlocksSetting] = await Promise.all([
+    prisma.subscriptionTier.findMany({
+      orderBy: { sortOrder: "asc" },
+      include: {
+        redemptionRules: true,
+        agentAccess: {
+          where: { isEnabled: true },
+          include: { agent: { select: { id: true, name: true, category: true, icon: true } } },
+        },
+        partnerAssignments: {
+          where: { isActive: true },
+          include: { partner: { select: { id: true, name: true, logoUrl: true } } },
+        },
       },
-      partnerAssignments: {
-        where: { isActive: true },
-        include: { partner: { select: { id: true, name: true, logoUrl: true } } },
-      },
-    },
-  });
+    }),
+    prisma.setting.findUnique({ where: { key: BENEFIT_BLOCKS_SETTING_KEY } }),
+  ]);
+
+  const enabledBenefitBlocks = benefitBlocksSetting
+    ? String(benefitBlocksSetting.value)
+    : DEFAULT_BENEFIT_BLOCKS;
 
   // Serialize Decimal values for client
   const serialized = tiers.map((t) => ({
@@ -46,5 +55,10 @@ export default async function TiersPage() {
     })),
   }));
 
-  return <TierPageClient initialTiers={serialized as never} />;
+  return (
+    <TierPageClient
+      initialTiers={serialized as never}
+      enabledBenefitBlocks={enabledBenefitBlocks}
+    />
+  );
 }

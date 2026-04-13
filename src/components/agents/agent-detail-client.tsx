@@ -277,7 +277,7 @@ export function AgentDetailClient({
         }
         const json = await res.json();
         toast.success("Agent created");
-        router.push(`/admin/agents/${json.data.id}`);
+        router.push(`/admin/blocks/agents/${json.data.id}`);
       } finally {
         setSaving(false);
       }
@@ -332,7 +332,7 @@ export function AgentDetailClient({
       toast.success("Agent duplicated");
       setDuplicateOpen(false);
       setDuplicateName("");
-      router.push(`/admin/agents/${newAgent.data.id}`);
+      router.push(`/admin/blocks/agents/${newAgent.data.id}`);
     } catch {
       toast.error("Something went wrong");
     } finally {
@@ -352,7 +352,7 @@ export function AgentDetailClient({
       }
       toast.success("Agent deleted");
       setDeleteOpen(false);
-      router.push("/admin/agents");
+      router.push("/admin/blocks/agents");
       router.refresh();
     } catch {
       toast.error("Something went wrong");
@@ -367,7 +367,7 @@ export function AgentDetailClient({
       <div className="flex items-center justify-between shrink-0 border-b py-3 px-4">
         <nav className="flex items-center gap-2 text-sm">
           <Link
-            href="/admin/agents"
+            href="/admin/blocks/agents"
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
             AI Agents

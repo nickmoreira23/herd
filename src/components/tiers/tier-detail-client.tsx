@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import type { SubscriptionTier } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -43,18 +43,19 @@ import {
   ArrowUpDown,
   XCircle,
   Package,
-  Bot,
-  Handshake,
-  Star,
-  Users,
   PanelRightClose,
   PanelRight,
   CheckCircle2,
-  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
-import { cn, formatCurrency } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
+import {
+  BLOCK_ICON_MAP,
+  BLOCK_LABEL_MAP,
+  BLOCKS_REQUIRING_TIER_ID,
+  DEFAULT_BENEFIT_BLOCKS,
+} from "@/lib/blocks/block-meta";
 
 // Tabs
 import { IdentityTab } from "./tabs/identity-tab";
@@ -68,7 +69,7 @@ import { AgentsTab } from "./tabs/agents-tab";
 import { PartnersTab } from "./tabs/partners-tab";
 import { CommunityTab } from "./tabs/community-tab";
 import { PerksTab } from "./tabs/perks-tab";
-import { PlanBuilderChat } from "./plan-builder-chat";
+
 
 // ─── Exported types for tab components ───────────────────────────────
 
@@ -117,6 +118,8 @@ export interface TierFormState {
   creditOnDowngrade: string;
   // Cancellation
   minimumCommitMonths: string;
+  cancelCreditBehavior: string;
+  cancelCreditGraceDays: string;
   pauseAllowed: boolean;
   pauseMaxMonths: string;
   pauseCreditBehavior: string;
@@ -162,13 +165,43 @@ const NAV_DETAILS: NavItem[] = [
   { key: "cancellation", label: "Cancellation", icon: XCircle },
 ];
 
-const NAV_BENEFITS: NavItem[] = [
-  { key: "products", label: "Products", icon: Package, requiresTierId: true },
-  { key: "agents", label: "Agents", icon: Bot, requiresTierId: true },
-  { key: "partners", label: "Partners", icon: Handshake, requiresTierId: true },
-  { key: "perks", label: "Perks", icon: Star },
-  { key: "community", label: "Community", icon: Users },
-];
+// Benefit tab renderer map — maps block names to their tab components
+const BENEFIT_TAB_RENDERERS: Record<
+  string,
+  (props: {
+    tierId: string;
+    form: TierFormState;
+    updateForm: (field: string, value: unknown) => void;
+    rulesVersion: number;
+    benefitsVersion: number;
+    onBenefitSaved: () => void;
+  }) => React.ReactNode
+> = {
+  products: ({ tierId, rulesVersion, onBenefitSaved }) => (
+    <ProductsTab key={rulesVersion} tierId={tierId} onBenefitSaved={onBenefitSaved} />
+  ),
+  agents: ({ tierId, benefitsVersion, onBenefitSaved }) => <AgentsTab key={`agents-${benefitsVersion}`} tierId={tierId} onBenefitSaved={onBenefitSaved} />,
+  partners: ({ tierId, benefitsVersion, onBenefitSaved }) => <PartnersTab key={`partners-${benefitsVersion}`} tierId={tierId} onBenefitSaved={onBenefitSaved} />,
+  perks: ({ tierId, form, updateForm, benefitsVersion, onBenefitSaved }) => (
+    <PerksTab key={`perks-${benefitsVersion}`} tierId={tierId} form={form} updateForm={updateForm} onBenefitSaved={onBenefitSaved} />
+  ),
+  community: ({ tierId, benefitsVersion, onBenefitSaved }) => <CommunityTab key={`community-${benefitsVersion}`} tierId={tierId} onBenefitSaved={onBenefitSaved} />,
+};
+
+// Placeholder for blocks that don't have a dedicated benefit tab yet
+function GenericBenefitPlaceholder({ blockName }: { blockName: string }) {
+  const Icon = BLOCK_ICON_MAP[blockName] || Package;
+  const label = BLOCK_LABEL_MAP[blockName] || blockName;
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+      <Icon className="h-10 w-10 mb-3 opacity-50" />
+      <p className="text-sm font-medium">{label}</p>
+      <p className="text-xs mt-1">
+        Benefit configuration for {label} is coming soon.
+      </p>
+    </div>
+  );
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────
 
@@ -214,6 +247,8 @@ function tierToForm(tier: SubscriptionTier): TierFormState {
     creditOnUpgrade: (t.creditOnUpgrade as string) || "CARRY_OVER",
     creditOnDowngrade: (t.creditOnDowngrade as string) || "FORFEIT_EXCESS",
     minimumCommitMonths: String(t.minimumCommitMonths ?? 1),
+    cancelCreditBehavior: (t.cancelCreditBehavior as string) || "FORFEIT",
+    cancelCreditGraceDays: String(t.cancelCreditGraceDays ?? 0),
     pauseAllowed: (t.pauseAllowed as boolean) ?? false,
     pauseMaxMonths: String(t.pauseMaxMonths ?? 0),
     pauseCreditBehavior: (t.pauseCreditBehavior as string) || "FROZEN",
@@ -273,6 +308,8 @@ function formToPayload(form: TierFormState) {
     creditOnUpgrade: form.creditOnUpgrade,
     creditOnDowngrade: form.creditOnDowngrade,
     minimumCommitMonths: parseInt(form.minimumCommitMonths) || 1,
+    cancelCreditBehavior: form.cancelCreditBehavior,
+    cancelCreditGraceDays: parseInt(form.cancelCreditGraceDays) || 0,
     pauseAllowed: form.pauseAllowed,
     pauseMaxMonths: parseInt(form.pauseMaxMonths) || 0,
     pauseCreditBehavior: form.pauseCreditBehavior,
@@ -322,22 +359,51 @@ interface TierDetailClientProps {
   tierId?: string;
   initialTier?: SubscriptionTier;
   allTiers?: { id: string; name: string }[];
+  enabledBenefitBlocks?: string;
 }
 
 // ─── Component ───────────────────────────────────────────────────────
 
-export function TierDetailClient({ tierId, initialTier, allTiers }: TierDetailClientProps) {
+export function TierDetailClient({ tierId, initialTier, allTiers, enabledBenefitBlocks }: TierDetailClientProps) {
   const router = useRouter();
   const initialForm = useRef<TierFormState>(
     initialTier ? tierToForm(initialTier) : DEFAULT_FORM
   );
   const [form, setForm] = useState<TierFormState>(initialForm.current);
   const [activeTab, setActiveTab] = useState("identity");
-  const [rightPanel, setRightPanel] = useState<"preview" | "plan-builder" | null>("preview");
+  const [rightPanel, setRightPanel] = useState<"preview" | null>("preview");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const savedTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const isDirty = JSON.stringify(form) !== JSON.stringify(initialForm.current);
+
+  // Dynamic benefit blocks
+  const navBenefits: NavItem[] = useMemo(() => {
+    const blocks = (enabledBenefitBlocks || DEFAULT_BENEFIT_BLOCKS)
+      .split(",")
+      .filter(Boolean);
+    return blocks.map((name) => ({
+      key: name,
+      label: BLOCK_LABEL_MAP[name] || name,
+      icon: BLOCK_ICON_MAP[name] || Package,
+      requiresTierId: BLOCKS_REQUIRING_TIER_ID.has(name),
+    }));
+  }, [enabledBenefitBlocks]);
+
+  // URL tab sync — read ?tab= search param to set active tab
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    const allValidKeys = [
+      ...NAV_DETAILS.map((d) => d.key),
+      ...navBenefits.map((b) => b.key),
+    ];
+    if (tab && allValidKeys.includes(tab)) {
+      setActiveTab(tab);
+    } else if (!allValidKeys.includes(activeTab)) {
+      setActiveTab("identity");
+    }
+  }, [searchParams, navBenefits, activeTab]);
 
   // Duplicate modal
   const [duplicateOpen, setDuplicateOpen] = useState(false);
@@ -346,6 +412,91 @@ export function TierDetailClient({ tierId, initialTier, allTiers }: TierDetailCl
 
   // Rules refresh — bumped when plan builder creates/deletes rules
   const [rulesVersion, setRulesVersion] = useState(0);
+
+  // Benefits refresh — bumped when plan agent changes benefit assignments
+  const [benefitsVersion, setBenefitsVersion] = useState(0);
+
+  // Benefit saved indicator — flash the save button when benefit tabs auto-save
+  const handleBenefitSaved = useCallback(() => {
+    setSaved(true);
+    clearTimeout(savedTimer.current);
+    savedTimer.current = setTimeout(() => setSaved(false), 2000);
+  }, []);
+
+  // ─── Live updates from Plans Architect agent ──────────────────
+  useEffect(() => {
+    function handlePlanUpdated(e: Event) {
+      const detail = (e as CustomEvent).detail as {
+        planId: string;
+        updatedFields?: Record<string, unknown>;
+      };
+      if (detail.planId !== tierId || !detail.updatedFields) return;
+
+      // Update form state with new values from the agent
+      setForm((prev) => {
+        const next = { ...prev };
+        const rec = next as unknown as Record<string, unknown>;
+        for (const [key, value] of Object.entries(detail.updatedFields!)) {
+          if (key in next) {
+            // Convert values to the form's string-based format
+            if (typeof value === "boolean" || Array.isArray(value)) {
+              rec[key] = value;
+            } else if (value === null || value === undefined) {
+              rec[key] = "";
+            } else {
+              rec[key] = String(value);
+            }
+          }
+        }
+        return next;
+      });
+
+      // Also update the initial form ref so it doesn't show as dirty
+      if (detail.updatedFields) {
+        const ref = initialForm.current as unknown as Record<string, unknown>;
+        for (const [key, value] of Object.entries(detail.updatedFields)) {
+          if (key in initialForm.current) {
+            if (typeof value === "boolean" || Array.isArray(value)) {
+              ref[key] = value;
+            } else if (value === null || value === undefined) {
+              ref[key] = "";
+            } else {
+              ref[key] = String(value);
+            }
+          }
+        }
+      }
+
+      // Flash save indicator
+      setSaved(true);
+      clearTimeout(savedTimer.current);
+      savedTimer.current = setTimeout(() => setSaved(false), 2000);
+    }
+
+    function handleRulesChanged(e: Event) {
+      const detail = (e as CustomEvent).detail as { planId: string };
+      if (detail.planId === tierId) {
+        setRulesVersion((v) => v + 1);
+      }
+    }
+
+    function handleBenefitsChanged(e: Event) {
+      const detail = (e as CustomEvent).detail as { planId: string };
+      if (detail.planId === tierId) {
+        setBenefitsVersion((v) => v + 1);
+      }
+    }
+
+    window.addEventListener("plan-agent:plan-updated", handlePlanUpdated);
+    window.addEventListener("plan-agent:rules-changed", handleRulesChanged);
+    window.addEventListener("plan-agent:benefits-changed", handleBenefitsChanged);
+
+    return () => {
+      window.removeEventListener("plan-agent:plan-updated", handlePlanUpdated);
+      window.removeEventListener("plan-agent:rules-changed", handleRulesChanged);
+      window.removeEventListener("plan-agent:benefits-changed", handleBenefitsChanged);
+    };
+  }, [tierId]);
 
   // Delete modal
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -371,8 +522,9 @@ export function TierDetailClient({ tierId, initialTier, allTiers }: TierDetailCl
       });
       if (!res.ok) {
         const json = await res.json();
-        toast.error(json.error || "Failed to save");
-        return;
+        const msg = json.error || "Failed to save";
+        toast.error(msg);
+        throw new Error(msg);
       }
       initialForm.current = { ...form };
       setSaved(true);
@@ -486,10 +638,12 @@ export function TierDetailClient({ tierId, initialTier, allTiers }: TierDetailCl
             size="sm"
             className={isDirty
               ? "bg-[#C5F135] text-black hover:bg-[#C5F135]/90"
-              : "bg-muted text-muted-foreground hover:bg-muted/80"
+              : saved
+                ? "bg-emerald-600 text-white hover:bg-emerald-600/90"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
             }
             onClick={handleSave}
-            disabled={saving || (!isDirty && !saving)}
+            disabled={saving || (!isDirty && !saving && !saved)}
           >
             {saving ? (
               <>
@@ -557,7 +711,8 @@ export function TierDetailClient({ tierId, initialTier, allTiers }: TierDetailCl
             </div>
           </div>
 
-          {/* Benefits group */}
+          {/* Benefits group (dynamic) */}
+          {navBenefits.length > 0 && (
           <div>
             <div className="px-2.5 mb-2">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
@@ -565,7 +720,7 @@ export function TierDetailClient({ tierId, initialTier, allTiers }: TierDetailCl
               </span>
             </div>
             <div className="space-y-0.5">
-              {NAV_BENEFITS.map((item) => {
+              {navBenefits.map((item) => {
                 const disabled = item.requiresTierId && !tierId;
                 return (
                   <SidebarNavItem
@@ -581,6 +736,7 @@ export function TierDetailClient({ tierId, initialTier, allTiers }: TierDetailCl
               })}
             </div>
           </div>
+          )}
         </div>
 
         {/* ── Center editing area ──────────────────────────────── */}
@@ -612,65 +768,33 @@ export function TierDetailClient({ tierId, initialTier, allTiers }: TierDetailCl
           {activeTab === "cancellation" && (
             <CancellationTab form={form} updateForm={updateForm} />
           )}
-          {activeTab === "products" && tierId && (
-            <ProductsTab key={rulesVersion} tierId={tierId} />
-          )}
-          {activeTab === "agents" && tierId && (
-            <AgentsTab tierId={tierId} />
-          )}
-          {activeTab === "partners" && tierId && (
-            <PartnersTab tierId={tierId} />
-          )}
-          {activeTab === "community" && (
-            tierId ? (
-              <CommunityTab tierId={tierId} />
-            ) : (
-              <EmptyTierMessage message="Save the plan first to manage community benefits." />
-            )
-          )}
-          {activeTab === "perks" && (
-            tierId ? (
-              <PerksTab tierId={tierId} form={form} updateForm={updateForm} />
-            ) : (
-              <EmptyTierMessage message="Save the plan first to manage perks." />
-            )
-          )}
+          {/* Dynamic benefit tab rendering */}
+          {navBenefits.some((b) => b.key === activeTab) &&
+            (() => {
+              if (!tierId && BLOCKS_REQUIRING_TIER_ID.has(activeTab)) return null;
+              if (!tierId) {
+                return (
+                  <EmptyTierMessage
+                    message={`Save the plan first to manage ${BLOCK_LABEL_MAP[activeTab] || activeTab}.`}
+                  />
+                );
+              }
+              const renderer = BENEFIT_TAB_RENDERERS[activeTab];
+              return renderer
+                ? renderer({ tierId, form, updateForm, rulesVersion, benefitsVersion, onBenefitSaved: handleBenefitSaved })
+                : <GenericBenefitPlaceholder blockName={activeTab} />;
+            })()}
         </div>
 
-        {/* ── Right panel (Preview / Plan Builder) ─────────────── */}
+        {/* ── Right panel (Preview) ─────────────────────────────── */}
         {rightPanel ? (
-          <div className={cn(
-            "shrink-0 border-l flex flex-col bg-muted/5",
-            rightPanel === "plan-builder" ? "w-[400px]" : "w-[320px]"
-          )}>
-            {/* Panel tabs */}
+          <div className="w-[320px] shrink-0 border-l flex flex-col bg-muted/5">
+            {/* Panel header */}
             <div className="flex items-center border-b px-1 shrink-0">
-              <button
-                onClick={() => setRightPanel("preview")}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium transition-colors border-b-2 -mb-px",
-                  rightPanel === "preview"
-                    ? "border-foreground text-foreground"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                )}
-              >
+              <div className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium border-b-2 -mb-px border-foreground text-foreground">
                 <PanelRight className="h-3.5 w-3.5" />
                 Preview
-              </button>
-              {tierId && (
-                <button
-                  onClick={() => setRightPanel("plan-builder")}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium transition-colors border-b-2 -mb-px",
-                    rightPanel === "plan-builder"
-                      ? "border-violet-500 text-foreground"
-                      : "border-transparent text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Plan Builder
-                </button>
-              )}
+              </div>
               <div className="flex-1" />
               <button
                 onClick={() => setRightPanel(null)}
@@ -682,20 +806,9 @@ export function TierDetailClient({ tierId, initialTier, allTiers }: TierDetailCl
             </div>
 
             {/* Panel content */}
-            {rightPanel === "preview" && (
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                <PlanPreviewCard form={form} />
-              </div>
-            )}
-            {rightPanel === "plan-builder" && tierId && (
-              <div className="flex-1 overflow-hidden">
-                <PlanBuilderChat
-                  tierId={tierId}
-                  onRulesChanged={() => setRulesVersion((v) => v + 1)}
-                  onClose={() => setRightPanel("preview")}
-                />
-              </div>
-            )}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <PlanPreviewCard form={form} />
+            </div>
           </div>
         ) : (
           <div className="w-10 shrink-0 border-l flex flex-col items-start pt-4 gap-4">
@@ -709,18 +822,6 @@ export function TierDetailClient({ tierId, initialTier, allTiers }: TierDetailCl
                 Preview
               </span>
             </button>
-            {tierId && (
-              <button
-                onClick={() => setRightPanel("plan-builder")}
-                className="w-full flex flex-col items-center gap-2 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
-                title="Open AI plan builder"
-              >
-                <Sparkles className="h-4 w-4" />
-                <span className="text-[10px] font-semibold uppercase tracking-wider [writing-mode:vertical-lr]">
-                  AI Builder
-                </span>
-              </button>
-            )}
           </div>
         )}
       </div>
@@ -1003,6 +1104,8 @@ const DEFAULT_FORM: TierFormState = {
   creditOnUpgrade: "CARRY_OVER",
   creditOnDowngrade: "FORFEIT_EXCESS",
   minimumCommitMonths: "1",
+  cancelCreditBehavior: "FORFEIT",
+  cancelCreditGraceDays: "0",
   pauseAllowed: false,
   pauseMaxMonths: "0",
   pauseCreditBehavior: "FROZEN",

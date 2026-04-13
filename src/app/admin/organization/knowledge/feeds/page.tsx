@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { KnowledgeFeedTable } from "@/components/knowledge/feeds/knowledge-feed-table";
+import { FeedTable } from "@/components/feeds/feed-table";
 import { KnowledgeFeedsEmpty } from "@/components/knowledge/feeds/knowledge-feeds-empty";
 import { connection } from "next/server";
 
@@ -35,7 +35,7 @@ export default async function KnowledgeFeedsPage() {
   }
 
   return (
-    <KnowledgeFeedTable
+    <FeedTable
       initialFeeds={serialized}
       initialStats={stats}
     />

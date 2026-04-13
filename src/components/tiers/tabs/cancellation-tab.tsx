@@ -10,8 +10,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ShieldX, Pause, Gift, ClipboardList } from "lucide-react";
+import { ShieldX, Pause, Gift, ClipboardList, Coins } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { InfoTip } from "../info-tip";
 import type { TierFormState } from "../tier-detail-client";
 
 interface CancellationTabProps {
@@ -32,7 +33,7 @@ export function CancellationTab({ form, updateForm, onBlurSave }: CancellationTa
             <span className="text-xs font-semibold uppercase tracking-wider">Commitment</span>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Minimum Commitment (months)</Label>
+            <Label className="text-xs">Minimum Commitment (months) <InfoTip text="The minimum number of months a member must stay subscribed before they can cancel. Set to 1 for no commitment requirement." /></Label>
             <Input
               type="number"
               min="1"
@@ -54,10 +55,63 @@ export function CancellationTab({ form, updateForm, onBlurSave }: CancellationTa
               }}
             />
             <div>
-              <span className="text-sm font-medium">Exit Survey Required</span>
+              <span className="text-sm font-medium">Exit Survey Required <InfoTip text="When enabled, members must complete a short feedback survey before their cancellation is processed. Helps gather retention insights." /></span>
               <p className="text-[10px] text-muted-foreground">Show a cancellation survey before processing</p>
             </div>
           </label>
+        </div>
+
+        {/* Credits on Cancellation */}
+        <div className="rounded-xl border bg-muted/20 p-4 space-y-4">
+          <div className="flex items-center gap-1.5">
+            <Coins className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs font-semibold uppercase tracking-wider">Credits on Cancellation</span>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">What happens to unused credits? <InfoTip text="Controls how remaining credits are handled when a member cancels. Forfeit removes them immediately; Grace Period gives extra days to use them; Keep Forever lets them stay indefinitely." /></Label>
+            <Select
+              value={form.cancelCreditBehavior}
+              onValueChange={(val) => {
+                updateForm("cancelCreditBehavior", val ?? "FORFEIT");
+                if (val !== "GRACE_PERIOD") {
+                  updateForm("cancelCreditGraceDays", "0");
+                }
+                onBlurSave?.();
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="FORFEIT">Forfeit immediately</SelectItem>
+                <SelectItem value="GRACE_PERIOD">Grace period to use</SelectItem>
+                <SelectItem value="KEEP_FOREVER">Keep forever</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-[10px] text-muted-foreground">
+              {form.cancelCreditBehavior === "FORFEIT"
+                ? "All remaining credits are lost when the plan ends."
+                : form.cancelCreditBehavior === "GRACE_PERIOD"
+                  ? "Member keeps credits for a set number of days after cancellation."
+                  : "Member keeps all credits indefinitely after cancelling."}
+            </p>
+          </div>
+
+          {form.cancelCreditBehavior === "GRACE_PERIOD" && (
+            <div className="space-y-1.5">
+              <Label className="text-xs">Grace Period (days) <InfoTip text="Number of days after cancellation during which the member can still redeem their remaining credits." /></Label>
+              <Input
+                type="number"
+                min="1"
+                value={form.cancelCreditGraceDays}
+                onChange={(e) => updateForm("cancelCreditGraceDays", e.target.value)}
+                onBlur={onBlurSave}
+              />
+              <p className="text-[10px] text-muted-foreground">
+                Number of days after cancellation the member can still use remaining credits.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Pause */}
@@ -76,7 +130,7 @@ export function CancellationTab({ form, updateForm, onBlurSave }: CancellationTa
               }}
             />
             <div>
-              <span className="text-sm font-medium">Allow Plan Pause</span>
+              <span className="text-sm font-medium">Allow Plan Pause <InfoTip text="When enabled, members can temporarily pause their subscription instead of cancelling. They retain their plan slot and can resume later." /></span>
               <p className="text-[10px] text-muted-foreground">Members can temporarily pause instead of cancelling</p>
             </div>
           </label>
@@ -84,7 +138,7 @@ export function CancellationTab({ form, updateForm, onBlurSave }: CancellationTa
           {form.pauseAllowed && (
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs">Max Pause Duration (months)</Label>
+                <Label className="text-xs">Max Pause Duration (months) <InfoTip text="The maximum number of months a member can keep their plan paused before it auto-resumes or cancels." /></Label>
                 <Input
                   type="number"
                   min="0"
@@ -94,7 +148,7 @@ export function CancellationTab({ form, updateForm, onBlurSave }: CancellationTa
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Credits While Paused</Label>
+                <Label className="text-xs">Credits While Paused <InfoTip text="How credits are handled during a pause. Frozen keeps the balance intact until they resume; Forfeited removes all remaining credits when the pause begins." /></Label>
                 <Select
                   value={form.pauseCreditBehavior}
                   onValueChange={(val) => {
@@ -123,7 +177,7 @@ export function CancellationTab({ form, updateForm, onBlurSave }: CancellationTa
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-xs">Win-back Window (days)</Label>
+              <Label className="text-xs">Win-back Window (days) <InfoTip text="Number of days after cancellation during which a special re-subscription offer is shown. Set to 0 to disable win-back offers." /></Label>
               <Input
                 type="number"
                 min="0"
@@ -136,7 +190,7 @@ export function CancellationTab({ form, updateForm, onBlurSave }: CancellationTa
               </p>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Win-back Bonus Credits ($)</Label>
+              <Label className="text-xs">Win-back Bonus Credits ($) <InfoTip text="Bonus credit amount offered to members who re-subscribe within the win-back window. Acts as an incentive to return." /></Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
                 <Input
@@ -201,7 +255,13 @@ export function CancellationTab({ form, updateForm, onBlurSave }: CancellationTa
             <FlowStep
               step={4}
               label="Process Cancellation"
-              detail="Plan ends at current cycle end"
+              detail={
+                form.cancelCreditBehavior === "FORFEIT"
+                  ? "Plan ends — credits forfeited immediately"
+                  : form.cancelCreditBehavior === "GRACE_PERIOD"
+                    ? `Plan ends — credits usable for ${form.cancelCreditGraceDays || 0} more days`
+                    : "Plan ends — credits kept forever"
+              }
               active
             />
             {parseInt(form.winbackDays) > 0 && (

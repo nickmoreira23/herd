@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { PublicFormRenderer } from "@/components/knowledge/forms/public/public-form-renderer";
-import { PublicFormClosed } from "@/components/knowledge/forms/public/public-form-closed";
-import { PublicFormAccessGate } from "@/components/knowledge/forms/public/public-form-access-gate";
+import { PublicFormRenderer } from "@/components/forms/public/public-form-renderer";
+import { PublicFormClosed } from "@/components/forms/public/public-form-closed";
+import { PublicFormAccessGate } from "@/components/forms/public/public-form-access-gate";
 
 export default async function PublicFormPage({
   params,

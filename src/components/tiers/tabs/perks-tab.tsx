@@ -48,9 +48,10 @@ interface PerksTabProps {
   form: TierFormState;
   updateForm: (field: string, value: unknown) => void;
   onBlurSave?: () => void;
+  onBenefitSaved?: () => void;
 }
 
-export function PerksTab({ tierId, form, updateForm, onBlurSave }: PerksTabProps) {
+export function PerksTab({ tierId, form, updateForm, onBlurSave, onBenefitSaved }: PerksTabProps) {
   const [allPerks, setAllPerks] = useState<PerkInfo[]>([]);
   const [assignments, setAssignments] = useState<Map<string, PerkAssignment>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -112,12 +113,14 @@ export function PerksTab({ tierId, form, updateForm, onBlurSave }: PerksTabProps
         });
         if (!res.ok) {
           toast.error("Failed to save");
+        } else {
+          onBenefitSaved?.();
         }
       } catch {
         toast.error("Failed to save");
       }
     },
-    [tierId]
+    [tierId, onBenefitSaved]
   );
 
   const togglePerk = useCallback(
@@ -283,7 +286,7 @@ export function PerksTab({ tierId, form, updateForm, onBlurSave }: PerksTabProps
           {allPerks.length === 0 && (
             <div className="text-sm text-muted-foreground text-center py-8">
               No perks configured yet. Add perks from the{" "}
-              <Link href="/admin/perks" className="text-brand underline">
+              <Link href="/admin/blocks/perks" className="text-brand underline">
                 Perks
               </Link>{" "}
               page.

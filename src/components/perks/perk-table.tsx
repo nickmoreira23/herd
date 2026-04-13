@@ -132,7 +132,7 @@ export function PerkTable({ initialPerks, stats }: PerkTableProps) {
   const columns = useMemo(
     () =>
       getPerkColumns({
-        onOpen: (p) => router.push(`/admin/perks/${p.id}`),
+        onOpen: (p) => router.push(`/admin/blocks/perks/${p.id}`),
         onDelete: handleDelete,
       }),
     [handleDelete, router]
@@ -149,7 +149,7 @@ export function PerkTable({ initialPerks, stats }: PerkTableProps) {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button size="sm" onClick={() => router.push("/admin/perks/new")}>
+          <Button size="sm" onClick={() => router.push("/admin/blocks/perks/new")}>
             <Plus className="mr-1 h-3 w-3" />
             Add Perk
           </Button>
@@ -238,7 +238,7 @@ export function PerkTable({ initialPerks, stats }: PerkTableProps) {
       {viewMode === "grid" ? (
         <PerkCardGrid
           perks={filteredPerks}
-          onOpen={(p) => router.push(`/admin/perks/${p.id}`)}
+          onOpen={(p) => router.push(`/admin/blocks/perks/${p.id}`)}
         />
       ) : (
         <DataTable

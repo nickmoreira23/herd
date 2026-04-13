@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { KnowledgeVideoTable } from "@/components/knowledge/videos/knowledge-video-table";
+import { VideoTable } from "@/components/videos/video-table";
 import { KnowledgeVideosEmpty } from "@/components/knowledge/videos/knowledge-videos-empty";
 import { connection } from "next/server";
 
@@ -36,7 +36,7 @@ export default async function KnowledgeVideosPage() {
   }
 
   return (
-    <KnowledgeVideoTable
+    <VideoTable
       initialVideos={serializedVideos}
       initialFolders={serializedFolders}
     />

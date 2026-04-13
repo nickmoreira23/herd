@@ -29,11 +29,15 @@ const DEFAULT_INPUTS: FinancialInputs = {
   fulfillmentCostPerOrder: 3.5,
   shippingCostPerOrder: 5.0,
   commissionStructure: {
+    upfrontType: "flat",
     flatBonusPerSale: 50,
+    upfrontPercent: 100,
     residualPercent: 5,
+    residualDelayMonths: 0,
     tierBonuses: [],
     percentHittingAccelerator: 20,
     acceleratorMultiplier: 1.5,
+    payoutDelayMonths: 0,
   },
   salesRepChannel: {
     startingReps: 10,
@@ -41,13 +45,16 @@ const DEFAULT_INPUTS: FinancialInputs = {
     monthlyGrowthRate: 10,
   },
   samplerChannel: {
-    monthlyMarketingSpend: 5000,
-    costPerSampler: 25,
-    conversionRate: 15,
-    monthlyGrowthRate: 10,
+    monthlyMarketingSpend: 0,
+    costPerSampler: 0,
+    conversionRate: 0,
+    monthlyGrowthRate: 0,
   },
   partnerKickbacks: [],
   operationalOverhead: { mode: "fixed", fixedMonthly: 25000 },
+  profitSplitParties: [],
+  chargebackPercent: 0,
+  chargebackFee: 15,
 };
 
 export const useFinancialStore = create<FinancialState>((set, get) => ({
@@ -96,6 +103,27 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
     // Remove old totalSubscribers if present
     delete (migrated as Record<string, unknown>).totalSubscribers;
 
+    // Per-tier billingDistribution & creditRedemptionRate: optional fields added in
+    // "Plan Assumptions" rework. Old snapshots simply lack these fields — the engine
+    // falls back to global values via ?? operator. No migration needed.
+
+    // Commission structure: new fields (upfrontType, upfrontPercent, payoutDelayMonths, residualDelayMonths)
+    // Old snapshots lack these — engine uses ?? fallbacks ("flat", 0, 0, 0).
+    if (migrated.commissionStructure && !migrated.commissionStructure.upfrontType) {
+      migrated.commissionStructure = {
+        ...migrated.commissionStructure,
+        upfrontType: "flat" as const,
+        upfrontPercent: 100,
+        payoutDelayMonths: 0,
+      };
+    }
+    if (migrated.commissionStructure && migrated.commissionStructure.residualDelayMonths == null) {
+      migrated.commissionStructure = {
+        ...migrated.commissionStructure,
+        residualDelayMonths: 0,
+      };
+    }
+
     // Migrate old operationalOverheadMonthly → operationalOverhead
     if (!migrated.operationalOverhead && (migrated as Record<string, unknown>).operationalOverheadMonthly != null) {
       const oldOverhead = (migrated as Record<string, unknown>).operationalOverheadMonthly as number;
@@ -104,6 +132,27 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
     }
     if (!migrated.operationalOverhead) {
       migrated.operationalOverhead = { mode: "fixed", fixedMonthly: 25000 };
+    }
+
+    // Migrate old snapshots missing profitSplitParties
+    if (!migrated.profitSplitParties) {
+      migrated.profitSplitParties = [];
+    }
+
+    // Migrate old snapshots missing chargeback fields
+    if (migrated.chargebackPercent == null) {
+      migrated.chargebackPercent = 0;
+    }
+    if (migrated.chargebackFee == null) {
+      migrated.chargebackFee = 15;
+    }
+
+    // Migrate tiers missing minimumCommitMonths
+    if (migrated.tiers) {
+      migrated.tiers = migrated.tiers.map((t) => ({
+        ...t,
+        minimumCommitMonths: t.minimumCommitMonths ?? 1,
+      }));
     }
 
     set({

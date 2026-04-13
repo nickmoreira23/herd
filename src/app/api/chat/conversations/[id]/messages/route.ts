@@ -14,11 +14,31 @@ import {
   executeAction,
   formatActionResult,
 } from "@/lib/chat/action-execution";
-import { buildActionCatalog } from "@/lib/blocks/registry";
+import { buildActionCatalog, actionToBlock } from "@/lib/blocks/registry";
+import { buildSolutionActionCatalog } from "@/lib/solutions/registry";
 import { resolveAnthropicKey } from "@/lib/integrations";
 
-function buildSystemPrompt(catalog: string, actionCatalog: string): string {
-  return `You are HERD AI, the intelligent assistant for HERD OS — a subscription operations platform. You have access to the company's knowledge base, operational foundation data, AND the ability to take actions across all blocks.
+const ORCHESTRATOR_KEY = "orchestrator";
+
+// Fallback system prompt base if no agent record exists
+const DEFAULT_SYSTEM_PROMPT_BASE = `You are HERD AI, the intelligent assistant for HERD OS — a subscription operations platform. You have access to the company's knowledge base, operational foundation data, AND the ability to take actions across all blocks.`;
+
+async function buildSystemPrompt(catalog: string, actionCatalog: string): Promise<string> {
+  // Load orchestrator agent's system prompt from DB if available
+  let basePrompt = DEFAULT_SYSTEM_PROMPT_BASE;
+  try {
+    const agent = await prisma.agent.findUnique({
+      where: { key: ORCHESTRATOR_KEY },
+      select: { systemPrompt: true },
+    });
+    if (agent?.systemPrompt) {
+      basePrompt = agent.systemPrompt;
+    }
+  } catch {
+    // Fall back to default
+  }
+
+  return `${basePrompt}
 
 Your role:
 - Answer questions using the company's knowledge base and foundation data
@@ -68,7 +88,12 @@ ${catalog}
 === AVAILABLE ACTIONS ===
 You can perform the following operations using the execute_action tool. Pass the action name and its parameters.
 
-${actionCatalog}`;
+${actionCatalog}
+
+=== SOLUTION TOOLS ===
+Higher-level business tools that compose block actions for specific goals like financial projections, legal contracts, marketing campaigns, and sales pipeline management.
+
+${buildSolutionActionCatalog()}`;
 }
 
 export async function POST(
@@ -128,7 +153,7 @@ export async function POST(
   // Build knowledge catalog and action catalog
   const catalog = await getDataCatalog();
   const actionCatalog = buildActionCatalog();
-  const systemPrompt = buildSystemPrompt(catalog, actionCatalog);
+  const systemPrompt = await buildSystemPrompt(catalog, actionCatalog);
 
   // Build messages for Anthropic
   const messages: Anthropic.MessageParam[] = history.map((m) => ({
@@ -261,6 +286,23 @@ export async function POST(
                       ? `${actionName} succeeded`
                       : `${actionName} failed: ${actionResult.error}`,
                   });
+
+                  // Emit activity event for successful mutations
+                  if (actionResult.success) {
+                    const entry = actionToBlock.get(actionName);
+                    if (entry) {
+                      const actionType = entry.action.method === "DELETE"
+                        ? "deleted"
+                        : entry.action.method === "POST"
+                          ? "created"
+                          : "updated";
+                      send("activity", {
+                        type: actionType,
+                        label: `${actionType} via ${actionName}`,
+                        blockName: entry.block.name,
+                      });
+                    }
+                  }
 
                   toolResultContent = formatActionResult(actionResult);
                 } else {

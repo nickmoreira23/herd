@@ -18,9 +18,9 @@ import {
   Layers,
   Target,
   UserPlus,
-  Megaphone,
   HelpCircle,
   ChevronDown,
+  PieChart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency, formatPercent, getMarginColorClass } from "@/lib/utils";
@@ -191,22 +191,6 @@ export function MetricsPanel({ multiplier: m, periodLabel }: MetricsPanelProps) 
           </div>
         </CollapsibleCard>
 
-        <CollapsibleCard
-          icon={<Megaphone className="h-3.5 w-3.5" />}
-          title="Sampler Channel"
-          description="Marketing spend, conversions & growth"
-          tooltip="Metrics from your sampler/starter pack channel — month-1 spend, converted subscribers, and projected spend at month 12."
-        >
-          <div className="grid grid-cols-3 gap-2">
-            <MetricCard label="Mo 1 Spend" value={formatCurrency(results.month1SamplerSpend)} />
-            <MetricCard label="Mo 1 New Subs" value={String(results.newSubsFromSamplers)} accent="blue" />
-            <MetricCard
-              label="Spend @ Mo 12"
-              value={results.cohortProjection[11] ? formatCurrency(results.cohortProjection[11].samplerSpend) : "—"}
-            />
-          </div>
-        </CollapsibleCard>
-
         {/* Revenue */}
         <CollapsibleCard
           icon={<TrendingUp className="h-3.5 w-3.5" />}
@@ -229,8 +213,8 @@ export function MetricsPanel({ multiplier: m, periodLabel }: MetricsPanelProps) 
           tooltip="Cost of goods sold — total product costs, fulfillment expenses, and the blended cost per subscriber."
         >
           <div className="grid grid-cols-3 gap-2">
-            <MetricCard label="Product Cost" value={formatCurrency(results.totalProductCost * m)} accent="amber" />
-            <MetricCard label="Fulfillment" value={formatCurrency(results.totalFulfillmentCost * m)} accent="amber" />
+            <MetricCard label="Total COGS" value={formatCurrency(results.totalProductCost * m)} accent="amber" />
+            <MetricCard label="Fulfillment" value={formatCurrency(results.totalFulfillmentCost * m)} />
             <MetricCard label="Cost/Sub" value={formatCurrency(results.costPerSubscriber)} />
           </div>
         </CollapsibleCard>
@@ -257,12 +241,12 @@ export function MetricsPanel({ multiplier: m, periodLabel }: MetricsPanelProps) 
         <CollapsibleCard
           icon={<Handshake className="h-3.5 w-3.5" />}
           title="Partners & Breakage"
-          description="Kickback revenue & unredeemed credit profit"
-          tooltip="Revenue from partner brand kickbacks and profit from credit breakage (unused credits that expire)."
+          description="Kickback revenue & credit savings"
+          tooltip="Revenue from partner brand kickbacks. Breakage savings represent COGS avoided from unredeemed credits — already reflected in lower COGS figures."
         >
           <div className="grid grid-cols-2 gap-2">
             <MetricCard label="Kickback Revenue" value={formatCurrency(results.totalKickbackRevenue * m)} accent="blue" />
-            <MetricCard label="Breakage Profit" value={formatCurrency(results.totalBreakageProfit * m)} accent="blue" />
+            <MetricCard label="Breakage Savings" value={formatCurrency(results.totalBreakageProfit * m)} />
           </div>
         </CollapsibleCard>
 
@@ -271,7 +255,7 @@ export function MetricsPanel({ multiplier: m, periodLabel }: MetricsPanelProps) 
           icon={<BarChart3 className="h-3.5 w-3.5" />}
           title="Margins"
           description="Gross & net margin in dollars and percent"
-          tooltip="Gross margin (revenue minus COGS) and net margin (after all expenses including commissions, overhead, and sampler spend)."
+          tooltip="Gross margin (revenue minus COGS) and net margin (after all expenses including commissions and overhead)."
         >
           <div className="grid grid-cols-2 gap-2">
             <MetricCard label="Gross Margin" value={formatCurrency(results.grossMarginDollars * m)} />
@@ -290,6 +274,38 @@ export function MetricsPanel({ multiplier: m, periodLabel }: MetricsPanelProps) 
             />
           </div>
         </CollapsibleCard>
+
+        {/* Profit Split */}
+        {results.profitSplit.parties.length > 0 && (
+          <CollapsibleCard
+            icon={<PieChart className="h-3.5 w-3.5" />}
+            title="Profit Split"
+            description="How channel profits are divided between parties"
+            tooltip="After all costs, the remaining net profit is split among the defined parties according to their agreed percentages."
+          >
+            <div className="grid grid-cols-2 gap-2">
+              {results.profitSplit.parties.map((party) => (
+                <MetricCard
+                  key={party.id}
+                  label={`${party.name || "Unnamed"} (${party.percent}%)`}
+                  value={formatCurrency(party.monthlyAmount * m)}
+                  accent="green"
+                />
+              ))}
+              {results.profitSplit.undistributedPercent > 0 && (
+                <MetricCard
+                  label={`Undistributed (${results.profitSplit.undistributedPercent}%)`}
+                  value={formatCurrency(
+                    results.netMarginDollars > 0
+                      ? results.netMarginDollars * m * (results.profitSplit.undistributedPercent / 100)
+                      : 0
+                  )}
+                  accent="amber"
+                />
+              )}
+            </div>
+          </CollapsibleCard>
+        )}
 
         {/* Per-Tier Details */}
         {results.tierDetails.length > 0 && (

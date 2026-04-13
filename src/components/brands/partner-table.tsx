@@ -112,7 +112,7 @@ export function PartnerTable({ initialPartners }: PartnerTableProps) {
   const columns = useMemo(
     () =>
       getPartnerColumns({
-        onOpen: (p) => router.push(`/admin/brands/${p.id}`),
+        onOpen: (p) => router.push(`/admin/blocks/partners/${p.id}`),
         onDelete: handleDelete,
       }),
     [handleDelete, router]
@@ -142,7 +142,7 @@ export function PartnerTable({ initialPartners }: PartnerTableProps) {
             Manage affiliate partners, discounts, and commission programs.
           </p>
         </div>
-        <Button size="sm" onClick={() => router.push("/admin/brands/new")}>
+        <Button size="sm" onClick={() => router.push("/admin/blocks/partners/new")}>
           <Plus className="mr-1 h-3 w-3" />
           Add Partner
         </Button>
@@ -241,7 +241,7 @@ export function PartnerTable({ initialPartners }: PartnerTableProps) {
       {viewMode === "grid" ? (
         <PartnerCardGrid
           partners={filteredPartners}
-          onOpen={(p) => router.push(`/admin/brands/${p.id}`)}
+          onOpen={(p) => router.push(`/admin/blocks/partners/${p.id}`)}
         />
       ) : (
         <DataTable

@@ -1,5 +1,15 @@
 import type { ArtifactMeta, DataProvider, SearchParams, SearchResult, CatalogItem } from "./types";
-import { KnowledgeProvider } from "./providers/knowledge.provider";
+// Knowledge-type block providers (split from monolithic KnowledgeProvider)
+import { DocumentProvider } from "./providers/document.provider";
+import { ImageProvider } from "./providers/image.provider";
+import { VideoProvider } from "./providers/video.provider";
+import { AudioProvider } from "./providers/audio.provider";
+import { LinkProvider } from "./providers/link.provider";
+import { TableProvider } from "./providers/table.provider";
+import { FormProvider } from "./providers/form.provider";
+import { FeedProvider } from "./providers/feed.provider";
+import { AppProvider } from "./providers/app.provider";
+// Foundation + other providers
 import { ProductProvider } from "./providers/product.provider";
 import { AgentProvider } from "./providers/agent.provider";
 import { PerkProvider } from "./providers/perk.provider";
@@ -7,12 +17,24 @@ import { CommunityProvider } from "./providers/community.provider";
 import { PartnerProvider } from "./providers/partner.provider";
 import { MeetingProvider } from "./providers/meeting.provider";
 import { EventProvider } from "./providers/event.provider";
+import { LandingPageProvider } from "./providers/landing-page.provider";
+import { MessageProvider } from "./providers/message.provider";
 
 // ─── Provider Registry ─────────────────────────────────────────────
 // To add a new domain, create a provider and add it here.
 
 const providers: DataProvider[] = [
-  new KnowledgeProvider(),
+  // Knowledge-type blocks (9 individual providers)
+  new DocumentProvider(),
+  new ImageProvider(),
+  new VideoProvider(),
+  new AudioProvider(),
+  new LinkProvider(),
+  new TableProvider(),
+  new FormProvider(),
+  new FeedProvider(),
+  new AppProvider(),
+  // Foundation + other providers
   new ProductProvider(),
   new AgentProvider(),
   new PerkProvider(),
@@ -20,6 +42,8 @@ const providers: DataProvider[] = [
   new PartnerProvider(),
   new MeetingProvider(),
   new EventProvider(),
+  new LandingPageProvider(),
+  new MessageProvider(),
 ];
 
 // Build a lookup: type string → provider instance
@@ -108,6 +132,18 @@ export async function getDataCatalog(): Promise<string> {
     );
     sections.push(
       `=== MEETINGS (${meetingItems.length}) ===\n${lines.join("\n")}`
+    );
+  }
+
+  // Operations section (messages, etc.)
+  const operationsItems = byDomain.get("operations") || [];
+  if (operationsItems.length > 0) {
+    const lines = operationsItems.map(
+      (item) =>
+        `- [${item.id}] "${item.name}"${item.description ? ` — ${item.description}` : ""} (${item.extra || ""})`
+    );
+    sections.push(
+      `=== OPERATIONS (${operationsItems.length}) ===\n${lines.join("\n")}`
     );
   }
 
@@ -237,6 +273,8 @@ export const SEARCH_DATA_TOOL = {
             "partner_brand",
             "meeting",
             "event",
+            "message_thread",
+            "message",
           ],
         },
         description: "Filter search by data type (only applies to keyword search)",

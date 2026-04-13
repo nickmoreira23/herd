@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function BenefitsPage() {
-  redirect("/admin/products");
+  redirect("/admin/blocks/products");
 }

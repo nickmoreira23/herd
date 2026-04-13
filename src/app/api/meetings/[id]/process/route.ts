@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-utils";
-import { transcribeAudio } from "@/lib/knowledge/audio-transcriber";
+import { transcribeAudio } from "@/lib/audios/audio-transcriber";
 import { existsSync } from "fs";
 import path from "path";
 

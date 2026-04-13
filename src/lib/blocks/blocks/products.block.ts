@@ -12,7 +12,7 @@ export const productsBlock: BlockManifest = {
   dependencies: ["tiers", "packages"],
   paths: {
     components: "src/components/products/",
-    pages: "src/app/admin/products/",
+    pages: "src/app/admin/blocks/products/",
     api: "src/app/api/products/",
     lib: "src/lib/products/",
     validators: "src/lib/validators/product.ts",

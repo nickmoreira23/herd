@@ -84,7 +84,7 @@ export function CanvasSection({ section }: CanvasSectionProps) {
         // Step 1: Upload file
         const formData = new FormData();
         formData.append("file", file);
-        const uploadRes = await fetch("/api/knowledge/images/upload", {
+        const uploadRes = await fetch("/api/images/upload", {
           method: "POST",
           body: formData,
         });
@@ -96,7 +96,7 @@ export function CanvasSection({ section }: CanvasSectionProps) {
 
         // Step 2: Create KB record
         const name = file.name.replace(/\.[^/.]+$/, "");
-        const imageRes = await fetch("/api/knowledge/images", {
+        const imageRes = await fetch("/api/images", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -114,7 +114,7 @@ export function CanvasSection({ section }: CanvasSectionProps) {
         const imageJson = await imageRes.json();
 
         // Step 3: Fire-and-forget processing
-        fetch(`/api/knowledge/images/${imageJson.data.id}/process`, {
+        fetch(`/api/images/${imageJson.data.id}/process`, {
           method: "POST",
         }).catch(() => {});
 

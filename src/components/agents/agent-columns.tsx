@@ -10,9 +10,99 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal, MessageSquare, Sparkles, Blocks, Users } from "lucide-react";
 import Image from "next/image";
 import { DynamicIcon } from "@/components/shared/icon-picker";
+
+// ─── Linked-To helpers ────────────────────────────────────────
+
+interface LinkedLocation {
+  label: string;
+  icon: "chat" | "specialist" | "block" | "tiers";
+}
+
+const SCOPE_LABELS: Record<string, string> = {
+  products: "Products",
+  events: "Events",
+  meetings: "Meetings",
+  agents: "AI Agents",
+  partners: "Partners",
+  perks: "Perks",
+  community: "Community",
+  pages: "Pages",
+  documents: "Documents",
+  images: "Images",
+  videos: "Videos",
+  audios: "Audios",
+  tables: "Tables",
+  forms: "Forms",
+  links: "Links",
+  feeds: "Feeds",
+  apps: "Apps",
+  tasks: "Tasks",
+  subscriptions: "Subscriptions",
+  plans: "Plans & Tiers",
+  projections: "Financial Projections",
+  knowledge: "Knowledge Base",
+};
+
+function getLinkedLocations(agent: AgentWithCount): LinkedLocation[] {
+  const locations: LinkedLocation[] = [];
+
+  // Derive role/scope from DB fields or fall back to key pattern
+  let role = agent.role as string | undefined;
+  let scope = agent.scope as string | undefined | null;
+
+  if (!role) {
+    // Infer from key when role isn't in the DB yet
+    if (agent.key === "orchestrator") {
+      role = "ORCHESTRATOR";
+    } else if (agent.key === "plans-architect") {
+      role = "SPECIALIST";
+      scope = "plans";
+    } else if (agent.key === "projections-architect") {
+      role = "SPECIALIST";
+      scope = "projections";
+    } else if (agent.key.startsWith("block-")) {
+      role = "BLOCK";
+      scope = agent.key.replace("block-", "");
+    }
+  }
+
+  if (role === "ORCHESTRATOR") {
+    locations.push({ label: "Chat Sidebar", icon: "chat" });
+  } else if (role === "SPECIALIST") {
+    const label = scope ? (SCOPE_LABELS[scope] || scope) : "Specialist";
+    locations.push({ label, icon: "specialist" });
+  } else if (role === "BLOCK") {
+    const label = scope ? (SCOPE_LABELS[scope] || scope) : "Block";
+    locations.push({ label, icon: "block" });
+  }
+
+  // Member-facing agents linked via tiers
+  if (agent._count.tierAccess > 0) {
+    locations.push({
+      label: `${agent._count.tierAccess} tier${agent._count.tierAccess === 1 ? "" : "s"}`,
+      icon: "tiers",
+    });
+  }
+
+  return locations;
+}
+
+const LINKED_ICON_MAP = {
+  chat: MessageSquare,
+  specialist: Sparkles,
+  block: Blocks,
+  tiers: Users,
+};
+
+const LINKED_COLOR_MAP: Record<string, string> = {
+  chat: "border-blue-500/50 bg-blue-500/10 text-blue-500",
+  specialist: "border-violet-500/50 bg-violet-500/10 text-violet-500",
+  block: "border-emerald-500/50 bg-emerald-500/10 text-emerald-500",
+  tiers: "border-amber-500/50 bg-amber-500/10 text-amber-500",
+};
 
 type AgentWithCount = Agent & { _count: { tierAccess: number } };
 
@@ -112,6 +202,33 @@ export function getAgentColumns(actions: ColumnActions): ColumnDef<AgentWithCoun
           {row.getValue("key")}
         </span>
       ),
+    },
+    {
+      id: "linkedTo",
+      header: () => <span className="text-xs">Linked To</span>,
+      cell: ({ row }) => {
+        const locations = getLinkedLocations(row.original);
+        if (locations.length === 0) {
+          return <span className="text-sm text-muted-foreground">--</span>;
+        }
+        return (
+          <div className="flex flex-wrap gap-1">
+            {locations.map((loc) => {
+              const Icon = LINKED_ICON_MAP[loc.icon];
+              return (
+                <Badge
+                  key={loc.label}
+                  variant="outline"
+                  className={`text-[11px] font-normal gap-1 ${LINKED_COLOR_MAP[loc.icon] || ""}`}
+                >
+                  <Icon className="h-3 w-3" />
+                  {loc.label}
+                </Badge>
+              );
+            })}
+          </div>
+        );
+      },
     },
     {
       accessorKey: "category",

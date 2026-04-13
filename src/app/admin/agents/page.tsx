@@ -6,7 +6,7 @@ import { connection } from "next/server";
 export default async function AgentsPage() {
   await connection();
   const agents = await prisma.agent.findMany({
-    orderBy: { sortOrder: "asc" },
+    orderBy: [{ role: "asc" }, { sortOrder: "asc" }],
     include: {
       _count: { select: { tierAccess: true } },
     },
@@ -31,7 +31,6 @@ export default async function AgentsPage() {
       : []),
   ];
 
-  // Serialize Decimal values for the client
   const serializedAgents = agents.map((a) => ({
     ...a,
     temperature: a.temperature != null ? toNumber(a.temperature) : null,

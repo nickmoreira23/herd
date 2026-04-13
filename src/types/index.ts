@@ -239,6 +239,9 @@ export type KnowledgeItemStatusValue = (typeof KNOWLEDGE_ITEM_STATUSES)[number];
 export const AGENT_TOOL_AUTH_TYPES = ["NONE", "API_KEY", "OAUTH2", "BEARER_TOKEN", "CUSTOM_HEADER"] as const;
 export type AgentToolAuthTypeValue = (typeof AGENT_TOOL_AUTH_TYPES)[number];
 
+export const AGENT_ROLES = ["ORCHESTRATOR", "SPECIALIST", "BLOCK"] as const;
+export type AgentRoleValue = (typeof AGENT_ROLES)[number];
+
 // Perk enum values
 export const PERK_STATUSES = ["DRAFT", "ACTIVE", "ARCHIVED"] as const;
 export type PerkStatusValue = (typeof PERK_STATUSES)[number];

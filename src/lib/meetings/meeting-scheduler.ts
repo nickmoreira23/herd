@@ -168,7 +168,7 @@ export async function checkCompletedRecordings(): Promise<number> {
           await writeFile(tmpPath, buffer);
 
           const { transcribeAudio } = await import(
-            "@/lib/knowledge/audio-transcriber"
+            "@/lib/audios/audio-transcriber"
           );
           const transcriptText = await transcribeAudio(tmpPath);
 

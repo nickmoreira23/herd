@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ImagePlus, Upload, X, Plus, GripVertical } from "lucide-react";
+import { InfoTip } from "../info-tip";
 import type { TierFormState } from "../tier-detail-client";
 
 interface IdentityTabProps {
@@ -99,7 +100,7 @@ export function IdentityTab({ form, updateForm }: IdentityTabProps) {
       {/* Name + Slug */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label htmlFor="tier-name">Plan Name</Label>
+          <Label htmlFor="tier-name">Plan Name <InfoTip text="The display name members will see when browsing available plans." /></Label>
           <Input
             id="tier-name"
             value={form.name}
@@ -108,7 +109,7 @@ export function IdentityTab({ form, updateForm }: IdentityTabProps) {
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="tier-slug">URL Slug</Label>
+          <Label htmlFor="tier-slug">URL Slug <InfoTip text="URL-friendly identifier used in links (e.g. /plans/starter). Should be lowercase with hyphens." /></Label>
           <Input
             id="tier-slug"
             value={form.slug}
@@ -121,7 +122,7 @@ export function IdentityTab({ form, updateForm }: IdentityTabProps) {
 
       {/* Tagline */}
       <div className="space-y-1.5">
-        <Label htmlFor="tier-tagline">Tagline</Label>
+        <Label htmlFor="tier-tagline">Tagline <InfoTip text="A short one-liner displayed under the plan name on the pricing page." /></Label>
         <Input
           id="tier-tagline"
           value={form.tagline}
@@ -133,7 +134,7 @@ export function IdentityTab({ form, updateForm }: IdentityTabProps) {
       {/* Visibility + Featured */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label>Visibility</Label>
+          <Label>Visibility <InfoTip text="Public: visible to everyone. Rep Only: only sales reps can offer. Hidden: not shown on pricing page." /></Label>
           <Select
             value={form.visibility}
             onValueChange={(val) => {
@@ -151,7 +152,7 @@ export function IdentityTab({ form, updateForm }: IdentityTabProps) {
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label>Featured</Label>
+          <Label>Featured <InfoTip text="When enabled, this plan is visually highlighted on the public pricing page." /></Label>
           <div className="flex items-center gap-2 mt-1.5">
             <Switch
               checked={form.isFeatured}
@@ -168,7 +169,7 @@ export function IdentityTab({ form, updateForm }: IdentityTabProps) {
 
       {/* Plan Image — Drag & Drop Upload */}
       <div className="space-y-1.5">
-        <Label>Plan Image</Label>
+        <Label>Plan Image <InfoTip text="The main image or icon displayed on the plan card. Upload or paste a URL." /></Label>
         <div
           onDrop={handleDrop}
           onDragOver={handleDragOver}
@@ -241,7 +242,7 @@ export function IdentityTab({ form, updateForm }: IdentityTabProps) {
 
       {/* Description */}
       <div className="space-y-1.5">
-        <Label htmlFor="tier-desc">Description</Label>
+        <Label htmlFor="tier-desc">Description <InfoTip text="Detailed description shown on the plan's detail page and used in marketing materials." /></Label>
         <Textarea
           id="tier-desc"
           value={form.description}
@@ -253,7 +254,7 @@ export function IdentityTab({ form, updateForm }: IdentityTabProps) {
 
       {/* Highlight Features — List with Add/Remove */}
       <div className="space-y-2">
-        <Label>Highlight Features</Label>
+        <Label>Highlight Features <InfoTip text="Key selling points displayed as bullet points on the plan card. These help members compare plans at a glance." /></Label>
         <p className="text-[11px] text-muted-foreground -mt-1">
           Key features displayed on the plan card. Drag to reorder.
         </p>

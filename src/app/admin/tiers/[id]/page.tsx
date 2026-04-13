@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { TierDetailClient } from "@/components/tiers/tier-detail-client";
 import { toNumber } from "@/lib/utils";
 import { connection } from "next/server";
+import { BENEFIT_BLOCKS_SETTING_KEY, DEFAULT_BENEFIT_BLOCKS } from "@/lib/blocks/block-meta";
 
 export default async function EditTierPage({
   params,
@@ -15,7 +16,7 @@ export default async function EditTierPage({
   // "new" is handled by the /new route, skip it here
   if (id === "new") return notFound();
 
-  const [tier, allTiersRaw] = await Promise.all([
+  const [tier, allTiersRaw, benefitBlocksSetting] = await Promise.all([
     prisma.subscriptionTier.findUnique({
       where: { id },
       include: {
@@ -26,7 +27,12 @@ export default async function EditTierPage({
       select: { id: true, name: true },
       orderBy: { sortOrder: "asc" },
     }),
+    prisma.setting.findUnique({ where: { key: BENEFIT_BLOCKS_SETTING_KEY } }),
   ]);
+
+  const enabledBenefitBlocks = benefitBlocksSetting
+    ? String(benefitBlocksSetting.value)
+    : DEFAULT_BENEFIT_BLOCKS;
 
   if (!tier) return notFound();
 
@@ -58,6 +64,7 @@ export default async function EditTierPage({
       tierId={tier.id}
       initialTier={serialized as never}
       allTiers={allTiersRaw}
+      enabledBenefitBlocks={enabledBenefitBlocks}
     />
   );
 }

@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ArrowUpDown } from "lucide-react";
+import { InfoTip } from "../info-tip";
 import type { TierFormState } from "../tier-detail-client";
 
 interface TierInfo {
@@ -48,7 +49,7 @@ export function RulesTab({ form, updateForm, onBlurSave, allTiers, currentTierId
         <div className="grid grid-cols-2 gap-6">
           {/* Upgrades */}
           <div className="space-y-3">
-            <Label className="text-xs font-medium">Upgrade Paths</Label>
+            <Label className="text-xs font-medium">Upgrade Paths <InfoTip text="Select which plans members on this tier can upgrade to. Only checked plans will appear as upgrade options." /></Label>
             {otherTiers.length > 0 ? (
               <div className="space-y-1.5">
                 {otherTiers.map((tier) => (
@@ -67,7 +68,7 @@ export function RulesTab({ form, updateForm, onBlurSave, allTiers, currentTierId
               <p className="text-xs text-muted-foreground">No other plans available</p>
             )}
             <div className="space-y-1.5 pt-2">
-              <Label className="text-[10px] text-muted-foreground">Upgrade Timing</Label>
+              <Label className="text-[10px] text-muted-foreground">Upgrade Timing <InfoTip text="When the upgrade takes effect. Immediate applies it right away; Next Billing Cycle waits until the current period ends." /></Label>
               <Select
                 value={form.upgradeTiming}
                 onValueChange={(val) => {
@@ -85,7 +86,7 @@ export function RulesTab({ form, updateForm, onBlurSave, allTiers, currentTierId
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-[10px] text-muted-foreground">Credits on Upgrade</Label>
+              <Label className="text-[10px] text-muted-foreground">Credits on Upgrade <InfoTip text="What happens to the member's credit balance when they upgrade. Carry Over keeps all credits; Reset zeroes them out; Forfeit Excess removes credits above the new plan's limit." /></Label>
               <Select
                 value={form.creditOnUpgrade}
                 onValueChange={(val) => {
@@ -107,7 +108,7 @@ export function RulesTab({ form, updateForm, onBlurSave, allTiers, currentTierId
 
           {/* Downgrades */}
           <div className="space-y-3">
-            <Label className="text-xs font-medium">Downgrade Paths</Label>
+            <Label className="text-xs font-medium">Downgrade Paths <InfoTip text="Select which plans members on this tier can downgrade to. Only checked plans will appear as downgrade options." /></Label>
             {otherTiers.length > 0 ? (
               <div className="space-y-1.5">
                 {otherTiers.map((tier) => (
@@ -126,7 +127,7 @@ export function RulesTab({ form, updateForm, onBlurSave, allTiers, currentTierId
               <p className="text-xs text-muted-foreground">No other plans available</p>
             )}
             <div className="space-y-1.5 pt-2">
-              <Label className="text-[10px] text-muted-foreground">Downgrade Timing</Label>
+              <Label className="text-[10px] text-muted-foreground">Downgrade Timing <InfoTip text="When the downgrade takes effect. Immediate applies it right away; Next Billing Cycle waits until the current period ends." /></Label>
               <Select
                 value={form.downgradeTiming}
                 onValueChange={(val) => {
@@ -144,7 +145,7 @@ export function RulesTab({ form, updateForm, onBlurSave, allTiers, currentTierId
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-[10px] text-muted-foreground">Credits on Downgrade</Label>
+              <Label className="text-[10px] text-muted-foreground">Credits on Downgrade <InfoTip text="What happens to the member's credit balance when they downgrade. Carry Over keeps all credits; Reset zeroes them out; Forfeit Excess removes credits above the new plan's limit." /></Label>
               <Select
                 value={form.creditOnDowngrade}
                 onValueChange={(val) => {

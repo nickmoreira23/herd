@@ -3,8 +3,6 @@
 import { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
-  List,
-  Calendar,
   Plus,
   MoreVertical,
   Plug,
@@ -13,7 +11,6 @@ import {
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/components/layout/page-header";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,12 +18,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { EventListView } from "./event-list-view";
+import { BlockListPage } from "@/components/shared/block-list-page";
+import { getEventColumns } from "./event-columns";
 import { EventCalendarView } from "./event-calendar-view";
 import { CreateEventDialog } from "./create-event-dialog";
 import { EventSettingsDialog } from "./event-settings-dialog";
 import { IntegrateCalendarDialog } from "./integrate-calendar-dialog";
-import { BlockAgentPanel } from "@/components/shared/block-agent-panel";
+import { EventCalendarFilter } from "./event-calendar-filter";
 import type { CalendarEventRow, CalendarSyncRow, IntegrationRow } from "./types";
 
 // ─── Types ──────────────────────────────────────────────────────
@@ -48,7 +46,6 @@ export function EventsClient({
   const [events, setEvents] = useState<CalendarEventRow[]>(initialEvents);
   const [calendars] = useState<CalendarSyncRow[]>(initialCalendars);
   const [syncing, setSyncing] = useState(false);
-  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [selectedCalendarIds, setSelectedCalendarIds] = useState<Set<string>>(
     () => new Set(initialCalendars.map((c) => c.id))
   );
@@ -112,130 +109,121 @@ export function EventsClient({
     return events.filter((e) => selectedCalendarIds.has(e.calendarSyncId));
   }, [events, selectedCalendarIds, calendars.length]);
 
+  const columns = useMemo(
+    () => getEventColumns({ onView: handleView }),
+    [handleView]
+  );
+
   return (
-    <>
-      <PageHeader
-        title="Events"
-        description="All your calendar events in one place"
-        action={
-          <div className="flex items-center gap-2">
-            {/* View Toggle */}
-            <div className="flex items-center rounded-lg border bg-muted/50 p-1 shrink-0">
-              <button
-                type="button"
-                onClick={() => setViewMode("list")}
-                className={`rounded-md px-2.5 py-2 transition-colors ${
-                  viewMode === "list"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                title="List view"
+    <BlockListPage<CalendarEventRow>
+      blockName="events"
+      title="Events"
+      description="All your calendar events in one place"
+      data={filteredEvents}
+      getId={(e) => e.id}
+      columns={columns}
+      onRowClick={handleView}
+      searchPlaceholder="Search events..."
+      searchFn={(item, query) => {
+        const q = query.toLowerCase();
+        return (
+          item.title.toLowerCase().includes(q) ||
+          (item.description?.toLowerCase().includes(q) ?? false)
+        );
+      }}
+      toolbarExtras={
+        <EventCalendarFilter
+          calendars={calendars}
+          selectedCalendarIds={selectedCalendarIds}
+          onToggle={handleToggleCalendar}
+        />
+      }
+      additionalViews={[
+        {
+          type: "calendar" as const,
+          render: (data) => (
+            <EventCalendarView
+              events={data}
+              calendars={calendars}
+              selectedCalendarIds={selectedCalendarIds}
+              onToggleCalendar={handleToggleCalendar}
+              onSelectEvent={handleView}
+              onDayClick={handleDayClick}
+            />
+          ),
+        },
+      ]}
+      headerActions={
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            onClick={() => {
+              setCreateEventDate(null);
+              setCreateEventOpen(true);
+            }}
+          >
+            <Plus className="h-4 w-4 mr-1.5" />
+            Add Event
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button variant="outline" size="icon-sm">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              }
+            />
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setIntegrateOpen(true)}>
+                <Plug className="h-4 w-4" />
+                Integrate Calendar
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
+                <Settings className="h-4 w-4" />
+                Settings
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => {
+                  if (!syncing) handleSync();
+                }}
               >
-                <List className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("calendar")}
-                className={`rounded-md px-2.5 py-2 transition-colors ${
-                  viewMode === "calendar"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                title="Calendar view"
-              >
-                <Calendar className="h-4 w-4" />
-              </button>
-            </div>
-
-            {/* Add Event */}
-            <Button
-              size="sm"
-              onClick={() => {
-                setCreateEventDate(null);
-                setCreateEventOpen(true);
-              }}
-            >
-              <Plus className="h-4 w-4 mr-1.5" />
-              Add Event
-            </Button>
-
-            {/* Options Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button variant="outline" size="icon-sm">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                }
-              />
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={() => setIntegrateOpen(true)}
-                >
-                  <Plug className="h-4 w-4" />
-                  Integrate Calendar
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setSettingsOpen(true)}
-                >
-                  <Settings className="h-4 w-4" />
-                  Settings
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => {
-                    if (!syncing) handleSync();
-                  }}
-                >
-                  {syncing ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="h-4 w-4" />
-                  )}
-                  Sync Now
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        }
-      />
-
-      <div className="px-4">
-        {viewMode === "list" ? (
-          <EventListView events={filteredEvents} onView={handleView} />
-        ) : (
-          <EventCalendarView
-            events={filteredEvents}
+                {syncing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+                Sync Now
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      }
+      modals={
+        <>
+          <CreateEventDialog
+            open={createEventOpen}
+            onOpenChange={setCreateEventOpen}
             calendars={calendars}
-            selectedCalendarIds={selectedCalendarIds}
-            onToggleCalendar={handleToggleCalendar}
-            onSelectEvent={handleView}
-            onDayClick={handleDayClick}
+            prefillDate={createEventDate}
+            onEventCreated={handleEventCreated}
           />
-        )}
-      </div>
-
-      {/* Dialogs */}
-      <CreateEventDialog
-        open={createEventOpen}
-        onOpenChange={setCreateEventOpen}
-        calendars={calendars}
-        prefillDate={createEventDate}
-        onEventCreated={handleEventCreated}
-      />
-      <EventSettingsDialog
-        open={settingsOpen}
-        onOpenChange={setSettingsOpen}
-        calendars={calendars}
-        onSync={handleSync}
-        syncing={syncing}
-      />
-      <IntegrateCalendarDialog
-        open={integrateOpen}
-        onOpenChange={setIntegrateOpen}
-        integrations={initialIntegrations}
-      />
-      <BlockAgentPanel blockName="events" blockDisplayName="Events" />
-    </>
+          <EventSettingsDialog
+            open={settingsOpen}
+            onOpenChange={setSettingsOpen}
+            calendars={calendars}
+            onSync={handleSync}
+            syncing={syncing}
+          />
+          <IntegrateCalendarDialog
+            open={integrateOpen}
+            onOpenChange={setIntegrateOpen}
+            integrations={initialIntegrations}
+          />
+        </>
+      }
+      showAgent={true}
+    />
   );
 }

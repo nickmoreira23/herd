@@ -153,7 +153,7 @@ export function PartnerDetailClient({ partner: initialPartner, allTiers }: Partn
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon-sm" onClick={() => router.push("/admin/brands")}>
+        <Button variant="ghost" size="icon-sm" onClick={() => router.push("/admin/blocks/partners")}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">

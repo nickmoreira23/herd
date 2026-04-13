@@ -58,13 +58,14 @@ export function FinancialCharts({ multiplier, periodLabel }: FinancialChartsProp
   }));
 
   // Margin waterfall data (scaled by period)
+  // totalProductCost includes fulfillment+shipping, so split them for the waterfall
+  const productOnlyCost = results.totalProductCost - results.totalFulfillmentCost;
   const waterfallData = [
     { name: "Revenue", value: Math.round(results.mrr * m) },
-    { name: "Product", value: -Math.round(results.totalProductCost * m) },
+    { name: "Product", value: -Math.round(productOnlyCost * m) },
     { name: "Fulfillment", value: -Math.round(results.totalFulfillmentCost * m) },
     { name: "Commission", value: -Math.round(results.totalCommissionExpense * m) },
-    { name: "Kickbacks", value: Math.round(results.totalKickbackRevenue * m) },
-    { name: "Breakage", value: Math.round(results.totalBreakageProfit * m) },
+    ...(results.totalKickbackRevenue > 0 ? [{ name: "Kickbacks", value: Math.round(results.totalKickbackRevenue * m) }] : []),
     { name: "Overhead", value: -Math.round(resolveOverhead(inputs.operationalOverhead, 0) * m) },
     { name: "Net", value: Math.round(results.netMarginDollars * m) },
   ];
@@ -88,9 +89,10 @@ export function FinancialCharts({ multiplier, periodLabel }: FinancialChartsProp
   }));
 
   // Margin breakdown donut (scaled by period)
+  // totalProductCost already includes fulfillment — don't double-count
   const marginPieData = [
     { name: "Net Margin", value: Math.max(0, Math.round(results.netMarginDollars * m)) },
-    { name: "COGS", value: Math.round((results.totalProductCost + results.totalFulfillmentCost) * m) },
+    { name: "COGS", value: Math.round(results.totalProductCost * m) },
     { name: "Commissions", value: Math.round(results.totalCommissionExpense * m) },
     {
       name: "Overhead",

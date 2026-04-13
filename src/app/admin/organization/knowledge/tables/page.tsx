@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { KnowledgeTableList } from "@/components/knowledge/tables/knowledge-table-list";
+import { TableList } from "@/components/tables/table-list";
 import { KnowledgeTablesEmpty } from "@/components/knowledge/tables/knowledge-tables-empty";
 import { connection } from "next/server";
 
@@ -37,7 +37,7 @@ export default async function KnowledgeTablesPage() {
   }
 
   return (
-    <KnowledgeTableList
+    <TableList
       initialTables={serialized}
       initialStats={stats}
       airtableConnected={airtableConnected}

@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, BarChart3, Trash2, Calendar, TrendingUp, Users, DollarSign, Target } from "lucide-react";
+import { Plus, BarChart3, Trash2, Calendar, TrendingUp, Users, DollarSign, Target, LayoutGrid, Table2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatCurrency, getMarginColorClass } from "@/lib/utils";
+import { formatCurrency, getMarginColorClass, cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface SavedModel {
@@ -22,6 +22,7 @@ export function ModelsList() {
   const router = useRouter();
   const [models, setModels] = useState<SavedModel[]>([]);
   const [loading, setLoading] = useState(true);
+  const [view, setView] = useState<"cards" | "table">("table");
 
   const fetchModels = useCallback(async () => {
     try {
@@ -35,6 +36,18 @@ export function ModelsList() {
 
   useEffect(() => {
     fetchModels();
+  }, [fetchModels]);
+
+  // Live sync — refresh when the projections agent saves or deletes a scenario
+  useEffect(() => {
+    const onSaved = () => fetchModels();
+    const onDeleted = () => fetchModels();
+    window.addEventListener("projections-agent:scenario-saved", onSaved);
+    window.addEventListener("projections-agent:scenario-deleted", onDeleted);
+    return () => {
+      window.removeEventListener("projections-agent:scenario-saved", onSaved);
+      window.removeEventListener("projections-agent:scenario-deleted", onDeleted);
+    };
   }, [fetchModels]);
 
   const handleDelete = useCallback(
@@ -65,15 +78,46 @@ export function ModelsList() {
             Build and compare financial projection models for your operation.
           </p>
         </div>
-        <Button onClick={() => router.push("/admin/operation/finances/projections/new")}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Model
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* View toggle */}
+          {models.length > 0 && (
+            <div className="flex items-center border rounded-md">
+              <button
+                type="button"
+                onClick={() => setView("cards")}
+                className={cn(
+                  "p-1.5 rounded-l-md transition-colors",
+                  view === "cards"
+                    ? "bg-foreground text-background"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                )}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setView("table")}
+                className={cn(
+                  "p-1.5 rounded-r-md transition-colors",
+                  view === "table"
+                    ? "bg-foreground text-background"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                )}
+              >
+                <Table2 className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+          <Button onClick={() => router.push("/admin/operation/finances/projections/new")}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Model
+          </Button>
+        </div>
       </div>
 
       {models.length === 0 ? (
         <EmptyState onAdd={() => router.push("/admin/operation/finances/projections/new")} />
-      ) : (
+      ) : view === "cards" ? (
         <div className="space-y-3">
           {models.map((model) => (
             <ModelCard
@@ -86,6 +130,12 @@ export function ModelsList() {
             />
           ))}
         </div>
+      ) : (
+        <ModelsTable
+          models={models}
+          onRowClick={(id) => router.push(`/admin/operation/finances/projections/${id}`)}
+          onDelete={handleDelete}
+        />
       )}
     </div>
   );
@@ -109,6 +159,135 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
     </div>
   );
 }
+
+/* ─── Table View ─── */
+
+function ModelsTable({
+  models,
+  onRowClick,
+  onDelete,
+}: {
+  models: SavedModel[];
+  onRowClick: (id: string) => void;
+  onDelete: (e: React.MouseEvent, id: string, name: string) => void;
+}) {
+  return (
+    <div className="overflow-x-auto border rounded-lg">
+      <table className="w-full text-sm border-collapse">
+        <thead>
+          <tr className="border-b bg-muted/50">
+            <th className="px-4 py-2.5 text-left font-medium text-muted-foreground text-xs">Model</th>
+            <th className="px-3 py-2.5 text-right font-medium text-muted-foreground text-xs">MRR</th>
+            <th className="px-3 py-2.5 text-right font-medium text-muted-foreground text-xs">ARR</th>
+            <th className="px-3 py-2.5 text-right font-medium text-muted-foreground text-xs">Net Margin</th>
+            <th className="px-3 py-2.5 text-right font-medium text-muted-foreground text-xs">Gross Margin</th>
+            <th className="px-3 py-2.5 text-right font-medium text-muted-foreground text-xs">New Subs/Mo</th>
+            <th className="px-3 py-2.5 text-right font-medium text-muted-foreground text-xs">LTV:CAC</th>
+            <th className="px-3 py-2.5 text-right font-medium text-muted-foreground text-xs">Breakeven</th>
+            <th className="px-3 py-2.5 text-right font-medium text-muted-foreground text-xs">Created</th>
+            <th className="px-3 py-2.5 w-10"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {models.map((model) => {
+            const color = model.color || DEFAULT_COLOR;
+            const r = model.results;
+            const mrr = r?.mrr as number | undefined;
+            const arr = r?.arr as number | undefined;
+            const netMarginPct = r?.netMarginPercent as number | undefined;
+            const grossMarginPct = r?.grossMarginPercent as number | undefined;
+            const newSubsPerMonth = r?.newSubscribersPerMonth as number | undefined;
+            const breakeven = r?.operationBreakevenMonth as number | undefined;
+            const ltvCac = r?.ltvCac as Record<string, unknown> | undefined;
+            const ltvCacRatio = ltvCac?.ltvCacRatio as number | undefined;
+
+            return (
+              <tr
+                key={model.id}
+                onClick={() => onRowClick(model.id)}
+                className="border-b hover:bg-muted/30 cursor-pointer transition-colors group"
+              >
+                <td className="px-4 py-2.5">
+                  <div className="flex items-center gap-2.5">
+                    <div
+                      className="h-2.5 w-2.5 rounded-full shrink-0"
+                      style={{ backgroundColor: color }}
+                    />
+                    <span className="font-medium truncate max-w-[200px]">
+                      {model.scenarioName || "Untitled Model"}
+                    </span>
+                  </div>
+                </td>
+                <td className="px-3 py-2.5 text-right tabular-nums">
+                  {mrr !== undefined ? formatCurrency(mrr) : "—"}
+                </td>
+                <td className="px-3 py-2.5 text-right tabular-nums">
+                  {arr !== undefined ? formatCurrency(arr) : "—"}
+                </td>
+                <td className={cn("px-3 py-2.5 text-right tabular-nums font-medium", netMarginPct !== undefined ? getMarginColorClass(netMarginPct) : "")}>
+                  {netMarginPct !== undefined ? `${Math.round(netMarginPct)}%` : "—"}
+                </td>
+                <td className={cn("px-3 py-2.5 text-right tabular-nums font-medium", grossMarginPct !== undefined ? getMarginColorClass(grossMarginPct) : "")}>
+                  {grossMarginPct !== undefined ? `${Math.round(grossMarginPct)}%` : "—"}
+                </td>
+                <td className="px-3 py-2.5 text-right tabular-nums">
+                  {newSubsPerMonth !== undefined ? newSubsPerMonth.toLocaleString() : "—"}
+                </td>
+                <td className={cn(
+                  "px-3 py-2.5 text-right tabular-nums font-medium",
+                  ltvCacRatio !== undefined
+                    ? ltvCacRatio >= 3
+                      ? "text-green-600 dark:text-green-400"
+                      : ltvCacRatio >= 1
+                        ? "text-amber-600 dark:text-amber-400"
+                        : "text-red-600 dark:text-red-400"
+                    : ""
+                )}>
+                  {ltvCacRatio !== undefined
+                    ? ltvCacRatio === Infinity
+                      ? "∞"
+                      : `${ltvCacRatio.toFixed(1)}x`
+                    : "—"}
+                </td>
+                <td className={cn(
+                  "px-3 py-2.5 text-right tabular-nums font-medium",
+                  breakeven !== undefined
+                    ? breakeven === Infinity
+                      ? "text-red-500"
+                      : breakeven <= 6
+                        ? "text-green-600 dark:text-green-400"
+                        : "text-amber-600 dark:text-amber-400"
+                    : ""
+                )}>
+                  {breakeven !== undefined
+                    ? breakeven === Infinity
+                      ? "Never"
+                      : `Mo ${breakeven}`
+                    : "—"}
+                </td>
+                <td className="px-3 py-2.5 text-right text-xs text-muted-foreground tabular-nums">
+                  {new Date(model.createdAt).toLocaleDateString()}
+                </td>
+                <td className="px-3 py-2.5 text-right">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={(e) => onDelete(e, model.id, model.scenarioName || "Untitled")}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-red-500"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/* ─── Card View ─── */
 
 function ModelCard({
   model,

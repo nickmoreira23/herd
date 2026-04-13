@@ -8,16 +8,19 @@ import type {
   PartnerKickbackInput,
   CommissionCalcInput,
   SalesRepChannel,
-  SamplerChannel,
   FinancialInputs,
   OperationalOverhead,
+  FullyLoadedCommissionInput,
 } from "@/lib/financial-engine";
 import type { OpexCategoryData } from "@/lib/opex-resolver";
+import type { DataSourceMeta, TierDisplayMeta } from "@/app/admin/financials/data";
 import { ScenarioBuilder } from "./scenario-builder";
 import { ExecutiveSummary } from "./executive-summary";
 import { MetricsPanel } from "./metrics-panel";
 import { FinancialCharts } from "./financial-charts";
 import { PLStatement } from "./pl-statement";
+import { ProjectionSpreadsheet } from "./projection-spreadsheet";
+import { CohortSpreadsheet } from "./cohort-spreadsheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,6 +56,8 @@ import {
   Pencil,
   Copy,
   Trash2,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -101,7 +106,6 @@ interface FinancialPageClientProps {
   tierData: TierFinancialInput[];
   commissionData: CommissionCalcInput;
   salesRepData: SalesRepChannel;
-  samplerData: SamplerChannel;
   partnerData: PartnerKickbackInput[];
   overheadData: OperationalOverhead;
   opexData: OpexCategoryData[];
@@ -109,13 +113,22 @@ interface FinancialPageClientProps {
   initialName?: string;
   initialColor?: string;
   initialInputs?: FinancialInputs;
+  // New: product-derived COGS defaults
+  productCOGSRatio?: number;
+  productFulfillmentCost?: number;
+  productShippingCost?: number;
+  // New: fully-loaded commission plan data
+  fullyLoadedCommissionData?: FullyLoadedCommissionInput;
+  // New: data source metadata for UI indicators
+  dataSourceMeta?: DataSourceMeta;
+  // New: tier display metadata for read-only plan structure display
+  tierDisplayMeta?: TierDisplayMeta[];
 }
 
 export function FinancialPageClient({
   tierData,
   commissionData,
   salesRepData,
-  samplerData,
   partnerData,
   overheadData,
   opexData,
@@ -123,6 +136,12 @@ export function FinancialPageClient({
   initialName = "",
   initialColor = "#3B82F6",
   initialInputs,
+  productCOGSRatio,
+  productFulfillmentCost,
+  productShippingCost,
+  fullyLoadedCommissionData,
+  dataSourceMeta,
+  tierDisplayMeta,
 }: FinancialPageClientProps) {
   const router = useRouter();
   const { setInputs, inputs, results, loadInputs } = useFinancialStore();
@@ -151,6 +170,9 @@ export function FinancialPageClient({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // Full-screen projection view
+  const [fullScreen, setFullScreen] = useState(false);
+
   if (initialized.current == null) {
     initialized.current = true;
     if (initialInputs) {
@@ -161,13 +183,17 @@ export function FinancialPageClient({
       }
       loadInputs(migratedInputs, initialName);
     } else {
+      // New model: initialize with all available structured data
       setInputs({
         tiers: tierData,
         commissionStructure: commissionData,
         salesRepChannel: salesRepData,
-        samplerChannel: samplerData,
         partnerKickbacks: partnerData,
         operationalOverhead: overheadData,
+        // Apply product-derived COGS if available
+        ...(productCOGSRatio != null && { avgCOGSToMemberPriceRatio: productCOGSRatio }),
+        ...(productFulfillmentCost != null && { fulfillmentCostPerOrder: productFulfillmentCost }),
+        ...(productShippingCost != null && { shippingCostPerOrder: productShippingCost }),
       });
     }
   }
@@ -200,8 +226,20 @@ export function FinancialPageClient({
         toast.error(json.error || "Failed to save");
         return;
       }
+      const json = await res.json();
       toast.success(modelId ? "Model updated" : "Model saved");
-      router.push("/admin/operation/finances/projections");
+      if (modelId) {
+        // Existing model — stay on detail view, exit edit mode
+        setEditing(false);
+      } else {
+        // New model — redirect to the newly created model's detail view
+        const newId = json.data?.id;
+        if (newId) {
+          router.push(`/admin/operation/finances/projections/${newId}`);
+        } else {
+          router.push("/admin/operation/finances/projections");
+        }
+      }
     } finally {
       setSaving(false);
     }
@@ -232,7 +270,7 @@ export function FinancialPageClient({
       setEditing(true);
       setRemixOpen(false);
       setRemixPrompt("");
-      toast.success("Model remixed — review the updated premises");
+      toast.success("Model remixed — review the updated assumptions");
     } catch {
       toast.error("Something went wrong");
     } finally {
@@ -404,21 +442,26 @@ export function FinancialPageClient({
         </div>
       </div>
 
-      {/* Main content: 50/50 split — 16px on all sides */}
-      <div className="grid grid-cols-2 gap-4 flex-1 min-h-0 p-4">
-        {/* Left: Premises */}
-        <div className="rounded-xl border bg-card flex flex-col min-h-0">
-          <div className="px-4 flex items-center shrink-0" style={{ height: 68 }}>
-            <h2 className="text-sm font-semibold">Premises</h2>
+      {/* Main content: 50/50 split (or full-width when fullScreen) */}
+      <div className={cn(
+        "gap-4 flex-1 min-h-0 p-4",
+        fullScreen ? "flex" : "grid grid-cols-2"
+      )}>
+        {/* Left: Assumptions */}
+        {!fullScreen && (
+          <div className="rounded-xl border bg-card flex flex-col min-h-0">
+            <div className="px-4 flex items-center shrink-0" style={{ height: 68 }}>
+              <h2 className="text-sm font-semibold">Assumptions</h2>
+            </div>
+            <div className="border-t" />
+            <div className="flex-1 overflow-y-auto p-4 scrollbar-thin">
+              <ScenarioBuilder readOnly={!editing} defaultOpen={editing || isNewModel} dataSourceMeta={dataSourceMeta} tierDisplayMeta={tierDisplayMeta} />
+            </div>
           </div>
-          <div className="border-t" />
-          <div className="flex-1 overflow-y-auto p-4 scrollbar-thin">
-            <ScenarioBuilder readOnly={!editing} defaultOpen={editing || isNewModel} />
-          </div>
-        </div>
+        )}
 
         {/* Right: Projection */}
-        <Tabs defaultValue="summary" className="flex flex-col min-h-0">
+        <Tabs defaultValue="summary" className={cn("flex flex-col min-h-0", fullScreen && "flex-1")}>
           <div className="rounded-xl border bg-card flex flex-col min-h-0 flex-1">
             <div className="px-4 flex items-center justify-between shrink-0" style={{ height: 68 }}>
               <div className="flex items-center gap-3">
@@ -458,20 +501,40 @@ export function FinancialPageClient({
                   )}
                 </div>
               </div>
-              <TabsList className="h-8">
-                <TabsTrigger value="summary" className="text-xs px-3 h-6">
-                  Summary
-                </TabsTrigger>
-                <TabsTrigger value="statement" className="text-xs px-3 h-6">
-                  Statement
-                </TabsTrigger>
-                <TabsTrigger value="metrics" className="text-xs px-3 h-6">
-                  Metrics
-                </TabsTrigger>
-                <TabsTrigger value="charts" className="text-xs px-3 h-6">
-                  Charts
-                </TabsTrigger>
-              </TabsList>
+              <div className="flex items-center gap-2">
+                <TabsList className="h-8">
+                  <TabsTrigger value="summary" className="text-xs px-3 h-6">
+                    Summary
+                  </TabsTrigger>
+                  <TabsTrigger value="statement" className="text-xs px-3 h-6">
+                    Statement
+                  </TabsTrigger>
+                  <TabsTrigger value="spreadsheet" className="text-xs px-3 h-6">
+                    Spreadsheet
+                  </TabsTrigger>
+                  <TabsTrigger value="cohort" className="text-xs px-3 h-6">
+                    Cohort
+                  </TabsTrigger>
+                  <TabsTrigger value="metrics" className="text-xs px-3 h-6">
+                    Metrics
+                  </TabsTrigger>
+                  <TabsTrigger value="charts" className="text-xs px-3 h-6">
+                    Charts
+                  </TabsTrigger>
+                </TabsList>
+                <button
+                  type="button"
+                  onClick={() => setFullScreen(!fullScreen)}
+                  className="inline-flex items-center justify-center rounded-md h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                  title={fullScreen ? "Exit full screen" : "Full screen"}
+                >
+                  {fullScreen ? (
+                    <Minimize2 className="h-3.5 w-3.5" />
+                  ) : (
+                    <Maximize2 className="h-3.5 w-3.5" />
+                  )}
+                </button>
+              </div>
             </div>
             <div className="border-t" />
             <div className="flex-1 overflow-y-auto p-4 scrollbar-thin">
@@ -480,6 +543,12 @@ export function FinancialPageClient({
               </TabsContent>
               <TabsContent value="statement" className="mt-0">
                 <PLStatement multiplier={periodMultiplier} periodLabel={periodLabel} />
+              </TabsContent>
+              <TabsContent value="spreadsheet" className="mt-0">
+                <ProjectionSpreadsheet months={12} />
+              </TabsContent>
+              <TabsContent value="cohort" className="mt-0">
+                <CohortSpreadsheet months={12} />
               </TabsContent>
               <TabsContent value="metrics" className="mt-0">
                 <MetricsPanel multiplier={periodMultiplier} periodLabel={periodLabel} />
@@ -506,7 +575,7 @@ export function FinancialPageClient({
             </DialogDescription>
           </DialogHeader>
           <Textarea
-            placeholder="e.g., Make this more aggressive — start with 20 reps growing at 15%/mo, double the sampler spend, and reduce overhead to $15k..."
+            placeholder="e.g., Make this more aggressive — start with 20 reps growing at 15%/mo, reduce overhead to $15k, and increase the residual to 8%..."
             value={remixPrompt}
             onChange={(e) => setRemixPrompt(e.target.value)}
             className="min-h-[140px] resize-none"
@@ -536,7 +605,7 @@ export function FinancialPageClient({
               Duplicate Model
             </DialogTitle>
             <DialogDescription>
-              Create a copy of this model with a new name and color. All premises
+              Create a copy of this model with a new name and color. All assumptions
               and projections will be duplicated.
             </DialogDescription>
           </DialogHeader>

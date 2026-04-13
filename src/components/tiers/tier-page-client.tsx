@@ -7,11 +7,32 @@ import { TierComparison } from "./tier-comparison";
 import { TierCreateSheet } from "./tier-create-sheet";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, MoreHorizontal, Settings2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  BLOCK_ICON_MAP,
+  BLOCK_LABEL_MAP,
+  NON_BENEFIT_BLOCKS,
+  ALL_BENEFIT_ELIGIBLE_BLOCKS,
+} from "@/lib/blocks/block-meta";
 
 interface TierPageClientProps {
   initialTiers: SubscriptionTier[];
+  enabledBenefitBlocks: string;
 }
 
 const DEFAULT_SETTINGS = {
@@ -137,9 +158,47 @@ function TierCarousel({
   );
 }
 
-export function TierPageClient({ initialTiers }: TierPageClientProps) {
+export function TierPageClient({ initialTiers, enabledBenefitBlocks }: TierPageClientProps) {
   const [tiers, setTiers] = useState<SubscriptionTier[]>(initialTiers);
   const [showCreate, setShowCreate] = useState(false);
+
+  // Benefit blocks settings
+  const [benefitBlocks, setBenefitBlocks] = useState<Set<string>>(
+    () => new Set(enabledBenefitBlocks.split(",").filter(Boolean))
+  );
+  const [benefitsDialogOpen, setBenefitsDialogOpen] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
+
+  const toggleBlock = useCallback((blockName: string) => {
+    setBenefitBlocks((prev) => {
+      const next = new Set(prev);
+      if (next.has(blockName)) next.delete(blockName);
+      else next.add(blockName);
+      return next;
+    });
+  }, []);
+
+  const handleSaveBenefitBlocks = useCallback(async () => {
+    setSavingSettings(true);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plan_benefit_blocks: Array.from(benefitBlocks).join(","),
+        }),
+      });
+      if (res.ok) {
+        toast.success("Benefit blocks updated");
+      } else {
+        toast.error("Failed to save benefit blocks");
+      }
+    } catch {
+      toast.error("Failed to save benefit blocks");
+    } finally {
+      setSavingSettings(false);
+    }
+  }, [benefitBlocks]);
 
   const refreshTiers = useCallback(async () => {
     const res = await fetch("/api/tiers");
@@ -210,6 +269,8 @@ export function TierPageClient({ initialTiers }: TierPageClientProps) {
           creditOnDowngrade: t.creditOnDowngrade || "FORFEIT_EXCESS",
           // Cancellation
           minimumCommitMonths: t.minimumCommitMonths ?? 1,
+          cancelCreditBehavior: t.cancelCreditBehavior || "FORFEIT",
+          cancelCreditGraceDays: t.cancelCreditGraceDays ?? 0,
           pauseAllowed: t.pauseAllowed ?? false,
           pauseMaxMonths: t.pauseMaxMonths ?? 0,
           pauseCreditBehavior: t.pauseCreditBehavior || "FROZEN",
@@ -267,15 +328,75 @@ export function TierPageClient({ initialTiers }: TierPageClientProps) {
             Manage your subscription plans and their configuration.
           </p>
         </div>
-        <Button
-          size="sm"
-          className="bg-[#C5F135] text-black hover:bg-[#C5F135]/90"
-          onClick={() => setShowCreate(true)}
-        >
-          <Plus className="mr-1.5 h-3.5 w-3.5" />
-          New Plan
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            className="bg-[#C5F135] text-black hover:bg-[#C5F135]/90"
+            onClick={() => setShowCreate(true)}
+          >
+            <Plus className="mr-1.5 h-3.5 w-3.5" />
+            New Plan
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md border border-input bg-background px-2.5 h-8 text-sm hover:bg-accent hover:text-accent-foreground transition-colors">
+              <MoreHorizontal className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-[220px]">
+              <DropdownMenuItem onClick={() => setBenefitsDialogOpen(true)}>
+                <Settings2 className="h-4 w-4 mr-2 shrink-0" />
+                <span className="whitespace-nowrap">Benefits Configuration</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
+
+      {/* Benefits Configuration Dialog */}
+      <Dialog open={benefitsDialogOpen} onOpenChange={setBenefitsDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Benefits Configuration</DialogTitle>
+            <DialogDescription>
+              Choose which blocks are available as benefits across all of your plans.
+              Enabling a block here adds it as a configurable benefit tab when editing any plan.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-2">
+            {ALL_BENEFIT_ELIGIBLE_BLOCKS.filter(
+              (name) => !NON_BENEFIT_BLOCKS.has(name)
+            ).map((blockName) => {
+              const Icon = BLOCK_ICON_MAP[blockName];
+              const label = BLOCK_LABEL_MAP[blockName];
+              return (
+                <label
+                  key={blockName}
+                  className="flex items-center gap-3 rounded-md border px-3 py-2.5 cursor-pointer hover:bg-muted/50 transition-colors"
+                >
+                  {Icon && <Icon className="h-4 w-4 text-muted-foreground shrink-0" />}
+                  <span className="text-sm flex-1">{label}</span>
+                  <Switch
+                    checked={benefitBlocks.has(blockName)}
+                    onCheckedChange={() => toggleBlock(blockName)}
+                  />
+                </label>
+              );
+            })}
+          </div>
+          <div className="flex justify-end">
+            <Button
+              size="sm"
+              onClick={async () => {
+                await handleSaveBenefitBlocks();
+                setBenefitsDialogOpen(false);
+              }}
+              disabled={savingSettings}
+            >
+              {savingSettings && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+              Save
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Tabs: List | Compare */}
       <Tabs defaultValue="list" className="w-full flex-1 flex flex-col min-h-0 mt-6">

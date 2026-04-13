@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { DollarSign, TrendingUp, TrendingDown, Target, Clock } from "lucide-react";
 import { formatCurrency, formatPercent } from "@/lib/utils";
 import { calculateTierPreview } from "@/lib/financial-engine";
+import { InfoTip } from "../info-tip";
 import type { TierFormState, TierPricingSnapshotSerialized } from "../tier-detail-client";
 
 interface PricingTabProps {
@@ -81,7 +82,7 @@ export function PricingTab({ form, updateForm, onBlurSave, pricingSnapshots }: P
           </div>
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-xs">Monthly Price</Label>
+              <Label className="text-xs">Monthly Price <InfoTip text="Base monthly subscription price charged to members each billing cycle." /></Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
                 <Input
@@ -96,7 +97,7 @@ export function PricingTab({ form, updateForm, onBlurSave, pricingSnapshots }: P
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center gap-2">
-                <Label className="text-xs">Quarterly/mo</Label>
+                <Label className="text-xs">Quarterly/mo <InfoTip text="Per-month price when billed quarterly. Members pay this amount x3 every 3 months." /></Label>
                 {monthlySavingsQ && (
                   <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 text-[10px] px-1.5 py-0">
                     Save {monthlySavingsQ}%
@@ -117,7 +118,7 @@ export function PricingTab({ form, updateForm, onBlurSave, pricingSnapshots }: P
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center gap-2">
-                <Label className="text-xs">Annual/mo</Label>
+                <Label className="text-xs">Annual/mo <InfoTip text="Per-month price when billed annually. Members pay this amount x12 once per year." /></Label>
                 {monthlySavingsA && (
                   <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 text-[10px] px-1.5 py-0">
                     Save {monthlySavingsA}%
@@ -147,7 +148,7 @@ export function PricingTab({ form, updateForm, onBlurSave, pricingSnapshots }: P
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-xs">Quarterly Display $/mo</Label>
+              <Label className="text-xs">Quarterly Display $/mo <InfoTip text="Optional display override for the pricing page. Use for strikethrough pricing effects." /></Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
                 <Input
@@ -162,7 +163,7 @@ export function PricingTab({ form, updateForm, onBlurSave, pricingSnapshots }: P
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Annual Display $/mo</Label>
+              <Label className="text-xs">Annual Display $/mo <InfoTip text="Optional display override for the pricing page. Use for strikethrough pricing effects." /></Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
                 <Input
@@ -184,7 +185,7 @@ export function PricingTab({ form, updateForm, onBlurSave, pricingSnapshots }: P
           <span className="text-xs font-semibold uppercase tracking-wider">Setup & Onboarding</span>
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-xs">Setup Fee</Label>
+              <Label className="text-xs">Setup Fee <InfoTip text="One-time fee charged when a member first subscribes to this plan." /></Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
                 <Input
@@ -198,7 +199,7 @@ export function PricingTab({ form, updateForm, onBlurSave, pricingSnapshots }: P
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Trial Days</Label>
+              <Label className="text-xs">Trial Days <InfoTip text="Number of free days before the first payment is collected. 0 = no trial period." /></Label>
               <Input
                 type="number"
                 value={form.trialDays}
@@ -208,7 +209,7 @@ export function PricingTab({ form, updateForm, onBlurSave, pricingSnapshots }: P
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Billing Anchor</Label>
+              <Label className="text-xs">Billing Anchor <InfoTip text="Signup Date: billing starts when they join. 1st of Month: all members billed on the 1st, prorated for the first cycle." /></Label>
               <Select
                 value={form.billingAnchor}
                 onValueChange={(val) => {

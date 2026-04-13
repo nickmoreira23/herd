@@ -47,7 +47,7 @@ export function CommunityCreateWizard({ allTiers }: CommunityCreateWizardProps) 
       <div className="flex items-center justify-between shrink-0 border-b py-3 px-4">
         <nav className="flex items-center gap-2 text-sm">
           <Link
-            href="/admin/community"
+            href="/admin/blocks/community"
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
             Community

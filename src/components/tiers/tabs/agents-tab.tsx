@@ -28,6 +28,7 @@ interface TierAccessRow {
 
 interface AgentsTabProps {
   tierId: string;
+  onBenefitSaved?: () => void;
 }
 
 const CATEGORY_ORDER = ["NUTRITION", "TRAINING", "RECOVERY", "COACHING", "ANALYTICS"];
@@ -46,7 +47,7 @@ interface AgentState {
   priorityAccess: boolean;
 }
 
-export function AgentsTab({ tierId }: AgentsTabProps) {
+export function AgentsTab({ tierId, onBenefitSaved }: AgentsTabProps) {
   const [allAgents, setAllAgents] = useState<AgentInfo[]>([]);
   const [assignments, setAssignments] = useState<Map<string, AgentState>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -109,12 +110,14 @@ export function AgentsTab({ tierId }: AgentsTabProps) {
         });
         if (!res.ok) {
           toast.error("Failed to save");
+        } else {
+          onBenefitSaved?.();
         }
       } catch {
         toast.error("Failed to save");
       }
     },
-    [tierId]
+    [tierId, onBenefitSaved]
   );
 
   const toggleAgent = useCallback(
@@ -278,7 +281,7 @@ export function AgentsTab({ tierId }: AgentsTabProps) {
         {allAgents.length === 0 && (
           <div className="text-sm text-muted-foreground text-center py-8">
             No agents configured yet. Add agents from the{" "}
-            <Link href="/admin/agents" className="text-brand underline">
+            <Link href="/admin/blocks/agents" className="text-brand underline">
               AI Agents
             </Link>{" "}
             page.

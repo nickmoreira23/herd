@@ -29,8 +29,8 @@ Statuses: DRAFT → ACTIVE (or ARCHIVED)
 - `src/components/community/community-presets.ts` — Preset templates
 
 ### Pages
-- `src/app/admin/community/page.tsx` — List
-- `src/app/admin/community/[id]/page.tsx` — Detail
+- `src/app/admin/blocks/community/page.tsx` — List
+- `src/app/admin/blocks/community/[id]/page.tsx` — Detail
 
 ### API Routes
 - `src/app/api/community/route.ts` — GET (list) + POST (create)

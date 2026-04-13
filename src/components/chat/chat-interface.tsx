@@ -4,10 +4,12 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { ChatMessage } from "./chat-message";
 import { ChatInput } from "./chat-input";
 import { ChatEmptyState } from "./chat-empty-state";
+import { ChatVoiceInterface } from "./chat-voice-interface";
 import { ModelSelector } from "./model-selector";
 import { Loader2 } from "lucide-react";
 import type { ArtifactMeta } from "@/lib/chat/types";
 import { ThinkingSteps, type ThinkingStep } from "./thinking-steps";
+import { ActivityFeed, type ActivityItem } from "@/components/agents/shared/activity-feed";
 
 interface Message {
   id: string;
@@ -17,6 +19,7 @@ interface Message {
   sources: Array<{ type: string; id: string; name: string }> | null;
   artifacts: ArtifactMeta[] | null;
   steps?: ThinkingStep[] | null;
+  activities?: ActivityItem[] | null;
   createdAt: string;
 }
 
@@ -48,9 +51,14 @@ export function ChatInterface({
   >([]);
   const [streamingArtifacts, setStreamingArtifacts] = useState<ArtifactMeta[]>([]);
   const [streamingSteps, setStreamingSteps] = useState<ThinkingStep[]>([]);
+  const [streamingActivities, setStreamingActivities] = useState<ActivityItem[]>([]);
   const [statusText, setStatusText] = useState<string | null>(null);
+  const [voiceMode, setVoiceMode] = useState(false);
+  const [ttsText, setTtsText] = useState<string | null>(null);
+  const [isPlayingTTS, setIsPlayingTTS] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // Load messages when conversation changes
   useEffect(() => {
@@ -88,6 +96,54 @@ export function ChatInterface({
     }
   }, [messages, streamingContent]);
 
+  // TTS playback when NOT in voice mode (voice mode handles its own TTS)
+  useEffect(() => {
+    if (!ttsText || voiceMode) return;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const res = await fetch("/api/foundation/voice/synthesize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: ttsText }),
+        });
+
+        if (!res.ok || cancelled) return;
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        ttsAudioRef.current = audio;
+
+        audio.onplay = () => setIsPlayingTTS(true);
+        audio.onended = () => {
+          setIsPlayingTTS(false);
+          URL.revokeObjectURL(url);
+          ttsAudioRef.current = null;
+        };
+        audio.onerror = () => {
+          setIsPlayingTTS(false);
+          URL.revokeObjectURL(url);
+          ttsAudioRef.current = null;
+        };
+
+        audio.play().catch(() => {});
+      } catch {
+        // TTS not available — silently degrade
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (ttsAudioRef.current) {
+        ttsAudioRef.current.pause();
+        ttsAudioRef.current = null;
+      }
+    };
+  }, [ttsText, voiceMode]);
+
   const handleSend = useCallback(
     async (content: string) => {
       let activeConversationId = conversationId;
@@ -101,7 +157,10 @@ export function ChatInterface({
             body: JSON.stringify({ model }),
           });
           const json = await res.json();
-          if (!json.data?.id) return;
+          if (!json.data?.id) {
+            console.error("Failed to create conversation — no ID returned:", json);
+            return;
+          }
           activeConversationId = json.data.id as string;
           onFirstMessage(activeConversationId);
         } catch (e) {
@@ -126,6 +185,7 @@ export function ChatInterface({
       setStreamingSources([]);
       setStreamingArtifacts([]);
       setStreamingSteps([]);
+      setStreamingActivities([]);
       setStatusText(null);
 
       const abortController = new AbortController();
@@ -155,6 +215,8 @@ export function ChatInterface({
         let sources: Array<{ type: string; id: string; name: string }> = [];
         let artifacts: ArtifactMeta[] = [];
         let steps: ThinkingStep[] = [];
+        let activities: ActivityItem[] = [];
+        let hadMutations = false;
 
         while (true) {
           const { done, value } = await reader.read();
@@ -206,6 +268,25 @@ export function ChatInterface({
                   setStatusText(data.text);
                 } else if (eventType === "title") {
                   onTitleUpdate(activeConversationId!, data.title);
+                } else if (eventType === "activity") {
+                  hadMutations = true;
+                  const activity: ActivityItem = {
+                    type: data.type as ActivityItem["type"],
+                    label: data.label as string,
+                  };
+                  activities = [...activities, activity];
+                  setStreamingActivities(activities);
+
+                  // Dispatch CustomEvent for live UI sync
+                  window.dispatchEvent(
+                    new CustomEvent("orchestrator:activity", {
+                      detail: {
+                        type: data.type,
+                        label: data.label,
+                        blockName: data.blockName,
+                      },
+                    })
+                  );
                 } else if (eventType === "error") {
                   accumulated += `\n\n⚠️ ${data.message}`;
                   setStreamingContent(accumulated);
@@ -226,9 +307,23 @@ export function ChatInterface({
           sources: sources.length > 0 ? sources : null,
           artifacts: artifacts.length > 0 ? artifacts : null,
           steps: steps.length > 0 ? steps : null,
+          activities: activities.length > 0 ? activities : null,
           createdAt: new Date().toISOString(),
         };
         setMessages((prev) => [...prev, assistantMessage]);
+
+        // Synthesize response as speech when voice mode is active
+        if (voiceMode && accumulated) {
+          console.log("[ChatInterface] Voice mode active, setting ttsText:", accumulated.slice(0, 80) + "...");
+          setTtsText(accumulated);
+        } else if (voiceMode) {
+          console.warn("[ChatInterface] Voice mode active but no accumulated text");
+        }
+
+        // Refresh server data if mutations occurred
+        if (hadMutations) {
+          window.dispatchEvent(new CustomEvent("orchestrator:mutations-complete"));
+        }
       } catch (e) {
         if ((e as Error).name !== "AbortError") {
           console.error("Streaming error:", e);
@@ -238,13 +333,33 @@ export function ChatInterface({
         setStreamingContent("");
         setStreamingSources([]);
         setStreamingArtifacts([]);
+        setStreamingActivities([]);
         // Don't clear steps - they persist to show what the agent did
         setStatusText(null);
         abortRef.current = null;
       }
     },
-    [conversationId, model, onFirstMessage, onTitleUpdate]
+    [conversationId, model, onFirstMessage, onTitleUpdate, voiceMode]
   );
+
+  // ─── Voice mode: full-screen voice interface ──────────────────
+  if (voiceMode) {
+    return (
+      <div className="flex flex-1 flex-col h-full">
+        <div className="flex items-center justify-between border-b px-4 py-2">
+          <span className="text-sm font-medium text-primary">Voice Mode</span>
+          <ModelSelector value={model} onChange={onModelChange} disabled={isStreaming} />
+        </div>
+        <ChatVoiceInterface
+          onSend={handleSend}
+          onExit={() => setVoiceMode(false)}
+          isStreaming={isStreaming}
+          ttsText={ttsText}
+          onPlayingTTSChange={setIsPlayingTTS}
+        />
+      </div>
+    );
+  }
 
   // No conversation selected and no messages — show empty state
   if (!conversationId && messages.length === 0) {
@@ -258,7 +373,13 @@ export function ChatInterface({
         </div>
         <ChatEmptyState onSendMessage={handleSend} />
         <div className="p-4 border-t">
-          <ChatInput onSend={handleSend} disabled={isStreaming} />
+          <ChatInput
+            onSend={handleSend}
+            disabled={isStreaming}
+            enableVoice
+            voiceMode={voiceMode}
+            onVoiceModeToggle={() => setVoiceMode(true)}
+          />
         </div>
       </div>
     );
@@ -290,6 +411,7 @@ export function ChatInterface({
                 sources={msg.sources}
                 artifacts={msg.artifacts}
                 steps={msg.steps}
+                activities={msg.activities}
                 onArtifactClick={onArtifactClick}
                 selectedArtifactId={selectedArtifactId}
               />
@@ -311,6 +433,11 @@ export function ChatInterface({
                 isStreaming
               />
             )}
+            {isStreaming && streamingActivities.length > 0 && (
+              <div className="py-2 pl-11">
+                <ActivityFeed items={streamingActivities} />
+              </div>
+            )}
             {isStreaming && !streamingContent && streamingSteps.length === 0 && (
               <div className="flex items-center gap-2 py-4 pl-11">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -324,7 +451,13 @@ export function ChatInterface({
       </div>
 
       <div className="p-4 border-t">
-        <ChatInput onSend={handleSend} disabled={isStreaming} />
+        <ChatInput
+          onSend={handleSend}
+          disabled={isStreaming}
+          enableVoice
+          voiceMode={voiceMode}
+          onVoiceModeToggle={() => setVoiceMode(true)}
+        />
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import { useState, useMemo } from "react";
 import type { ArtifactMeta } from "@/lib/chat/types";
 import { InlineArtifactCard } from "./artifacts/inline-artifact-card";
 import { ThinkingSteps, type ThinkingStep } from "./thinking-steps";
+import { ActivityFeed, type ActivityItem } from "@/components/agents/shared/activity-feed";
 
 interface Source {
   type: string;
@@ -19,6 +20,7 @@ interface ChatMessageProps {
   sources?: Source[] | null;
   artifacts?: ArtifactMeta[] | null;
   steps?: ThinkingStep[] | null;
+  activities?: ActivityItem[] | null;
   isStreaming?: boolean;
   onArtifactClick?: (artifact: ArtifactMeta) => void;
   selectedArtifactId?: string | null;
@@ -36,11 +38,12 @@ const sourceIcons: Record<string, typeof FileText> = {
   app_data: Activity,
 };
 
-export function ChatMessage({ role, content, sources, artifacts, steps, isStreaming, onArtifactClick, selectedArtifactId }: ChatMessageProps) {
+export function ChatMessage({ role, content, sources, artifacts, steps, activities, isStreaming, onArtifactClick, selectedArtifactId }: ChatMessageProps) {
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const isUser = role === "user";
   const hasArtifacts = artifacts && artifacts.length > 0;
   const hasSteps = steps && steps.length > 0;
+  const hasActivities = activities && activities.length > 0;
 
   // Build a map of artifacts by their full ID for inline lookup
   const artifactMap = useMemo(() => {
@@ -94,6 +97,11 @@ export function ChatMessage({ role, content, sources, artifacts, steps, isStream
             <span className="inline-block w-[2px] h-[1.1em] ml-0.5 -mb-[1px] bg-foreground animate-caret-blink" />
           )}
         </div>
+
+        {/* Activity feed for messages that triggered mutations */}
+        {hasActivities && !isStreaming && (
+          <ActivityFeed items={activities} />
+        )}
 
         {/* Fallback: old-style source badges for messages without artifacts */}
         {hasSourcesOnly && (

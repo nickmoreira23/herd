@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getValidAccessToken } from "@/lib/knowledge/token-refresh";
+import { getValidAccessToken } from "@/lib/apps/token-refresh";
 import { decrypt } from "@/lib/encryption";
 import { OuraService } from "@/lib/services/oura";
 import { WhoopService } from "@/lib/services/whoop";
 import { TerraService } from "@/lib/services/terra";
 import type { KnowledgeAppDataCategory } from "@prisma/client";
-import { transformDataPoint } from "@/lib/knowledge/data-transformer";
+import { transformDataPoint } from "@/lib/apps/data-transformer";
 
 /**
  * GET — Scheduled sync for all connected Knowledge Apps.

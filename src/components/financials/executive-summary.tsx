@@ -133,7 +133,7 @@ export function ExecutiveSummary() {
               icon={<Handshake className="h-3.5 w-3.5" />}
               label="Partner Kickbacks"
               detail={`${inputs.partnerKickbacks.length} active partners`}
-              href="/admin/brands"
+              href="/admin/blocks/partners"
               source="Brands page"
             />
           </div>
@@ -311,6 +311,11 @@ function ValidationPlaceholder({
 
   if (results.netMarginPercent < -50) {
     warnings.push("Net margin is deeply negative — review cost assumptions");
+  }
+
+  const profitSplitTotal = inputs.profitSplitParties?.reduce((s, p) => s + p.percent, 0) ?? 0;
+  if (inputs.profitSplitParties?.length > 0 && Math.abs(profitSplitTotal - 100) > 0.1) {
+    warnings.push(`Profit split percentages total ${profitSplitTotal}%, not 100%`);
   }
 
   const avgChurn = inputs.tiers.length > 0

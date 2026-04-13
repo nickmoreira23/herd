@@ -22,7 +22,13 @@ import {
   formatCurrency,
   formatPercent,
   getMarginColorClass,
+  getMarkupColorClass,
+  getContributionColorClass,
   toNumber,
+  calculateMarkup,
+  calculateLandedCost,
+  calculateTrueGrossMargin,
+  calculateContributionMargin,
 } from "@/lib/utils";
 import { InlineEditCell } from "./inline-edit-cell";
 
@@ -41,7 +47,6 @@ function getMatchingRules(
   product: Product,
   rules: RedemptionRuleInfo[]
 ): { tierName: string; redemptionType: string; discountPercent: number; scopeType: string }[] {
-  // Group rules by tierName + redemptionType
   const grouped = new Map<string, RedemptionRuleInfo[]>();
   for (const rule of rules) {
     const key = `${rule.tierName}::${rule.redemptionType}`;
@@ -52,7 +57,6 @@ function getMatchingRules(
   const matches: { tierName: string; redemptionType: string; discountPercent: number; scopeType: string }[] = [];
 
   for (const [, groupRules] of grouped) {
-    // Find the highest-priority match: SKU > SUB_CATEGORY > CATEGORY
     const skuMatch = groupRules.find(
       (r) => r.scopeType === "SKU" && r.scopeValue === product.sku
     );
@@ -109,10 +113,21 @@ function getMargin(cogs: number, memberPrice: number): number {
   return ((memberPrice - cogs) / memberPrice) * 100;
 }
 
+// ─── Helper: read new cost fields from Product row ──────────────────
+function getCostFields(row: Product) {
+  const p = row as Record<string, unknown>;
+  return {
+    shipping: toNumber((p.shippingCost as number) ?? 0),
+    handling: toNumber((p.handlingCost as number) ?? 0),
+    procPct: toNumber((p.paymentProcessingPct as number) ?? 0),
+    procFlat: toNumber((p.paymentProcessingFlat as number) ?? 0),
+    map: p.mapPrice != null ? toNumber(p.mapPrice as number) : null,
+  };
+}
+
 export function getProductColumns(actions: ColumnActions): ColumnDef<Product>[] {
   const { tiers, selectedTier, redemptionRules = [] } = actions;
 
-  // Sort tiers by discount to find min/max
   const sortedTiers = [...tiers].sort(
     (a, b) => a.discountPercent - b.discountPercent
   );
@@ -120,6 +135,9 @@ export function getProductColumns(actions: ColumnActions): ColumnDef<Product>[] 
   const highestDiscountTier = sortedTiers[sortedTiers.length - 1];
 
   return [
+    // ═══════════════════════════════════════════════════════════════
+    // BASIC COLUMNS (left side — casual users)
+    // ═══════════════════════════════════════════════════════════════
     {
       id: "select",
       header: ({ table }) => (
@@ -196,6 +214,19 @@ export function getProductColumns(actions: ColumnActions): ColumnDef<Product>[] 
       ),
     },
     {
+      id: "brand",
+      header: () => <span className="text-xs">Brand</span>,
+      accessorFn: (row) => (row as Record<string, unknown>).brand || "",
+      cell: ({ row }) => {
+        const brand = (row.original as Record<string, unknown>).brand as string | null;
+        return brand ? (
+          <span className="text-sm">{brand}</span>
+        ) : (
+          <span className="text-sm text-muted-foreground">—</span>
+        );
+      },
+    },
+    {
       accessorKey: "category",
       header: () => <span className="text-xs">Category</span>,
       cell: ({ row }) => (
@@ -216,6 +247,24 @@ export function getProductColumns(actions: ColumnActions): ColumnDef<Product>[] 
       },
     },
     {
+      accessorKey: "isActive",
+      header: () => <span className="text-xs">Status</span>,
+      cell: ({ row }) => (
+        <button
+          onClick={() => actions.onToggleActive(row.original)}
+          className="cursor-pointer"
+        >
+          <Badge variant={row.original.isActive ? "default" : "secondary"} className="text-sm font-normal">
+            {row.original.isActive ? "Active" : "Inactive"}
+          </Badge>
+        </button>
+      ),
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // STANDARD PRICING (middle)
+    // ═══════════════════════════════════════════════════════════════
+    {
       accessorKey: "retailPrice",
       header: ({ column }) => (
         <button
@@ -234,6 +283,213 @@ export function getProductColumns(actions: ColumnActions): ColumnDef<Product>[] 
         />
       ),
     },
+    {
+      accessorKey: "costOfGoods",
+      header: () => <span className="text-xs">COGS</span>,
+      cell: ({ row }) => (
+        <InlineEditCell
+          value={toNumber(row.original.costOfGoods)}
+          onSave={(val) => actions.onInlineUpdate(row.original.id, "costOfGoods", val)}
+          formatter={formatCurrency}
+        />
+      ),
+    },
+    {
+      id: "grossMarginRetail",
+      header: ({ column }) => (
+        <button
+          className="inline-flex items-center gap-1 text-xs font-medium hover:text-foreground/80"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Gross Margin
+          <ArrowUpDown className="h-3 w-3" />
+        </button>
+      ),
+      accessorFn: (row) => {
+        const retail = toNumber(row.retailPrice);
+        const cogs = toNumber(row.costOfGoods);
+        if (retail <= 0) return 0;
+        return ((retail - cogs) / retail) * 100;
+      },
+      cell: ({ row }) => {
+        const retail = toNumber(row.original.retailPrice);
+        const cogs = toNumber(row.original.costOfGoods);
+        const margin = retail > 0 ? ((retail - cogs) / retail) * 100 : 0;
+        return (
+          <Badge className={`${getMarginColorClass(margin)} text-sm font-normal`} variant="outline">
+            {formatPercent(margin)}
+          </Badge>
+        );
+      },
+    },
+    {
+      id: "markup",
+      header: ({ column }) => (
+        <button
+          className="inline-flex items-center gap-1 text-xs font-medium hover:text-foreground/80"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Markup
+          <ArrowUpDown className="h-3 w-3" />
+        </button>
+      ),
+      accessorFn: (row) => calculateMarkup(row.costOfGoods, row.retailPrice),
+      cell: ({ row }) => {
+        const markup = calculateMarkup(row.original.costOfGoods, row.original.retailPrice);
+        return (
+          <Badge className={`${getMarkupColorClass(markup)} text-sm font-normal`} variant="outline">
+            {formatPercent(markup)}
+          </Badge>
+        );
+      },
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // ADVANCED FINANCIAL (scroll right — CFO/co-founder view)
+    // ═══════════════════════════════════════════════════════════════
+    {
+      id: "shippingCost",
+      header: () => <span className="text-xs">Shipping</span>,
+      accessorFn: (row) => getCostFields(row).shipping,
+      cell: ({ row }) => {
+        const { shipping } = getCostFields(row.original);
+        return (
+          <InlineEditCell
+            value={shipping}
+            onSave={(val) => actions.onInlineUpdate(row.original.id, "shippingCost", val)}
+            formatter={formatCurrency}
+          />
+        );
+      },
+    },
+    {
+      id: "handlingCost",
+      header: () => <span className="text-xs">Handling</span>,
+      accessorFn: (row) => getCostFields(row).handling,
+      cell: ({ row }) => {
+        const { handling } = getCostFields(row.original);
+        return (
+          <InlineEditCell
+            value={handling}
+            onSave={(val) => actions.onInlineUpdate(row.original.id, "handlingCost", val)}
+            formatter={formatCurrency}
+          />
+        );
+      },
+    },
+    {
+      id: "landedCost",
+      header: ({ column }) => (
+        <button
+          className="inline-flex items-center gap-1 text-xs font-medium hover:text-foreground/80"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Landed Cost
+          <ArrowUpDown className="h-3 w-3" />
+        </button>
+      ),
+      accessorFn: (row) => {
+        const { shipping, handling } = getCostFields(row);
+        return calculateLandedCost(row.costOfGoods, shipping, handling);
+      },
+      cell: ({ row }) => {
+        const { shipping, handling } = getCostFields(row.original);
+        const landed = calculateLandedCost(row.original.costOfGoods, shipping, handling);
+        const isCogsOnly = shipping === 0 && handling === 0;
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger className="cursor-default">
+                <span className="text-sm tabular-nums">
+                  {formatCurrency(landed)}
+                  {isCogsOnly && (
+                    <span className="text-[10px] text-muted-foreground ml-1">*</span>
+                  )}
+                </span>
+              </TooltipTrigger>
+              {isCogsOnly && (
+                <TooltipContent side="top" className="text-xs">
+                  COGS only — no shipping or handling costs entered
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
+        );
+      },
+    },
+    {
+      id: "trueGrossMargin",
+      header: ({ column }) => (
+        <button
+          className="inline-flex items-center gap-1 text-xs font-medium hover:text-foreground/80"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          True Gross Margin
+          <ArrowUpDown className="h-3 w-3" />
+        </button>
+      ),
+      accessorFn: (row) => {
+        const { shipping, handling } = getCostFields(row);
+        const landed = calculateLandedCost(row.costOfGoods, shipping, handling);
+        return calculateTrueGrossMargin(row.retailPrice, landed);
+      },
+      cell: ({ row }) => {
+        const { shipping, handling } = getCostFields(row.original);
+        const landed = calculateLandedCost(row.original.costOfGoods, shipping, handling);
+        const margin = calculateTrueGrossMargin(row.original.retailPrice, landed);
+        return (
+          <Badge className={`${getMarginColorClass(margin)} text-sm font-normal`} variant="outline">
+            {formatPercent(margin)}
+          </Badge>
+        );
+      },
+    },
+    {
+      id: "contributionMargin",
+      header: ({ column }) => (
+        <button
+          className="inline-flex items-center gap-1 text-xs font-medium hover:text-foreground/80"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Contribution $
+          <ArrowUpDown className="h-3 w-3" />
+        </button>
+      ),
+      accessorFn: (row) => {
+        const { shipping, handling, procPct, procFlat } = getCostFields(row);
+        return calculateContributionMargin(
+          row.retailPrice, row.costOfGoods, shipping, handling, procPct, procFlat
+        );
+      },
+      cell: ({ row }) => {
+        const { shipping, handling, procPct, procFlat } = getCostFields(row.original);
+        const contrib = calculateContributionMargin(
+          row.original.retailPrice, row.original.costOfGoods, shipping, handling, procPct, procFlat
+        );
+        return (
+          <Badge className={`${getContributionColorClass(contrib)} text-sm font-normal`} variant="outline">
+            {formatCurrency(contrib)}
+          </Badge>
+        );
+      },
+    },
+    {
+      id: "mapPrice",
+      header: () => <span className="text-xs">MAP Price</span>,
+      accessorFn: (row) => getCostFields(row).map ?? 0,
+      cell: ({ row }) => {
+        const { map } = getCostFields(row.original);
+        return map != null ? (
+          <span className="text-sm tabular-nums">{formatCurrency(map)}</span>
+        ) : (
+          <span className="text-sm text-muted-foreground">—</span>
+        );
+      },
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // MEMBER PRICING (far right)
+    // ═══════════════════════════════════════════════════════════════
     {
       accessorKey: "redemptionType",
       header: () => <span className="text-xs">Redemption Type</span>,
@@ -261,7 +517,6 @@ export function getProductColumns(actions: ColumnActions): ColumnDef<Product>[] 
       },
       cell: () => {
         if (selectedTier) {
-          // Single tier — show exact discount
           return (
             <span className="text-sm tabular-nums">
               {selectedTier.discountPercent > 0
@@ -271,7 +526,6 @@ export function getProductColumns(actions: ColumnActions): ColumnDef<Product>[] 
           );
         }
 
-        // All tiers — show range
         if (tiers.length > 0 && lowestDiscountTier && highestDiscountTier) {
           const low = lowestDiscountTier.discountPercent;
           const high = highestDiscountTier.discountPercent;
@@ -322,7 +576,6 @@ export function getProductColumns(actions: ColumnActions): ColumnDef<Product>[] 
           );
         }
 
-        // All tiers — show range
         if (tiers.length > 0 && lowestDiscountTier && highestDiscountTier) {
           const highPrice = getMemberPrice(
             retail,
@@ -356,24 +609,13 @@ export function getProductColumns(actions: ColumnActions): ColumnDef<Product>[] 
       },
     },
     {
-      accessorKey: "costOfGoods",
-      header: () => <span className="text-xs">COGS</span>,
-      cell: ({ row }) => (
-        <InlineEditCell
-          value={toNumber(row.original.costOfGoods)}
-          onSave={(val) => actions.onInlineUpdate(row.original.id, "costOfGoods", val)}
-          formatter={formatCurrency}
-        />
-      ),
-    },
-    {
-      id: "margin",
+      id: "memberMargin",
       header: ({ column }) => (
         <button
           className="inline-flex items-center gap-1 text-xs font-medium hover:text-foreground/80"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Margin
+          Member Margin
           <ArrowUpDown className="h-3 w-3" />
         </button>
       ),
@@ -402,7 +644,6 @@ export function getProductColumns(actions: ColumnActions): ColumnDef<Product>[] 
           );
         }
 
-        // All tiers — show range
         if (tiers.length > 0 && lowestDiscountTier && highestDiscountTier) {
           const highPrice = getMemberPrice(
             retail,
@@ -508,20 +749,6 @@ export function getProductColumns(actions: ColumnActions): ColumnDef<Product>[] 
           } as ColumnDef<Product>,
         ]
       : []),
-    {
-      accessorKey: "isActive",
-      header: () => <span className="text-xs">Status</span>,
-      cell: ({ row }) => (
-        <button
-          onClick={() => actions.onToggleActive(row.original)}
-          className="cursor-pointer"
-        >
-          <Badge variant={row.original.isActive ? "default" : "secondary"} className="text-sm font-normal">
-            {row.original.isActive ? "Active" : "Inactive"}
-          </Badge>
-        </button>
-      ),
-    },
     {
       id: "actions",
       cell: ({ row }) => (

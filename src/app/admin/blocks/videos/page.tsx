@@ -1,0 +1,39 @@
+import { prisma } from "@/lib/prisma";
+import { VideosListClient } from "@/components/videos/videos-list-client";
+import { connection } from "next/server";
+
+export default async function VideosPage() {
+  await connection();
+  const [videos, folders] = await Promise.all([
+    prisma.knowledgeVideo.findMany({
+      orderBy: { uploadedAt: "desc" },
+    }),
+    prisma.knowledgeFolder.findMany({
+      where: { folderType: "VIDEO" },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      include: {
+        _count: { select: { documents: true, images: true, videos: true, audios: true, children: true } },
+      },
+    }),
+  ]);
+
+  const serializedVideos = videos.map((v) => ({
+    ...v,
+    uploadedAt: v.uploadedAt.toISOString(),
+    processedAt: v.processedAt?.toISOString() ?? null,
+    updatedAt: undefined,
+  }));
+
+  const serializedFolders = folders.map((f) => ({
+    ...f,
+    createdAt: f.createdAt.toISOString(),
+    updatedAt: undefined,
+  }));
+
+  return (
+    <VideosListClient
+      initialVideos={serializedVideos}
+      initialFolders={serializedFolders}
+    />
+  );
+}

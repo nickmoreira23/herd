@@ -209,7 +209,7 @@ export function CommunityDetailClient({
         }
         const json = await res.json();
         toast.success("Benefit created");
-        router.push(`/admin/community/${json.data.id}`);
+        router.push(`/admin/blocks/community/${json.data.id}`);
       } finally {
         setSaving(false);
       }
@@ -264,7 +264,7 @@ export function CommunityDetailClient({
       toast.success("Benefit duplicated");
       setDuplicateOpen(false);
       setDuplicateName("");
-      router.push(`/admin/community/${newBenefit.data.id}`);
+      router.push(`/admin/blocks/community/${newBenefit.data.id}`);
     } catch {
       toast.error("Something went wrong");
     } finally {
@@ -284,7 +284,7 @@ export function CommunityDetailClient({
       }
       toast.success("Benefit deleted");
       setDeleteOpen(false);
-      router.push("/admin/community");
+      router.push("/admin/blocks/community");
       router.refresh();
     } catch {
       toast.error("Something went wrong");
@@ -320,7 +320,7 @@ export function CommunityDetailClient({
       <div className="flex items-center justify-between shrink-0 border-b py-3 px-4">
         <nav className="flex items-center gap-2 text-sm">
           <Link
-            href="/admin/community"
+            href="/admin/blocks/community"
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
             Community Benefits

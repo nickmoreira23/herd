@@ -1,4 +1,5 @@
 import { actionToBlock } from "../blocks/registry";
+import { toolActionToSolution } from "../solutions/registry";
 
 // ─── Types ─────────────────────────────────────────────────────────
 
@@ -46,17 +47,78 @@ export async function executeAction(
   params: Record<string, unknown>,
   userId: string
 ): Promise<ActionResult> {
+  // Check block actions first
   const entry = actionToBlock.get(actionName);
+
+  // Check solution tool actions if not a block action
   if (!entry) {
+    const toolEntry = toolActionToSolution.get(actionName);
+    if (!toolEntry) {
+      return {
+        success: false,
+        action: actionName,
+        block: "unknown",
+        error: `Unknown action: "${actionName}". Check the available actions list.`,
+      };
+    }
+
+    const { solution, action: toolAction } = toolEntry;
+
+    // If the tool action composes block actions, execute them in sequence
+    if (toolAction.blockActions && toolAction.blockActions.length > 0) {
+      const results: ActionResult[] = [];
+      for (const blockActionName of toolAction.blockActions) {
+        const result = await executeAction(blockActionName, params, userId);
+        results.push(result);
+        if (!result.success) break;
+      }
+      return {
+        success: results.every((r) => r.success),
+        action: actionName,
+        block: solution.name,
+        data: results.length === 1 ? results[0].data : results.map((r) => r.data),
+        error: results.find((r) => !r.success)?.error,
+      };
+    }
+
+    // If the tool action has its own endpoint, handle it like a block action
+    if (toolAction.endpoint && toolAction.method) {
+      // Reuse the same execution logic below by creating a compatible entry
+      const syntheticBlock = { name: solution.name } as const;
+      const syntheticAction = {
+        endpoint: toolAction.endpoint,
+        method: toolAction.method,
+        name: toolAction.name,
+        description: toolAction.description,
+        parametersSchema: toolAction.parametersSchema,
+        responseDescription: toolAction.responseDescription,
+      };
+      // Fall through to the standard execution path
+      return executeBlockAction(actionName, syntheticBlock.name, syntheticAction, params, userId);
+    }
+
     return {
       success: false,
       action: actionName,
-      block: "unknown",
-      error: `Unknown action: "${actionName}". Check the available actions list.`,
+      block: solution.name,
+      error: `Tool action "${actionName}" has no endpoint or block actions configured.`,
     };
   }
 
   const { block, action } = entry;
+  return executeBlockAction(actionName, block.name, action, params, userId);
+}
+
+/**
+ * Executes a single action by routing to an API endpoint.
+ */
+async function executeBlockAction(
+  actionName: string,
+  blockName: string,
+  action: { endpoint: string; method: string },
+  params: Record<string, unknown>,
+  userId: string
+): Promise<ActionResult> {
 
   // Build the URL, replacing path params like {id}
   let path = action.endpoint;
@@ -120,7 +182,7 @@ export async function executeAction(
       return {
         success: false,
         action: actionName,
-        block: block.name,
+        block: blockName,
         error:
           (json.error as string) ||
           `HTTP ${response.status}: ${response.statusText}`,
@@ -130,14 +192,14 @@ export async function executeAction(
     return {
       success: true,
       action: actionName,
-      block: block.name,
+      block: blockName,
       data: json.data ?? json,
     };
   } catch (err) {
     return {
       success: false,
       action: actionName,
-      block: block.name,
+      block: blockName,
       error: err instanceof Error ? err.message : "Unknown error during action execution",
     };
   }

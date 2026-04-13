@@ -12,7 +12,7 @@ export const agentsBlock: BlockManifest = {
   dependencies: ["tiers", "knowledge"],
   paths: {
     components: "src/components/agents/",
-    pages: "src/app/admin/agents/",
+    pages: "src/app/admin/blocks/agents/",
     api: "src/app/api/agents/",
     validators: "src/lib/validators/agent.ts",
     provider: "src/lib/chat/providers/agent.provider.ts",

@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import { KnowledgeTableView } from "@/components/knowledge/tables/knowledge-table-view";
+import { TableView } from "@/components/tables/table-view";
 import { connection } from "next/server";
 
 export default async function KnowledgeTableDetailPage({
@@ -51,7 +51,7 @@ export default async function KnowledgeTableDetailPage({
   }));
 
   return (
-    <KnowledgeTableView
+    <TableView
       table={serializedTable}
       initialFields={serializedFields}
       initialRecords={serializedRecords}

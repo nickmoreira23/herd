@@ -26,9 +26,10 @@ interface Partner {
 
 interface PartnersTabProps {
   tierId: string;
+  onBenefitSaved?: () => void;
 }
 
-export function PartnersTab({ tierId }: PartnersTabProps) {
+export function PartnersTab({ tierId, onBenefitSaved }: PartnersTabProps) {
   const [partners, setPartners] = useState<Partner[]>([]);
   const [assignments, setAssignments] = useState<PartnerAssignment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,6 +71,7 @@ export function PartnersTab({ tierId }: PartnersTabProps) {
         if (res.ok) {
           await fetchData();
           toast.success("Partner assigned");
+          onBenefitSaved?.();
         }
       } else {
         // Find and delete assignment
@@ -81,6 +83,7 @@ export function PartnersTab({ tierId }: PartnersTabProps) {
           if (res.ok) {
             await fetchData();
             toast.success("Partner removed");
+            onBenefitSaved?.();
           }
         }
       }
@@ -100,9 +103,10 @@ export function PartnersTab({ tierId }: PartnersTabProps) {
           prev.map((a) => (a.id === assignmentId ? { ...a, discountPercent } : a))
         );
         toast.success("Discount updated");
+        onBenefitSaved?.();
       }
     },
-    []
+    [onBenefitSaved]
   );
 
   if (loading) {

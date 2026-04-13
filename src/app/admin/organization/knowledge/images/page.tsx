@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { KnowledgeImageTable } from "@/components/knowledge/images/knowledge-image-table";
+import { ImageTable } from "@/components/images/image-table";
 import { KnowledgeImagesEmpty } from "@/components/knowledge/images/knowledge-images-empty";
 import { connection } from "next/server";
 
@@ -36,7 +36,7 @@ export default async function KnowledgeImagesPage() {
   }
 
   return (
-    <KnowledgeImageTable
+    <ImageTable
       initialImages={serializedImages}
       initialFolders={serializedFolders}
     />

@@ -63,6 +63,8 @@ export const createTierSchema = z.object({
   pauseAllowed: z.boolean().optional(),
   pauseMaxMonths: z.coerce.number().int().nonnegative().optional(),
   pauseCreditBehavior: z.enum(["FROZEN", "FORFEIT"]).optional(),
+  cancelCreditBehavior: z.enum(["FORFEIT", "GRACE_PERIOD", "KEEP_FOREVER"]).optional(),
+  cancelCreditGraceDays: z.coerce.number().int().nonnegative().optional(),
   winbackDays: z.coerce.number().int().nonnegative().optional(),
   winbackBonusCredits: z.coerce.number().nonnegative().optional(),
   exitSurveyRequired: z.boolean().optional(),
