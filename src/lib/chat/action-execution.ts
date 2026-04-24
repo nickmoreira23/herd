@@ -179,13 +179,17 @@ async function executeBlockAction(
     }
 
     if (!response.ok) {
+      const baseError =
+        (json.error as string) ||
+        `HTTP ${response.status}: ${response.statusText}`;
+      const details = json.details
+        ? ` — ${JSON.stringify(json.details)}`
+        : "";
       return {
         success: false,
         action: actionName,
         block: blockName,
-        error:
-          (json.error as string) ||
-          `HTTP ${response.status}: ${response.statusText}`,
+        error: `${baseError}${details}`,
       };
     }
 

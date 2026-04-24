@@ -145,6 +145,7 @@ function productToForm(product: Product): ProductFormState {
 }
 
 function formToPayload(form: ProductFormState) {
+  const memberPriceNum = parseFloat(form.memberPrice);
   return {
     name: form.name,
     sku: form.sku,
@@ -152,7 +153,7 @@ function formToPayload(form: ProductFormState) {
     subCategory: form.subCategory || undefined,
     redemptionType: form.redemptionType,
     retailPrice: parseFloat(form.retailPrice) || 0,
-    memberPrice: parseFloat(form.memberPrice) || 0,
+    memberPrice: memberPriceNum > 0 ? memberPriceNum : undefined,
     costOfGoods: parseFloat(form.costOfGoods) || 0,
     shippingCost: parseFloat(form.shippingCost) || 0,
     handlingCost: parseFloat(form.handlingCost) || 0,
@@ -300,6 +301,9 @@ export function ProductDetailClient({
     ? calculateContributionMargin(retailNum, costNum, shippingNum, handlingNum, procPctNum, procFlatNum)
     : 0;
 
+  const retailNumValid = parseFloat(form.retailPrice) > 0;
+  const canCreate = form.name.trim().length > 0 && form.sku.trim().length > 0 && retailNumValid;
+
   const handleSave = useCallback(async () => {
     if (!form.name.trim()) return;
 
@@ -307,6 +311,10 @@ export function ProductDetailClient({
     if (!productId) {
       if (!form.sku.trim()) {
         toast.error("SKU is required");
+        return;
+      }
+      if (!(parseFloat(form.retailPrice) > 0)) {
+        toast.error("Retail price is required");
         return;
       }
       setSaving(true);
@@ -323,7 +331,8 @@ export function ProductDetailClient({
         }
         const json = await res.json();
         toast.success("Product created");
-        router.push(`/admin/blocks/products/${json.data.id}`);
+        router.replace(`/admin/blocks/products/${json.data.id}`);
+        router.refresh();
       } finally {
         setSaving(false);
       }
@@ -535,7 +544,7 @@ export function ProductDetailClient({
             size="sm"
             className="bg-[#C5F135] text-black hover:bg-[#C5F135]/90"
             onClick={handleSave}
-            disabled={saving || (!isDirty && !!productId)}
+            disabled={saving || (!isDirty && !!productId) || (!productId && !canCreate)}
           >
             {saving ? (
               <>
@@ -592,7 +601,9 @@ export function ProductDetailClient({
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="product-name">Name</Label>
+                  <Label htmlFor="product-name">
+                    Name <span className="text-red-500">*</span>
+                  </Label>
                   <Input
                     id="product-name"
                     value={form.name}
@@ -698,7 +709,9 @@ export function ProductDetailClient({
               {/* Row 1: Retail / Member / COGS */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 <div>
-                  <Label htmlFor="product-retail">Retail Price</Label>
+                  <Label htmlFor="product-retail">
+                    Retail Price <span className="text-red-500">*</span>
+                  </Label>
                   <InputGroup className="mt-2">
                     <InputGroupAddon align="inline-start">$</InputGroupAddon>
                     <InputGroupInput

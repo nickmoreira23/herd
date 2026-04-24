@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { Product } from "@/types";
 import { getProductColumns } from "./product-columns";
@@ -79,6 +79,10 @@ export function ProductsListClient({
 }: ProductsListClientProps) {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>(initialProducts);
+
+  useEffect(() => {
+    setProducts(initialProducts);
+  }, [initialProducts]);
   const [showImport, setShowImport] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [showUrlImport, setShowUrlImport] = useState(false);

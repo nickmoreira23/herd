@@ -1,9 +1,14 @@
 import { z } from "zod";
 
+const categoryEnum = z.preprocess(
+  (v) => (typeof v === "string" ? v.toUpperCase() : v),
+  z.enum(["SUPPLEMENT", "APPAREL", "ACCESSORY"]),
+);
+
 export const createProductSchema = z.object({
   name: z.string().min(1, "Name is required"),
   sku: z.string().min(1, "SKU is required"),
-  category: z.enum(["SUPPLEMENT", "APPAREL", "ACCESSORY"]),
+  category: categoryEnum,
   subCategory: z.string().optional(),
   redemptionType: z.enum(["Members Store", "Members Rate"]).optional(),
   retailPrice: z.coerce.number().positive("Retail price must be positive"),
@@ -38,7 +43,7 @@ export const updateProductSchema = createProductSchema.partial();
 export const bulkImportRowSchema = z.object({
   name: z.string().min(1),
   sku: z.string().min(1),
-  category: z.enum(["SUPPLEMENT", "APPAREL", "ACCESSORY"]),
+  category: categoryEnum,
   subCategory: z.string().optional(),
   redemptionType: z.enum(["Members Store", "Members Rate"]).optional(),
   retailPrice: z.coerce.number().positive(),

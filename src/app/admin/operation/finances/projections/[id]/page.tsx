@@ -27,6 +27,7 @@ export default async function EditProjectionPage({
       tierData={defaults.tierData}
       commissionData={defaults.commissionData}
       salesRepData={defaults.salesRepData}
+      samplerData={defaults.samplerData}
       partnerData={defaults.partnerData}
       overheadData={defaults.overheadData}
       opexData={defaults.opexData}

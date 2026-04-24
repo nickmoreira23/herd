@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { toNumber } from "@/lib/utils";
 import type {
@@ -52,13 +53,13 @@ export interface TierDisplayMeta {
 
 // ─── Main data fetcher ──────────────────────────────────────────────
 
-export async function getFinancialDefaults() {
+// React.cache deduplicates calls within a single render tree (e.g. both the
+// snapshot page AND a parallel segment calling this get one set of DB queries).
+export const getFinancialDefaults = cache(async function getFinancialDefaults() {
   const [
     tiers,
     // New commission plan system (preferred)
     commissionPlan,
-    // Legacy commission structure (fallback)
-    legacyCommissionStructure,
     partners,
     opexCategories,
     products,
@@ -72,10 +73,7 @@ export async function getFinancialDefaults() {
         performanceTiers: { orderBy: { sortOrder: "asc" } },
       },
     }),
-    prisma.commissionStructure.findFirst({
-      where: { isActive: true },
-      include: { tierRates: true },
-    }),
+    // legacyCommissionStructure removed — it was fetched but never used
     prisma.partnerBrand.findMany({
       where: { isActive: true, kickbackType: { not: "NONE" } },
     }),
@@ -94,6 +92,13 @@ export async function getFinancialDefaults() {
     }),
     prisma.product.findMany({
       where: { isActive: true },
+      select: {
+        id: true,
+        memberPrice: true,
+        costOfGoods: true,
+        handlingCost: true,
+        shippingCost: true,
+      },
     }),
   ]);
 
@@ -336,4 +341,4 @@ export async function getFinancialDefaults() {
     dataSourceMeta,
     tierDisplayMeta,
   };
-}
+});

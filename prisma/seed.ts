@@ -895,6 +895,43 @@ async function main() {
   }
   console.log(`  Upserted ${agentSeedData.length} agents`);
 
+  // Block agents — admin-facing, scoped to a single block's CRUD surface
+  const blockAgentSeedData = [
+    {
+      key: "block-products",
+      name: "Products Agent",
+      description: "Manage the product catalog via natural language — create, update, delete, and bulk-edit products.",
+      category: "ANALYTICS" as const,
+      icon: "package",
+      sortOrder: 100,
+      status: "ACTIVE" as const,
+      role: "BLOCK" as const,
+      scope: "products",
+      isConversational: true,
+      isSystem: true,
+    },
+  ];
+
+  for (const agent of blockAgentSeedData) {
+    await prisma.agent.upsert({
+      where: { key: agent.key },
+      update: {
+        name: agent.name,
+        description: agent.description,
+        category: agent.category,
+        icon: agent.icon,
+        sortOrder: agent.sortOrder,
+        status: agent.status,
+        role: agent.role,
+        scope: agent.scope,
+        isConversational: agent.isConversational,
+        isSystem: agent.isSystem,
+      },
+      create: agent,
+    });
+  }
+  console.log(`  Upserted ${blockAgentSeedData.length} block agents`);
+
   // Create AgentTierAccess rows matching the intended tier→agent mapping
   console.log("Seeding agent-tier assignments...");
 

@@ -6,6 +6,7 @@ export default async function NewProjectionPage() {
     tierData,
     commissionData,
     salesRepData,
+    samplerData,
     partnerData,
     overheadData,
     opexData,
@@ -22,6 +23,7 @@ export default async function NewProjectionPage() {
       tierData={tierData}
       commissionData={commissionData}
       salesRepData={salesRepData}
+      samplerData={samplerData}
       partnerData={partnerData}
       overheadData={overheadData}
       opexData={opexData}

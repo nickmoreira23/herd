@@ -8,6 +8,7 @@ import type {
   PartnerKickbackInput,
   CommissionCalcInput,
   SalesRepChannel,
+  SamplerChannel,
   FinancialInputs,
   OperationalOverhead,
   FullyLoadedCommissionInput,
@@ -106,6 +107,7 @@ interface FinancialPageClientProps {
   tierData: TierFinancialInput[];
   commissionData: CommissionCalcInput;
   salesRepData: SalesRepChannel;
+  samplerData?: SamplerChannel;
   partnerData: PartnerKickbackInput[];
   overheadData: OperationalOverhead;
   opexData: OpexCategoryData[];
@@ -129,6 +131,7 @@ export function FinancialPageClient({
   tierData,
   commissionData,
   salesRepData,
+  samplerData,
   partnerData,
   overheadData,
   opexData,
@@ -188,6 +191,7 @@ export function FinancialPageClient({
         tiers: tierData,
         commissionStructure: commissionData,
         salesRepChannel: salesRepData,
+        ...(samplerData != null && { samplerChannel: samplerData }),
         partnerKickbacks: partnerData,
         operationalOverhead: overheadData,
         // Apply product-derived COGS if available
@@ -204,7 +208,7 @@ export function FinancialPageClient({
       return;
     }
     if (!results) {
-      toast.error("No results to save");
+      toast.error("No results to save — run the scenario first");
       return;
     }
     setSaving(true);
@@ -222,8 +226,8 @@ export function FinancialPageClient({
         }),
       });
       if (!res.ok) {
-        const json = await res.json();
-        toast.error(json.error || "Failed to save");
+        const json = await res.json().catch(() => ({}));
+        toast.error(json.error || `Failed to save (${res.status})`);
         return;
       }
       const json = await res.json();
@@ -240,6 +244,8 @@ export function FinancialPageClient({
           router.push("/admin/operation/finances/projections");
         }
       }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save — check your connection");
     } finally {
       setSaving(false);
     }
