@@ -64,6 +64,11 @@ export function TierProductEditor({
       memberPrice: number;
       imageUrl: string | null;
       retailPrice: number;
+      costOfGoods: number;
+      shippingCost: number;
+      handlingCost: number;
+      paymentProcessingPct: number;
+      paymentProcessingFlat: number;
     },
     creditCost: number
   ) {
@@ -78,6 +83,11 @@ export function TierProductEditor({
       retailPrice: product.retailPrice,
       quantity: 1,
       creditCost,
+      costOfGoods: product.costOfGoods,
+      shippingCost: product.shippingCost,
+      handlingCost: product.handlingCost,
+      paymentProcessingPct: product.paymentProcessingPct,
+      paymentProcessingFlat: product.paymentProcessingFlat,
     };
     addProduct(tier.id, localProduct);
   }

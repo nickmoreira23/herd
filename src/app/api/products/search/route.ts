@@ -34,6 +34,10 @@ export async function GET(request: NextRequest) {
         retailPrice: true,
         costOfGoods: true,
         memberPrice: true,
+        shippingCost: true,
+        handlingCost: true,
+        paymentProcessingPct: true,
+        paymentProcessingFlat: true,
         redemptionType: true,
         imageUrl: true,
       },
@@ -47,6 +51,10 @@ export async function GET(request: NextRequest) {
       retailPrice: Number(p.retailPrice),
       costOfGoods: Number(p.costOfGoods),
       memberPrice: Number(p.memberPrice),
+      shippingCost: Number(p.shippingCost),
+      handlingCost: Number(p.handlingCost),
+      paymentProcessingPct: Number(p.paymentProcessingPct),
+      paymentProcessingFlat: Number(p.paymentProcessingFlat),
     }));
 
     return apiSuccess(serialized);

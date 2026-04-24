@@ -18,6 +18,10 @@ import {
 import { toast } from "sonner";
 import { CreditBudgetBar } from "../credit-budget-bar";
 import { usePackageWizardStore } from "@/stores/package-wizard-store";
+import {
+  computeTierFinancials,
+  formatCurrency,
+} from "@/lib/package-financials";
 
 const GOAL_LABELS: Record<string, string> = {
   WEIGHT_LOSS: "Weight Loss",
@@ -61,7 +65,6 @@ export function StepReview({ onBack, goToStep }: StepReviewProps) {
     isSubmitting,
     setIsSubmitting,
     setActiveTier,
-    reset,
   } = usePackageWizardStore();
 
   const [expandedTiers, setExpandedTiers] = useState<Set<string>>(new Set());
@@ -82,6 +85,13 @@ export function StepReview({ onBack, goToStep }: StepReviewProps) {
           return sum + (t.monthlyCredits > 0 ? (used / t.monthlyCredits) * 100 : 0);
         }, 0) / tiers.length
       : 0;
+
+  const tierFinancials = tiers.map((t) => ({
+    tierId: t.id,
+    tierName: t.name,
+    fin: computeTierFinancials(tierProducts[t.id]?.products ?? [], t),
+  }));
+  const lossTiers = tierFinancials.filter((t) => t.fin.healthStatus === "loss");
 
   function toggleExpand(tierId: string) {
     setExpandedTiers((prev) => {
@@ -145,7 +155,6 @@ export function StepReview({ onBack, goToStep }: StepReviewProps) {
       });
 
       toast.success("Package created successfully!");
-      reset();
       router.push(`/admin/program/packages/${packageId}`);
     } catch (err) {
       toast.error(
@@ -159,6 +168,31 @@ export function StepReview({ onBack, goToStep }: StepReviewProps) {
 
   return (
     <div className="space-y-6">
+      {lossTiers.length > 0 && (
+        <div
+          role="alert"
+          className="rounded-lg border border-red-200 bg-red-50 p-4 flex items-start gap-3"
+        >
+          <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+          <div className="text-sm">
+            <div className="font-semibold text-red-800">
+              {lossTiers.length} tier{lossTiers.length === 1 ? "" : "s"} will
+              lose money at 100% redemption
+            </div>
+            <div className="text-red-700 mt-1">
+              {lossTiers
+                .map(
+                  (t) =>
+                    `${t.tierName} (${formatCurrency(t.fin.profitPerSubscriber)}/mo)`
+                )
+                .join(", ")}
+              . You can still publish — review the product mix or tier price
+              first.
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Summary card */}
       <div className="rounded-xl border border-border bg-card p-6 space-y-4">
         <div className="flex items-start justify-between">
@@ -222,6 +256,7 @@ export function StepReview({ onBack, goToStep }: StepReviewProps) {
           const isExpanded = expandedTiers.has(tier.id);
           const isEmpty = products.length === 0;
           const isOverBudget = totalUsed > tier.monthlyCredits;
+          const fin = computeTierFinancials(products, tier);
 
           return (
             <Card
@@ -272,6 +307,29 @@ export function StepReview({ onBack, goToStep }: StepReviewProps) {
                   used={totalUsed}
                   budget={tier.monthlyCredits}
                 />
+
+                {/* Profit summary */}
+                {!isEmpty && (
+                  <div className="flex items-center justify-between text-xs pt-1">
+                    <span className="text-muted-foreground">
+                      Profit / subscriber
+                    </span>
+                    <span
+                      className={
+                        fin.profitPerSubscriber < 0
+                          ? "font-semibold text-red-600"
+                          : fin.healthStatus === "tight"
+                            ? "font-semibold text-amber-700"
+                            : "font-semibold text-emerald-700"
+                      }
+                    >
+                      {formatCurrency(fin.profitPerSubscriber)} /mo
+                      <span className="text-muted-foreground font-normal ml-2">
+                        ({fin.grossMarginPct.toFixed(1)}%)
+                      </span>
+                    </span>
+                  </div>
+                )}
 
                 {/* Product list (collapsible) */}
                 {products.length > 0 && (

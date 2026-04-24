@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { TierTabBar } from "./tier-tab-bar";
 import { TierProductEditor } from "./tier-product-editor";
 import { WizardAiPanel } from "./wizard-ai-panel";
+import { TierFinancialsPanel } from "./tier-financials-panel";
 import {
   usePackageWizardStore,
   type TierInfo,
@@ -57,18 +58,11 @@ export function StepBuild({
   const copilotAutoTriggered = useRef(false);
 
   const activeTier = wizardTiers.find((t) => t.id === activeTierId) ?? wizardTiers[0];
-  const activeRules = activeTier ? (redemptionRulesByTier[activeTier.id] || []) : [];
 
   // Count configured tiers
   const configuredCount = wizardTiers.filter(
     (t) => (tierProducts[t.id]?.products.length ?? 0) > 0
   ).length;
-
-  const handleTriggerAi = useCallback(() => {
-    if (activeTier) {
-      setShowAiPanel((prev) => ({ ...prev, [activeTier.id]: true }));
-    }
-  }, [activeTier]);
 
   // In co-pilot mode, auto-show AI panel for ALL tiers when first arriving at this step
   useEffect(() => {
@@ -118,77 +112,71 @@ export function StepBuild({
         onSelectTier={handleSelectTier}
       />
 
-      {/* Hidden AI panels for non-active tiers (mount to auto-trigger all simultaneously) */}
-      {wizardTiers
-        .filter((t) => t.id !== activeTierId)
-        .map((tier) => {
-          const shouldMount =
-            (showAiPanel[tier.id] || tierProducts[tier.id]?.aiRun) && packageId;
-          if (!shouldMount) return null;
-          return (
-            <div key={`ai-bg-${tier.id}`} className="hidden" aria-hidden="true">
-              <WizardAiPanel
-                packageId={packageId!}
-                subscriptionTierId={tier.id}
-                fitnessGoal={fitnessGoal}
-                customGoalDescription={customGoalDescription}
-                preferences={preferences}
-                recommendations={analysisRecommendations}
-                autoTrigger={
-                  creationPath === "copilot" && !tierProducts[tier.id]?.aiRun
+      {/* All tier panels — active one is visible, others are hidden to preserve component state */}
+      {wizardTiers.map((tier) => {
+        const isActive = tier.id === activeTierId;
+        const tierRules = redemptionRulesByTier[tier.id] || [];
+        const shouldShowAiPanel =
+          (showAiPanel[tier.id] || tierProducts[tier.id]?.aiRun) && packageId;
+
+        return (
+          <div
+            key={tier.id}
+            className={
+              isActive
+                ? "grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5 items-start"
+                : "hidden"
+            }
+            aria-hidden={!isActive || undefined}
+          >
+            <div className="rounded-b-xl rounded-tr-xl border border-border bg-card p-6 space-y-5">
+              {/* Tier header */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div
+                    className="h-3.5 w-3.5 rounded-full"
+                    style={{ backgroundColor: tier.colorAccent }}
+                  />
+                  <h3 className="font-semibold">{tier.name}</h3>
+                  <Badge variant="secondary" className="text-xs">
+                    ${tier.monthlyCredits.toFixed(0)} credits/mo
+                  </Badge>
+                </div>
+                <Badge variant="outline" className="text-xs">
+                  {tierProducts[tier.id]?.products.length ?? 0} product
+                  {(tierProducts[tier.id]?.products.length ?? 0) !== 1 ? "s" : ""}
+                </Badge>
+              </div>
+
+              {/* AI Panel (if triggered) — always mounted once shown to preserve suggestions */}
+              {shouldShowAiPanel && (
+                <WizardAiPanel
+                  packageId={packageId!}
+                  subscriptionTierId={tier.id}
+                  fitnessGoal={fitnessGoal}
+                  customGoalDescription={customGoalDescription}
+                  preferences={preferences}
+                  recommendations={analysisRecommendations}
+                  autoTrigger={
+                    creationPath === "copilot" && !tierProducts[tier.id]?.aiRun
+                  }
+                />
+              )}
+
+              {/* Product editor */}
+              <TierProductEditor
+                tier={tier}
+                redemptionRules={tierRules}
+                onTriggerAi={() =>
+                  setShowAiPanel((prev) => ({ ...prev, [tier.id]: true }))
                 }
               />
             </div>
-          );
-        })}
 
-      {/* Active tier content */}
-      {activeTier && (
-        <div className="rounded-b-xl rounded-tr-xl border border-border bg-card p-6 space-y-5">
-          {/* Tier header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div
-                className="h-3.5 w-3.5 rounded-full"
-                style={{ backgroundColor: activeTier.colorAccent }}
-              />
-              <h3 className="font-semibold">{activeTier.name}</h3>
-              <Badge variant="secondary" className="text-xs">
-                ${activeTier.monthlyCredits.toFixed(0)} credits/mo
-              </Badge>
-            </div>
-            <Badge variant="outline" className="text-xs">
-              {tierProducts[activeTier.id]?.products.length ?? 0} product
-              {(tierProducts[activeTier.id]?.products.length ?? 0) !== 1
-                ? "s"
-                : ""}
-            </Badge>
+            <TierFinancialsPanel tier={tier} />
           </div>
-
-          {/* AI Panel (if triggered) */}
-          {(showAiPanel[activeTier.id] || tierProducts[activeTier.id]?.aiRun) &&
-            packageId && (
-              <WizardAiPanel
-                packageId={packageId}
-                subscriptionTierId={activeTier.id}
-                fitnessGoal={fitnessGoal}
-                customGoalDescription={customGoalDescription}
-                preferences={preferences}
-                recommendations={analysisRecommendations}
-                autoTrigger={
-                  creationPath === "copilot" && !tierProducts[activeTier.id]?.aiRun
-                }
-              />
-            )}
-
-          {/* Product editor */}
-          <TierProductEditor
-            tier={activeTier}
-            redemptionRules={activeRules}
-            onTriggerAi={handleTriggerAi}
-          />
-        </div>
-      )}
+        );
+      })}
 
       {/* Navigation footer */}
       <div className="flex items-center justify-between mt-6">

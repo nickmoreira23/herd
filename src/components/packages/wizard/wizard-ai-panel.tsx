@@ -31,6 +31,14 @@ interface Suggestion {
   discountPercent?: number;
   imageUrl?: string | null;
   category?: string | null;
+  sku?: string;
+  subCategory?: string | null;
+  retailPrice?: number;
+  costOfGoods?: number;
+  shippingCost?: number;
+  handlingCost?: number;
+  paymentProcessingPct?: number;
+  paymentProcessingFlat?: number;
 }
 
 interface WizardAiPanelProps {
@@ -176,14 +184,19 @@ export function WizardAiPanel({
       const product: LocalProduct = {
         productId: s.productId,
         name: s.productName,
-        sku: "",
+        sku: s.sku ?? "",
         category: s.category || "",
-        subCategory: null,
+        subCategory: s.subCategory ?? null,
         imageUrl: s.imageUrl || null,
         memberPrice: s.memberPrice || s.creditCost,
-        retailPrice: s.memberPrice || s.creditCost,
+        retailPrice: s.retailPrice ?? s.memberPrice ?? s.creditCost,
         quantity: s.quantity,
         creditCost: s.creditCost,
+        costOfGoods: s.costOfGoods ?? 0,
+        shippingCost: s.shippingCost ?? 0,
+        handlingCost: s.handlingCost ?? 0,
+        paymentProcessingPct: s.paymentProcessingPct ?? 0,
+        paymentProcessingFlat: s.paymentProcessingFlat ?? 0,
       };
       addProduct(subscriptionTierId, product);
     }

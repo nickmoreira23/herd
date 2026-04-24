@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError, parseAndValidate } from "@/lib/api-utils";
 import { updateProductSchema } from "@/lib/validators/product";
@@ -56,6 +57,9 @@ export async function PATCH(
       data,
     });
 
+    revalidatePath("/admin/blocks/products");
+    revalidatePath(`/admin/blocks/products/${id}`);
+
     return apiSuccess(product);
   } catch (e) {
     console.error("PATCH /api/products/[id] error:", e);
@@ -70,6 +74,9 @@ export async function DELETE(
   try {
     const { id } = await params;
     await prisma.product.delete({ where: { id } });
+
+    revalidatePath("/admin/blocks/products");
+
     return apiSuccess({ deleted: true });
   } catch (e) {
     console.error("DELETE /api/products/[id] error:", e);

@@ -57,6 +57,17 @@ interface SseSuggestion {
   totalCost: number;
   reasoning: string;
   matchedType: string;
+  sku?: string;
+  subCategory?: string | null;
+  category?: string | null;
+  memberPrice?: number;
+  retailPrice?: number;
+  imageUrl?: string | null;
+  costOfGoods?: number;
+  shippingCost?: number;
+  handlingCost?: number;
+  paymentProcessingPct?: number;
+  paymentProcessingFlat?: number;
 }
 
 /** Consume the SSE stream from ai-suggest and return parsed suggestions */
@@ -264,14 +275,19 @@ export function StepGoal({ onNext, onBack, tiers }: StepGoalProps) {
           const product: LocalProduct = {
             productId: s.productId,
             name: s.productName,
-            sku: "",
-            category: "",
-            subCategory: null,
-            imageUrl: null,
-            memberPrice: s.creditCost,
-            retailPrice: s.creditCost,
+            sku: s.sku ?? "",
+            category: s.category ?? "",
+            subCategory: s.subCategory ?? null,
+            imageUrl: s.imageUrl ?? null,
+            memberPrice: s.memberPrice ?? s.creditCost,
+            retailPrice: s.retailPrice ?? s.memberPrice ?? s.creditCost,
             quantity: s.quantity,
             creditCost: s.creditCost,
+            costOfGoods: s.costOfGoods ?? 0,
+            shippingCost: s.shippingCost ?? 0,
+            handlingCost: s.handlingCost ?? 0,
+            paymentProcessingPct: s.paymentProcessingPct ?? 0,
+            paymentProcessingFlat: s.paymentProcessingFlat ?? 0,
           };
           addProduct(tier.id, product);
         }

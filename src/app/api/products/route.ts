@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError, parseAndValidate } from "@/lib/api-utils";
 import { createProductSchema } from "@/lib/validators/product";
@@ -55,6 +56,8 @@ export async function POST(request: NextRequest) {
         tags: result.data.tags || [],
       },
     });
+
+    revalidatePath("/admin/blocks/products");
 
     return apiSuccess(product, 201);
   } catch (e) {

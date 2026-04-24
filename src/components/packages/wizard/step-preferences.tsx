@@ -111,16 +111,27 @@ export function StepPreferences({ onNext, onBack }: StepPreferencesProps) {
                       </p>
                     </div>
                   </div>
-                  <span className="text-lg font-semibold tabular-nums w-14 text-right">
-                    {value}%
-                  </span>
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={value}
+                      onChange={(e) => {
+                        const v = Math.min(100, Math.max(0, parseInt(e.target.value) || 0));
+                        handleSliderChange(cat.key, v);
+                      }}
+                      className="text-lg font-semibold tabular-nums w-14 text-right border border-input rounded-md px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-ring bg-background"
+                    />
+                    <span className="text-lg font-semibold text-muted-foreground">%</span>
+                  </div>
                 </div>
                 <Slider
                   value={[value]}
                   onValueChange={(val) => handleSliderChange(cat.key, Array.isArray(val) ? val[0] : val)}
                   min={0}
                   max={100}
-                  step={5}
+                  step={1}
                   className="w-full"
                 />
               </div>

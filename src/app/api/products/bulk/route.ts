@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError, parseAndValidate } from "@/lib/api-utils";
 import {
@@ -40,6 +41,7 @@ export async function POST(request: Request) {
       });
     }
 
+    revalidatePath("/admin/blocks/products");
     return apiSuccess(
       { created: toCreate.length, skipped: skippedSkus.length, skippedSkus },
       201
@@ -72,6 +74,7 @@ export async function PATCH(request: Request) {
       await prisma.product.deleteMany({
         where: { id: { in: ids } },
       });
+      revalidatePath("/admin/blocks/products");
       return apiSuccess({ deleted: ids.length });
     } else if (action === "adjustPrice" && adjustmentType && adjustmentValue != null && adjustmentField) {
       const products = await prisma.product.findMany({
@@ -93,6 +96,7 @@ export async function PATCH(request: Request) {
       }
     }
 
+    revalidatePath("/admin/blocks/products");
     return apiSuccess({ updated: ids.length });
   } catch (e) {
     console.error("PATCH /api/products/bulk error:", e);

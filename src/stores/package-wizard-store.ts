@@ -16,6 +16,11 @@ export interface LocalProduct {
   retailPrice: number;
   quantity: number;
   creditCost: number;
+  costOfGoods: number;
+  shippingCost: number;
+  handlingCost: number;
+  paymentProcessingPct: number;
+  paymentProcessingFlat: number;
 }
 
 export interface TierInfo {

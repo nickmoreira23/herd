@@ -38,17 +38,19 @@ Respond ONLY with valid JSON in this exact format:
 const PRODUCT_SPECIALIST_PROMPT = `You are a product catalog specialist. Given product type recommendations from a fitness expert, the user's category preferences, and the available product catalog, select the specific products that best match each recommendation within the budget.
 
 CRITICAL RULES:
-- You MUST use at least 80% of the monthly credit budget. This is the most important rule.
-- You MUST NEVER exceed the monthly credit budget. Going over budget is STRICTLY PROHIBITED.
-- Stay at or below the monthly credit budget (never exceed it)
-- Prioritize high-priority recommendations first
-- Respect the user's category preferences for budget allocation between supplements, apparel, and accessories
-- After selecting priority items, fill remaining budget with additional products to reach 80%+ usage
-- Select products with the best fit for the fitness goal
-- Default to quantity 1 unless a recommendation suggests otherwise
-- Only select from the provided catalog — do NOT invent products
+1. NEVER exceed the monthly credit budget. This is an absolute hard limit.
+2. Use AT LEAST 80% of the monthly credit budget — fill the budget greedily.
+3. Prioritize high-priority recommendations first, then medium, then low.
+4. Each tier has a DIFFERENT budget — select MORE products for higher budgets and FEWER for lower budgets.
+5. Do NOT repeat the same product set across tiers. Higher tiers get more products and/or higher quantities.
+6. Only select from the provided catalog — do NOT invent products.
+7. Default to quantity 1 unless the budget allows more of the same product.
 
-Budget strategy: Priority recommendations first → Fill remaining budget according to preferences → Target 80-100% utilization → NEVER exceed budget
+Budget strategy:
+- Start with high-priority items
+- Add medium and low priority items to fill budget
+- If budget remains, add quantity 2+ of key items or pick additional catalog items
+- Stop before exceeding the budget
 
 Respond ONLY with valid JSON in this exact format:
 {
@@ -221,6 +223,11 @@ export async function POST(
       subCategory: true,
       retailPrice: true,
       memberPrice: true,
+      costOfGoods: true,
+      shippingCost: true,
+      handlingCost: true,
+      paymentProcessingPct: true,
+      paymentProcessingFlat: true,
       description: true,
       brand: true,
       imageUrl: true,
@@ -253,6 +260,12 @@ export async function POST(
         brand: p.brand,
         description: p.description?.slice(0, 200),
         memberPrice,
+        retailPrice: Number(p.retailPrice),
+        costOfGoods: Number(p.costOfGoods),
+        shippingCost: Number(p.shippingCost),
+        handlingCost: Number(p.handlingCost),
+        paymentProcessingPct: Number(p.paymentProcessingPct),
+        paymentProcessingFlat: Number(p.paymentProcessingFlat),
         discountPercent: resolveDiscount(pricing, rules),
         creditCost: computeCreditCost(pricing, rules),
         imageUrl: p.imageUrl,
@@ -304,7 +317,7 @@ export async function POST(
           messages: [
             {
               role: "user",
-              content: `Fitness goal: ${goalLabel}\nTier: "${tier.name}" — tier ${tierPosition} of ${totalTiers} (${tierLineup})\nRemaining monthly credit budget: $${remainingBudget.toFixed(2)}\nMINIMUM spend target (80%): $${(remainingBudget * 0.8).toFixed(2)}\nMAXIMUM (NEVER exceed): $${remainingBudget.toFixed(2)}\nUser's category preferences: ${prefLabel}\n\nTIER POSITIONING: This is the "${tier.name}" tier (${tierPosition}/${totalTiers}). ${tierPosition === 1 ? "As the entry-level tier, focus on the most essential products only." : tierPosition === totalTiers ? "As the premium tier, include a comprehensive selection with premium and variety products." : tierPosition <= totalTiers / 2 ? "As a mid-low tier, include essentials plus a few additional products." : "As a mid-high tier, include a broad selection with some premium products."} Each tier MUST have a DIFFERENT product selection — do NOT just copy a smaller tier's products. Higher tiers should include MORE products and/or HIGHER quantities, not the same products.\n\nYou MUST select products totaling at least $${(remainingBudget * 0.8).toFixed(2)} but NEVER more than $${remainingBudget.toFixed(2)}. Going over $${remainingBudget.toFixed(2)} is STRICTLY PROHIBITED.\n\nFitness specialist recommendations:\n${JSON.stringify(recsForAgent, null, 2)}\n\nAvailable product catalog (${catalog.length} products):\n${JSON.stringify(catalog.map(({ imageUrl, ...rest }) => rest), null, 2)}\n\nPlease select the best specific products from this catalog. Ensure the selection is appropriate for the "${tier.name}" tier level.`,
+              content: `Fitness goal: ${goalLabel}\nTier: "${tier.name}" — tier ${tierPosition} of ${totalTiers} (${tierLineup})\nRemaining monthly credit budget: $${remainingBudget.toFixed(2)}\nMINIMUM spend target (80%): $${(remainingBudget * 0.8).toFixed(2)}\nMAXIMUM (NEVER exceed): $${remainingBudget.toFixed(2)}\nUser's category preferences: ${prefLabel}\n\nTIER POSITIONING: This is the "${tier.name}" tier (${tierPosition}/${totalTiers}). ${tierPosition === 1 ? "As the entry-level tier, focus on the most essential products only." : tierPosition === totalTiers ? "As the premium tier, include a comprehensive selection with premium and variety products." : tierPosition <= totalTiers / 2 ? "As a mid-low tier, include essentials plus a few additional products." : "As a mid-high tier, include a broad selection with some premium products."} Each tier MUST have a DIFFERENT product selection — do NOT just copy a smaller tier's products. Higher tiers should include MORE products and/or HIGHER quantities, not the same products.\n\nYou MUST select products totaling at least $${(remainingBudget * 0.8).toFixed(2)} but NEVER more than $${remainingBudget.toFixed(2)}. Going over $${remainingBudget.toFixed(2)} is STRICTLY PROHIBITED.\n${feedback ? `\nUSER INSTRUCTIONS (highest priority — follow these exactly): ${feedback}\n` : ""}Fitness specialist recommendations:\n${JSON.stringify(recsForAgent, null, 2)}\n\nAvailable product catalog (${catalog.length} products):\n${JSON.stringify(catalog.map(({ imageUrl, ...rest }) => rest), null, 2)}\n\nPlease select the best specific products from this catalog. Ensure the selection is appropriate for the "${tier.name}" tier level.`,
             },
           ],
         });
@@ -325,20 +338,42 @@ export async function POST(
         }
 
         // Enrich suggestions with memberPrice, discountPercent, and imageUrl from catalog
+        // Also enforce budget: use catalog prices (not AI-claimed prices) and trim to fit
         const catalogMap = new Map(catalog.map((c) => [c.id, c]));
-        const enrichedSuggestions = {
-          ...suggestions,
-          suggestions: (suggestions.suggestions || []).map((s: { productId: string; [key: string]: unknown }) => {
-            const cat = catalogMap.get(s.productId);
-            return {
-              ...s,
-              memberPrice: cat?.memberPrice ?? null,
-              discountPercent: cat?.discountPercent ?? 0,
-              imageUrl: cat?.imageUrl ?? null,
-              category: cat?.category ?? null,
-            };
-          }),
-        };
+        let runningTotal = 0;
+        const enrichedList: unknown[] = [];
+        for (const s of (suggestions.suggestions || []) as { productId: string; quantity: number; [key: string]: unknown }[]) {
+          const cat = catalogMap.get(s.productId);
+          if (!cat) continue; // product not in catalog — skip
+
+          const trueCreditCost = cat.creditCost;
+          const qty = Math.max(1, Math.round(Number(s.quantity) || 1));
+          const trueTotalCost = trueCreditCost * qty;
+
+          // Only include if it fits within the remaining budget
+          if (runningTotal + trueTotalCost > remainingBudget) continue;
+
+          runningTotal += trueTotalCost;
+          enrichedList.push({
+            ...s,
+            quantity: qty,
+            creditCost: trueCreditCost,
+            totalCost: trueTotalCost,
+            memberPrice: cat.memberPrice,
+            retailPrice: cat.retailPrice,
+            discountPercent: cat.discountPercent,
+            imageUrl: cat.imageUrl,
+            category: cat.category,
+            sku: cat.sku,
+            subCategory: cat.subCategory,
+            costOfGoods: cat.costOfGoods,
+            shippingCost: cat.shippingCost,
+            handlingCost: cat.handlingCost,
+            paymentProcessingPct: cat.paymentProcessingPct,
+            paymentProcessingFlat: cat.paymentProcessingFlat,
+          });
+        }
+        const enrichedSuggestions = { suggestions: enrichedList };
 
         send("suggestions", enrichedSuggestions);
         send("done", { success: true });
