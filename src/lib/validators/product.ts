@@ -1,9 +1,9 @@
 import { z } from "zod";
 
-const categoryEnum = z.preprocess(
-  (v) => (typeof v === "string" ? v.toUpperCase() : v),
-  z.enum(["SUPPLEMENT", "APPAREL", "ACCESSORY"]),
-);
+const categoryEnum = z
+  .string()
+  .transform((v) => v.toUpperCase())
+  .pipe(z.enum(["SUPPLEMENT", "APPAREL", "ACCESSORY"]));
 
 export const createProductSchema = z.object({
   name: z.string().min(1, "Name is required"),
