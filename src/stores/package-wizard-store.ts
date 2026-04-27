@@ -31,6 +31,11 @@ export interface TierInfo {
   monthlyPrice: number;
   colorAccent: string;
   sortOrder: number;
+  // Plan-level cost averages — drive package profitability calc
+  avgShippingCost: number;
+  avgHandlingCost: number;
+  processingFeePct: number;
+  processingFeeFlat: number;
 }
 
 export interface TierState {

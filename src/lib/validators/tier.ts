@@ -27,6 +27,12 @@ export const createTierSchema = z.object({
   trialDays: z.coerce.number().int().nonnegative().optional(),
   billingAnchor: z.enum(["SIGNUP_DATE", "FIRST_OF_MONTH"]).optional(),
 
+  // Per-subscriber average costs (drive package profitability calc)
+  avgShippingCost: z.coerce.number().nonnegative().optional(),
+  avgHandlingCost: z.coerce.number().nonnegative().optional(),
+  processingFeePct: z.coerce.number().min(0).max(100).optional(),
+  processingFeeFlat: z.coerce.number().nonnegative().optional(),
+
   // Credits
   monthlyCredits: z.coerce.number().nonnegative(),
   creditExpirationDays: z.coerce.number().int().positive().optional(),

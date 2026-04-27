@@ -18,7 +18,10 @@ import { useState } from "react";
 import { CreditBudgetBar } from "./credit-budget-bar";
 import { PriceBreakdown } from "./price-breakdown";
 import { SharePackageDialog } from "./share-package-dialog";
+import { TierProfitSummary } from "./tier-profit-summary";
 import { resolveDiscount, computeCreditCost, type RedemptionRule } from "@/lib/credit-cost";
+import { computeTierFinancials } from "@/lib/package-financials";
+import type { LocalProduct } from "@/stores/package-wizard-store";
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -37,6 +40,7 @@ interface ProductInVariant {
     retailPrice: number;
     memberPrice: number;
     imageUrl: string | null;
+    costOfGoods: number;
   };
 }
 
@@ -56,6 +60,10 @@ interface Variant {
     colorAccent: string;
     sortOrder: number;
     iconUrl: string | null;
+    avgShippingCost: number;
+    avgHandlingCost: number;
+    processingFeePct: number;
+    processingFeeFlat: number;
   };
   products: ProductInVariant[];
 }
@@ -339,6 +347,34 @@ export function PackageDetailView({ pkg, redemptionRulesByTier = {} }: PackageDe
                         used={variant.totalCreditsUsed}
                         budget={tier.monthlyCredits}
                       />
+
+                      {/* Profitability summary */}
+                      <div className="rounded-lg border border-border bg-muted/30 p-4">
+                        <TierProfitSummary
+                          fin={computeTierFinancials(
+                            products.map<LocalProduct>((p) => ({
+                              productId: p.productId,
+                              name: p.product.name,
+                              sku: p.product.sku,
+                              category: p.product.category,
+                              subCategory: p.product.subCategory,
+                              imageUrl: p.product.imageUrl,
+                              memberPrice: p.product.memberPrice,
+                              retailPrice: p.product.retailPrice,
+                              quantity: p.quantity,
+                              creditCost: p.creditCost,
+                              costOfGoods: p.product.costOfGoods,
+                              shippingCost: 0,
+                              handlingCost: 0,
+                              paymentProcessingPct: 0,
+                              paymentProcessingFlat: 0,
+                            })),
+                            tier
+                          )}
+                          variant="inline"
+                          footnote="Fulfillment & processing pulled from plan averages."
+                        />
+                      </div>
 
                       {/* Product list */}
                       <div className="space-y-2">

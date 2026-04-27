@@ -25,33 +25,33 @@ export interface TierFinancials {
 
 export function computeTierFinancials(
   products: LocalProduct[],
-  tier: Pick<TierInfo, "monthlyPrice">
+  tier: Pick<
+    TierInfo,
+    | "monthlyPrice"
+    | "avgShippingCost"
+    | "avgHandlingCost"
+    | "processingFeePct"
+    | "processingFeeFlat"
+  >
 ): TierFinancials {
   const revenue = Number(tier.monthlyPrice) || 0;
 
   let productCOGS = 0;
-  let fulfillmentCost = 0;
   let totalUnits = 0;
-  let weightedPct = 0;
-  let weightedFlat = 0;
-  let weightedUnits = 0;
 
   for (const p of products) {
     const qty = Math.max(1, p.quantity);
     productCOGS += (p.costOfGoods || 0) * qty;
-    fulfillmentCost += ((p.shippingCost || 0) + (p.handlingCost || 0)) * qty;
     totalUnits += qty;
-    weightedPct += (p.paymentProcessingPct || 0) * qty;
-    weightedFlat += (p.paymentProcessingFlat || 0) * qty;
-    weightedUnits += qty;
   }
 
-  // Payment processing is charged once per subscription billing event, not per
-  // product. Use a unit-weighted average of the selected products' rates as a
-  // stand-in so admins with uniform catalog settings get a stable number.
-  const avgPct = weightedUnits > 0 ? weightedPct / weightedUnits : 0;
-  const avgFlat = weightedUnits > 0 ? weightedFlat / weightedUnits : 0;
-  const paymentProcessing = revenue * (avgPct / 100) + avgFlat;
+  // Fulfillment + payment processing come from plan-level averages set on the
+  // SubscriptionTier — they don't depend on which products fill the package.
+  const fulfillmentCost =
+    (Number(tier.avgShippingCost) || 0) + (Number(tier.avgHandlingCost) || 0);
+  const paymentProcessing =
+    revenue * ((Number(tier.processingFeePct) || 0) / 100) +
+    (Number(tier.processingFeeFlat) || 0);
 
   const totalCOGS = productCOGS + fulfillmentCost + paymentProcessing;
 

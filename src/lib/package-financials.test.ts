@@ -28,10 +28,27 @@ function makeProduct(overrides: Partial<LocalProduct>): LocalProduct {
   };
 }
 
-const TIER = { monthlyPrice: 100 };
+function makeTier(
+  overrides: Partial<{
+    monthlyPrice: number;
+    avgShippingCost: number;
+    avgHandlingCost: number;
+    processingFeePct: number;
+    processingFeeFlat: number;
+  }> = {}
+) {
+  return {
+    monthlyPrice: 100,
+    avgShippingCost: 0,
+    avgHandlingCost: 0,
+    processingFeePct: 0,
+    processingFeeFlat: 0,
+    ...overrides,
+  };
+}
 
 test("empty selection returns revenue only, empty status", () => {
-  const r = computeTierFinancials([], TIER);
+  const r = computeTierFinancials([], makeTier());
   assert.equal(r.revenue, 100);
   assert.equal(r.productCOGS, 0);
   assert.equal(r.fulfillmentCost, 0);
@@ -43,10 +60,10 @@ test("empty selection returns revenue only, empty status", () => {
   assert.equal(r.productCount, 0);
 });
 
-test("single product, no fulfillment or processing", () => {
+test("single product, no plan-level fulfillment or processing", () => {
   const r = computeTierFinancials(
     [makeProduct({ costOfGoods: 10, quantity: 1 })],
-    TIER
+    makeTier()
   );
   assert.equal(r.productCOGS, 10);
   assert.equal(r.totalCOGS, 10);
@@ -55,49 +72,58 @@ test("single product, no fulfillment or processing", () => {
   assert.equal(r.healthStatus, "healthy");
 });
 
-test("multi-product with quantities + fulfillment", () => {
+test("plan-level shipping + handling are added once per subscriber", () => {
   const r = computeTierFinancials(
     [
-      makeProduct({
-        productId: "a",
-        costOfGoods: 10,
-        quantity: 2,
-        shippingCost: 2,
-        handlingCost: 1,
-      }),
-      makeProduct({
-        productId: "b",
-        costOfGoods: 5,
-        quantity: 3,
-        shippingCost: 1,
-        handlingCost: 0,
-      }),
+      makeProduct({ productId: "a", costOfGoods: 10, quantity: 2 }),
+      makeProduct({ productId: "b", costOfGoods: 5, quantity: 3 }),
     ],
-    TIER
+    makeTier({ avgShippingCost: 4, avgHandlingCost: 1 })
   );
   // COGS: 10*2 + 5*3 = 35
   assert.equal(r.productCOGS, 35);
-  // Fulfillment: (2+1)*2 + (1+0)*3 = 6 + 3 = 9
-  assert.equal(r.fulfillmentCost, 9);
+  // Fulfillment is plan-level only — not multiplied by quantities
+  assert.equal(r.fulfillmentCost, 5);
   assert.equal(r.paymentProcessing, 0);
-  assert.equal(r.totalCOGS, 44);
-  assert.equal(r.profitPerSubscriber, 56);
+  assert.equal(r.totalCOGS, 40);
+  assert.equal(r.profitPerSubscriber, 60);
   assert.equal(r.healthStatus, "healthy");
 });
 
-test("payment processing applied once per subscription", () => {
+test("plan-level product cost fields are ignored (plan-level replaces them)", () => {
+  // Even if products have shippingCost / paymentProcessingPct set, the calc
+  // ignores them — fulfillment & processing now come from the tier alone.
   const r = computeTierFinancials(
     [
       makeProduct({
         costOfGoods: 10,
         quantity: 1,
-        paymentProcessingPct: 2.9,
-        paymentProcessingFlat: 0.3,
+        shippingCost: 999,
+        handlingCost: 999,
+        paymentProcessingPct: 99,
+        paymentProcessingFlat: 99,
       }),
     ],
-    TIER
+    makeTier({
+      avgShippingCost: 4,
+      avgHandlingCost: 1,
+      processingFeePct: 2.9,
+      processingFeeFlat: 0.3,
+    })
   );
-  // Processing: 100 * 0.029 + 0.3 = 3.2
+  assert.equal(r.productCOGS, 10);
+  assert.equal(r.fulfillmentCost, 5);
+  // 100 * 0.029 + 0.30 = 3.2
+  assert.ok(Math.abs(r.paymentProcessing - 3.2) < 0.0001);
+  assert.ok(Math.abs(r.totalCOGS - 18.2) < 0.0001);
+  assert.ok(Math.abs(r.profitPerSubscriber - 81.8) < 0.0001);
+});
+
+test("plan-level processing fees", () => {
+  const r = computeTierFinancials(
+    [makeProduct({ costOfGoods: 10, quantity: 1 })],
+    makeTier({ processingFeePct: 2.9, processingFeeFlat: 0.3 })
+  );
   assert.ok(Math.abs(r.paymentProcessing - 3.2) < 0.0001);
   assert.ok(Math.abs(r.totalCOGS - 13.2) < 0.0001);
   assert.ok(Math.abs(r.profitPerSubscriber - 86.8) < 0.0001);
@@ -105,17 +131,10 @@ test("payment processing applied once per subscription", () => {
 
 test("loss-making selection yields negative profit and loss status", () => {
   const r = computeTierFinancials(
-    [
-      makeProduct({
-        costOfGoods: 80,
-        quantity: 2,
-        shippingCost: 5,
-        handlingCost: 2,
-      }),
-    ],
-    { monthlyPrice: 100 }
+    [makeProduct({ costOfGoods: 80, quantity: 2 })],
+    makeTier({ monthlyPrice: 100, avgShippingCost: 10, avgHandlingCost: 4 })
   );
-  // COGS: 160, fulfillment: (5+2)*2 = 14, total: 174
+  // COGS: 160, fulfillment: 14, total: 174
   assert.equal(r.totalCOGS, 174);
   assert.equal(r.profitPerSubscriber, -74);
   assert.equal(r.healthStatus, "loss");
@@ -124,7 +143,7 @@ test("loss-making selection yields negative profit and loss status", () => {
 test("tight margin status kicks in between 10% and 30%", () => {
   const r = computeTierFinancials(
     [makeProduct({ costOfGoods: 80, quantity: 1 })],
-    { monthlyPrice: 100 }
+    makeTier({ monthlyPrice: 100 })
   );
   // Profit 20, margin 20% — tight.
   assert.equal(r.profitPerSubscriber, 20);

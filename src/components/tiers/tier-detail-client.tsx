@@ -94,6 +94,11 @@ export interface TierFormState {
   setupFee: string;
   trialDays: string;
   billingAnchor: string;
+  // Per-subscriber average costs (drive package profitability)
+  avgShippingCost: string;
+  avgHandlingCost: string;
+  processingFeePct: string;
+  processingFeeFlat: string;
   // Credits
   monthlyCredits: string;
   creditExpirationDays: string;
@@ -226,6 +231,10 @@ function tierToForm(tier: SubscriptionTier): TierFormState {
     setupFee: String(t.setupFee ?? 0),
     trialDays: String(t.trialDays ?? 0),
     billingAnchor: (t.billingAnchor as string) || "SIGNUP_DATE",
+    avgShippingCost: String(t.avgShippingCost ?? 0),
+    avgHandlingCost: String(t.avgHandlingCost ?? 0),
+    processingFeePct: String(t.processingFeePct ?? 0),
+    processingFeeFlat: String(t.processingFeeFlat ?? 0),
     monthlyCredits: String(tier.monthlyCredits),
     creditExpirationDays: String(tier.creditExpirationDays),
     creditIssuing: (t.creditIssuing as string) || "ON_PAYMENT",
@@ -285,6 +294,10 @@ function formToPayload(form: TierFormState) {
     setupFee: parseFloat(form.setupFee) || 0,
     trialDays: parseInt(form.trialDays) || 0,
     billingAnchor: form.billingAnchor,
+    avgShippingCost: parseFloat(form.avgShippingCost) || 0,
+    avgHandlingCost: parseFloat(form.avgHandlingCost) || 0,
+    processingFeePct: parseFloat(form.processingFeePct) || 0,
+    processingFeeFlat: parseFloat(form.processingFeeFlat) || 0,
     monthlyCredits: parseFloat(form.monthlyCredits) || 0,
     creditExpirationDays: parseInt(form.creditExpirationDays) || 60,
     creditIssuing: form.creditIssuing,
@@ -1083,6 +1096,10 @@ const DEFAULT_FORM: TierFormState = {
   setupFee: "0",
   trialDays: "0",
   billingAnchor: "SIGNUP_DATE",
+  avgShippingCost: "0",
+  avgHandlingCost: "0",
+  processingFeePct: "0",
+  processingFeeFlat: "0",
   monthlyCredits: "",
   creditExpirationDays: "60",
   creditIssuing: "ON_PAYMENT",

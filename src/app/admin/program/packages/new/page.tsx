@@ -16,6 +16,10 @@ export default async function NewPackagePage() {
       monthlyPrice: true,
       colorAccent: true,
       sortOrder: true,
+      avgShippingCost: true,
+      avgHandlingCost: true,
+      processingFeePct: true,
+      processingFeeFlat: true,
       redemptionRules: {
         select: {
           redemptionType: true,
@@ -36,6 +40,10 @@ export default async function NewPackagePage() {
     monthlyPrice: toNumber(t.monthlyPrice),
     colorAccent: t.colorAccent,
     sortOrder: t.sortOrder,
+    avgShippingCost: toNumber(t.avgShippingCost),
+    avgHandlingCost: toNumber(t.avgHandlingCost),
+    processingFeePct: toNumber(t.processingFeePct),
+    processingFeeFlat: toNumber(t.processingFeeFlat),
   }));
 
   const redemptionRulesByTier: Record<

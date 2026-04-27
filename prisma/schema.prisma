@@ -460,6 +460,12 @@ model SubscriptionTier {
   trialDays              Int      @default(0)
   billingAnchor          BillingAnchor @default(SIGNUP_DATE)
 
+  // Per-subscriber average costs — drive package profitability calc
+  avgShippingCost        Decimal  @default(0) @db.Decimal(10, 2)
+  avgHandlingCost        Decimal  @default(0) @db.Decimal(10, 2)
+  processingFeePct       Decimal  @default(0) @db.Decimal(10, 2) // e.g. 2.90 = 2.9%
+  processingFeeFlat      Decimal  @default(0) @db.Decimal(10, 2)
+
   // Credits
   monthlyCredits         Decimal  @db.Decimal(10, 2)
   creditExpirationDays   Int      @default(60)

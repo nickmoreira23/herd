@@ -229,6 +229,79 @@ export function PricingTab({ form, updateForm, onBlurSave, pricingSnapshots }: P
           </div>
         </div>
 
+        {/* Fulfillment & Processing */}
+        <div className="rounded-xl border bg-muted/20 p-4 space-y-4">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-semibold uppercase tracking-wider">Fulfillment & Processing</span>
+          </div>
+          <p className="text-[11px] text-muted-foreground -mt-2">
+            Average per-subscriber cost used in the package profitability calculator.
+          </p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Avg Shipping Cost <InfoTip text="Average shipping cost per subscriber per month for this plan. Used to compute profitability when building packages." /></Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={form.avgShippingCost}
+                  onChange={(e) => updateForm("avgShippingCost", e.target.value)}
+                  onBlur={onBlurSave}
+                  className="pl-7"
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Avg Handling Cost <InfoTip text="Average handling/fulfillment cost per subscriber per month for this plan." /></Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={form.avgHandlingCost}
+                  onChange={(e) => updateForm("avgHandlingCost", e.target.value)}
+                  onBlur={onBlurSave}
+                  className="pl-7"
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Processing Fee % <InfoTip text="Percentage portion of payment processing (e.g. 2.9 for 2.9%). Applied to monthly revenue." /></Label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  value={form.processingFeePct}
+                  onChange={(e) => updateForm("processingFeePct", e.target.value)}
+                  onBlur={onBlurSave}
+                  className="pr-7"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Processing Fee Flat <InfoTip text="Flat-fee portion of payment processing per transaction (e.g. 0.30 for $0.30)." /></Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={form.processingFeeFlat}
+                  onChange={(e) => updateForm("processingFeeFlat", e.target.value)}
+                  onBlur={onBlurSave}
+                  className="pl-7"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Pricing History */}
         {pricingSnapshots && pricingSnapshots.length > 0 && (
           <div className="rounded-xl border bg-muted/20 p-4 space-y-3">
