@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -46,12 +46,15 @@ import {
   TrendingUp,
   Wallet,
   Blocks,
+  ShoppingBag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
 import { BLOCK_ICON_MAP, BLOCK_LABEL_MAP } from "@/lib/blocks/block-meta";
-import { getAllSolutions } from "@/lib/solutions/registry";
-import { TOOL_ICON_MAP } from "@/lib/solutions/solution-meta";
+import { getBlockLabel, getCategoryLabel } from "@/lib/blocks/block-labels";
+import { useLocale } from "@/lib/i18n/locale-context";
+import { getAllToolCategories } from "@/lib/tools/registry";
+import { TOOL_ICON_MAP } from "@/lib/tools/category-meta";
 import type { BlockCategory } from "@/lib/blocks/block-categories";
 import {
   DEFAULT_BLOCK_CATEGORIES,
@@ -61,6 +64,24 @@ import {
   hexToRgba,
 } from "@/lib/blocks/block-categories";
 import { ManageBlocksDialog } from "@/components/blocks/manage-blocks-dialog";
+import { ManageSectionsDialog } from "@/components/marketplace/admin/manage-sections-dialog";
+import { ManageNetworkDialog } from "@/components/network/manage-network-dialog";
+import { ManageKnowledgeDialog } from "@/components/knowledge/manage-knowledge-dialog";
+import {
+  KNOWLEDGE_BLOCKS_SETTING_KEY,
+  KNOWLEDGE_FALLBACK_CATEGORY_ID,
+  KNOWLEDGE_FALLBACK_CATEGORY_LABEL,
+  KNOWLEDGE_TYPE_BLOCKS,
+  groupSelectedSources,
+  parseKnowledgeBlocks,
+} from "@/lib/knowledge-commons/constants";
+import { getAllBlocks } from "@/lib/blocks/registry";
+import {
+  getCachedSections,
+  setCachedSections,
+  invalidateSectionsCache,
+  type CachedSection,
+} from "@/lib/marketplace/sections-cache";
 
 // ─── Sub-panel config ────────────────────────────────────────────────
 
@@ -70,10 +91,17 @@ export interface SubPanelLink {
   icon?: LucideIcon;
 }
 
+export interface SubPanelCategory {
+  id: string;
+  label: string;
+  links: SubPanelLink[];
+}
+
 export interface SubPanelConfig {
   id: string;
   label: string;
   links: SubPanelLink[];
+  categories?: SubPanelCategory[];
 }
 
 // Registry of all sub-panels — add new ones here
@@ -92,44 +120,45 @@ export const subPanelRegistry: Record<string, SubPanelConfig> = {
     label: "Blocks",
     links: [], // Dynamically rendered by BlocksSubPanel
   },
-  profile: {
-    id: "profile",
-    label: "Profile",
-    links: [
-      { href: "/admin/organization/profile", label: "General Information", icon: Building2 },
-      { href: "/admin/organization/profile/contact", label: "Contact Information", icon: Phone },
-      { href: "/admin/organization/profile/locations", label: "Locations", icon: MapPin },
-      { href: "/admin/organization/profile/business-hours", label: "Business Hours", icon: Clock },
-      { href: "/admin/organization/profile/regional-settings", label: "Regional Settings", icon: Globe },
+  network: {
+    id: "network",
+    label: "Network",
+    links: [], // Dynamically rendered by NetworkSubPanel
+  },
+  organization: {
+    id: "organization",
+    label: "Organization",
+    links: [],
+    categories: [
+      {
+        id: "profile",
+        label: "Profile",
+        links: [
+          { href: "/admin/organization/profile", label: "General Information", icon: Building2 },
+          { href: "/admin/organization/profile/contact", label: "Contact Information", icon: Phone },
+          { href: "/admin/organization/profile/locations", label: "Locations", icon: MapPin },
+          { href: "/admin/organization/profile/business-hours", label: "Business Hours", icon: Clock },
+          { href: "/admin/organization/profile/regional-settings", label: "Regional Settings", icon: Globe },
+        ],
+      },
+      {
+        id: "brand-kit",
+        label: "Brand Kit",
+        links: [
+          { href: "/admin/organization/brand-kit/logos", label: "Logos", icon: Image },
+          { href: "/admin/organization/brand-kit/colors", label: "Colors", icon: Palette },
+          { href: "/admin/organization/brand-kit/fonts", label: "Fonts", icon: Type },
+          { href: "/admin/organization/brand-kit/buttons", label: "Buttons", icon: RectangleHorizontal },
+          { href: "/admin/organization/brand-kit/appearance", label: "Appearance", icon: Sparkles },
+          { href: "/admin/organization/brand-kit/brand-voice", label: "Brand Voice", icon: MessageSquare },
+        ],
+      },
     ],
   },
   knowledge: {
     id: "knowledge",
     label: "Knowledge",
-    links: [
-      { href: "/admin/organization/knowledge", label: "Dashboard", icon: LayoutGrid },
-      { href: "/admin/organization/knowledge/documents", label: "Documents", icon: FileText },
-      { href: "/admin/organization/knowledge/images", label: "Images", icon: Image },
-      { href: "/admin/organization/knowledge/videos", label: "Videos", icon: Video },
-      { href: "/admin/organization/knowledge/audios", label: "Audios", icon: Music },
-      { href: "/admin/organization/knowledge/tables", label: "Tables", icon: Table2 },
-      { href: "/admin/organization/knowledge/forms", label: "Forms", icon: ClipboardList },
-      { href: "/admin/organization/knowledge/links", label: "Links", icon: Link2 },
-      { href: "/admin/organization/knowledge/feeds", label: "Feeds", icon: Rss },
-      { href: "/admin/organization/knowledge/apps", label: "Apps", icon: Plug },
-    ],
-  },
-  users: {
-    id: "users",
-    label: "Users",
-    links: [
-      { href: "/admin/organization/users", label: "All Users", icon: Users },
-      { href: "/admin/organization/org-chart", label: "Org Chart", icon: GitBranch },
-      { href: "/admin/organization/departments", label: "Departments", icon: Building2 },
-      { href: "/admin/organization/network-map", label: "Network Map", icon: Share2 },
-      { href: "/admin/network/profile-types", label: "Profile Types", icon: Layers },
-      { href: "/admin/network/roles", label: "Roles & Permissions", icon: Shield },
-    ],
+    links: [], // Dynamically rendered by KnowledgeSubPanel
   },
   integrations: {
     id: "integrations",
@@ -150,23 +179,15 @@ export const subPanelRegistry: Record<string, SubPanelConfig> = {
       { href: "/admin/integrations/other", label: "Other", icon: Box },
     ],
   },
-  "brand-kit": {
-    id: "brand-kit",
-    label: "Brand Kit",
-    links: [
-      { href: "/admin/organization/brand-kit", label: "All Assets", icon: LayoutGrid },
-      { href: "/admin/organization/brand-kit/logos", label: "Logos", icon: Image },
-      { href: "/admin/organization/brand-kit/colors", label: "Colors", icon: Palette },
-      { href: "/admin/organization/brand-kit/fonts", label: "Fonts", icon: Type },
-      { href: "/admin/organization/brand-kit/buttons", label: "Buttons", icon: RectangleHorizontal },
-      { href: "/admin/organization/brand-kit/appearance", label: "Appearance", icon: Sparkles },
-      { href: "/admin/organization/brand-kit/brand-voice", label: "Brand Voice", icon: MessageSquare },
-    ],
+  tools: {
+    id: "tools",
+    label: "Tools",
+    links: [], // Dynamically rendered by ToolsSubPanel
   },
-  solutions: {
-    id: "solutions",
-    label: "Solutions",
-    links: [], // Dynamically rendered by SolutionsSubPanel
+  marketplace: {
+    id: "marketplace",
+    label: "Marketplace",
+    links: [], // Dynamically rendered by MarketplaceSubPanel
   },
 };
 
@@ -174,19 +195,23 @@ export const subPanelRegistry: Record<string, SubPanelConfig> = {
 export const hrefToSubPanel: Record<string, string> = {
   "/admin/agents": "agents",
   "/admin/blocks": "blocks",
-  "/admin/solutions": "solutions",
-  "/admin/organization/profile": "profile",
+  "/admin/network": "network",
+  "/admin/tools": "tools",
+  "/admin/organization/profile": "organization",
   "/admin/organization/knowledge": "knowledge",
-  "/admin/organization/users": "users",
-  "/admin/organization/brand-kit": "brand-kit",
   "/admin/integrations": "integrations",
+  "/admin/marketplace": "marketplace",
 };
 
 // All hrefs that belong to a sub-panel (used to auto-detect active panel from pathname)
 export function getSubPanelIdForPath(pathname: string): string | null {
   if (pathname.startsWith("/admin/blocks")) return "blocks";
   if (pathname.startsWith("/admin/agents")) return "agents";
-  if (pathname.startsWith("/admin/solutions")) return "solutions";
+  if (pathname.startsWith("/admin/tools")) return "tools";
+  if (pathname.startsWith("/admin/marketplace")) return "marketplace";
+  if (pathname.startsWith("/admin/network")) return "network";
+  if (pathname.startsWith("/admin/organization/knowledge")) return "knowledge";
+  if (pathname.startsWith("/admin/organization")) return "organization";
 
   for (const [, config] of Object.entries(subPanelRegistry)) {
     if (config.links.some((link) => pathname.startsWith(link.href))) {
@@ -205,6 +230,7 @@ export const SUB_PANEL_WIDTH = 240; // px
 function BlocksSubPanel() {
   const pathname = usePathname();
   const { setSubPanelCollapsed } = useUIStore();
+  const locale = useLocale();
   const [categories, setCategories] = useState<BlockCategory[]>(DEFAULT_BLOCK_CATEGORIES);
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -264,11 +290,11 @@ function BlocksSubPanel() {
           return (
             <div key={cat.id} className="mt-4">
               <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-                {cat.label}
+                {getCategoryLabel(cat.id, locale)}
               </p>
               {cat.blocks.map((blockName) => {
                 const Icon = BLOCK_ICON_MAP[blockName];
-                const label = BLOCK_LABEL_MAP[blockName] ?? blockName;
+                const label = getBlockLabel(blockName, locale);
                 const href = `/admin/blocks/${blockName}`;
                 const active = isActive(href);
                 return (
@@ -326,17 +352,56 @@ function BlocksSubPanel() {
   );
 }
 
-// ─── Solutions Sub-Panel (dynamic from registry) ────────────────────
+// ─── Knowledge Sub-Panel (dynamic, grouped by category, no colors) ──
 
-function SolutionsSubPanel() {
+function KnowledgeSubPanel() {
   const pathname = usePathname();
   const { setSubPanelCollapsed } = useUIStore();
-  const solutions = getAllSolutions();
+  const locale = useLocale();
+  const [categories, setCategories] = useState<BlockCategory[]>(DEFAULT_BLOCK_CATEGORIES);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [dialogOpen, setDialogOpen] = useState(false);
 
-  const isActive = (href: string) => {
-    if (href === "/admin/solutions") return pathname === "/admin/solutions";
-    return pathname.startsWith(href);
-  };
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((json) => {
+        const cats = json.data?.[BLOCK_CATEGORIES_SETTING_KEY]
+          ? parseBlockCategories(json.data[BLOCK_CATEGORIES_SETTING_KEY])
+          : DEFAULT_BLOCK_CATEGORIES;
+        setCategories(cats);
+        setSelected(parseKnowledgeBlocks(json.data?.[KNOWLEDGE_BLOCKS_SETTING_KEY]));
+      })
+      .catch(() => {});
+  }, []);
+
+  const items = useMemo(
+    () => groupSelectedSources(selected, categories),
+    [selected, categories]
+  );
+
+  const allBlockNames = useMemo(
+    () => getAllBlocks().map((b) => b.name),
+    []
+  );
+
+  const knowledgeTypeBlocks = useMemo(
+    () => new Set<string>(KNOWLEDGE_TYPE_BLOCKS),
+    []
+  );
+
+  function hrefForBlock(blockName: string): string {
+    return knowledgeTypeBlocks.has(blockName)
+      ? `/admin/organization/knowledge/${blockName}`
+      : `/admin/blocks/${blockName}`;
+  }
+
+  function isActive(href: string) {
+    if (href === "/admin/organization/knowledge") {
+      return pathname === "/admin/organization/knowledge";
+    }
+    return pathname === href || pathname.startsWith(href + "/");
+  }
 
   return (
     <div
@@ -345,7 +410,7 @@ function SolutionsSubPanel() {
     >
       {/* Header */}
       <div className="flex items-center justify-between pt-6 pb-4">
-        <h2 className="text-[16px] font-semibold truncate pl-6">Solutions</h2>
+        <h2 className="text-[16px] font-semibold truncate pl-6">Knowledge</h2>
         <button
           onClick={() => setSubPanelCollapsed(true)}
           className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-accent mr-4"
@@ -357,31 +422,332 @@ function SolutionsSubPanel() {
 
       {/* Links */}
       <nav className="flex-1 pb-4 overflow-y-auto px-3">
-        {/* All Solutions link */}
+        {/* All Sources link */}
         <Link
-          href="/admin/solutions"
+          href="/admin/organization/knowledge"
           className={cn(
             "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-            pathname === "/admin/solutions"
+            isActive("/admin/organization/knowledge")
               ? "bg-primary/10 text-primary dark:bg-brand/10 dark:text-brand"
               : "text-muted-foreground hover:bg-accent hover:text-foreground"
           )}
         >
           <LayoutGrid className="h-4 w-4 shrink-0" />
-          <span className="truncate">All Solutions</span>
+          <span className="truncate">All Sources</span>
         </Link>
 
-        {/* Solution categories with tools */}
-        {solutions.map((solution) => {
-          const solutionColor = solution.color;
+        {/* Category sections (no colors) */}
+        {items.map((entry) => {
+          const label =
+            entry.categoryId === KNOWLEDGE_FALLBACK_CATEGORY_ID
+              ? KNOWLEDGE_FALLBACK_CATEGORY_LABEL
+              : getCategoryLabel(entry.categoryId, locale);
           return (
-            <div key={solution.name} className="mt-4">
+            <div key={entry.categoryId} className="mt-4">
               <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-                {solution.displayName}
+                {label}
               </p>
-              {solution.tools.map((tool) => {
+              {entry.blocks.map((blockName) => {
+                const Icon = BLOCK_ICON_MAP[blockName];
+                const linkLabel = getBlockLabel(blockName, locale);
+                const href = hrefForBlock(blockName);
+                const active = isActive(href);
+                return (
+                  <Link
+                    key={blockName}
+                    href={href}
+                    className={cn(
+                      "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                      active
+                        ? "bg-primary/10 text-primary dark:bg-brand/10 dark:text-brand"
+                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                    )}
+                  >
+                    {Icon && <Icon className="h-4 w-4 shrink-0" />}
+                    <span className="truncate">{linkLabel}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          );
+        })}
+      </nav>
+
+      {/* Footer */}
+      <div className="shrink-0 border-t border-border px-3 py-2">
+        <button
+          onClick={() => setDialogOpen(true)}
+          className="flex items-center justify-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors w-full"
+        >
+          <Settings2 className="h-3.5 w-3.5 shrink-0" />
+          <span>Manage Sources</span>
+        </button>
+      </div>
+
+      <ManageKnowledgeDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        value={selected}
+        categories={categories}
+        allBlockNames={allBlockNames}
+        onSave={setSelected}
+      />
+    </div>
+  );
+}
+
+// ─── Network Sub-Panel (dynamic departments + channels) ────────────
+
+interface NetworkSidebarDepartment {
+  id: string;
+  slug: string;
+  name: string;
+  color: string | null;
+  icon: string | null;
+}
+
+interface NetworkSidebarChannel {
+  id: string;
+  slug: string;
+  displayName: string;
+  color: string | null;
+  icon: string | null;
+}
+
+interface NetworkSidebarData {
+  departments: NetworkSidebarDepartment[];
+  channels: NetworkSidebarChannel[];
+}
+
+function NetworkSubPanel() {
+  const pathname = usePathname();
+  const { setSubPanelCollapsed } = useUIStore();
+  const [data, setData] = useState<NetworkSidebarData>({
+    departments: [],
+    channels: [],
+  });
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const refresh = () => {
+    fetch("/api/network/sidebar")
+      .then((r) => r.json())
+      .then((j) => {
+        if (j.data) setData(j.data as NetworkSidebarData);
+      })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    refresh();
+    const onUpdated = () => refresh();
+    window.addEventListener("network-sidebar-updated", onUpdated);
+    return () => window.removeEventListener("network-sidebar-updated", onUpdated);
+  }, []);
+
+  const isExact = (href: string) => pathname === href;
+  const isPrefix = (href: string) => pathname.startsWith(href);
+
+  const renderTopLink = (href: string, label: string, Icon: LucideIcon) => {
+    const active = isExact(href);
+    return (
+      <Link
+        key={href}
+        href={href}
+        className={cn(
+          "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+          active
+            ? "bg-primary/10 text-primary dark:bg-brand/10 dark:text-brand"
+            : "text-muted-foreground hover:bg-accent hover:text-foreground",
+        )}
+      >
+        <Icon className="h-4 w-4 shrink-0" />
+        <span className="truncate">{label}</span>
+      </Link>
+    );
+  };
+
+  return (
+    <div
+      className="shrink-0 flex flex-col border-r border-border bg-card h-screen transition-all duration-200 ease-in-out"
+      style={{ width: SUB_PANEL_WIDTH }}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between pt-6 pb-4">
+        <h2 className="text-[16px] font-semibold truncate pl-6">Network</h2>
+        <button
+          onClick={() => setSubPanelCollapsed(true)}
+          className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-accent mr-4"
+          title="Collapse panel"
+        >
+          <PanelLeftClose className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Links */}
+      <nav className="flex-1 pb-4 overflow-y-auto px-3">
+        {renderTopLink("/admin/network", "All Members", LayoutGrid)}
+        {renderTopLink("/admin/organization/org-chart", "Org Chart", GitBranch)}
+        {renderTopLink("/admin/organization/network-map", "Network Map", Share2)}
+
+        {/* Internal Network — departments */}
+        <div className="mt-4">
+          <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+            Internal Network
+          </p>
+          {data.departments.length === 0 ? (
+            <p className="px-3 py-1 text-xs text-muted-foreground italic">
+              No departments yet.
+            </p>
+          ) : (
+            data.departments.map((d) => {
+              const href = `/admin/network/departments/${d.slug}`;
+              const active = isPrefix(href);
+              return (
+                <Link
+                  key={d.id}
+                  href={href}
+                  className={cn(
+                    "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                    active
+                      ? "bg-primary/10 text-primary dark:bg-brand/10 dark:text-brand"
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                  )}
+                >
+                  <span
+                    className="size-3.5 shrink-0 rounded-full border-2"
+                    style={{
+                      borderColor: "#94a3b8",
+                      backgroundColor: hexToRgba("#94a3b8", 0.25),
+                    }}
+                  />
+                  <span className="truncate">{d.name}</span>
+                </Link>
+              );
+            })
+          )}
+        </div>
+
+        {/* External Network — channels */}
+        <div className="mt-4">
+          <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+            External Network
+          </p>
+          {data.channels.length === 0 ? (
+            <p className="px-3 py-1 text-xs text-muted-foreground italic">
+              No channels yet.
+            </p>
+          ) : (
+            data.channels.map((c) => {
+              const href = `/admin/network/channels/${c.slug}`;
+              const active = isPrefix(href);
+              const color = c.color || "#f59e0b";
+              return (
+                <Link
+                  key={c.id}
+                  href={href}
+                  className={cn(
+                    "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                    active
+                      ? ""
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                  )}
+                  style={
+                    active
+                      ? { backgroundColor: hexToRgba(color, 0.1), color }
+                      : undefined
+                  }
+                >
+                  <span
+                    className="size-3.5 shrink-0 rounded-full border-2"
+                    style={{
+                      borderColor: color,
+                      backgroundColor: hexToRgba(color, 0.25),
+                    }}
+                  />
+                  <span className="truncate">{c.displayName}</span>
+                </Link>
+              );
+            })
+          )}
+        </div>
+      </nav>
+
+      {/* Footer */}
+      <div className="shrink-0 border-t border-border px-3 py-2">
+        <button
+          onClick={() => setDialogOpen(true)}
+          className="flex items-center justify-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors w-full"
+        >
+          <Settings2 className="h-3.5 w-3.5 shrink-0" />
+          <span>Manage Network</span>
+        </button>
+      </div>
+
+      <ManageNetworkDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onChange={refresh}
+      />
+    </div>
+  );
+}
+
+// ─── Tools Sub-Panel (dynamic from registry) ────────────────────────
+
+function ToolsSubPanel() {
+  const pathname = usePathname();
+  const { setSubPanelCollapsed } = useUIStore();
+  const categories = getAllToolCategories();
+
+  const isActive = (href: string) => {
+    if (href === "/admin/tools") return pathname === "/admin/tools";
+    return pathname.startsWith(href);
+  };
+
+  return (
+    <div
+      className="shrink-0 flex flex-col border-r border-border bg-card h-screen transition-all duration-200 ease-in-out"
+      style={{ width: SUB_PANEL_WIDTH }}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between pt-6 pb-4">
+        <h2 className="text-[16px] font-semibold truncate pl-6">Tools</h2>
+        <button
+          onClick={() => setSubPanelCollapsed(true)}
+          className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-accent mr-4"
+          title="Collapse panel"
+        >
+          <PanelLeftClose className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Links */}
+      <nav className="flex-1 pb-4 overflow-y-auto px-3">
+        {/* All Tools link */}
+        <Link
+          href="/admin/tools"
+          className={cn(
+            "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+            pathname === "/admin/tools"
+              ? "bg-primary/10 text-primary dark:bg-brand/10 dark:text-brand"
+              : "text-muted-foreground hover:bg-accent hover:text-foreground"
+          )}
+        >
+          <LayoutGrid className="h-4 w-4 shrink-0" />
+          <span className="truncate">All Tools</span>
+        </Link>
+
+        {/* Categories with tools */}
+        {categories.map((category) => {
+          const categoryColor = category.color;
+          return (
+            <div key={category.name} className="mt-4">
+              <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                {category.displayName}
+              </p>
+              {category.tools.map((tool) => {
                 const ToolIcon = TOOL_ICON_MAP[tool.icon];
-                const href = `/admin/solutions/${solution.name}/${tool.name}`;
+                const href = `/admin/tools/${category.name}/${tool.name}`;
                 const active = isActive(href);
                 return (
                   <Link
@@ -396,8 +762,8 @@ function SolutionsSubPanel() {
                     style={
                       active
                         ? {
-                            backgroundColor: hexToRgba(solutionColor, 0.1),
-                            color: solutionColor,
+                            backgroundColor: hexToRgba(categoryColor, 0.1),
+                            color: categoryColor,
                           }
                         : undefined
                     }
@@ -405,7 +771,7 @@ function SolutionsSubPanel() {
                     {ToolIcon && (
                       <ToolIcon
                         className="h-4 w-4 shrink-0"
-                        style={{ color: solutionColor }}
+                        style={{ color: categoryColor }}
                       />
                     )}
                     <span className="truncate">{tool.displayName}</span>
@@ -423,9 +789,220 @@ function SolutionsSubPanel() {
           className="flex items-center justify-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors w-full"
         >
           <Settings2 className="h-3.5 w-3.5 shrink-0" />
-          <span>Manage Solutions</span>
+          <span>Manage Tools</span>
         </button>
       </div>
+    </div>
+  );
+}
+
+// ─── Marketplace Sub-Panel (dynamic sections from DB) ───────────────
+
+interface MarketplaceSectionRow {
+  id: string;
+  slug: string;
+  name: string;
+  iconKey: string | null;
+  status: string;
+}
+
+function MarketplaceSubPanel() {
+  const pathname = usePathname();
+  const { setSubPanelCollapsed } = useUIStore();
+  // Hydrate state from cache on first render so we don't flash an empty
+  // panel before the network responds. `loaded` differentiates "still
+  // fetching for the first time" (show skeleton) from "fetched, empty"
+  // (show 'No sections yet').
+  const cached = typeof window !== "undefined" ? getCachedSections() : null;
+  const [sections, setSections] = useState<MarketplaceSectionRow[]>(
+    cached ?? []
+  );
+  const [loaded, setLoaded] = useState(cached !== null);
+  const [manageOpen, setManageOpen] = useState(false);
+
+  const refresh = () => {
+    fetch("/api/marketplace/sections")
+      .then((r) => r.json())
+      .then((j) => {
+        if (Array.isArray(j.data)) {
+          const next: CachedSection[] = (j.data as MarketplaceSectionRow[]).map(
+            (s) => ({
+              id: s.id,
+              slug: s.slug,
+              name: s.name,
+              iconKey: s.iconKey ?? null,
+              status: s.status,
+            })
+          );
+          setSections(next);
+          setCachedSections(next);
+          setLoaded(true);
+        }
+      })
+      .catch(() => setLoaded(true));
+  };
+
+  useEffect(() => {
+    // Always revalidate in the background (stale-while-revalidate).
+    refresh();
+    const onUpdated = () => {
+      invalidateSectionsCache();
+      refresh();
+    };
+    window.addEventListener("marketplace-sections-updated", onUpdated);
+    return () =>
+      window.removeEventListener("marketplace-sections-updated", onUpdated);
+  }, []);
+
+  const isActive = (href: string) => pathname.startsWith(href);
+
+  return (
+    <div
+      className="shrink-0 flex flex-col border-r border-border bg-card h-screen transition-all duration-200 ease-in-out"
+      style={{ width: SUB_PANEL_WIDTH }}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between pt-6 pb-4">
+        <h2 className="text-[16px] font-semibold truncate pl-6">Marketplace</h2>
+        <button
+          onClick={() => setSubPanelCollapsed(true)}
+          className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-accent mr-4"
+          title="Collapse panel"
+        >
+          <PanelLeftClose className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Links — sections directly under the title */}
+      <nav className="flex-1 pb-4 overflow-y-auto px-3 space-y-0.5">
+        {sections.length === 0 && !loaded && (
+          // First-time load with no cache — show 3 skeleton rows so we
+          // don't flash a misleading "No sections yet".
+          <>
+            {[0, 1, 2].map((i) => (
+              <div
+                key={`skel-${i}`}
+                className="flex items-center gap-2.5 px-3 py-2"
+              >
+                <div className="h-4 w-4 rounded bg-muted animate-pulse" />
+                <div
+                  className="h-3 rounded bg-muted animate-pulse"
+                  style={{ width: `${60 + i * 15}%` }}
+                />
+              </div>
+            ))}
+          </>
+        )}
+        {sections.length === 0 && loaded && (
+          <p className="px-3 py-2 text-xs text-muted-foreground italic">
+            No sections yet.
+          </p>
+        )}
+        {sections.map((s) => {
+          const href = `/admin/marketplace/sections/${s.id}`;
+          const active = isActive(href);
+          return (
+            <Link
+              key={s.id}
+              href={href}
+              className={cn(
+                "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                active
+                  ? "bg-primary/10 text-primary dark:bg-brand/10 dark:text-brand"
+                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
+              )}
+            >
+              <ShoppingBag className="h-4 w-4 shrink-0" />
+              <span className="truncate flex-1">{s.name}</span>
+              {s.status === "DRAFT" && (
+                <span className="text-[9px] uppercase tracking-wider text-muted-foreground">
+                  draft
+                </span>
+              )}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* Footer */}
+      <div className="shrink-0 border-t border-border px-3 py-2">
+        <button
+          onClick={() => setManageOpen(true)}
+          className="flex items-center justify-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors w-full"
+        >
+          <Settings2 className="h-3.5 w-3.5 shrink-0" />
+          <span>Manage Sections</span>
+        </button>
+      </div>
+
+      <ManageSectionsDialog
+        open={manageOpen}
+        onOpenChange={setManageOpen}
+        sections={sections}
+        onChange={refresh}
+      />
+    </div>
+  );
+}
+
+// ─── Organization Sub-Panel (categorized, no colors) ────────────────
+
+function OrganizationSubPanel() {
+  const pathname = usePathname();
+  const { setSubPanelCollapsed } = useUIStore();
+  const config = subPanelRegistry.organization;
+  const categories = config?.categories ?? [];
+
+  const allHrefs = categories.flatMap((cat) => cat.links.map((l) => l.href));
+  const activeHref = allHrefs
+    .filter((href) => pathname === href || pathname.startsWith(href + "/"))
+    .sort((a, b) => b.length - a.length)[0];
+
+  return (
+    <div
+      className="shrink-0 flex flex-col border-r border-border bg-card h-screen transition-all duration-200 ease-in-out"
+      style={{ width: SUB_PANEL_WIDTH }}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between pt-6 pb-4">
+        <h2 className="text-[16px] font-semibold truncate pl-6">{config.label}</h2>
+        <button
+          onClick={() => setSubPanelCollapsed(true)}
+          className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-accent mr-4"
+          title="Collapse panel"
+        >
+          <PanelLeftClose className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Categories */}
+      <nav className="flex-1 pb-4 overflow-y-auto px-3">
+        {categories.map((cat) => (
+          <div key={cat.id} className="mt-4 first:mt-0">
+            <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+              {cat.label}
+            </p>
+            {cat.links.map((link) => {
+              const active = link.href === activeHref;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                    active
+                      ? "bg-primary/10 text-primary dark:bg-brand/10 dark:text-brand"
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                  )}
+                >
+                  {link.icon && <link.icon className="h-4 w-4 shrink-0" />}
+                  <span className="truncate">{link.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        ))}
+      </nav>
     </div>
   );
 }
@@ -495,7 +1072,11 @@ export function SubPanel() {
 
   // Custom sub-panels
   if (subPanelId === "blocks") return <BlocksSubPanel />;
-  if (subPanelId === "solutions") return <SolutionsSubPanel />;
+  if (subPanelId === "knowledge") return <KnowledgeSubPanel />;
+  if (subPanelId === "network") return <NetworkSubPanel />;
+  if (subPanelId === "tools") return <ToolsSubPanel />;
+  if (subPanelId === "marketplace") return <MarketplaceSubPanel />;
+  if (subPanelId === "organization") return <OrganizationSubPanel />;
 
   // All other panels use static registry
   const config = subPanelRegistry[subPanelId];

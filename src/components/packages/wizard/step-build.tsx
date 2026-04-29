@@ -99,7 +99,7 @@ export function StepBuild({
       // best-effort cleanup
     }
     reset();
-    router.push("/admin/program/packages");
+    router.push("/admin/tools/sales/packages");
   }
 
   return (

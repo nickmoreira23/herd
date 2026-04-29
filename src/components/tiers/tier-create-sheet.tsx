@@ -95,7 +95,7 @@ export function TierCreateSheet({ open, onOpenChange, onCreated }: TierCreateShe
       setMonthlyPrice("");
 
       // Navigate to full edit view
-      router.push(`/admin/tiers/${json.data.id}`);
+      router.push(`/admin/blocks/subscriptions/${json.data.id}`);
     } catch {
       setError("Failed to create plan");
     } finally {

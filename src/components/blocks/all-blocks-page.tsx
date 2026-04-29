@@ -3,7 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
-import { BLOCK_ICON_MAP, BLOCK_LABEL_MAP } from "@/lib/blocks/block-meta";
+import { BLOCK_ICON_MAP } from "@/lib/blocks/block-meta";
+import { getBlockLabel, getCategoryLabel } from "@/lib/blocks/block-labels";
+import { useLocale } from "@/lib/i18n/locale-context";
 import type { BlockCategory } from "@/lib/blocks/block-categories";
 import { DEFAULT_CATEGORY_COLOR, hexToRgba } from "@/lib/blocks/block-categories";
 
@@ -14,6 +16,7 @@ interface AllBlocksPageProps {
 
 export function AllBlocksPage({ initialCategories, counts }: AllBlocksPageProps) {
   const [categories] = useState(initialCategories);
+  const locale = useLocale();
 
   const totalBlocks = categories.reduce((sum, cat) => sum + cat.blocks.length, 0);
 
@@ -37,12 +40,12 @@ export function AllBlocksPage({ initialCategories, counts }: AllBlocksPageProps)
               className="text-[13px] font-semibold uppercase tracking-wider mb-3"
               style={{ color: catColor }}
             >
-              {category.label}
+              {getCategoryLabel(category.id, locale)}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {category.blocks.map((blockName) => {
                 const Icon = BLOCK_ICON_MAP[blockName];
-                const label = BLOCK_LABEL_MAP[blockName] || blockName;
+                const label = getBlockLabel(blockName, locale);
                 const count = counts[blockName] ?? 0;
 
                 return (

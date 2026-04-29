@@ -171,7 +171,7 @@ export function TierCard({ tier, onDuplicate, onArchive, onDelete }: TierCardPro
               <MoreHorizontal className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuItem onClick={() => router.push(`/admin/tiers/${tier.id}`)}>
+              <DropdownMenuItem onClick={() => router.push(`/admin/blocks/subscriptions/${tier.id}`)}>
                 Edit Plan
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onDuplicate(tier)}>
@@ -196,7 +196,7 @@ export function TierCard({ tier, onDuplicate, onArchive, onDelete }: TierCardPro
 
         {/* Icon — centered */}
         <div className="flex justify-center">
-          <Link href={`/admin/tiers/${tier.id}`}>
+          <Link href={`/admin/blocks/subscriptions/${tier.id}`}>
             {tier.iconUrl ? (
               <Image
                 src={tier.iconUrl}
@@ -219,7 +219,7 @@ export function TierCard({ tier, onDuplicate, onArchive, onDelete }: TierCardPro
       <div className="px-5 pt-4 pb-5 flex flex-col flex-1 overflow-y-auto min-h-0">
         {/* Title */}
         <div className="text-center mb-3">
-          <Link href={`/admin/tiers/${tier.id}`} className="group/link">
+          <Link href={`/admin/blocks/subscriptions/${tier.id}`} className="group/link">
             <h3 className="font-semibold text-base group-hover/link:text-[#C5F135] transition-colors">
               {tier.name}
             </h3>

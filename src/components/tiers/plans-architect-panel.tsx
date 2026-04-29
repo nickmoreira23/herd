@@ -39,7 +39,7 @@ export function PlansArchitectPanel() {
         case "navigate": {
           const planId = data.planId as string;
           const tab = (data.tab as string) || "identity";
-          router.push(`/admin/tiers/${planId}?tab=${tab}`);
+          router.push(`/admin/blocks/subscriptions/${planId}?tab=${tab}`);
           break;
         }
         case "done":

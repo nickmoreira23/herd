@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import {
   FileText,
@@ -16,8 +15,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { KnowledgeSettingsDialog } from "./knowledge-settings-dialog";
 
 interface BlockInfo {
   name: string;
@@ -33,7 +30,7 @@ const BLOCK_CONFIG: Array<{
   icon: LucideIcon;
   href: string;
 }> = [
-  { name: "documents", label: "Documents", icon: FileText, href: "/admin/organization/knowledge" },
+  { name: "documents", label: "Documents", icon: FileText, href: "/admin/organization/knowledge/documents" },
   { name: "images", label: "Images", icon: Image, href: "/admin/organization/knowledge/images" },
   { name: "videos", label: "Videos", icon: Video, href: "/admin/organization/knowledge/videos" },
   { name: "audios", label: "Audios", icon: Music, href: "/admin/organization/knowledge/audios" },
@@ -49,10 +46,7 @@ interface KnowledgeDashboardProps {
   enabledBlocks: string[];
 }
 
-export function KnowledgeDashboard({ counts, enabledBlocks: initial }: KnowledgeDashboardProps) {
-  const [enabledBlocks, setEnabledBlocks] = useState<string[]>(initial);
-  const [showSettings, setShowSettings] = useState(false);
-
+export function KnowledgeDashboard({ counts, enabledBlocks }: KnowledgeDashboardProps) {
   const blocks: BlockInfo[] = BLOCK_CONFIG
     .filter((b) => enabledBlocks.includes(b.name))
     .map((b) => ({ ...b, count: counts[b.name] ?? 0 }));
@@ -62,21 +56,11 @@ export function KnowledgeDashboard({ counts, enabledBlocks: initial }: Knowledge
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Knowledge Base</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {totalItems.toLocaleString()} total items across {blocks.length} content types
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowSettings(true)}
-        >
-          <Settings2 className="h-4 w-4 mr-2" />
-          Configure
-        </Button>
+      <div>
+        <h1 className="text-2xl font-bold">All Sources</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          {totalItems.toLocaleString()} total items across {blocks.length} sources
+        </p>
       </div>
 
       {/* Block Grid */}
@@ -84,13 +68,10 @@ export function KnowledgeDashboard({ counts, enabledBlocks: initial }: Knowledge
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Settings2 className="h-10 w-10 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-1">No content types enabled</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Enable content types to start building your knowledge base.
+            <h3 className="text-lg font-medium mb-1">No sources selected</h3>
+            <p className="text-sm text-muted-foreground">
+              Use “Manage Sources” in the sidebar to add blocks.
             </p>
-            <Button variant="default" onClick={() => setShowSettings(true)}>
-              Configure Knowledge Types
-            </Button>
           </CardContent>
         </Card>
       ) : (
@@ -112,14 +93,6 @@ export function KnowledgeDashboard({ counts, enabledBlocks: initial }: Knowledge
           ))}
         </div>
       )}
-
-      {/* Settings Dialog */}
-      <KnowledgeSettingsDialog
-        open={showSettings}
-        onOpenChange={setShowSettings}
-        enabledBlocks={enabledBlocks}
-        onSave={setEnabledBlocks}
-      />
     </div>
   );
 }

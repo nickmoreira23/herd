@@ -103,14 +103,14 @@ export function ExecutiveSummary() {
               icon={<Layers className="h-3.5 w-3.5" />}
               label="Tier Pricing"
               detail={`${inputs.tiers.length} tiers configured`}
-              href="/admin/tiers"
+              href="/admin/blocks/subscriptions"
               source="Plans page"
             />
             <ProvenanceRow
               icon={<DollarSign className="h-3.5 w-3.5" />}
               label="Commissions"
               detail={`$${inputs.commissionStructure.flatBonusPerSale} bonus + ${inputs.commissionStructure.residualPercent}% residual`}
-              href="/admin/network/promoters"
+              href="/admin/network/channels/promoters"
               source="Promoters page"
             />
             <ProvenanceRow

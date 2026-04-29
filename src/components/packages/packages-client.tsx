@@ -228,7 +228,7 @@ export function PackagesClient({ initialPackages }: PackagesClientProps) {
               <List className="h-4 w-4" />
             </button>
           </div>
-          <Button onClick={() => router.push("/admin/program/packages/new")}>
+          <Button onClick={() => router.push("/admin/tools/sales/packages/new")}>
             <Plus className="h-4 w-4 mr-2" />
             New Package
           </Button>
@@ -294,8 +294,8 @@ export function PackagesClient({ initialPackages }: PackagesClientProps) {
                   <PackageCard
                     key={pkg.id}
                     pkg={pkg}
-                    onView={() => router.push(`/admin/program/packages/${pkg.id}`)}
-                    onEdit={() => router.push(`/admin/program/packages/${pkg.id}/edit`)}
+                    onView={() => router.push(`/admin/tools/sales/packages/${pkg.id}`)}
+                    onEdit={() => router.push(`/admin/tools/sales/packages/${pkg.id}/edit`)}
                     onDelete={() => setDeleteTarget(pkg)}
                   />
                 ))}
@@ -308,8 +308,8 @@ export function PackagesClient({ initialPackages }: PackagesClientProps) {
                     pkg={pkg}
                     selected={selected.has(pkg.id)}
                     onToggleSelect={() => toggleSelect(pkg.id)}
-                    onView={() => router.push(`/admin/program/packages/${pkg.id}`)}
-                    onEdit={() => router.push(`/admin/program/packages/${pkg.id}/edit`)}
+                    onView={() => router.push(`/admin/tools/sales/packages/${pkg.id}`)}
+                    onEdit={() => router.push(`/admin/tools/sales/packages/${pkg.id}/edit`)}
                     onDelete={() => setDeleteTarget(pkg)}
                   />
                 ))}
@@ -330,7 +330,7 @@ export function PackagesClient({ initialPackages }: PackagesClientProps) {
             Create your first package to bundle products for a fitness goal
             across your subscription tiers.
           </p>
-          <Button onClick={() => router.push("/admin/program/packages/new")}>
+          <Button onClick={() => router.push("/admin/tools/sales/packages/new")}>
             <Plus className="h-4 w-4 mr-2" />
             Create Package
           </Button>

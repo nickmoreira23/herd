@@ -30,7 +30,7 @@ export function StepMode({ onNext }: StepModeProps) {
       <div className="flex items-center justify-between border-t px-6 py-4 bg-muted/30 rounded-b-xl">
         <Button
           variant="ghost"
-          onClick={() => router.push("/admin/program/packages")}
+          onClick={() => router.push("/admin/tools/sales/packages")}
         >
           Cancel
         </Button>

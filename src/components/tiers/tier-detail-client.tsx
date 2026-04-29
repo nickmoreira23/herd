@@ -577,7 +577,7 @@ export function TierDetailClient({ tierId, initialTier, allTiers, enabledBenefit
       toast.success("Plan duplicated");
       setDuplicateOpen(false);
       setDuplicateName("");
-      router.push(`/admin/tiers/${newTier.data.id}`);
+      router.push(`/admin/blocks/subscriptions/${newTier.data.id}`);
     } catch {
       toast.error("Something went wrong");
     } finally {
@@ -597,7 +597,7 @@ export function TierDetailClient({ tierId, initialTier, allTiers, enabledBenefit
       }
       toast.success("Plan deleted");
       setDeleteOpen(false);
-      router.push("/admin/tiers");
+      router.push("/admin/blocks/subscriptions");
     } catch {
       toast.error("Something went wrong");
     } finally {
@@ -611,7 +611,7 @@ export function TierDetailClient({ tierId, initialTier, allTiers, enabledBenefit
       <div className="flex items-center justify-between shrink-0 border-b py-3 px-4">
         <nav className="flex items-center gap-2 text-sm">
           <Link
-            href="/admin/tiers"
+            href="/admin/blocks/subscriptions"
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
             Plans

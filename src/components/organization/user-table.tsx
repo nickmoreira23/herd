@@ -240,7 +240,7 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
       } else if (editingUser && showResetPassword && form.password.trim()) {
         toast.success("Password has been reset");
       } else {
-        toast.success(editingUser ? "User updated" : "User created");
+        toast.success(editingUser ? "Member updated" : "Member created");
       }
 
       setModalOpen(false);
@@ -260,7 +260,7 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
       });
       if (res.ok) {
         await refreshUsers();
-        toast.success(newStatus === "ACTIVE" ? "User activated" : "User suspended");
+        toast.success(newStatus === "ACTIVE" ? "Member activated" : "Member suspended");
       }
     },
     [refreshUsers]
@@ -272,7 +272,7 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
       const res = await fetch(`/api/users/${user.id}`, { method: "DELETE" });
       if (res.ok) {
         await refreshUsers();
-        toast.success("User deleted");
+        toast.success("Member deleted");
       }
     },
     [refreshUsers]
@@ -309,14 +309,14 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Users</h1>
+          <h1 className="text-2xl font-bold">Members</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage all users across your network — internal team members and external partners.
+            Manage all members across your network — internal team and external channels.
           </p>
         </div>
         <Button size="sm" onClick={openCreate}>
           <Plus className="mr-1 h-3 w-3" />
-          Add User
+          Add Member
         </Button>
       </div>
 
@@ -325,7 +325,7 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
         enableRowSelection
         columns={columns}
         data={filteredUsers}
-        countLabel="user"
+        countLabel="member"
         toolbar={() => (
           <div className="flex items-center gap-3">
             <Select
@@ -409,7 +409,7 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
                 className="pl-8 pr-20 text-sm w-full"
               />
               <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground tabular-nums">
-                {filteredUsers.length} users
+                {filteredUsers.length} members
               </span>
             </div>
           </div>
@@ -420,11 +420,11 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editingUser ? "Edit User" : "Add User"}</DialogTitle>
+            <DialogTitle>{editingUser ? "Edit Member" : "Add Member"}</DialogTitle>
             <DialogDescription>
               {editingUser
-                ? "Update this user's details, profile type, and roles."
-                : "Add a new user to the network. A temporary password will be generated so they can log in."}
+                ? "Update this member's details, profile type, and roles."
+                : "Add a new member to the network. A temporary password will be generated so they can log in."}
             </DialogDescription>
           </DialogHeader>
 
@@ -621,7 +621,7 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
                 ? "Saving..."
                 : editingUser
                   ? "Save Changes"
-                  : "Create User"}
+                  : "Create Member"}
             </Button>
           </DialogFooter>
         </DialogContent>

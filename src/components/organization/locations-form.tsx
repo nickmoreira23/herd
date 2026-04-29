@@ -114,7 +114,7 @@ export function LocationsForm() {
       const res = await fetch("/api/locations");
       if (res.ok) {
         const json = await res.json();
-        setLocations(json.data || []);
+        setLocations(json.data?.locations || []);
       }
     } catch {
       toast.error("Failed to load locations");
@@ -171,10 +171,10 @@ export function LocationsForm() {
       const payload = { ...form, isHeadquarters: isHQ };
 
       const res = editingId
-        ? await fetch("/api/locations", {
+        ? await fetch(`/api/locations/${editingId}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: editingId, ...payload }),
+            body: JSON.stringify(payload),
           })
         : await fetch("/api/locations", {
             method: "POST",
@@ -198,7 +198,7 @@ export function LocationsForm() {
 
   const handleDelete = async (id: string) => {
     try {
-      const res = await fetch(`/api/locations?id=${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/locations/${id}`, { method: "DELETE" });
       if (!res.ok) {
         toast.error("Failed to delete location");
         return;

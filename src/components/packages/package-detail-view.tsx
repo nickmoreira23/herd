@@ -169,7 +169,7 @@ export function PackageDetailView({ pkg, redemptionRulesByTier = {} }: PackageDe
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => router.push("/admin/program/packages")}
+          onClick={() => router.push("/admin/tools/sales/packages")}
         >
           <ArrowLeft className="h-4 w-4 mr-1" />
           Packages
@@ -180,7 +180,7 @@ export function PackageDetailView({ pkg, redemptionRulesByTier = {} }: PackageDe
             Share
           </Button>
           <Button
-            onClick={() => router.push(`/admin/program/packages/${pkg.id}/edit`)}
+            onClick={() => router.push(`/admin/tools/sales/packages/${pkg.id}/edit`)}
           >
             <Pencil className="h-4 w-4 mr-2" />
             Edit Package

@@ -155,7 +155,7 @@ export function StepReview({ onBack, goToStep }: StepReviewProps) {
       });
 
       toast.success("Package created successfully!");
-      router.push(`/admin/program/packages/${packageId}`);
+      router.push(`/admin/tools/sales/packages/${packageId}`);
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : "Failed to create package"

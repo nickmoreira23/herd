@@ -21,7 +21,12 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/admin", request.url));
   }
 
-  return NextResponse.next();
+  // Forward URL info as REQUEST headers so server components (i18n) can read them.
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", pathname);
+  const localeOverride = request.nextUrl.searchParams.get("locale");
+  if (localeOverride) requestHeaders.set("x-locale-override", localeOverride);
+  return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
 export const config = {

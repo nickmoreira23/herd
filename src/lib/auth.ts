@@ -161,6 +161,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (session.user) {
         (session.user as { role?: string }).role = token.role as string;
         (session.user as { id?: string }).id = token.dbId as string;
+        if (typeof token.picture === "string" || token.picture === null) {
+          session.user.image = token.picture as string | null | undefined;
+        }
+        if (typeof token.name === "string") session.user.name = token.name;
       }
       return session;
     },

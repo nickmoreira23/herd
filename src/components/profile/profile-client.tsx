@@ -2,7 +2,6 @@
 
 import { useState, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -124,7 +123,8 @@ export function ProfileClient({ user: initialUser }: ProfileClientProps) {
           <CardContent className="flex flex-col items-center gap-4">
             <div className="relative group">
               {user.avatarUrl ? (
-                <Image
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
                   src={user.avatarUrl}
                   alt={user.name}
                   width={120}

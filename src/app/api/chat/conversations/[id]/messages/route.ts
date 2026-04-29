@@ -15,7 +15,7 @@ import {
   formatActionResult,
 } from "@/lib/chat/action-execution";
 import { buildActionCatalog, actionToBlock } from "@/lib/blocks/registry";
-import { buildSolutionActionCatalog } from "@/lib/solutions/registry";
+import { buildToolActionCatalog } from "@/lib/tools/registry";
 import { resolveAnthropicKey } from "@/lib/integrations";
 
 const ORCHESTRATOR_KEY = "orchestrator";
@@ -90,10 +90,10 @@ You can perform the following operations using the execute_action tool. Pass the
 
 ${actionCatalog}
 
-=== SOLUTION TOOLS ===
-Higher-level business tools that compose block actions for specific goals like financial projections, legal contracts, marketing campaigns, and sales pipeline management.
+=== TOOLS (by category) ===
+High-level capabilities organized by business area. Each tool composes block actions or calls a dedicated endpoint to accomplish a goal. Agents call tools via execute_action.
 
-${buildSolutionActionCatalog()}`;
+${buildToolActionCatalog()}`;
 }
 
 export async function POST(

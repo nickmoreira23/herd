@@ -95,7 +95,7 @@ export function TierRow({ tier, onDuplicate, onArchive, onDelete }: TierRowProps
 
       {/* Name + tagline */}
       <Link
-        href={`/admin/tiers/${tier.id}`}
+        href={`/admin/blocks/subscriptions/${tier.id}`}
         className="flex-1 min-w-0 group/link"
       >
         <div className="flex items-center gap-2">
@@ -139,7 +139,7 @@ export function TierRow({ tier, onDuplicate, onArchive, onDelete }: TierRowProps
           <MoreHorizontal className="h-4 w-4" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-40">
-          <DropdownMenuItem onClick={() => router.push(`/admin/tiers/${tier.id}`)}>
+          <DropdownMenuItem onClick={() => router.push(`/admin/blocks/subscriptions/${tier.id}`)}>
             Edit
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onDuplicate(tier)}>

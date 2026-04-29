@@ -133,8 +133,8 @@ export default async function DashboardPage() {
       {/* Quick links */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
         <QuickLink href="/admin/blocks/products" label="Manage Products" description="Edit catalog, prices, and COGS" />
-        <QuickLink href="/admin/tiers" label="Plans" description="Design pricing and credit allocations" />
-        <QuickLink href="/admin/network/promoters" label="Promoters" description="Configure sales team compensation" />
+        <QuickLink href="/admin/blocks/subscriptions" label="Plans" description="Design pricing and credit allocations" />
+        <QuickLink href="/admin/network/channels/promoters" label="Promoters" description="Configure sales team compensation" />
         <QuickLink href="/admin/blocks/partners" label="Partners" description="Manage brand partnerships" />
         <QuickLink href="/admin/operation/finances" label="Finances" description="Projections and payments" />
         <QuickLink href="/admin/settings" label="Settings" description="System-wide configuration" />

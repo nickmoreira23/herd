@@ -23,6 +23,7 @@ import {
   CreditCard,
   Flag,
   Network,
+  ShoppingBag,
   Megaphone,
   Star,
   Link2,
@@ -32,8 +33,6 @@ import {
   User,
   ChevronsUpDown,
   Pin,
-  Palette,
-  UserCog,
   Plug,
   Sun,
   Moon,
@@ -43,7 +42,6 @@ import {
   Dumbbell,
   Apple,
   MessageSquare,
-  Layers,
   type LucideIcon,
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
@@ -84,45 +82,13 @@ type NavItem = NavLink | NavGroup;
 const navItems: NavItem[] = [
   { type: "link", href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { type: "link", href: "/admin/chat", label: "Chat", icon: MessageSquare },
+  { type: "link", href: "/admin/organization/profile", label: "Organization", icon: Building2 },
+  { type: "link", href: "/admin/organization/knowledge", label: "Knowledge", icon: BookOpen },
+  { type: "link", href: "/admin/network", label: "Network", icon: Network },
+  { type: "link", href: "/admin/marketplace", label: "Marketplace", icon: ShoppingBag },
   { type: "link", href: "/admin/agents", label: "Agents", icon: Bot },
-  {
-    type: "group",
-    label: "Organization",
-    icon: Building2,
-    children: [
-      { type: "link", href: "/admin/organization/profile", label: "Profile", icon: UserCog },
-      { type: "link", href: "/admin/organization/brand-kit", label: "Brand Kit", icon: Palette },
-      { type: "link", href: "/admin/organization/knowledge", label: "Knowledge", icon: BookOpen },
-      { type: "link", href: "/admin/organization/users", label: "Users", icon: Users },
-    ],
-  },
-  {
-    type: "group",
-    label: "Network",
-    icon: Network,
-    children: [
-      { type: "link", href: "/admin/network/promoters", label: "Promoters", icon: Megaphone },
-      { type: "link", href: "/admin/network/influencers", label: "Influencers", icon: Star },
-      { type: "link", href: "/admin/network/affiliates", label: "Affiliates", icon: Link2 },
-      { type: "link", href: "/admin/network/resellers", label: "Resellers", icon: Store },
-      { type: "link", href: "/admin/network/trainers", label: "Trainers", icon: Dumbbell },
-      { type: "link", href: "/admin/network/nutritionists", label: "Nutritionists", icon: Apple },
-      { type: "link", href: "/admin/network/partners", label: "Leaders", icon: Crown },
-    ],
-  },
-  {
-    type: "group",
-    label: "Program",
-    icon: Gem,
-    children: [
-      { type: "link", href: "/admin/tiers", label: "Plans", icon: CreditCard },
-      { type: "link", href: "/admin/program/packages", label: "Packages", icon: Boxes },
-      { type: "link", href: "/admin/program/milestones", label: "Milestones", icon: Flag },
-    ],
-  },
-  { type: "link", href: "/admin/solutions", label: "Solutions", icon: Lightbulb },
+  { type: "link", href: "/admin/tools", label: "Tools", icon: Lightbulb },
   { type: "link", href: "/admin/blocks", label: "Blocks", icon: Blocks },
-  { type: "link", href: "/admin/foundations", label: "Foundation", icon: Layers },
   { type: "link", href: "/admin/integrations", label: "Integrations", icon: Plug },
 ];
 
@@ -211,12 +177,7 @@ export function Sidebar() {
 
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => {
     const initial = new Set<string>();
-    const activeSubPanel = getSubPanelIdForPath(pathname);
-    if (pathname.startsWith("/admin/organization") || activeSubPanel === "users") initial.add("Organization");
     if (pathname.startsWith("/admin/foundations")) initial.add("Foundations");
-    if (pathname.startsWith("/admin/tiers") || pathname.startsWith("/admin/program")) initial.add("Program");
-    if (pathname.startsWith("/admin/network")) initial.add("Network");
-    if (initial.size === 0 && pathname === "/admin") initial.add("Program");
     return initial;
   });
 
@@ -408,7 +369,8 @@ export function Sidebar() {
           >
             <div className="flex shrink-0 pl-4 pt-4 pb-4">
               {userImage ? (
-                <Image
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
                   src={userImage}
                   alt={userName}
                   width={40}
@@ -440,7 +402,8 @@ export function Sidebar() {
             {/* Profile header */}
             <div className="flex items-center gap-3 px-4 py-3 border-b">
               {userImage ? (
-                <Image
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
                   src={userImage}
                   alt={userName}
                   width={40}

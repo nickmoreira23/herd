@@ -2,21 +2,23 @@ import { prisma } from "@/lib/prisma";
 import { KnowledgeDashboard } from "@/components/knowledge/knowledge-dashboard";
 import {
   KNOWLEDGE_BLOCKS_SETTING_KEY,
-  DEFAULT_KNOWLEDGE_BLOCKS,
   KNOWLEDGE_TYPE_BLOCKS,
+  parseKnowledgeBlocks,
 } from "@/lib/knowledge-commons/constants";
 import { connection } from "next/server";
 
 export default async function KnowledgePage() {
   await connection();
 
-  // Fetch enabled blocks setting
-  const setting = await prisma.setting.findUnique({
+  const knowledgeSetting = await prisma.setting.findUnique({
     where: { key: KNOWLEDGE_BLOCKS_SETTING_KEY },
   });
-  const enabledBlocks = setting
-    ? String(setting.value).split(",").filter(Boolean)
-    : [...KNOWLEDGE_TYPE_BLOCKS];
+  const selected = parseKnowledgeBlocks(knowledgeSetting?.value);
+  // Dashboard only renders KNOWLEDGE_TYPE_BLOCKS — filter at the boundary so
+  // arbitrary blocks added via "Manage Sources" don't break it.
+  const enabledBlocks = (KNOWLEDGE_TYPE_BLOCKS as readonly string[]).filter(
+    (b) => selected.has(b)
+  );
 
   // Fetch counts for all block types in parallel
   const [
