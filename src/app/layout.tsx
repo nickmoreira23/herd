@@ -22,7 +22,11 @@ export const metadata: Metadata = {
   description: "Admin & Financial Engine for HERD subscription operations",
 };
 
-// Dynamic locale island — wrapped in <Suspense> so the layout shell streams.
+/**
+ * Async island that resolves the locale and wraps children in the
+ * `LocaleProvider`. Suspense'd by the layout so Next 16's prerenderer can
+ * stream the static shell first.
+ */
 async function LocaleShell({ children }: { children: ReactNode }) {
   const locale = await getLocale();
   return <LocaleProvider locale={locale}>{children}</LocaleProvider>;
@@ -39,11 +43,16 @@ export default function RootLayout({
       className={`dark ${inter.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <Suspense
-          fallback={
-            <LocaleProvider locale={DEFAULT_LOCALE}>{children}</LocaleProvider>
-          }
-        >
+        {/*
+         * Fallback intentionally omits {children}. Including the children in
+         * the fallback caused the prerenderer to evaluate them with the
+         * default locale AND the suspended locale-aware tree at the same
+         * time, which surfaced "uncached data outside <Suspense>" errors
+         * for routes whose pages were Suspense-correct on their own. With
+         * `null`, the body streams empty until LocaleShell resolves, then
+         * the real tree (with the resolved locale) renders.
+         */}
+        <Suspense fallback={null}>
           <LocaleShell>{children}</LocaleShell>
         </Suspense>
       </body>

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import Link from "next/link";
@@ -9,13 +10,17 @@ import { buildRenderContext } from "@/lib/marketplace/render-resolver";
 import { MarketplaceSectionRenderer } from "@/components/marketplace/renderer/marketplace-section-renderer";
 import type { ComponentNode } from "@/types/landing-page";
 
-export default async function ExploreSectionPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+interface PageParams {
+  slug: string;
+}
+
+/**
+ * Async island. Wrapped in <Suspense> by the page so Next 16 can stream the
+ * static shell first; otherwise the prerenderer aborts with "Uncached data
+ * was accessed outside of <Suspense>".
+ */
+async function SectionContent({ slug }: { slug: string }) {
   await connection();
-  const { slug } = await params;
   const session = await auth();
   const userId = (session?.user as { id?: string } | undefined)?.id ?? null;
   const viewer = await getViewerContext(userId);
@@ -30,18 +35,12 @@ export default async function ExploreSectionPage({
   }
 
   const ctx = await buildRenderContext(section, viewer);
-  const components = (Array.isArray(section.components)
+  const components = Array.isArray(section.components)
     ? (section.components as unknown as ComponentNode[])
-    : []);
+    : [];
 
   return (
-    <div className="max-w-6xl mx-auto px-6">
-      <Link
-        href="/explore"
-        className="inline-flex items-center gap-1 mt-6 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ChevronLeft className="h-4 w-4" /> Back to Explore
-      </Link>
+    <>
       <div className="mt-4 mb-2">
         <h1 className="text-3xl font-bold">{section.name}</h1>
         {section.description && (
@@ -56,6 +55,37 @@ export default async function ExploreSectionPage({
         sectionId={section.id}
         context="public"
       />
+    </>
+  );
+}
+
+function SectionSkeleton() {
+  return (
+    <div className="space-y-4 animate-pulse mt-4">
+      <div className="h-8 w-48 rounded bg-muted" />
+      <div className="h-4 w-72 rounded bg-muted" />
+      <div className="h-64 w-full rounded bg-muted mt-6" />
+    </div>
+  );
+}
+
+export default async function ExploreSectionPage({
+  params,
+}: {
+  params: Promise<PageParams>;
+}) {
+  const { slug } = await params;
+  return (
+    <div className="max-w-6xl mx-auto px-6">
+      <Link
+        href="/explore"
+        className="inline-flex items-center gap-1 mt-6 text-sm text-muted-foreground hover:text-foreground"
+      >
+        <ChevronLeft className="h-4 w-4" /> Back to Explore
+      </Link>
+      <Suspense fallback={<SectionSkeleton />}>
+        <SectionContent slug={slug} />
+      </Suspense>
     </div>
   );
 }
