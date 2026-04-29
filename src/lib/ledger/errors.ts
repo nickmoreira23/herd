@@ -114,3 +114,35 @@ export class StatementLimitExceededError extends LedgerError {
     this.name = "StatementLimitExceededError";
   }
 }
+
+export class CannotReverseReversalError extends LedgerError {
+  constructor(public reversalEntryId: string, public originalEntryId: string) {
+    super(
+      `Cannot reverse a reversal entry (id=${reversalEntryId}, which itself reverses ${originalEntryId}). ` +
+      `If you intend to "redo" the original effect, post a new entry instead.`,
+    );
+    this.name = "CannotReverseReversalError";
+  }
+}
+
+export class EntryAlreadyReversedError extends LedgerError {
+  constructor(
+    public originalEntryId: string,
+    public existingReversalId: string,
+  ) {
+    super(
+      `Journal entry ${originalEntryId} has already been reversed by entry ${existingReversalId}. ` +
+      `If you need a different effect, post a new entry instead of attempting another reversal.`,
+    );
+    this.name = "EntryAlreadyReversedError";
+  }
+}
+
+export class MissingReversalReasonError extends LedgerError {
+  constructor() {
+    super(
+      `Reversal requires an explicit reason. Pass options.reason as a non-empty string explaining why.`,
+    );
+    this.name = "MissingReversalReasonError";
+  }
+}
