@@ -1,18 +1,18 @@
 import { defineConfig } from "vitest/config";
 import path from "node:path";
 
-// Separate config for ledger integration tests.
+// Separate config for integration tests that require a live database.
 // Run via `npm run test:ledger`. Requires DATABASE_URL or DIRECT_URL env var
-// pointing at a Postgres database with the ledger_core migration applied.
+// pointing at a Postgres database with all migrations applied.
 //
-// Why a separate config: the default vitest config excludes `src/lib/ledger/**`
-// so `npm test` (and CI) does not need a database. This config does not
-// exclude the ledger paths and only matches them.
+// Naming convention: integration tests use `*.integration.test.ts`. The
+// default vitest config excludes that pattern so `npm test` (and CI) does
+// not need a database. This config matches only that pattern.
 export default defineConfig({
   test: {
     environment: "node",
     globals: false,
-    include: ["src/lib/ledger/**/*.{test,spec}.{ts,tsx}"],
+    include: ["src/**/*.integration.test.{ts,tsx}"],
     exclude: ["node_modules", ".next", "dist"],
     setupFiles: ["dotenv/config"],
   },
