@@ -43,21 +43,3 @@ export interface ProviderUsage {
   quotaLimit?: number;
 }
 
-/**
- * Metadata for a registered foundation service.
- * Used by the admin Foundations hub and registry.
- */
-export interface FoundationServiceMeta {
-  /** Machine name (e.g., "voice", "payments") */
-  name: string;
-  /** Display name (e.g., "Voice", "Payments") */
-  displayName: string;
-  /** Short description */
-  description: string;
-  /** Current status */
-  status: "active" | "coming-soon";
-  /** Admin page path */
-  adminPath: string;
-  /** Capabilities this service provides */
-  capabilities: string[];
-}

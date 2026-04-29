@@ -73,9 +73,19 @@ interface IntegrationWithRelations {
   }>;
 }
 
+interface JobRow {
+  id: string;
+  operation: string;
+  provider: string;
+  status: string;
+  durationSec: number | null;
+  createdAt: string;
+}
+
 interface IntegrationDetailClientProps {
   integration: IntegrationWithRelations;
   tiers: { id: string; name: string; slug: string }[];
+  jobs: JobRow[] | null;
 }
 
 const STATUS_STYLES: Record<string, { label: string; className: string }> = {
@@ -88,6 +98,7 @@ const STATUS_STYLES: Record<string, { label: string; className: string }> = {
 export function IntegrationDetailClient({
   integration: initial,
   tiers,
+  jobs,
 }: IntegrationDetailClientProps) {
   const router = useRouter();
   const [integration, setIntegration] = useState(initial);
@@ -307,6 +318,7 @@ export function IntegrationDetailClient({
           <TabsTrigger value="configuration">Configuration</TabsTrigger>
           <TabsTrigger value="data-sync">Data Sync</TabsTrigger>
           <TabsTrigger value="logs">Webhooks & Logs</TabsTrigger>
+          {jobs && <TabsTrigger value="jobs">Jobs</TabsTrigger>}
         </TabsList>
 
         {/* Tab 1: Overview */}
@@ -612,6 +624,63 @@ export function IntegrationDetailClient({
             </Card>
           </div>
         </TabsContent>
+
+        {/* Tab 5: Jobs (voice/video only) */}
+        {jobs && (
+          <TabsContent value="jobs">
+            <Card className="mt-4">
+              <CardHeader>
+                <CardTitle className="text-sm">Recent Jobs</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {jobs.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No jobs recorded yet.
+                  </p>
+                ) : (
+                  <div className="border rounded-lg overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b bg-muted/50">
+                          <th className="text-left px-4 py-2 font-medium text-muted-foreground">Status</th>
+                          <th className="text-left px-4 py-2 font-medium text-muted-foreground">Operation</th>
+                          <th className="text-left px-4 py-2 font-medium text-muted-foreground">Duration</th>
+                          <th className="text-left px-4 py-2 font-medium text-muted-foreground">Created</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {jobs.map((job) => (
+                          <tr key={job.id} className="border-b last:border-0">
+                            <td className="px-4 py-2">
+                              <Badge
+                                className={`text-[10px] ${
+                                  job.status === "completed"
+                                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                                    : job.status === "failed"
+                                      ? "bg-red-500/10 text-red-600 dark:text-red-400"
+                                      : "bg-muted text-muted-foreground"
+                                }`}
+                              >
+                                {job.status}
+                              </Badge>
+                            </td>
+                            <td className="px-4 py-2 capitalize">{job.operation}</td>
+                            <td className="px-4 py-2 text-muted-foreground">
+                              {job.durationSec ? `${Math.round(job.durationSec)}s` : "—"}
+                            </td>
+                            <td className="px-4 py-2 text-muted-foreground text-xs whitespace-nowrap">
+                              {new Date(job.createdAt).toLocaleString()}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Connect Modal */}

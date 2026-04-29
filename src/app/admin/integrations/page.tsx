@@ -5,7 +5,7 @@ import { connection } from "next/server";
 export default async function IntegrationsPage() {
   await connection();
   const integrations = await prisma.integration.findMany({
-    orderBy: { name: "asc" },
+    orderBy: [{ category: "asc" }, { name: "asc" }],
   });
 
   const connected = integrations.filter((i) => i.status === "CONNECTED");
@@ -20,7 +20,8 @@ export default async function IntegrationsPage() {
         { label: "Available", value: String(available.length) },
       ]}
       title="All Integrations"
-      description="Connect third-party services to extend your platform."
+      description="Connect third-party services to extend your platform. Browse by category or search across all."
+      showCategoryToggle
     />
   );
 }

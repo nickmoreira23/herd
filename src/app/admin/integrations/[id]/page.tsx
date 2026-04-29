@@ -36,10 +36,49 @@ export default async function IntegrationDetailPage({
     select: { id: true, name: true, slug: true },
   });
 
+  const [voiceJobs, videoJobs] = await Promise.all([
+    integration.category === "VOICE"
+      ? prisma.voiceJob.findMany({
+          where: { integrationId: integration.id },
+          orderBy: { createdAt: "desc" },
+          take: 25,
+        })
+      : Promise.resolve([]),
+    integration.category === "VIDEO"
+      ? prisma.videoJob.findMany({
+          where: { integrationId: integration.id },
+          orderBy: { createdAt: "desc" },
+          take: 25,
+        })
+      : Promise.resolve([]),
+  ]);
+
+  const jobs =
+    integration.category === "VOICE"
+      ? voiceJobs.map((j) => ({
+          id: j.id,
+          operation: j.operation,
+          provider: j.provider,
+          status: j.status,
+          durationSec: j.audioDurationSec,
+          createdAt: j.createdAt.toISOString(),
+        }))
+      : integration.category === "VIDEO"
+        ? videoJobs.map((j) => ({
+            id: j.id,
+            operation: j.operation,
+            provider: j.provider,
+            status: j.status,
+            durationSec: j.videoDurationSec,
+            createdAt: j.createdAt.toISOString(),
+          }))
+        : null;
+
   return (
     <IntegrationDetailClient
       integration={JSON.parse(JSON.stringify(integration))}
       tiers={JSON.parse(JSON.stringify(tiers))}
+      jobs={jobs}
     />
   );
 }

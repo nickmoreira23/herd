@@ -22,6 +22,9 @@ const CATEGORY_LABELS: Record<string, string> = {
   PROJECT_MANAGEMENT: "Project Management",
   SOCIAL_MEDIA: "Social Media",
   AI_MODELS: "AI Models",
+  VOICE: "Voice",
+  VIDEO: "Video",
+  NOTIFICATIONS: "Notifications",
   OTHER: "Other",
 };
 

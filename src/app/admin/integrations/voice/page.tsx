@@ -1,7 +1,7 @@
 import { CategoryHub } from "@/components/integrations/category-hub";
 import { connection } from "next/server";
 
-export default async function OtherIntegrationsPage() {
+export default async function VoiceIntegrationsPage() {
   await connection();
-  return <CategoryHub category="OTHER" />;
+  return <CategoryHub category="VOICE" />;
 }
