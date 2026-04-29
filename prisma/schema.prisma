@@ -892,6 +892,12 @@ model PartnerAgreement {
   @@index([commissionPlanId])
 }
 
+/// @deprecated since Phase 1, Etapa 1.2 of the Marketplace+Opportunities project.
+/// This single-table ledger is frozen — no new writes after this point.
+/// All new financial movements go through the double-entry ledger
+/// (models Account / JournalEntry / JournalLine in this same schema).
+/// See docs/discovery/HERD_DISCOVERY_REPORT.md, section 9, for the rationale.
+/// Data migration from this model to the new ledger is deferred to a later phase.
 model CommissionLedgerEntry {
   id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   orgNodeId          String            @db.Uuid
@@ -3313,4 +3319,93 @@ model RoutineStep {
   @@index([routineId])
   @@index([agentId])
   @@map("routine_steps")
+}
+
+// ============================================================
+// Double-entry ledger — Phase 1, Etapa 1.2
+// All monetary movements in the new system flow through these tables.
+// Invariant: for every JournalEntry, sum(D) = sum(C) per currency.
+// ============================================================
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  REVENUE
+  EXPENSE
+  EQUITY
+}
+
+enum AccountOwnerKind {
+  PLATFORM
+  PROFILE
+  EXTERNAL
+}
+
+enum JournalLineDirection {
+  D
+  C
+}
+
+enum JournalEntrySourceKind {
+  TRANSACTION
+  COMMISSION
+  REFUND
+  MANUAL_ADJUSTMENT
+  SEED
+  REVERSAL
+}
+
+model Account {
+  id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code        String           @unique
+  name        String
+  accountType AccountType
+  ownerKind   AccountOwnerKind
+  ownerId     String?          @db.Uuid
+  currency    String           @db.Char(3)
+  metadata    Json             @default("{}")
+  archivedAt  DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  journalLines JournalLine[]
+
+  @@index([ownerKind, ownerId])
+  @@index([accountType])
+  @@index([currency])
+  @@map("accounts")
+}
+
+model JournalEntry {
+  id             String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sourceKind     JournalEntrySourceKind
+  sourceId       String                 @db.Uuid
+  idempotencyKey String?                @unique
+  description    String?
+  postedAt       DateTime               @default(now())
+  metadata       Json                   @default("{}")
+  createdAt      DateTime               @default(now())
+
+  lines JournalLine[]
+
+  @@index([sourceKind, sourceId])
+  @@index([postedAt])
+  @@map("journal_entries")
+}
+
+model JournalLine {
+  id             BigInt               @id @default(autoincrement())
+  journalEntryId String               @db.Uuid
+  accountId      String               @db.Uuid
+  direction      JournalLineDirection
+  amountCents    BigInt
+  currency       String               @db.Char(3)
+  createdAt      DateTime             @default(now())
+
+  journalEntry JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Restrict)
+  account      Account      @relation(fields: [accountId], references: [id], onDelete: Restrict)
+
+  @@index([journalEntryId])
+  @@index([accountId])
+  @@map("journal_lines")
 }

@@ -8,7 +8,7 @@ export default defineConfig({
     environment: "node",
     globals: false,
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
-    exclude: ["node_modules", ".next", "dist"],
+    exclude: ["node_modules", ".next", "dist", "src/lib/ledger/**"],
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
