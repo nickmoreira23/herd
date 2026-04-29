@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
-import { apiSuccess, apiError } from "@/lib/api-utils";
+import { apiSuccess, apiError, parseAndValidate } from "@/lib/api-utils";
+import { updateTaskSchema } from "@/lib/validators/tasks";
+import type { Prisma } from "@prisma/client";
 
 export async function GET(
   _request: Request,
@@ -20,31 +22,29 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const { id } = await params;
-    const body = await request.json();
+  const { id } = await params;
+  const result = await parseAndValidate(request, updateTaskSchema);
+  if ("error" in result) return result.error;
 
+  try {
+    const body = result.data;
     const existing = await prisma.task.findUnique({ where: { id } });
     if (!existing) return apiError("Task not found", 404);
 
-    const data: Record<string, unknown> = {};
+    const data: Prisma.TaskUpdateInput = {};
 
     if (body.title !== undefined) data.title = body.title;
-    if (body.description !== undefined) data.description = body.description;
+    if (body.description !== undefined) data.description = body.description ?? null;
     if (body.status !== undefined) data.status = body.status;
     if (body.priority !== undefined) data.priority = body.priority;
-    if (body.dueDate !== undefined) data.dueDate = body.dueDate ? new Date(body.dueDate) : null;
-    if (body.assignee !== undefined) data.assignee = body.assignee;
-    if (body.assigneeEmail !== undefined) data.assigneeEmail = body.assigneeEmail;
+    if (body.dueDate !== undefined) data.dueDate = body.dueDate ?? null;
+    if (body.assignee !== undefined) data.assignee = body.assignee ?? null;
+    if (body.assigneeEmail !== undefined) data.assigneeEmail = body.assigneeEmail ?? null;
     if (body.labels !== undefined) data.labels = body.labels;
-    if (body.completedAt !== undefined) data.completedAt = body.completedAt ? new Date(body.completedAt) : null;
-    if (body.projectName !== undefined) data.projectName = body.projectName;
+    if (body.completedAt !== undefined) data.completedAt = body.completedAt ?? null;
+    if (body.projectName !== undefined) data.projectName = body.projectName ?? null;
 
-    const task = await prisma.task.update({
-      where: { id },
-      data,
-    });
-
+    const task = await prisma.task.update({ where: { id }, data });
     return apiSuccess(task);
   } catch (e) {
     console.error("PATCH /api/tasks/[id] error:", e);

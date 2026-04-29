@@ -1,12 +1,42 @@
 import { prisma } from "@/lib/prisma";
-import { apiSuccess, apiError } from "@/lib/api-utils";
+import { apiSuccess, apiError, parseAndValidate } from "@/lib/api-utils";
+import { createLocationSchema } from "@/lib/validators/locations";
+import type { Prisma } from "@prisma/client";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const locations = await prisma.location.findMany({
-      orderBy: [{ isHeadquarters: "desc" }, { name: "asc" }],
-    });
-    return apiSuccess(locations);
+    const { searchParams } = new URL(request.url);
+    const type = searchParams.get("type");
+    const isActive = searchParams.get("isActive");
+    const search = searchParams.get("search");
+    const limit = parseInt(searchParams.get("limit") ?? "200", 10);
+    const offset = parseInt(searchParams.get("offset") ?? "0", 10);
+
+    const where: Prisma.LocationWhereInput = {};
+    if (type) where.type = type;
+    if (isActive === "true") where.isActive = true;
+    else if (isActive === "false") where.isActive = false;
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: "insensitive" } },
+        { city: { contains: search, mode: "insensitive" } },
+        { state: { contains: search, mode: "insensitive" } },
+        { country: { contains: search, mode: "insensitive" } },
+        { street: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    const [locations, total] = await Promise.all([
+      prisma.location.findMany({
+        where,
+        orderBy: [{ isHeadquarters: "desc" }, { name: "asc" }],
+        take: limit,
+        skip: offset,
+      }),
+      prisma.location.count({ where }),
+    ]);
+
+    return apiSuccess({ locations, total });
   } catch (e) {
     console.error("GET /api/locations error:", e);
     return apiError("Failed to fetch locations", 500);
@@ -14,16 +44,13 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const result = await parseAndValidate(request, createLocationSchema);
+  if ("error" in result) return result.error;
+
   try {
-    const body = await request.json();
-    const { name, type, street, street2, city, state, zip, country, phone, email, isHeadquarters, notes } = body;
+    const body = result.data;
 
-    if (!name || typeof name !== "string") {
-      return apiError("Name is required", 400);
-    }
-
-    // If marking as headquarters, unset any existing headquarters
-    if (isHeadquarters) {
+    if (body.isHeadquarters) {
       await prisma.location.updateMany({
         where: { isHeadquarters: true },
         data: { isHeadquarters: false },
@@ -32,70 +59,24 @@ export async function POST(request: Request) {
 
     const location = await prisma.location.create({
       data: {
-        name,
-        type: type || "office",
-        street: street || null,
-        street2: street2 || null,
-        city: city || null,
-        state: state || null,
-        zip: zip || null,
-        country: country || null,
-        phone: phone || null,
-        email: email || null,
-        isHeadquarters: isHeadquarters || false,
-        notes: notes || null,
+        name: body.name,
+        type: body.type ?? "office",
+        street: body.street ?? null,
+        street2: body.street2 ?? null,
+        city: body.city ?? null,
+        state: body.state ?? null,
+        zip: body.zip ?? null,
+        country: body.country ?? null,
+        phone: body.phone ?? null,
+        email: body.email ?? null,
+        isHeadquarters: body.isHeadquarters ?? false,
+        notes: body.notes ?? null,
       },
     });
 
-    return apiSuccess(location);
+    return apiSuccess(location, 201);
   } catch (e) {
     console.error("POST /api/locations error:", e);
     return apiError("Failed to create location", 500);
-  }
-}
-
-export async function PATCH(request: Request) {
-  try {
-    const body = await request.json();
-    const { id, ...data } = body;
-
-    if (!id) {
-      return apiError("Location ID is required", 400);
-    }
-
-    // If marking as headquarters, unset any existing headquarters
-    if (data.isHeadquarters) {
-      await prisma.location.updateMany({
-        where: { isHeadquarters: true, id: { not: id } },
-        data: { isHeadquarters: false },
-      });
-    }
-
-    const location = await prisma.location.update({
-      where: { id },
-      data,
-    });
-
-    return apiSuccess(location);
-  } catch (e) {
-    console.error("PATCH /api/locations error:", e);
-    return apiError("Failed to update location", 500);
-  }
-}
-
-export async function DELETE(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
-
-    if (!id) {
-      return apiError("Location ID is required", 400);
-    }
-
-    await prisma.location.delete({ where: { id } });
-    return apiSuccess({ deleted: true });
-  } catch (e) {
-    console.error("DELETE /api/locations error:", e);
-    return apiError("Failed to delete location", 500);
   }
 }

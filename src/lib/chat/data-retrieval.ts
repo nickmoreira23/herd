@@ -19,11 +19,23 @@ import { MeetingProvider } from "./providers/meeting.provider";
 import { EventProvider } from "./providers/event.provider";
 import { LandingPageProvider } from "./providers/landing-page.provider";
 import { MessageProvider } from "./providers/message.provider";
+import { TaskProvider } from "./providers/task.provider";
+import { NoteProvider } from "./providers/note.provider";
+import { LocationProvider } from "./providers/location.provider";
+import { FeedbackProvider } from "./providers/feedback.provider";
+import { ServiceProvider } from "./providers/service.provider";
+import { ContactProvider } from "./providers/contact.provider";
+import { CompanyProvider } from "./providers/company.provider";
+import { DealProvider } from "./providers/deal.provider";
+import { CampaignProvider } from "./providers/campaign.provider";
+import { ExperienceProvider } from "./providers/experience.provider";
+import { SubscriptionProvider } from "./providers/subscription.provider";
+import { RoutineProvider } from "./providers/routine.provider";
 
 // ─── Provider Registry ─────────────────────────────────────────────
 // To add a new domain, create a provider and add it here.
 
-const providers: DataProvider[] = [
+export const providers: DataProvider[] = [
   // Knowledge-type blocks (9 individual providers)
   new DocumentProvider(),
   new ImageProvider(),
@@ -44,6 +56,18 @@ const providers: DataProvider[] = [
   new EventProvider(),
   new LandingPageProvider(),
   new MessageProvider(),
+  new TaskProvider(),
+  new NoteProvider(),
+  new LocationProvider(),
+  new FeedbackProvider(),
+  new ServiceProvider(),
+  new ContactProvider(),
+  new CompanyProvider(),
+  new DealProvider(),
+  new CampaignProvider(),
+  new ExperienceProvider(),
+  new SubscriptionProvider(),
+  new RoutineProvider(),
 ];
 
 // Build a lookup: type string → provider instance

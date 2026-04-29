@@ -1,76 +1,142 @@
 import type { BlockManifest } from "../manifest";
 
+const STATUS_ENUM = ["DRAFT", "ACTIVE", "ARCHIVED"];
+const VISIBILITY_ENUM = ["PUBLIC", "PRIVATE", "INVITE_ONLY"];
+
 export const subscriptionsBlock: BlockManifest = {
   name: "subscriptions",
   displayName: "Subscriptions",
   description:
-    "Subscription tier management — discount rules for Members Store and Members Rate. Supports creating, updating, and deleting redemption rules that control product pricing for tier members.",
-  domain: "foundation",
+    "Subscription plans (tiers) the organization offers — the catalog of recurring memberships customers can subscribe to. Each plan has pricing across billing cycles (monthly/quarterly/annual), monthly credits, included perks, agent access, partner discounts, status & visibility controls, lifecycle policies (trials, pauses, cancellations), and a set of benefit blocks attached to it. The block also owns the discount redemption rules (Members Store / Members Rate) that govern product pricing for plan members. Lives in the Commerce category.",
+  domain: "commerce",
   types: ["subscription_tier", "redemption_rule"],
   capabilities: ["read", "create", "update", "delete"],
   models: ["SubscriptionTier", "SubscriptionRedemptionRule"],
   dependencies: ["products"],
   paths: {
     components: "src/components/tiers/",
-    pages: "src/app/admin/plans/",
-    api: "src/app/api/subscriptions/",
-    validators: "src/lib/validators/redemption-rule.ts",
+    pages: "src/app/admin/blocks/subscriptions/",
+    api: "src/app/api/tiers/",
+    validators: "src/lib/validators/tier.ts",
+    provider: "src/lib/chat/providers/subscription.provider.ts",
   },
   actions: [
     {
+      name: "list_subscriptions",
+      description:
+        "List subscription plans (tiers) ordered by sortOrder, with pricing, status, visibility, included credits and feature highlights.",
+      method: "GET",
+      endpoint: "/api/tiers",
+      parametersSchema: {
+        type: "object",
+        properties: {
+          status: { type: "string", enum: STATUS_ENUM },
+          visibility: { type: "string", enum: VISIBILITY_ENUM },
+          search: { type: "string" },
+          limit: { type: "number" },
+          offset: { type: "number" },
+        },
+      },
+      responseDescription:
+        "{ tiers: SubscriptionTier[], total: number } — each tier serializes Decimal pricing as numbers",
+    },
+    {
+      name: "get_subscription",
+      description:
+        "Get a single subscription plan (tier) by ID with full pricing, credits, lifecycle, agent access and partner assignments.",
+      method: "GET",
+      endpoint: "/api/tiers/{id}",
+      parametersSchema: {
+        type: "object",
+        properties: { id: { type: "string" } },
+        required: ["id"],
+      },
+      requiredFields: ["id"],
+      responseDescription: "Single SubscriptionTier with relations.",
+    },
+    {
+      name: "create_subscription",
+      description:
+        "Create a new subscription plan (tier). At minimum needs a name, slug and the three pricing fields (monthly/quarterly/annual).",
+      method: "POST",
+      endpoint: "/api/tiers",
+      parametersSchema: {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          slug: { type: "string" },
+          tagline: { type: "string" },
+          status: { type: "string", enum: STATUS_ENUM },
+          visibility: { type: "string", enum: VISIBILITY_ENUM },
+          monthlyPrice: { type: "number" },
+          quarterlyPrice: { type: "number" },
+          annualPrice: { type: "number" },
+          monthlyCredits: { type: "number" },
+        },
+        required: ["name", "slug"],
+      },
+      requiredFields: ["name", "slug"],
+      responseDescription: "Created tier record",
+    },
+    {
+      name: "update_subscription",
+      description:
+        "Update a subscription plan (tier). All fields are optional; pass only what's changing.",
+      method: "PATCH",
+      endpoint: "/api/tiers/{id}",
+      parametersSchema: {
+        type: "object",
+        properties: { id: { type: "string" } },
+        required: ["id"],
+      },
+      requiredFields: ["id"],
+      responseDescription: "Updated tier record",
+    },
+    {
+      name: "delete_subscription",
+      description: "Delete a subscription plan (tier).",
+      method: "DELETE",
+      endpoint: "/api/tiers/{id}",
+      parametersSchema: {
+        type: "object",
+        properties: { id: { type: "string" } },
+        required: ["id"],
+      },
+      requiredFields: ["id"],
+      responseDescription: "{ deleted: true }",
+    },
+    {
       name: "list_redemption_rules",
       description:
-        "List all discount redemption rules for a subscription tier",
+        "List discount redemption rules attached to a subscription plan.",
       method: "GET",
       endpoint: "/api/subscriptions/{tierId}/redemption-rules",
       parametersSchema: {
         type: "object",
-        properties: {
-          tierId: {
-            type: "string",
-            description: "The subscription tier UUID",
-          },
-        },
+        properties: { tierId: { type: "string" } },
         required: ["tierId"],
       },
       requiredFields: ["tierId"],
       responseDescription:
-        "Array of redemption rule objects with redemptionType, discountPercent, scopeType, scopeValue",
+        "Array of redemption rules with redemptionType, discountPercent, scopeType, scopeValue.",
     },
     {
       name: "create_redemption_rule",
       description:
-        "Create a new discount rule for a subscription tier. Rules can target an entire CATEGORY, a SUB_CATEGORY, or a specific product SKU. redemptionType is either MEMBERS_STORE (credits-based purchase) or MEMBERS_RATE (flat discount, out-of-pocket).",
+        "Create a redemption rule for a subscription plan. MEMBERS_STORE = credit-based purchase at discount; MEMBERS_RATE = flat % off retail. Scope can be CATEGORY, SUB_CATEGORY or SKU.",
       method: "POST",
       endpoint: "/api/subscriptions/{tierId}/redemption-rules",
       parametersSchema: {
         type: "object",
         properties: {
-          tierId: {
-            type: "string",
-            description: "The subscription tier UUID",
-          },
+          tierId: { type: "string" },
           redemptionType: {
             type: "string",
             enum: ["MEMBERS_STORE", "MEMBERS_RATE"],
-            description:
-              "MEMBERS_STORE = bought with credits at discount; MEMBERS_RATE = flat % off retail, paid out-of-pocket",
           },
-          discountPercent: {
-            type: "number",
-            description: "Discount percentage (0-100) off retail price",
-          },
-          scopeType: {
-            type: "string",
-            enum: ["CATEGORY", "SUB_CATEGORY", "SKU"],
-            description:
-              "What level this rule targets. SKU overrides SUB_CATEGORY which overrides CATEGORY.",
-          },
-          scopeValue: {
-            type: "string",
-            description:
-              "The category name (e.g. SUPPLEMENT), sub-category name (e.g. Protein), or product SKU",
-          },
+          discountPercent: { type: "number" },
+          scopeType: { type: "string", enum: ["CATEGORY", "SUB_CATEGORY", "SKU"] },
+          scopeValue: { type: "string" },
         },
         required: [
           "tierId",
@@ -87,52 +153,33 @@ export const subscriptionsBlock: BlockManifest = {
         "scopeType",
         "scopeValue",
       ],
-      responseDescription: "The created redemption rule object",
+      responseDescription: "The created redemption rule",
     },
     {
       name: "update_redemption_rule",
-      description:
-        "Update the discount percentage of an existing redemption rule",
+      description: "Update a redemption rule's discount percentage.",
       method: "PATCH",
       endpoint: "/api/subscriptions/{tierId}/redemption-rules/{id}",
       parametersSchema: {
         type: "object",
         properties: {
-          tierId: {
-            type: "string",
-            description: "The subscription tier UUID",
-          },
-          id: {
-            type: "string",
-            description: "The redemption rule UUID",
-          },
-          discountPercent: {
-            type: "number",
-            description: "New discount percentage (0-100)",
-          },
+          tierId: { type: "string" },
+          id: { type: "string" },
+          discountPercent: { type: "number" },
         },
         required: ["tierId", "id", "discountPercent"],
       },
       requiredFields: ["tierId", "id", "discountPercent"],
-      responseDescription: "The updated redemption rule object",
+      responseDescription: "The updated redemption rule",
     },
     {
       name: "delete_redemption_rule",
-      description: "Delete a discount redemption rule from a tier",
+      description: "Delete a redemption rule from a subscription plan.",
       method: "DELETE",
       endpoint: "/api/subscriptions/{tierId}/redemption-rules/{id}",
       parametersSchema: {
         type: "object",
-        properties: {
-          tierId: {
-            type: "string",
-            description: "The subscription tier UUID",
-          },
-          id: {
-            type: "string",
-            description: "The redemption rule UUID to delete",
-          },
-        },
+        properties: { tierId: { type: "string" }, id: { type: "string" } },
         required: ["tierId", "id"],
       },
       requiredFields: ["tierId", "id"],

@@ -23,6 +23,17 @@ import { appsBlock } from "./blocks/apps.block";
 import { voiceBlock } from "./blocks/voice.block";
 // Operations blocks
 import { messagesBlock } from "./blocks/messages.block";
+import { tasksBlock } from "./blocks/tasks.block";
+import { notesBlock } from "./blocks/notes.block";
+import { locationsBlock } from "./blocks/locations.block";
+import { feedbacksBlock } from "./blocks/feedbacks.block";
+import { servicesBlock } from "./blocks/services.block";
+import { contactsBlock } from "./blocks/contacts.block";
+import { companiesBlock } from "./blocks/companies.block";
+import { dealsBlock } from "./blocks/deals.block";
+import { campaignsBlock } from "./blocks/campaigns.block";
+import { experiencesBlock } from "./blocks/experiences.block";
+import { routinesBlock } from "./blocks/routines.block";
 
 // ─── All registered blocks ────────────────────────────────────────
 // To add a new block, create a manifest and add it here.
@@ -52,6 +63,17 @@ const blocks: BlockManifest[] = [
   voiceBlock,
   // Operations blocks
   messagesBlock,
+  tasksBlock,
+  notesBlock,
+  locationsBlock,
+  feedbacksBlock,
+  servicesBlock,
+  contactsBlock,
+  companiesBlock,
+  dealsBlock,
+  campaignsBlock,
+  experiencesBlock,
+  routinesBlock,
 ];
 
 // ─── Lookup Maps ──────────────────────────────────────────────────

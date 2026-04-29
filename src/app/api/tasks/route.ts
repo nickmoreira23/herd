@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { apiSuccess, apiError } from "@/lib/api-utils";
+import { apiSuccess, apiError, parseAndValidate } from "@/lib/api-utils";
+import { createTaskSchema } from "@/lib/validators/tasks";
 import type { Prisma } from "@prisma/client";
 
 export async function GET(request: Request) {
@@ -49,20 +50,18 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const result = await parseAndValidate(request, createTaskSchema);
+  if ("error" in result) return result.error;
+
   try {
-    const body = await request.json();
-
-    if (!body.title || typeof body.title !== "string" || body.title.trim() === "") {
-      return apiError("Title is required", 400);
-    }
-
+    const body = result.data;
     const task = await prisma.task.create({
       data: {
         title: body.title.trim(),
         description: body.description ?? null,
         status: body.status ?? "TODO",
         priority: body.priority ?? "NONE",
-        dueDate: body.dueDate ? new Date(body.dueDate) : null,
+        dueDate: body.dueDate ?? null,
         assignee: body.assignee ?? null,
         assigneeEmail: body.assigneeEmail ?? null,
         projectName: body.projectName ?? null,

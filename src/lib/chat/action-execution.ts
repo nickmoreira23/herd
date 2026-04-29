@@ -1,5 +1,5 @@
 import { actionToBlock } from "../blocks/registry";
-import { toolActionToSolution } from "../solutions/registry";
+import { toolActionToCategory } from "../tools/registry";
 
 // ─── Types ─────────────────────────────────────────────────────────
 
@@ -50,9 +50,9 @@ export async function executeAction(
   // Check block actions first
   const entry = actionToBlock.get(actionName);
 
-  // Check solution tool actions if not a block action
+  // Check tool actions if not a block action
   if (!entry) {
-    const toolEntry = toolActionToSolution.get(actionName);
+    const toolEntry = toolActionToCategory.get(actionName);
     if (!toolEntry) {
       return {
         success: false,
@@ -62,7 +62,7 @@ export async function executeAction(
       };
     }
 
-    const { solution, action: toolAction } = toolEntry;
+    const { category, action: toolAction } = toolEntry;
 
     // If the tool action composes block actions, execute them in sequence
     if (toolAction.blockActions && toolAction.blockActions.length > 0) {
@@ -75,7 +75,7 @@ export async function executeAction(
       return {
         success: results.every((r) => r.success),
         action: actionName,
-        block: solution.name,
+        block: category.name,
         data: results.length === 1 ? results[0].data : results.map((r) => r.data),
         error: results.find((r) => !r.success)?.error,
       };
@@ -83,8 +83,6 @@ export async function executeAction(
 
     // If the tool action has its own endpoint, handle it like a block action
     if (toolAction.endpoint && toolAction.method) {
-      // Reuse the same execution logic below by creating a compatible entry
-      const syntheticBlock = { name: solution.name } as const;
       const syntheticAction = {
         endpoint: toolAction.endpoint,
         method: toolAction.method,
@@ -93,14 +91,13 @@ export async function executeAction(
         parametersSchema: toolAction.parametersSchema,
         responseDescription: toolAction.responseDescription,
       };
-      // Fall through to the standard execution path
-      return executeBlockAction(actionName, syntheticBlock.name, syntheticAction, params, userId);
+      return executeBlockAction(actionName, category.name, syntheticAction, params, userId);
     }
 
     return {
       success: false,
       action: actionName,
-      block: solution.name,
+      block: category.name,
       error: `Tool action "${actionName}" has no endpoint or block actions configured.`,
     };
   }

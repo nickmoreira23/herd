@@ -1,0 +1,185 @@
+import type { BlockManifest } from "../manifest";
+
+export const feedbacksBlock: BlockManifest = {
+  name: "feedbacks",
+  displayName: "Feedbacks",
+  description:
+    "Centralized product feedback — suggestions, bugs, complaints, praise, questions, ideas. Each feedback has a type, status (NEW → TRIAGED → PLANNED → IN_PROGRESS → DONE/DECLINED), priority, vote count, optional submitter (name + email), optional source channel, tags, and rich-text content (TipTap JSON). Supports polymorphic linking to other entities (entityType + entityId). Setting status to DONE or DECLINED automatically populates resolvedAt.",
+  domain: "knowledge",
+  types: ["feedback"],
+  capabilities: ["read", "create", "update", "delete", "upvote"],
+  models: ["Feedback"],
+  dependencies: [],
+  paths: {
+    components: "src/components/feedbacks/",
+    pages: "src/app/admin/blocks/feedbacks/",
+    api: "src/app/api/feedbacks/",
+    validators: "src/lib/validators/feedbacks.ts",
+    provider: "src/lib/chat/providers/feedback.provider.ts",
+  },
+  actions: [
+    {
+      name: "list_feedbacks",
+      description:
+        "List feedbacks with optional filters by type, status, priority, source, linked entity, and keyword search across title/content/submitter",
+      method: "GET",
+      endpoint: "/api/feedbacks",
+      parametersSchema: {
+        type: "object",
+        properties: {
+          type: {
+            type: "string",
+            enum: [
+              "SUGGESTION",
+              "BUG",
+              "COMPLAINT",
+              "PRAISE",
+              "QUESTION",
+              "IDEA",
+            ],
+          },
+          status: {
+            type: "string",
+            enum: [
+              "NEW",
+              "TRIAGED",
+              "PLANNED",
+              "IN_PROGRESS",
+              "DONE",
+              "DECLINED",
+            ],
+          },
+          priority: {
+            type: "string",
+            enum: ["LOW", "MEDIUM", "HIGH", "URGENT"],
+          },
+          source: { type: "string" },
+          entityType: { type: "string" },
+          entityId: { type: "string" },
+          search: { type: "string" },
+          limit: { type: "number" },
+          offset: { type: "number" },
+        },
+      },
+      responseDescription: "{ feedbacks: Feedback[], total: number }",
+    },
+    {
+      name: "get_feedback",
+      description: "Get a single feedback by ID",
+      method: "GET",
+      endpoint: "/api/feedbacks/{id}",
+      parametersSchema: {
+        type: "object",
+        properties: { id: { type: "string" } },
+        required: ["id"],
+      },
+      requiredFields: ["id"],
+      responseDescription: "Single feedback record",
+    },
+    {
+      name: "create_feedback",
+      description:
+        "Create a new feedback. Optionally link to another entity by providing both entityType and entityId.",
+      method: "POST",
+      endpoint: "/api/feedbacks",
+      parametersSchema: {
+        type: "object",
+        properties: {
+          title: { type: "string" },
+          contentJson: { type: "object", description: "TipTap document JSON" },
+          contentText: { type: "string" },
+          type: {
+            type: "string",
+            enum: [
+              "SUGGESTION",
+              "BUG",
+              "COMPLAINT",
+              "PRAISE",
+              "QUESTION",
+              "IDEA",
+            ],
+          },
+          status: {
+            type: "string",
+            enum: [
+              "NEW",
+              "TRIAGED",
+              "PLANNED",
+              "IN_PROGRESS",
+              "DONE",
+              "DECLINED",
+            ],
+          },
+          priority: {
+            type: "string",
+            enum: ["LOW", "MEDIUM", "HIGH", "URGENT"],
+          },
+          source: { type: "string" },
+          submitterName: { type: "string" },
+          submitterEmail: { type: "string" },
+          tags: { type: "array", items: { type: "string" } },
+          entityType: { type: "string" },
+          entityId: { type: "string" },
+        },
+        required: ["title"],
+      },
+      requiredFields: ["title"],
+      responseDescription: "Created feedback record",
+    },
+    {
+      name: "update_feedback",
+      description:
+        "Update an existing feedback. Setting status to DONE or DECLINED auto-populates resolvedAt; reverting to an earlier status clears it.",
+      method: "PATCH",
+      endpoint: "/api/feedbacks/{id}",
+      parametersSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string" },
+          title: { type: "string" },
+          contentJson: { type: "object" },
+          contentText: { type: "string" },
+          type: { type: "string" },
+          status: { type: "string" },
+          priority: { type: "string" },
+          source: { type: "string" },
+          submitterName: { type: "string" },
+          submitterEmail: { type: "string" },
+          tags: { type: "array", items: { type: "string" } },
+          entityType: { type: "string" },
+          entityId: { type: "string" },
+        },
+        required: ["id"],
+      },
+      requiredFields: ["id"],
+      responseDescription: "Updated feedback record",
+    },
+    {
+      name: "delete_feedback",
+      description: "Delete a feedback permanently",
+      method: "DELETE",
+      endpoint: "/api/feedbacks/{id}",
+      parametersSchema: {
+        type: "object",
+        properties: { id: { type: "string" } },
+        required: ["id"],
+      },
+      requiredFields: ["id"],
+      responseDescription: "{ deleted: true }",
+    },
+    {
+      name: "upvote_feedback",
+      description:
+        "Increment voteCount of a feedback by 1. No deduplication in v1.",
+      method: "POST",
+      endpoint: "/api/feedbacks/{id}/upvote",
+      parametersSchema: {
+        type: "object",
+        properties: { id: { type: "string" } },
+        required: ["id"],
+      },
+      requiredFields: ["id"],
+      responseDescription: "{ id, voteCount }",
+    },
+  ],
+};
