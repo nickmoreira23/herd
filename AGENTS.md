@@ -31,7 +31,7 @@ Action engine: `src/lib/chat/action-execution.ts`
 npx tsx scripts/create-block.ts --name "rewards" --display "Rewards" --model "Reward"
 ```
 
-Then: add Prisma model, register in registry.ts and data-retrieval.ts, run `npx prisma db push`.
+Then: add Prisma model, register in registry.ts and data-retrieval.ts, run `npm run db:migrate` (see "Database migrations" below).
 
 # Tools Architecture
 
@@ -59,3 +59,27 @@ npx tsx scripts/create-tool-category.ts --name "hr" --display "Human Resources" 
 ```
 
 Then: import and register in `src/lib/tools/registry.ts`, add icon mapping in `category-meta.ts`.
+
+# Database migrations
+
+This project uses `prisma migrate`, not `db push`.
+
+- Local development: `npm run db:migrate` (creates and applies a new migration).
+- Production/CI: `npm run db:deploy` (applies pending migrations without prompting).
+- Never run `prisma db push` — it bypasses the migration history.
+
+# Lint debt
+
+This project carries pre-existing lint debt in legacy paths
+(`src/app/admin/**`, `src/components/**`, `src/lib/services/**`,
+and others — see `eslint.config.mjs` for the full list). Those rules
+are downgraded to `warn` only for those paths.
+
+**New code is held to the strict ruleset.** If your work adds a path
+to the override list to make lint pass, push back — that's a sign
+the code has the same problem the legacy has, and we should fix it
+properly instead.
+
+The cleanup of legacy lint debt is tracked as a future task
+(planned: "Etapa 1.1.5 — Lint cleanup"). It is not blocking for
+Phase 1 of the marketplace+opportunities work.
