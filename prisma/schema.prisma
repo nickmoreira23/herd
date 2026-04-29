@@ -208,48 +208,48 @@ enum PartnerTierAccess {
 }
 
 model Product {
-  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name           String
-  sku            String   @unique
-  category       String   // SUPPLEMENT | APPAREL | ACCESSORY
+  sku            String  @unique
+  category       String // SUPPLEMENT | APPAREL | ACCESSORY
   subCategory    String?
-  redemptionType String   @default("Members Store") // "Members Store" | "Members Rate"
-  retailPrice    Decimal  @db.Decimal(10, 2)
-  memberPrice    Decimal  @db.Decimal(10, 2)
-  costOfGoods    Decimal  @db.Decimal(10, 2)
+  redemptionType String  @default("Members Store") // "Members Store" | "Members Rate"
+  retailPrice    Decimal @db.Decimal(10, 2)
+  memberPrice    Decimal @db.Decimal(10, 2)
+  costOfGoods    Decimal @db.Decimal(10, 2)
 
   // Cost components for advanced metrics
-  shippingCost           Decimal  @default(0) @db.Decimal(10, 2)
-  handlingCost           Decimal  @default(0) @db.Decimal(10, 2)
-  paymentProcessingPct   Decimal  @default(0) @db.Decimal(5, 2)   // e.g. 2.90 = 2.9%
-  paymentProcessingFlat  Decimal  @default(0) @db.Decimal(10, 2)  // e.g. 0.30 flat fee
-  mapPrice               Decimal? @db.Decimal(10, 2)               // minimum advertised price
+  shippingCost          Decimal  @default(0) @db.Decimal(10, 2)
+  handlingCost          Decimal  @default(0) @db.Decimal(10, 2)
+  paymentProcessingPct  Decimal  @default(0) @db.Decimal(5, 2) // e.g. 2.90 = 2.9%
+  paymentProcessingFlat Decimal  @default(0) @db.Decimal(10, 2) // e.g. 0.30 flat fee
+  mapPrice              Decimal? @db.Decimal(10, 2) // minimum advertised price
 
-  imageUrl       String?
-  isActive       Boolean  @default(true)
-  weightOz       Decimal? @db.Decimal(8, 2)
-  tags           String[] // PostgreSQL native string array
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  imageUrl  String?
+  isActive  Boolean  @default(true)
+  weightOz  Decimal? @db.Decimal(8, 2)
+  tags      String[] // PostgreSQL native string array
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Extended product info (populated via URL scraping or manual entry)
   description          String?
   brand                String?
-  sourceUrl            String?   // URL this product was scraped from
-  flavor               String?   // Selected variant/flavor
-  variants             Json?     // [{name: "Flavor", options: ["Blue Raz", "Watermelon"]}]
+  sourceUrl            String? // URL this product was scraped from
+  flavor               String? // Selected variant/flavor
+  variants             Json? // [{name: "Flavor", options: ["Blue Raz", "Watermelon"]}]
   servingSize          String?
   servingsPerContainer Int?
-  ingredients          String?   // Plain text ingredient list
-  supplementFacts      Json?     // [{name, amount, unit, dailyValue}]
+  ingredients          String? // Plain text ingredient list
+  supplementFacts      Json? // [{name, amount, unit, dailyValue}]
   warnings             String?
 
   // Scrape lifecycle
-  scrapeStatus      String?   // PENDING | PROCESSING | READY | ERROR
-  scrapeError       String?
-  lastScrapedAt     DateTime?
-  rescrapeInterval  String?   // DAILY | WEEKLY | MONTHLY | null=off
-  nextRescrapeAt    DateTime?
+  scrapeStatus     String? // PENDING | PROCESSING | READY | ERROR
+  scrapeError      String?
+  lastScrapedAt    DateTime?
+  rescrapeInterval String? // DAILY | WEEKLY | MONTHLY | null=off
+  nextRescrapeAt   DateTime?
 
   images          ProductImage[]
   packageProducts PackageTierProduct[]
@@ -282,31 +282,31 @@ model Agent {
   sortOrder       Int           @default(0)
 
   // AI/LLM Configuration
-  modelType       ModelType @default(TEXT)
-  modelProvider   String?
-  modelId         String?
-  systemPrompt    String?
-  temperature     Decimal?      @db.Decimal(3, 2)
-  maxTokens       Int?
+  modelType     ModelType @default(TEXT)
+  modelProvider String?
+  modelId       String?
+  systemPrompt  String?
+  temperature   Decimal?  @db.Decimal(3, 2)
+  maxTokens     Int?
 
   // Image model config
-  imageSize       String?   // "1024x1024", "1792x1024", "1024x1792"
-  imageStyle      String?   // "natural", "vivid", "anime", etc.
-  imageQuality    String?   // "standard", "hd"
+  imageSize    String? // "1024x1024", "1792x1024", "1024x1792"
+  imageStyle   String? // "natural", "vivid", "anime", etc.
+  imageQuality String? // "standard", "hd"
 
   // Video model config
-  videoDuration   Int?      // max duration in seconds
-  videoResolution String?   // "720p", "1080p", "4k"
-  videoAspectRatio String?  // "16:9", "9:16", "1:1"
+  videoDuration    Int? // max duration in seconds
+  videoResolution  String? // "720p", "1080p", "4k"
+  videoAspectRatio String? // "16:9", "9:16", "1:1"
 
   // Voice model config
-  voiceId         String?   // provider-specific voice identifier
-  voiceSpeed      Decimal?  @db.Decimal(3, 2) // 0.25 to 4.0
-  voiceStability  Decimal?  @db.Decimal(3, 2) // 0.0 to 1.0
+  voiceId        String? // provider-specific voice identifier
+  voiceSpeed     Decimal? @db.Decimal(3, 2) // 0.25 to 4.0
+  voiceStability Decimal? @db.Decimal(3, 2) // 0.0 to 1.0
 
   // Rate Limiting & Cost
   dailyUsageLimit     Int?
-  monthlyCostEstimate Decimal?  @db.Decimal(10, 2)
+  monthlyCostEstimate Decimal? @db.Decimal(10, 2)
   avgTokensPerCall    Int?
 
   // Feature flags
@@ -315,17 +315,17 @@ model Agent {
   isConversational Boolean @default(false)
 
   // Response format
-  responseFormat  String?  // "text" | "json" | "structured"
+  responseFormat String? // "text" | "json" | "structured"
 
   // Role & Scope
-  role              AgentRole @default(BLOCK)
-  scope             String?
-  isSystem          Boolean   @default(false)
+  role     AgentRole @default(BLOCK)
+  scope    String?
+  isSystem Boolean   @default(false)
 
   // Runtime behavior
-  confirmationTier  String    @default("none")
-  autoNavigate      Boolean   @default(false)
-  historyWindow     Int       @default(30)
+  confirmationTier String  @default("none")
+  autoNavigate     Boolean @default(false)
+  historyWindow    Int     @default(30)
 
   // Multimodal capabilities
   acceptsImages            Boolean @default(false)
@@ -349,15 +349,17 @@ model Agent {
   skills         AgentSkill[]
   tools          AgentTool[]
   conversations  ChatConversation[]
+  routines       Routine[]
+  routineSteps   RoutineStep[]
 }
 
 model AgentTierAccess {
-  id                     String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  agentId                String  @db.Uuid
-  subscriptionTierId     String  @db.Uuid
-  isEnabled              Boolean @default(true)
+  id                      String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  agentId                 String  @db.Uuid
+  subscriptionTierId      String  @db.Uuid
+  isEnabled               Boolean @default(true)
   dailyUsageLimitOverride Int?
-  priorityAccess         Boolean @default(false)
+  priorityAccess          Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -391,18 +393,18 @@ model AgentKnowledgeItem {
 }
 
 model AgentSkill {
-  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  agentId         String   @db.Uuid
-  name            String
-  key             String
-  description     String?
-  promptFragment  String?
-  isEnabled       Boolean  @default(true)
-  requiresTools   String[]
-  category        String?
-  sortOrder       Int      @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  agentId        String   @db.Uuid
+  name           String
+  key            String
+  description    String?
+  promptFragment String?
+  isEnabled      Boolean  @default(true)
+  requiresTools  String[]
+  category       String?
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
 
@@ -434,87 +436,87 @@ model AgentTool {
 }
 
 model SubscriptionTier {
-  id                     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name                   String
-  slug                   String   @unique
-  tagline                String?
-  colorAccent            String   @default("#6B7280")
-  iconUrl                String?
-  description            String?
-  highlightFeatures      String[]
-  sortOrder              Int      @default(0)
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String
+  slug              String   @unique
+  tagline           String?
+  colorAccent       String   @default("#6B7280")
+  iconUrl           String?
+  description       String?
+  highlightFeatures String[]
+  sortOrder         Int      @default(0)
 
   // Status & visibility
-  status                 SubscriptionStatus     @default(ACTIVE)
-  visibility             SubscriptionVisibility @default(PUBLIC)
-  isActive               Boolean  @default(true) // DEPRECATED — use status; kept for migration
-  isFeatured             Boolean  @default(false)
+  status     SubscriptionStatus     @default(ACTIVE)
+  visibility SubscriptionVisibility @default(PUBLIC)
+  isActive   Boolean                @default(true) // DEPRECATED — use status; kept for migration
+  isFeatured Boolean                @default(false)
 
   // Pricing
-  monthlyPrice           Decimal  @db.Decimal(10, 2)
-  quarterlyPrice         Decimal  @db.Decimal(10, 2)
-  annualPrice            Decimal  @db.Decimal(10, 2)
-  quarterlyDisplay       Decimal? @db.Decimal(10, 2) // per-month equivalent shown to customer
-  annualDisplay          Decimal? @db.Decimal(10, 2) // per-month equivalent shown to customer
-  setupFee               Decimal  @default(0) @db.Decimal(10, 2)
-  trialDays              Int      @default(0)
-  billingAnchor          BillingAnchor @default(SIGNUP_DATE)
+  monthlyPrice     Decimal       @db.Decimal(10, 2)
+  quarterlyPrice   Decimal       @db.Decimal(10, 2)
+  annualPrice      Decimal       @db.Decimal(10, 2)
+  quarterlyDisplay Decimal?      @db.Decimal(10, 2) // per-month equivalent shown to customer
+  annualDisplay    Decimal?      @db.Decimal(10, 2) // per-month equivalent shown to customer
+  setupFee         Decimal       @default(0) @db.Decimal(10, 2)
+  trialDays        Int           @default(0)
+  billingAnchor    BillingAnchor @default(SIGNUP_DATE)
 
   // Per-subscriber average costs — drive package profitability calc
-  avgShippingCost        Decimal  @default(0) @db.Decimal(10, 2)
-  avgHandlingCost        Decimal  @default(0) @db.Decimal(10, 2)
-  processingFeePct       Decimal  @default(0) @db.Decimal(10, 2) // e.g. 2.90 = 2.9%
-  processingFeeFlat      Decimal  @default(0) @db.Decimal(10, 2)
+  avgShippingCost   Decimal @default(0) @db.Decimal(10, 2)
+  avgHandlingCost   Decimal @default(0) @db.Decimal(10, 2)
+  processingFeePct  Decimal @default(0) @db.Decimal(10, 2) // e.g. 2.90 = 2.9%
+  processingFeeFlat Decimal @default(0) @db.Decimal(10, 2)
 
   // Credits
-  monthlyCredits         Decimal  @db.Decimal(10, 2)
-  creditExpirationDays   Int      @default(60)
-  creditIssuing          CreditIssuingTiming @default(ON_PAYMENT)
-  rolloverMonths         Int      @default(0)  // 0 = no rollover
-  rolloverCap            Decimal? @db.Decimal(10, 2) // null = uncapped
-  creditExpiry           CreditExpiryBehavior @default(FORFEIT)
-  annualBonusCredits     Decimal  @default(0) @db.Decimal(10, 2)
-  referralCreditAmt      Decimal  @default(0) @db.Decimal(10, 2)
+  monthlyCredits       Decimal              @db.Decimal(10, 2)
+  creditExpirationDays Int                  @default(60)
+  creditIssuing        CreditIssuingTiming  @default(ON_PAYMENT)
+  rolloverMonths       Int                  @default(0) // 0 = no rollover
+  rolloverCap          Decimal?             @db.Decimal(10, 2) // null = uncapped
+  creditExpiry         CreditExpiryBehavior @default(FORFEIT)
+  annualBonusCredits   Decimal              @default(0) @db.Decimal(10, 2)
+  referralCreditAmt    Decimal              @default(0) @db.Decimal(10, 2)
 
   // Partner & apparel (existing)
   partnerDiscountPercent Decimal  @db.Decimal(5, 2)
   includedAIFeatures     String[]
-  apparelCadence         String   // NONE | QUARTERLY | MONTHLY
+  apparelCadence         String // NONE | QUARTERLY | MONTHLY
   apparelBudget          Decimal? @db.Decimal(10, 2)
 
   // Access controls
-  maxMembers             Int?     // null = unlimited
-  geoRestriction         String[] // ISO country codes, empty = all
-  minimumAge             Int?
-  inviteOnly             Boolean  @default(false)
-  repChannelOnly         Boolean  @default(false)
+  maxMembers     Int? // null = unlimited
+  geoRestriction String[] // ISO country codes, empty = all
+  minimumAge     Int?
+  inviteOnly     Boolean  @default(false)
+  repChannelOnly Boolean  @default(false)
 
   // Tier movement
-  upgradeToTierIds       String[] // cuid references to eligible upgrade targets
-  downgradeToTierIds     String[] // cuid references to eligible downgrade targets
-  upgradeTiming          TierChangeTiming @default(IMMEDIATE)
-  downgradeTiming        TierChangeTiming @default(NEXT_CYCLE)
-  creditOnUpgrade        CreditOnChange   @default(CARRY_OVER)
-  creditOnDowngrade      CreditOnChange   @default(FORFEIT_EXCESS)
+  upgradeToTierIds   String[] // cuid references to eligible upgrade targets
+  downgradeToTierIds String[] // cuid references to eligible downgrade targets
+  upgradeTiming      TierChangeTiming @default(IMMEDIATE)
+  downgradeTiming    TierChangeTiming @default(NEXT_CYCLE)
+  creditOnUpgrade    CreditOnChange   @default(CARRY_OVER)
+  creditOnDowngrade  CreditOnChange   @default(FORFEIT_EXCESS)
 
   // Cancellation & retention
-  minimumCommitMonths    Int      @default(1)
-  pauseAllowed           Boolean  @default(false)
-  pauseMaxMonths         Int      @default(0)
-  pauseCreditBehavior    PauseCreditBehavior @default(FROZEN)
-  cancelCreditBehavior   CancelCreditBehavior @default(FORFEIT)
-  cancelCreditGraceDays  Int      @default(0)   // only used when cancelCreditBehavior = GRACE_PERIOD
-  winbackDays            Int      @default(0)   // 0 = no win-back
-  winbackBonusCredits    Decimal  @default(0) @db.Decimal(10, 2)
-  exitSurveyRequired     Boolean  @default(false)
+  minimumCommitMonths   Int                  @default(1)
+  pauseAllowed          Boolean              @default(false)
+  pauseMaxMonths        Int                  @default(0)
+  pauseCreditBehavior   PauseCreditBehavior  @default(FROZEN)
+  cancelCreditBehavior  CancelCreditBehavior @default(FORFEIT)
+  cancelCreditGraceDays Int                  @default(0) // only used when cancelCreditBehavior = GRACE_PERIOD
+  winbackDays           Int                  @default(0) // 0 = no win-back
+  winbackBonusCredits   Decimal              @default(0) @db.Decimal(10, 2)
+  exitSurveyRequired    Boolean              @default(false)
 
   // Value pillar JSON configs
-  agentConfig            Json?    // Tab 7: AI agent toggles
-  communityConfig        Json?    // Tab 9: community benefits toggles
-  perksConfig            Json?    // Tab 10: perks toggles + sub-config
+  agentConfig     Json? // Tab 7: AI agent toggles
+  communityConfig Json? // Tab 9: community benefits toggles
+  perksConfig     Json? // Tab 10: perks toggles + sub-config
 
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
   commissionTierRates  CommissionTierRate[]
@@ -562,42 +564,42 @@ model CommissionTierRate {
 }
 
 model PartnerBrand {
-  id                       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name                     String
-  key                      String   @unique
-  logoUrl                  String?
-  heroImageUrl             String?
-  discountDescription      String?
-  tagline                  String?
-  description              String?  // 2-3 sentence rich description
-  websiteUrl               String?
-  isActive                 Boolean  @default(true) // DEPRECATED — use status; kept for migration
-  kickbackType             String   // NONE | PERCENT_OF_SALE | FLAT_PER_REFERRAL | FLAT_PER_MONTH
-  kickbackValue            Decimal? @db.Decimal(10, 2)
-  category                 String
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                String
+  key                 String   @unique
+  logoUrl             String?
+  heroImageUrl        String?
+  discountDescription String?
+  tagline             String?
+  description         String? // 2-3 sentence rich description
+  websiteUrl          String?
+  isActive            Boolean  @default(true) // DEPRECATED — use status; kept for migration
+  kickbackType        String // NONE | PERCENT_OF_SALE | FLAT_PER_REFERRAL | FLAT_PER_MONTH
+  kickbackValue       Decimal? @db.Decimal(10, 2)
+  category            String
 
   // Audience benefit
-  audienceBenefit          String?  // e.g. "20% off your first order"
-  benefitType              PartnerBenefitType?
+  audienceBenefit String? // e.g. "20% off your first order"
+  benefitType     PartnerBenefitType?
 
   // Affiliate program details
   affiliateSignupUrl       String?
-  affiliateLinkPlaceholder String?  // filled after manual signup
-  affiliateNetwork         String?  // e.g. "Impact", "ShareASale", "In-house"
-  commissionRate           String?  // e.g. "15%", "$20 flat", "Up to 50%"
+  affiliateLinkPlaceholder String? // filled after manual signup
+  affiliateNetwork         String? // e.g. "Impact", "ShareASale", "In-house"
+  commissionRate           String? // e.g. "15%", "$20 flat", "Up to 50%"
   commissionType           PartnerCommissionType?
-  cookieDuration           String?  // e.g. "30 days", "Lifetime"
+  cookieDuration           String? // e.g. "30 days", "Lifetime"
 
   // Status & access
-  status                   PartnerStatus     @default(ACTIVE)
-  tierAccess               PartnerTierAccess @default(ALL)
+  status     PartnerStatus     @default(ACTIVE)
+  tierAccess PartnerTierAccess @default(ALL)
 
   // Scraper metadata
-  scrapedAt                DateTime?
-  notes                    String?
+  scrapedAt DateTime?
+  notes     String?
 
-  createdAt                DateTime @default(now())
-  updatedAt                DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   tierAssignments PartnerTierAssignment[]
 }
@@ -620,9 +622,9 @@ model PartnerTierAssignment {
 model FinancialSnapshot {
   id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   subscriptionTierId String?  @db.Uuid
-  billingCycle       String?  // MONTHLY | QUARTERLY | ANNUAL
+  billingCycle       String? // MONTHLY | QUARTERLY | ANNUAL
   scenarioName       String?
-  color              String?  // hex color for visual identification
+  color              String? // hex color for visual identification
   assumptions        Json
   results            Json
   createdBy          String?
@@ -650,7 +652,7 @@ model OpexCategory {
   id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String
   description String?
-  icon        String?  // lucide icon name
+  icon        String? // lucide icon name
   color       String   @default("#6B7280") // hex color
   sortOrder   Int      @default(0)
   isActive    Boolean  @default(true)
@@ -663,7 +665,7 @@ model OpexCategory {
 model OpexMilestoneLevel {
   id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   memberCount Int      @unique
-  label       String   // e.g. "Pre-Launch", "1k", "5k"
+  label       String // e.g. "Pre-Launch", "1k", "5k"
   sortOrder   Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -680,18 +682,18 @@ model OpexItem {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  category    OpexCategory     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  milestones  OpexMilestone[]
+  category   OpexCategory    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  milestones OpexMilestone[]
 }
 
 model OpexMilestone {
-  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  itemId         String   @db.Uuid
-  memberCount    Int      // e.g. 0, 1000, 5000, 10000
-  monthlyCost    Decimal  @db.Decimal(10, 2)
-  notes          String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  itemId      String   @db.Uuid
+  memberCount Int // e.g. 0, 1000, 5000, 10000
+  monthlyCost Decimal  @db.Decimal(10, 2)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   item OpexItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
@@ -701,10 +703,10 @@ model OpexMilestone {
 model SubscriptionRedemptionRule {
   id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   subscriptionTierId String   @db.Uuid
-  redemptionType     String   // MEMBERS_STORE | MEMBERS_RATE
-  discountPercent    Int      // 0–100
-  scopeType          String   // CATEGORY | SUB_CATEGORY | SKU
-  scopeValue         String   // category name, sub-category name, or product SKU
+  redemptionType     String // MEMBERS_STORE | MEMBERS_RATE
+  discountPercent    Int // 0–100
+  scopeType          String // CATEGORY | SUB_CATEGORY | SKU
+  scopeValue         String // category name, sub-category name, or product SKU
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -722,22 +724,22 @@ model Setting {
 }
 
 model Location {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name          String
-  type          String   @default("office") // headquarters, office, store, warehouse, other
-  street        String?
-  street2       String?
-  city          String?
-  state         String?
-  zip           String?
-  country       String?
-  phone         String?
-  email         String?
-  isHeadquarters Boolean @default(false)
-  isActive      Boolean  @default(true)
-  notes         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String
+  type           String   @default("office") // headquarters, office, store, warehouse, other
+  street         String?
+  street2        String?
+  city           String?
+  state          String?
+  zip            String?
+  country        String?
+  phone          String?
+  email          String?
+  isHeadquarters Boolean  @default(false)
+  isActive       Boolean  @default(true)
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 // ========================
@@ -773,9 +775,9 @@ model OrgNode {
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
-  partner       D2DPartner  @relation(fields: [d2dPartnerId], references: [id], onDelete: Cascade)
-  parent        OrgNode?    @relation("OrgHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
-  children      OrgNode[]   @relation("OrgHierarchy")
+  partner       D2DPartner              @relation(fields: [d2dPartnerId], references: [id], onDelete: Cascade)
+  parent        OrgNode?                @relation("OrgHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children      OrgNode[]               @relation("OrgHierarchy")
   ledgerEntries CommissionLedgerEntry[]
 
   @@index([d2dPartnerId])
@@ -825,7 +827,7 @@ model OverrideRule {
   id               String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   commissionPlanId String      @db.Uuid
   roleType         OrgRoleType
-  overrideType     String      // FLAT | PERCENT_OF_BONUS | PERCENT_OF_REVENUE
+  overrideType     String // FLAT | PERCENT_OF_BONUS | PERCENT_OF_REVENUE
   overrideValue    Decimal     @db.Decimal(10, 2)
   notes            String?
   createdAt        DateTime    @default(now())
@@ -837,14 +839,14 @@ model OverrideRule {
 }
 
 model PerformanceTier {
-  id               String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  commissionPlanId String  @db.Uuid
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  commissionPlanId String   @db.Uuid
   label            String
   minSales         Int
   maxSales         Int?
-  bonusMultiplier  Decimal @db.Decimal(5, 2)
-  bonusFlat        Decimal @default(0) @db.Decimal(10, 2)
-  sortOrder        Int     @default(0)
+  bonusMultiplier  Decimal  @db.Decimal(5, 2)
+  bonusFlat        Decimal  @default(0) @db.Decimal(10, 2)
+  sortOrder        Int      @default(0)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -925,30 +927,30 @@ enum PerkStatus {
 }
 
 model Perk {
-  id              String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name            String
-  key             String     @unique
-  description     String?
-  longDescription String?
-  icon            String     @default("gift")
-  status          PerkStatus @default(DRAFT)
-  hasSubConfig    Boolean    @default(false)
-  subConfigLabel  String?    // e.g. "Amount ($)", "Tier Level"
-  subConfigType   String?    // "number", "select"
-  subConfigOptions String[]  // e.g. ["standard", "priority", "vip"]
-  sortOrder       Int        @default(0)
-  tags            String[]
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  id               String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name             String
+  key              String     @unique
+  description      String?
+  longDescription  String?
+  icon             String     @default("gift")
+  status           PerkStatus @default(DRAFT)
+  hasSubConfig     Boolean    @default(false)
+  subConfigLabel   String? // e.g. "Amount ($)", "Tier Level"
+  subConfigType    String? // "number", "select"
+  subConfigOptions String[] // e.g. ["standard", "priority", "vip"]
+  sortOrder        Int        @default(0)
+  tags             String[]
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
 
   tierAssignments PerkTierAssignment[]
 }
 
 model PerkTierAssignment {
-  id                 String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  perkId             String  @db.Uuid
-  subscriptionTierId String  @db.Uuid
-  isEnabled          Boolean @default(true)
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  perkId             String   @db.Uuid
+  subscriptionTierId String   @db.Uuid
+  isEnabled          Boolean  @default(true)
   configValue        String? // stores sub-config value (e.g. "25", "vip")
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
@@ -970,28 +972,28 @@ enum CommunityBenefitStatus {
 }
 
 model CommunityBenefit {
-  id              String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id              String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name            String
-  key             String                @unique
+  key             String                 @unique
   description     String?
   longDescription String?
-  icon            String                @default("users")
+  icon            String                 @default("users")
   status          CommunityBenefitStatus @default(DRAFT)
-  platform        String?               // e.g. "discord", "zoom", "forum", "in-person"
-  accessUrl       String?               // link to the community resource
-  sortOrder       Int                   @default(0)
+  platform        String? // e.g. "discord", "zoom", "forum", "in-person"
+  accessUrl       String? // link to the community resource
+  sortOrder       Int                    @default(0)
   tags            String[]
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
 
   tierAssignments CommunityBenefitTierAssignment[]
 }
 
 model CommunityBenefitTierAssignment {
-  id                 String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  communityBenefitId String  @db.Uuid
-  subscriptionTierId String  @db.Uuid
-  isEnabled          Boolean @default(true)
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  communityBenefitId String   @db.Uuid
+  subscriptionTierId String   @db.Uuid
+  isEnabled          Boolean  @default(true)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -1005,7 +1007,7 @@ model Document {
   id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String
   description String?
-  category    String   // CONTRACT, TERMS, PRESENTATION, POLICY, OTHER
+  category    String // CONTRACT, TERMS, PRESENTATION, POLICY, OTHER
   fileName    String
   fileUrl     String
   fileSize    Int
@@ -1037,7 +1039,7 @@ model KnowledgeFolder {
   id          String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String
   description String?
-  color       String?             // optional color for folder icon (hex)
+  color       String? // optional color for folder icon (hex)
   folderType  KnowledgeFolderType @default(DOCUMENT)
   parentId    String?             @db.Uuid
   sortOrder   Int                 @default(0)
@@ -1057,51 +1059,239 @@ model KnowledgeFolder {
 }
 
 model KnowledgeDocument {
-  id           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name         String
-  description  String?
-  fileType     String                  // PDF, DOCX, TXT, MD, CSV
-  fileName     String
-  fileUrl      String
-  fileSize     Int
-  mimeType     String
-  folderId     String?                 @db.Uuid
-  status       KnowledgeDocumentStatus @default(PENDING)
-  isActive     Boolean                 @default(true)
-  errorMessage String?
-  chunkCount   Int                     @default(0)
-  textContent  String?
-  uploadedAt   DateTime                @default(now())
-  processedAt  DateTime?
-  updatedAt      DateTime                @updatedAt
-  sourceFeature  String?
+  id            String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String
+  description   String?
+  fileType      String // PDF, DOCX, TXT, MD, CSV
+  fileName      String
+  fileUrl       String
+  fileSize      Int
+  mimeType      String
+  folderId      String?                 @db.Uuid
+  status        KnowledgeDocumentStatus @default(PENDING)
+  isActive      Boolean                 @default(true)
+  errorMessage  String?
+  chunkCount    Int                     @default(0)
+  textContent   String?
+  uploadedAt    DateTime                @default(now())
+  processedAt   DateTime?
+  updatedAt     DateTime                @updatedAt
+  sourceFeature String?
 
   folder KnowledgeFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
 
   @@index([folderId])
 }
 
+enum CompanySize {
+  SMALL
+  MEDIUM
+  LARGE
+  ENTERPRISE
+}
+
+model Company {
+  id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String
+  legalName     String?
+  taxId         String?
+  website       String?
+  domain        String?
+  logoUrl       String?
+  industry      String?
+  size          CompanySize?
+  email         String?
+  phone         String?
+  linkedinUrl   String?
+  twitterHandle String?
+  street        String?
+  street2       String?
+  city          String?
+  state         String?
+  zip           String?
+  country       String?
+  description   String?
+  contentJson   Json         @default("{}")
+  contentText   String       @default("")
+  ownerId       String?      @db.Uuid
+  tags          String[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  contacts      Contact[]
+  deals         Deal[]
+
+  @@index([domain])
+  @@index([industry])
+  @@index([ownerId])
+  @@map("companies")
+}
+
+model Contact {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  firstName     String
+  lastName      String?
+  email         String?
+  phone         String?
+  avatarUrl     String?
+  jobTitle      String?
+  department    String?
+  companyId     String?   @db.Uuid
+  ownerId       String?   @db.Uuid
+
+  company       Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  deals         Deal[]
+  source        String?
+  street        String?
+  street2       String?
+  city          String?
+  state         String?
+  zip           String?
+  country       String?
+  birthday      DateTime?
+  linkedinUrl   String?
+  twitterHandle String?
+  contentJson   Json      @default("{}")
+  contentText   String    @default("")
+  tags          String[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([email])
+  @@index([companyId])
+  @@index([ownerId])
+  @@map("contacts")
+}
+
+enum ServiceStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum ServicePricingType {
+  FIXED
+  HOURLY
+  DAILY
+  MONTHLY
+  CUSTOM
+}
+
+model Service {
+  id          String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  key         String             @unique
+  description String?
+  contentJson Json               @default("{}")
+  contentText String             @default("")
+  category    String?
+  duration    String?
+  price       Decimal?           @db.Decimal(10, 2)
+  pricingType ServicePricingType @default(FIXED)
+  imageUrl    String?
+  icon        String             @default("briefcase")
+  status      ServiceStatus      @default(DRAFT)
+  sortOrder   Int                @default(0)
+  tags        String[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([category])
+  @@index([status])
+  @@map("services")
+}
+
+enum FeedbackType {
+  SUGGESTION
+  BUG
+  COMPLAINT
+  PRAISE
+  QUESTION
+  IDEA
+}
+
+enum FeedbackStatus {
+  NEW
+  TRIAGED
+  PLANNED
+  IN_PROGRESS
+  DONE
+  DECLINED
+}
+
+enum FeedbackPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model Feedback {
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title          String
+  contentJson    Json             @default("{}")
+  contentText    String           @default("")
+  type           FeedbackType     @default(SUGGESTION)
+  status         FeedbackStatus   @default(NEW)
+  priority       FeedbackPriority @default(MEDIUM)
+  source         String?
+  submitterName  String?
+  submitterEmail String?
+  tags           String[]
+  voteCount      Int              @default(0)
+  entityType     String?
+  entityId       String?          @db.Uuid
+  resolvedAt     DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([status, updatedAt])
+  @@index([type])
+  @@index([priority])
+  @@index([entityType, entityId])
+  @@map("feedbacks")
+}
+
+model Note {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title       String
+  contentJson Json     @default("{}")
+  contentText String   @default("")
+  tags        String[]
+  pinned      Boolean  @default(false)
+  archived    Boolean  @default(false)
+  entityType  String?
+  entityId    String?  @db.Uuid
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([pinned, updatedAt])
+  @@index([archived])
+  @@index([entityType, entityId])
+  @@map("notes")
+}
+
 model KnowledgeImage {
-  id           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name         String
-  description  String?
-  fileType     String                  // PNG, JPG, WEBP, GIF, SVG, TIFF
-  fileName     String
-  fileUrl      String
-  fileSize     Int
-  mimeType     String
-  width        Int?
-  height       Int?
-  folderId     String?                 @db.Uuid
-  status       KnowledgeDocumentStatus @default(PENDING)
-  isActive     Boolean                 @default(true)
-  errorMessage String?
-  chunkCount   Int                     @default(0)
-  textContent  String?                 // Claude Vision description
-  uploadedAt   DateTime                @default(now())
-  processedAt  DateTime?
-  updatedAt      DateTime                @updatedAt
-  sourceFeature  String?
+  id            String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String
+  description   String?
+  fileType      String // PNG, JPG, WEBP, GIF, SVG, TIFF
+  fileName      String
+  fileUrl       String
+  fileSize      Int
+  mimeType      String
+  width         Int?
+  height        Int?
+  folderId      String?                 @db.Uuid
+  status        KnowledgeDocumentStatus @default(PENDING)
+  isActive      Boolean                 @default(true)
+  errorMessage  String?
+  chunkCount    Int                     @default(0)
+  textContent   String? // Claude Vision description
+  uploadedAt    DateTime                @default(now())
+  processedAt   DateTime?
+  updatedAt     DateTime                @updatedAt
+  sourceFeature String?
 
   folder KnowledgeFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
 
@@ -1109,26 +1299,26 @@ model KnowledgeImage {
 }
 
 model KnowledgeVideo {
-  id           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name         String
-  description  String?
-  fileType     String                  // MP4, MOV, WEBM, AVI
-  fileName     String
-  fileUrl      String
-  fileSize     Int
-  mimeType     String
-  duration     Float?                  // duration in seconds
-  thumbnailUrl String?                 // extracted frame thumbnail
-  folderId     String?                 @db.Uuid
-  status       KnowledgeDocumentStatus @default(PENDING)
-  isActive     Boolean                 @default(true)
-  errorMessage String?
-  chunkCount   Int                     @default(0)
-  textContent  String?                 // transcript with speaker labels
-  uploadedAt   DateTime                @default(now())
-  processedAt  DateTime?
-  updatedAt      DateTime                @updatedAt
-  sourceFeature  String?
+  id            String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String
+  description   String?
+  fileType      String // MP4, MOV, WEBM, AVI
+  fileName      String
+  fileUrl       String
+  fileSize      Int
+  mimeType      String
+  duration      Float? // duration in seconds
+  thumbnailUrl  String? // extracted frame thumbnail
+  folderId      String?                 @db.Uuid
+  status        KnowledgeDocumentStatus @default(PENDING)
+  isActive      Boolean                 @default(true)
+  errorMessage  String?
+  chunkCount    Int                     @default(0)
+  textContent   String? // transcript with speaker labels
+  uploadedAt    DateTime                @default(now())
+  processedAt   DateTime?
+  updatedAt     DateTime                @updatedAt
+  sourceFeature String?
 
   folder KnowledgeFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
 
@@ -1136,28 +1326,28 @@ model KnowledgeVideo {
 }
 
 model KnowledgeAudio {
-  id           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name         String
-  description  String?
-  fileType     String                  // MP3, WAV, OGG, FLAC, AAC, M4A
-  fileName     String
-  fileUrl      String
-  fileSize     Int
-  mimeType     String
-  duration     Float?                  // duration in seconds
-  folderId     String?                 @db.Uuid
-  status       KnowledgeDocumentStatus @default(PENDING)
-  isActive     Boolean                 @default(true)
-  errorMessage String?
-  chunkCount   Int                     @default(0)
-  textContent  String?                 // transcript with speaker labels
-  sourceIntegration String?            // e.g. "plaud"
-  sourceId          String?            // external ID for dedup
-  metadata          Json?              // integration-specific data (summary, mindMap, etc.)
-  uploadedAt   DateTime                @default(now())
-  processedAt  DateTime?
-  updatedAt      DateTime                @updatedAt
-  sourceFeature  String?
+  id                String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String
+  description       String?
+  fileType          String // MP3, WAV, OGG, FLAC, AAC, M4A
+  fileName          String
+  fileUrl           String
+  fileSize          Int
+  mimeType          String
+  duration          Float? // duration in seconds
+  folderId          String?                 @db.Uuid
+  status            KnowledgeDocumentStatus @default(PENDING)
+  isActive          Boolean                 @default(true)
+  errorMessage      String?
+  chunkCount        Int                     @default(0)
+  textContent       String? // transcript with speaker labels
+  sourceIntegration String? // e.g. "plaud"
+  sourceId          String? // external ID for dedup
+  metadata          Json? // integration-specific data (summary, mindMap, etc.)
+  uploadedAt        DateTime                @default(now())
+  processedAt       DateTime?
+  updatedAt         DateTime                @updatedAt
+  sourceFeature     String?
 
   folder KnowledgeFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
 
@@ -1214,17 +1404,17 @@ model KnowledgeLinkPage {
 }
 
 model KnowledgeTable {
-  id            String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name          String
-  description   String?
-  status        KnowledgeDocumentStatus @default(PENDING)
-  isActive      Boolean                 @default(true)
-  errorMessage  String?
-  textContent   String?
-  contentLength Int                     @default(0)
-  chunkCount    Int                     @default(0)
-  recordCount   Int                     @default(0)
-  fieldCount    Int                     @default(0)
+  id               String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name             String
+  description      String?
+  status           KnowledgeDocumentStatus @default(PENDING)
+  isActive         Boolean                 @default(true)
+  errorMessage     String?
+  textContent      String?
+  contentLength    Int                     @default(0)
+  chunkCount       Int                     @default(0)
+  recordCount      Int                     @default(0)
+  fieldCount       Int                     @default(0)
   processedAt      DateTime?
   sourceType       String?
   sourceId         String?
@@ -1557,6 +1747,9 @@ enum IntegrationCategory {
   PROJECT_MANAGEMENT
   SOCIAL_MEDIA
   AI_MODELS
+  VOICE
+  VIDEO
+  NOTIFICATIONS
   OTHER
 }
 
@@ -1574,54 +1767,56 @@ enum SyncDirection {
 }
 
 model Integration {
-  id          String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name        String
-  slug        String              @unique
-  description String?
-  logoUrl     String?
-  category    IntegrationCategory
-  status      IntegrationStatus   @default(AVAILABLE)
-  websiteUrl  String?
-  docsUrl     String?
-  credentials String?             // Encrypted JSON blob — admin/platform-level API keys, client_id/client_secret
-  configJson  String?             // Integration-specific config as JSON
-  authType    String?             // "token" | "oauth2" | "basic" — how members connect
-  oauthScopes String[]            // OAuth scopes required for member connections (e.g. ["calendar.readonly"])
-  connectedAt DateTime?
-  lastSyncAt  DateTime?
+  id            String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String
+  slug          String              @unique
+  description   String?
+  logoUrl       String?
+  category      IntegrationCategory
+  status        IntegrationStatus   @default(AVAILABLE)
+  websiteUrl    String?
+  docsUrl       String?
+  credentials   String? // Encrypted JSON blob — admin/platform-level API keys, client_id/client_secret
+  configJson    String? // Integration-specific config as JSON
+  authType      String? // "token" | "oauth2" | "basic" — how members connect
+  oauthScopes   String[] // OAuth scopes required for member connections (e.g. ["calendar.readonly"])
+  connectedAt   DateTime?
+  lastSyncAt    DateTime?
   lastSyncError String?
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
 
   tierMappings      IntegrationTierMapping[]
   webhookEvents     IntegrationWebhookEvent[]
   syncLogs          IntegrationSyncLog[]
   memberConnections MemberConnection[]
   messageChannels   MessageChannel[]
+  voiceJobs         VoiceJob[]
+  videoJobs         VideoJob[]
 }
 
 // Per-member connection to an integration (OAuth tokens, user-level auth)
 // Admin sets up the platform credentials (client_id/secret) in Integration.credentials
 // Members connect via OAuth flow and their personal tokens are stored here
 model MemberConnection {
-  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  profileId       String    @db.Uuid
-  integrationId   String    @db.Uuid
-  status          String    @default("ACTIVE")  // ACTIVE, EXPIRED, REVOKED
-  accessToken     String?   // Encrypted
-  refreshToken    String?   // Encrypted
-  tokenExpiresAt  DateTime?
-  externalUserId  String?   // User's ID in the external system
-  externalEmail   String?   // User's email in the external system
-  scopes          String[]  // Granted OAuth scopes
-  metadata        Json?     // Additional connection-specific data
-  connectedAt     DateTime  @default(now())
-  lastUsedAt      DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  profileId      String    @db.Uuid
+  integrationId  String    @db.Uuid
+  status         String    @default("ACTIVE") // ACTIVE, EXPIRED, REVOKED
+  accessToken    String? // Encrypted
+  refreshToken   String? // Encrypted
+  tokenExpiresAt DateTime?
+  externalUserId String? // User's ID in the external system
+  externalEmail  String? // User's email in the external system
+  scopes         String[] // Granted OAuth scopes
+  metadata       Json? // Additional connection-specific data
+  connectedAt    DateTime  @default(now())
+  lastUsedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   profile     NetworkProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  integration Integration   @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  integration Integration    @relation(fields: [integrationId], references: [id], onDelete: Cascade)
 
   @@unique([profileId, integrationId])
   @@index([integrationId])
@@ -1629,15 +1824,15 @@ model MemberConnection {
 }
 
 model IntegrationTierMapping {
-  id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  integrationId    String        @db.Uuid
-  externalPlanId   String
-  externalPlanName String?
-  subscriptionTierId String      @db.Uuid
-  syncDirection    SyncDirection @default(INCOMING)
-  isActive         Boolean       @default(true)
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  integrationId      String        @db.Uuid
+  externalPlanId     String
+  externalPlanName   String?
+  subscriptionTierId String        @db.Uuid
+  syncDirection      SyncDirection @default(INCOMING)
+  isActive           Boolean       @default(true)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
 
   integration      Integration      @relation(fields: [integrationId], references: [id], onDelete: Cascade)
   subscriptionTier SubscriptionTier @relation(fields: [subscriptionTierId], references: [id], onDelete: Cascade)
@@ -1649,7 +1844,7 @@ model IntegrationWebhookEvent {
   id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   integrationId String    @db.Uuid
   eventType     String
-  payload       String    // Raw JSON
+  payload       String // Raw JSON
   processedAt   DateTime?
   error         String?
   createdAt     DateTime  @default(now())
@@ -1663,8 +1858,8 @@ model IntegrationWebhookEvent {
 model IntegrationSyncLog {
   id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   integrationId    String   @db.Uuid
-  action           String   // e.g. "sync_plans", "test_connection"
-  status           String   // "success" | "error"
+  action           String // e.g. "sync_plans", "test_connection"
+  status           String // "success" | "error"
   details          String?
   recordsProcessed Int      @default(0)
   createdAt        DateTime @default(now())
@@ -1700,13 +1895,13 @@ enum OverrideEffect {
 // ========================
 
 model NetworkCompensationPlan {
-  id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  slug            String  @unique
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug            String   @unique
   name            String
-  commissionRules Json    @default("{}")
-  bonusRules      Json    @default("{}")
-  pointsRules     Json    @default("{}")
-  isActive        Boolean @default(true)
+  commissionRules Json     @default("{}")
+  bonusRules      Json     @default("{}")
+  pointsRules     Json     @default("{}")
+  isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -1716,39 +1911,39 @@ model NetworkCompensationPlan {
 }
 
 model RankTier {
-  id                String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  slug              String  @unique
-  displayName       String
-  level             Int     @unique
-  color             String?
-  qualificationRules Json   @default("{}")
-  benefits          Json    @default("{}")
-  isActive          Boolean @default(true)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug               String   @unique
+  displayName        String
+  level              Int      @unique
+  color              String?
+  qualificationRules Json     @default("{}")
+  benefits           Json     @default("{}")
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
-  profileRanks      NetworkProfileRank[]
+  profileRanks        NetworkProfileRank[]
   monthlyPerformances NetworkMonthlyPerformance[]
 
   @@map("rank_tiers")
 }
 
 model NetworkProfileType {
-  id              String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  slug            String      @unique
-  networkType     NetworkType
-  displayName     String
-  description     String?
-  icon            String?
-  color           String?
-  wizardFields    Json        @default("[]")
-  defaultRoleIds  String[]
-  defaultCompPlanId String?   @db.Uuid
-  defaultRankId   String?     @db.Uuid
-  isActive        Boolean     @default(true)
-  sortOrder       Int         @default(0)
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  id                String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug              String      @unique
+  networkType       NetworkType
+  displayName       String
+  description       String?
+  icon              String?
+  color             String?
+  wizardFields      Json        @default("[]")
+  defaultRoleIds    String[]
+  defaultCompPlanId String?     @db.Uuid
+  defaultRankId     String?     @db.Uuid
+  isActive          Boolean     @default(true)
+  sortOrder         Int         @default(0)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
 
   profiles NetworkProfile[]
 
@@ -1756,32 +1951,32 @@ model NetworkProfileType {
 }
 
 model NetworkRole {
-  id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  slug          String       @unique
-  displayName   String
-  description   String?
-  networkType   NetworkType?
-  parentRoleId  String?      @db.Uuid
-  isSystem      Boolean      @default(false)
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug         String       @unique
+  displayName  String
+  description  String?
+  networkType  NetworkType?
+  parentRoleId String?      @db.Uuid
+  isSystem     Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
-  parentRole    NetworkRole?  @relation("RoleHierarchy", fields: [parentRoleId], references: [id], onDelete: SetNull)
-  childRoles    NetworkRole[] @relation("RoleHierarchy")
+  parentRole      NetworkRole?            @relation("RoleHierarchy", fields: [parentRoleId], references: [id], onDelete: SetNull)
+  childRoles      NetworkRole[]           @relation("RoleHierarchy")
   rolePermissions NetworkRolePermission[]
-  profileRoles  NetworkProfileRole[]
+  profileRoles    NetworkProfileRole[]
 
   @@map("network_roles")
 }
 
 model NetworkPermission {
-  id        String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   resource  String
   action    String
   createdAt DateTime @default(now())
 
-  rolePermissions    NetworkRolePermission[]
-  profileOverrides   NetworkProfilePermissionOverride[]
+  rolePermissions  NetworkRolePermission[]
+  profileOverrides NetworkProfilePermissionOverride[]
 
   @@unique([resource, action])
   @@map("network_permissions")
@@ -1799,44 +1994,45 @@ model NetworkRolePermission {
 }
 
 model NetworkProfile {
-  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  networkType     NetworkType
-  profileTypeId   String        @db.Uuid
-  status          ProfileStatus @default(PENDING)
-  firstName       String
-  lastName        String
-  email           String        @unique
-  phone           String?
-  passwordHash    String?
-  avatarUrl       String?
-  parentId        String?       @db.Uuid
-  onboardedAt     DateTime?
-  lastLogin       DateTime?
-  createdBy       String?       @db.Uuid
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  networkType   NetworkType
+  profileTypeId String        @db.Uuid
+  status        ProfileStatus @default(PENDING)
+  firstName     String
+  lastName      String
+  email         String        @unique
+  phone         String?
+  passwordHash  String?
+  avatarUrl     String?
+  locale        String        @default("pt-BR")
+  parentId      String?       @db.Uuid
+  onboardedAt   DateTime?
+  lastLogin     DateTime?
+  createdBy     String?       @db.Uuid
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
-  profileType     NetworkProfileType @relation(fields: [profileTypeId], references: [id])
-  parent          NetworkProfile?    @relation("ProfileHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
-  children        NetworkProfile[]   @relation("ProfileHierarchy")
+  profileType NetworkProfileType @relation(fields: [profileTypeId], references: [id])
+  parent      NetworkProfile?    @relation("ProfileHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children    NetworkProfile[]   @relation("ProfileHierarchy")
 
-  attributes      NetworkProfileAttribute[]
-  ancestorPaths   NetworkProfileHierarchyPath[] @relation("Descendant")
-  descendantPaths NetworkProfileHierarchyPath[] @relation("Ancestor")
-  profileRoles    NetworkProfileRole[]
-  permissionOverrides NetworkProfilePermissionOverride[]
-  compensations   NetworkProfileCompensation[]
-  profileRanks    NetworkProfileRank[]
-  pointsLedger    NetworkPointsLedger[]
-  monthlyPerformances NetworkMonthlyPerformance[]
-  teamMemberships     NetworkTeamMember[]
-  ledTeams            NetworkTeam[] @relation("TeamLead")
-  departmentMemberships DepartmentMember[]
-  headOfDepartments   Department[] @relation("DepartmentHead")
-  conversations       ChatConversation[]
-  memberConnections   MemberConnection[]
-  messageThreadsAsContact  MessageThread[] @relation("ThreadContact")
-  messageThreadsAsAssignee MessageThread[] @relation("ThreadAssignee")
+  attributes               NetworkProfileAttribute[]
+  ancestorPaths            NetworkProfileHierarchyPath[]      @relation("Descendant")
+  descendantPaths          NetworkProfileHierarchyPath[]      @relation("Ancestor")
+  profileRoles             NetworkProfileRole[]
+  permissionOverrides      NetworkProfilePermissionOverride[]
+  compensations            NetworkProfileCompensation[]
+  profileRanks             NetworkProfileRank[]
+  pointsLedger             NetworkPointsLedger[]
+  monthlyPerformances      NetworkMonthlyPerformance[]
+  teamMemberships          NetworkTeamMember[]
+  ledTeams                 NetworkTeam[]                      @relation("TeamLead")
+  departmentMemberships    DepartmentMember[]
+  headOfDepartments        Department[]                       @relation("DepartmentHead")
+  conversations            ChatConversation[]
+  memberConnections        MemberConnection[]
+  messageThreadsAsContact  MessageThread[]                    @relation("ThreadContact")
+  messageThreadsAsAssignee MessageThread[]                    @relation("ThreadAssignee")
 
   @@map("network_profiles")
 }
@@ -1879,9 +2075,9 @@ model NetworkProfileRole {
 }
 
 model NetworkProfilePermissionOverride {
-  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  profileId    String        @db.Uuid
-  permissionId String        @db.Uuid
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  profileId    String         @db.Uuid
+  permissionId String         @db.Uuid
   effect       OverrideEffect
   reason       String?
 
@@ -1906,12 +2102,12 @@ model NetworkProfileCompensation {
 }
 
 model NetworkProfileRank {
-  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  profileId        String   @db.Uuid
-  rankTierId       String   @db.Uuid
-  isCurrent        Boolean  @default(true)
-  achievedAt       DateTime @default(now())
-  qualifyingMetrics Json    @default("{}")
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  profileId         String   @db.Uuid
+  rankTierId        String   @db.Uuid
+  isCurrent         Boolean  @default(true)
+  achievedAt        DateTime @default(now())
+  qualifyingMetrics Json     @default("{}")
 
   profile  NetworkProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
   rankTier RankTier       @relation(fields: [rankTierId], references: [id])
@@ -1927,7 +2123,7 @@ model NetworkPointsLedger {
   sourceType   String
   sourceId     String?  @db.Uuid
   description  String?
-  period       String   // YYYY-MM
+  period       String // YYYY-MM
   createdAt    DateTime @default(now())
 
   profile NetworkProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
@@ -1939,7 +2135,7 @@ model NetworkPointsLedger {
 model NetworkMonthlyPerformance {
   id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   profileId      String  @db.Uuid
-  period         String  // YYYY-MM
+  period         String // YYYY-MM
   totalPoints    Int     @default(0)
   totalRevenue   Decimal @default(0) @db.Decimal(12, 2)
   totalReferrals Int     @default(0)
@@ -1963,7 +2159,7 @@ model NetworkTeam {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
-  teamLead NetworkProfile?    @relation("TeamLead", fields: [teamLeadId], references: [id], onDelete: SetNull)
+  teamLead NetworkProfile?     @relation("TeamLead", fields: [teamLeadId], references: [id], onDelete: SetNull)
   members  NetworkTeamMember[]
 
   @@map("network_teams")
@@ -1986,22 +2182,22 @@ model NetworkTeamMember {
 // ========================
 
 model Department {
-  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String
-  slug        String       @unique
+  slug        String      @unique
   description String?
-  parentId    String?      @db.Uuid
-  headId      String?      @db.Uuid
-  networkType NetworkType  @default(INTERNAL)
+  parentId    String?     @db.Uuid
+  headId      String?     @db.Uuid
+  networkType NetworkType @default(INTERNAL)
   color       String?
   icon        String?
-  sortOrder   Int          @default(0)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  sortOrder   Int         @default(0)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
-  parent   Department?  @relation("DepartmentHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
-  children Department[] @relation("DepartmentHierarchy")
-  head     NetworkProfile? @relation("DepartmentHead", fields: [headId], references: [id], onDelete: SetNull)
+  parent   Department?        @relation("DepartmentHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children Department[]       @relation("DepartmentHierarchy")
+  head     NetworkProfile?    @relation("DepartmentHead", fields: [headId], references: [id], onDelete: SetNull)
   members  DepartmentMember[]
 
   @@map("departments")
@@ -2047,30 +2243,30 @@ enum PackageStatus {
 }
 
 model Package {
-  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name        String
-  slug        String        @unique
-  fitnessGoal            FitnessGoal
-  customGoalDescription  String?
-  description            String?
-  imageUrl    String?
-  status      PackageStatus @default(DRAFT)
-  sortOrder   Int           @default(0)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id                    String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                  String
+  slug                  String        @unique
+  fitnessGoal           FitnessGoal
+  customGoalDescription String?
+  description           String?
+  imageUrl              String?
+  status                PackageStatus @default(DRAFT)
+  sortOrder             Int           @default(0)
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
 
   variants   PackageTierVariant[]
   shareLinks PackageShareLink[]
 }
 
 model PackageShareLink {
-  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  packageId   String    @db.Uuid
-  token       String    @unique @default(dbgenerated("gen_random_uuid()"))
-  permission  String    @default("view") // "view" | "edit"
-  createdAt   DateTime  @default(now())
-  expiresAt   DateTime?
-  isActive    Boolean   @default(true)
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  packageId  String    @db.Uuid
+  token      String    @unique @default(dbgenerated("gen_random_uuid()"))
+  permission String    @default("view") // "view" | "edit"
+  createdAt  DateTime  @default(now())
+  expiresAt  DateTime?
+  isActive   Boolean   @default(true)
 
   package Package @relation(fields: [packageId], references: [id], onDelete: Cascade)
 
@@ -2088,8 +2284,8 @@ model PackageTierVariant {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  package          Package          @relation(fields: [packageId], references: [id], onDelete: Cascade)
-  subscriptionTier SubscriptionTier @relation(fields: [subscriptionTierId], references: [id], onDelete: Cascade)
+  package          Package              @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  subscriptionTier SubscriptionTier     @relation(fields: [subscriptionTierId], references: [id], onDelete: Cascade)
   products         PackageTierProduct[]
 
   @@unique([packageId, subscriptionTierId])
@@ -2140,13 +2336,13 @@ model ChatConversation {
 model ChatMessage {
   id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   conversationId String   @db.Uuid
-  role           String   // "user" | "assistant"
+  role           String // "user" | "assistant"
   content        String
   model          String?
-  sources        Json?    // knowledge items referenced [{type, id, name}]
-  artifacts      Json?    // ArtifactMeta[] for rich card rendering
-  attachments    Json?    // [{ type, url, mimeType, metadata }]
-  mediaOutputs   Json?    // [{ type, url, metadata }]
+  sources        Json? // knowledge items referenced [{type, id, name}]
+  artifacts      Json? // ArtifactMeta[] for rich card rendering
+  attachments    Json? // [{ type, url, mimeType, metadata }]
+  mediaOutputs   Json? // [{ type, url, metadata }]
   createdAt      DateTime @default(now())
 
   conversation ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
@@ -2160,28 +2356,28 @@ model ChatMessage {
 // ========================
 
 model LandingPage {
-  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name               String
-  slug               String            @unique
-  description        String?
-  status             LandingPageStatus @default(DRAFT)
+  id          String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  slug        String            @unique
+  description String?
+  status      LandingPageStatus @default(DRAFT)
 
   // SEO metadata
-  seoTitle           String?
-  seoDescription     String?
-  seoImage           String?
+  seoTitle       String?
+  seoDescription String?
+  seoImage       String?
 
   // Global page styles (design tokens)
-  pageStyles         Json              @default("{}")
+  pageStyles Json @default("{}")
 
   // Publishing
-  publishedVersionId String?           @db.Uuid
+  publishedVersionId String?   @db.Uuid
   lastPublishedAt    DateTime?
 
   // Metadata
-  sortOrder          Int               @default(0)
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   versions LandingPageVersion[]
 
@@ -2194,7 +2390,7 @@ model LandingPageVersion {
   pageId        String   @db.Uuid
   versionNumber Int
   label         String?
-  snapshot      Json     // Full page snapshot: { pageStyles, sections[] with components[] }
+  snapshot      Json // Full page snapshot: { pageStyles, sections[] with components[] }
   createdAt     DateTime @default(now())
 
   page LandingPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
@@ -2205,21 +2401,21 @@ model LandingPageVersion {
 }
 
 model LandingPageSection {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  pageId      String   @db.Uuid
-  sectionType String   // "hero" | "features" | "testimonials" | "cta" | "custom" | etc.
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pageId      String  @db.Uuid
+  sectionType String // "hero" | "features" | "testimonials" | "cta" | "custom" | etc.
   name        String?
 
   // Layout configuration
-  layout     Json     @default("{}")  // { columns, gap, padding, alignment, maxWidth, background }
+  layout Json @default("{}") // { columns, gap, padding, alignment, maxWidth, background }
 
   // Components within this section (ordered array of component objects)
-  components Json     @default("[]") // [{ id, type, props, styles, children? }]
+  components Json @default("[]") // [{ id, type, props, styles, children? }]
 
   // Visibility & ordering
-  isVisible  Boolean  @default(true)
-  isLocked   Boolean  @default(false)
-  sortOrder  Int      @default(0)
+  isVisible Boolean @default(true)
+  isLocked  Boolean @default(false)
+  sortOrder Int     @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2259,7 +2455,7 @@ enum MeetingPlatform {
 // ========================
 
 model Meeting {
-  id          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   title       String
   description String?
 
@@ -2302,8 +2498,8 @@ model Meeting {
 
   // Timestamps
   processedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   participants MeetingParticipant[]
 
@@ -2336,10 +2532,10 @@ model MeetingAgentConfig {
   isEnabled Boolean @default(true)
 
   // Bot configuration
-  botName       String @default("HERD Notetaker")
-  autoJoin      Boolean @default(true)
-  joinMinutesBefore Int @default(1)
-  recordingMode String @default("audio_only") // audio_only | speaker_view | gallery_view
+  botName           String  @default("HERD Notetaker")
+  autoJoin          Boolean @default(true)
+  joinMinutesBefore Int     @default(1)
+  recordingMode     String  @default("audio_only") // audio_only | speaker_view | gallery_view
 
   // Processing pipeline
   autoTranscribe     Boolean @default(true)
@@ -2428,7 +2624,7 @@ model CalendarEvent {
 
   startAt  DateTime
   endAt    DateTime
-  isAllDay Boolean @default(false)
+  isAllDay Boolean  @default(false)
   timeZone String?
 
   status     EventStatus     @default(CONFIRMED)
@@ -2540,19 +2736,20 @@ model Task {
 // ═══════════════════════════════════════════════════════════════════
 
 model FoundationServiceConfig {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  service   String   @unique
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  service    String   @unique
   configJson String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@map("foundation_service_config")
 }
 
 model VoiceJob {
   id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  operation        String    // "transcribe" | "synthesize" | "voice_session"
-  provider         String    // "deepgram" | "elevenlabs" | etc.
+  integrationId    String?   @db.Uuid
+  operation        String // "transcribe" | "synthesize" | "voice_session"
+  provider         String // "deepgram" | "elevenlabs" | etc.
   status           String    @default("pending") // pending | processing | completed | failed
   inputRef         String?
   resultJson       String?
@@ -2560,21 +2757,25 @@ model VoiceJob {
   audioDurationSec Float?
   costCents        Int?
   errorMessage     String?
-  sourceType       String?   // "meeting" | "audio" | "agent" | "api"
+  sourceType       String? // "meeting" | "audio" | "agent" | "api"
   sourceId         String?
   createdAt        DateTime  @default(now())
   completedAt      DateTime?
 
+  integration Integration? @relation(fields: [integrationId], references: [id], onDelete: SetNull)
+
   @@index([status])
   @@index([operation])
+  @@index([integrationId])
   @@index([sourceType, sourceId])
   @@map("voice_jobs")
 }
 
 model VideoJob {
   id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  operation        String    // "transcribe" | "generate" | "process" | "upload"
-  provider         String    // "deepgram" | "runway" | "heygen" | "ffmpeg" | "local"
+  integrationId    String?   @db.Uuid
+  operation        String // "transcribe" | "generate" | "process" | "upload"
+  provider         String // "deepgram" | "runway" | "heygen" | "ffmpeg" | "local"
   status           String    @default("pending") // pending | processing | completed | failed
   inputRef         String?
   resultJson       String?
@@ -2582,13 +2783,16 @@ model VideoJob {
   videoDurationSec Float?
   costCents        Int?
   errorMessage     String?
-  sourceType       String?   // "knowledge" | "agent" | "api"
+  sourceType       String? // "knowledge" | "agent" | "api"
   sourceId         String?
   createdAt        DateTime  @default(now())
   completedAt      DateTime?
 
+  integration Integration? @relation(fields: [integrationId], references: [id], onDelete: SetNull)
+
   @@index([status])
   @@index([operation])
+  @@index([integrationId])
   @@index([sourceType, sourceId])
   @@map("video_jobs")
 }
@@ -2698,4 +2902,415 @@ model Message {
   @@index([sentAt])
   @@index([externalId])
   @@map("messages")
+}
+
+// ─── Marketplace ───────────────────────────────────────────────────
+// Curated discovery surface ("Explore") composed of Sections. Each
+// Section is built via a wizard (Mode → Block → Items → Section page →
+// Identity → Review) and renders a composed page (banners, category
+// strips, collections, item grids) — same composer model as Pages.
+
+enum MarketplaceSectionStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum MarketplaceCreationPath {
+  MANUAL
+  COPILOT
+  AUTONOMOUS
+}
+
+enum MarketplaceScopeType {
+  ALL
+  CATEGORY
+  SUB_CATEGORY
+  ITEM
+}
+
+model MarketplaceSection {
+  id           String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug         String                   @unique
+  name         String
+  description  String?
+  iconKey      String?
+  imageUrl     String?
+  sortOrder    Int                      @default(0)
+  status       MarketplaceSectionStatus @default(DRAFT)
+  creationPath MarketplaceCreationPath  @default(MANUAL)
+
+  blockNames String[]
+
+  layout     Json?
+  components Json   @default("[]")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  scopes MarketplaceSectionScope[]
+
+  @@index([status])
+  @@map("marketplace_sections")
+}
+
+model MarketplaceSectionScope {
+  id         String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sectionId  String               @db.Uuid
+  blockName  String
+  scopeType  MarketplaceScopeType
+  scopeValue String?
+  sortOrder  Int                  @default(0)
+
+  allowedProfileTypeIds String[] @db.Uuid
+  allowedRoleIds        String[] @db.Uuid
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  section MarketplaceSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@index([sectionId])
+  @@index([blockName])
+  @@map("marketplace_section_scopes")
+}
+
+enum DealStage {
+  LEAD
+  QUALIFIED
+  PROPOSAL
+  NEGOTIATION
+  WON
+  LOST
+}
+
+model Deal {
+  id                String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  // Identification
+  title             String
+  description       String?
+
+  // Pipeline
+  stage             DealStage  @default(LEAD)
+  amount            Decimal?   @db.Decimal(12, 2)
+  currency          String     @default("BRL")
+  probability       Int?
+  expectedCloseDate DateTime?
+  closedAt          DateTime?
+  lostReason        String?
+
+  // Links
+  contactId         String?    @db.Uuid
+  companyId         String?    @db.Uuid
+  campaignId        String?    @db.Uuid
+  ownerId           String?    @db.Uuid
+  source            String?
+
+  contact           Contact?   @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  company           Company?   @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  campaign          Campaign?  @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+
+  // Content
+  contentJson       Json       @default("{}")
+  contentText       String     @default("")
+  tags              String[]
+
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  @@index([stage])
+  @@index([contactId])
+  @@index([companyId])
+  @@index([campaignId])
+  @@index([ownerId])
+  @@index([expectedCloseDate])
+  @@map("deals")
+}
+
+enum CampaignChannel {
+  EMAIL
+  SOCIAL
+  ADS
+  EVENT
+  CONTENT
+  WEBINAR
+  REFERRAL
+  DIRECT_MAIL
+  SMS
+  PARTNER
+  OTHER
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ARCHIVED
+}
+
+enum CampaignObjective {
+  AWARENESS
+  ACQUISITION
+  ACTIVATION
+  RETENTION
+  REVENUE
+  REFERRAL
+  OTHER
+}
+
+model Campaign {
+  id            String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  name          String
+  description   String?
+  status        CampaignStatus     @default(DRAFT)
+  channels      CampaignChannel[]  @default([])
+  objective     CampaignObjective?
+
+  // Schedule
+  startDate     DateTime?
+  endDate       DateTime?
+
+  // Budget (in campaign currency)
+  budget        Decimal?           @db.Decimal(12, 2)
+  spent         Decimal?           @db.Decimal(12, 2)
+  currency      String             @default("BRL")
+
+  // Targeting & ownership
+  audience      String?
+  ownerId       String?            @db.Uuid
+
+  // Free-form metrics (impressions, clicks, conversions, etc.)
+  metrics       Json               @default("{}")
+
+  // Content
+  contentJson   Json               @default("{}")
+  contentText   String             @default("")
+  tags          String[]
+
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  // Relations
+  deals         Deal[]
+
+  @@index([status])
+  @@index([ownerId])
+  @@index([startDate])
+  @@index([endDate])
+  @@map("campaigns")
+}
+
+enum ExperienceFormat {
+  IN_PERSON
+  ONLINE
+  HYBRID
+  SELF_PACED
+}
+
+enum ExperienceStatus {
+  DRAFT
+  SCHEDULED
+  OPEN
+  SOLD_OUT
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model Experience {
+  id            String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  name          String
+  headline      String?
+  description   String?
+
+  format        ExperienceFormat @default(IN_PERSON)
+  status        ExperienceStatus @default(DRAFT)
+
+  // Schedule
+  startDate     DateTime?
+  endDate       DateTime?
+  durationMin   Int?
+
+  // Logistics
+  locationName  String?
+  locationUrl   String?
+  capacity      Int?
+
+  // Pricing
+  price         Decimal?         @db.Decimal(12, 2)
+  currency      String           @default("BRL")
+
+  // Presentation
+  coverImageUrl String?
+
+  // Ownership
+  hostId        String?          @db.Uuid
+
+  // Content
+  contentJson   Json             @default("{}")
+  contentText   String           @default("")
+  tags          String[]
+
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([status])
+  @@index([format])
+  @@index([startDate])
+  @@index([hostId])
+  @@map("experiences")
+}
+
+enum RoutineTriggerType {
+  MANUAL
+  SCHEDULE
+  EVENT
+}
+
+enum RoutineStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum RoutineRunStatus {
+  QUEUED
+  RUNNING
+  SUCCESS
+  FAILED
+  CANCELLED
+}
+
+enum RoutineTriggerSource {
+  MANUAL
+  SCHEDULE
+  EVENT
+  BACKFILL
+}
+
+model Routine {
+  id              String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String
+  description     String?
+  promptTemplate  String              @db.Text
+  status          RoutineStatus       @default(DRAFT)
+
+  agentId         String              @db.Uuid
+  agent           Agent               @relation(fields: [agentId], references: [id], onDelete: Restrict)
+
+  // Trigger config
+  triggerType     RoutineTriggerType
+  cronExpression  String?
+  timezone        String              @default("America/Sao_Paulo")
+  eventBlock      String?
+  eventType       String?
+  eventFilter     Json                @default("{}")
+
+  // Inputs / Outputs
+  inputSchema     Json                @default("{}")
+  defaultInputs   Json                @default("{}")
+  outputFormat    String              @default("text")
+
+  // Scheduling state
+  nextRunAt       DateTime?
+  lastRunAt       DateTime?
+  lastRunStatus   RoutineRunStatus?
+
+  // Stats
+  runCount        Int                 @default(0)
+  successCount    Int                 @default(0)
+  failureCount    Int                 @default(0)
+
+  ownerId         String?             @db.Uuid
+  tags            String[]
+  contentJson     Json                @default("{}")
+  contentText     String              @default("")
+
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  runs            RoutineRun[]
+  steps           RoutineStep[]
+
+  @@index([status])
+  @@index([triggerType])
+  @@index([nextRunAt])
+  @@index([eventBlock, eventType, status])
+  @@index([agentId])
+  @@map("routines")
+}
+
+model RoutineRun {
+  id               String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  routineId        String                @db.Uuid
+  routine          Routine               @relation(fields: [routineId], references: [id], onDelete: Cascade)
+
+  status           RoutineRunStatus      @default(QUEUED)
+  triggerSource    RoutineTriggerSource
+
+  scheduledFor     DateTime              @default(now())
+  startedAt        DateTime?
+  completedAt      DateTime?
+  durationMs       Int?
+
+  input            Json                  @default("{}")
+  output           String?               @db.Text
+  outputJson       Json?
+  error            String?               @db.Text
+
+  promptTokens     Int?
+  completionTokens Int?
+
+  // Per-step trace for multi-step routines.
+  // Array of { stepId, stepOrder, status, output, outputJson, error,
+  //            durationMs, promptTokens, completionTokens, startedAt, completedAt }.
+  stepResults      Json                  @default("[]")
+
+  lockedBy         String?
+  lockedAt         DateTime?
+
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  @@index([routineId, createdAt])
+  @@index([status, scheduledFor])
+  @@map("routine_runs")
+}
+
+model RoutineStep {
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  routineId      String           @db.Uuid
+  routine        Routine          @relation(fields: [routineId], references: [id], onDelete: Cascade)
+
+  stepOrder      Int
+  name           String?
+
+  agentId        String           @db.Uuid
+  agent          Agent            @relation(fields: [agentId], references: [id], onDelete: Restrict)
+
+  promptTemplate String           @db.Text
+  outputFormat   String           @default("text")
+
+  // "trigger" — uses routine trigger payload + defaultInputs
+  // "step"    — uses previous step output as {{previousOutput}}
+  inputSource    String           @default("trigger")
+  previousStepId String?          @db.Uuid
+
+  // Canvas position (so the user's manual layout sticks)
+  positionX      Float?
+  positionY      Float?
+
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@unique([routineId, stepOrder])
+  @@index([routineId])
+  @@index([agentId])
+  @@map("routine_steps")
 }
