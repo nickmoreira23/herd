@@ -48,3 +48,78 @@ export interface BuildBalancedEntryInput {
   debits: Array<{ accountCode: string; amount: Money }>;
   credits: Array<{ accountCode: string; amount: Money }>;
 }
+
+// ============================================================
+// Query types — Etapa 1.4
+// ============================================================
+
+export interface AccountInfo {
+  id: string;
+  code: string;
+  name: string;
+  accountType: AccountType;
+  ownerKind: AccountOwnerKind;
+  ownerId: string | null;
+  currency: string;
+  archivedAt: Date | null;
+}
+
+export interface AccountBalance {
+  account: AccountInfo;
+  asOf: Date;
+  balance: Money;       // signed via accountType polarity
+  rawDebits: Money;     // raw sum of D lines
+  rawCredits: Money;    // raw sum of C lines
+  lineCount: number;
+}
+
+export interface StatementLineDetail {
+  id: string;           // BigInt JournalLine.id, exposed as string for JSON safety
+  journalEntryId: string;
+  direction: JournalLineDirection;
+  amount: Money;
+  postedAt: Date;
+  sourceKind: JournalEntrySourceKind;
+  sourceId: string;
+  entryDescription: string | null;
+}
+
+export interface AccountStatement {
+  account: AccountInfo;
+  range: { from: Date; to: Date };
+  lines: StatementLineDetail[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}
+
+export interface EntryDetails {
+  id: string;
+  sourceKind: JournalEntrySourceKind;
+  sourceId: string;
+  description: string | null;
+  postedAt: Date;
+  createdAt: Date;
+  idempotencyKey: string | null;
+  metadata: Record<string, unknown>;
+  lines: EntryLineDetail[];
+}
+
+export interface EntryLineDetail {
+  id: string;           // BigInt as string
+  direction: JournalLineDirection;
+  amount: Money;
+  account: {
+    id: string;
+    code: string;
+    name: string;
+    accountType: AccountType;
+  };
+}
+
+export interface GetAccountStatementInput {
+  accountCode: string;
+  from?: Date;
+  to?: Date;
+  cursor?: string;
+  limit?: number;       // default 100, max 500
+}
