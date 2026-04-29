@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 
 /**
  * Notify the routines system that something happened in a block. Routines
@@ -30,7 +31,7 @@ export async function dispatchBlockEvent(
       data: routines.map((r) => ({
         routineId: r.id,
         triggerSource: "EVENT" as const,
-        input: payload,
+        input: payload as Prisma.InputJsonValue,
       })),
     });
   } catch (err) {

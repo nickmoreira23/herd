@@ -10,6 +10,8 @@
 
 import type { MessageKey } from "@/lib/i18n/t";
 
+type EventMessageKey = MessageKey | (string & {});
+
 export interface EventPayloadField {
   /** Field name in the dispatched payload */
   name: string;
@@ -23,9 +25,9 @@ export interface BlockEvent {
   blockName: string;
   eventType: string;
   /** i18n key for the event's display label (e.g. "Won deal") */
-  displayKey: MessageKey;
+  displayKey: EventMessageKey;
   /** i18n key for the event's longer description */
-  descriptionKey: MessageKey;
+  descriptionKey: EventMessageKey;
   /** Documented fields the dispatcher includes in the payload */
   payload: EventPayloadField[];
   /** Sample payload used by the wizard's "Test render" panel */

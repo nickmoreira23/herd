@@ -57,7 +57,11 @@ export async function PATCH(
         (data as any)[f] = body[f] ?? null;
       }
     }
-    if (body.companyId !== undefined) data.companyId = body.companyId ?? null;
+    if (body.companyId !== undefined) {
+      data.company = body.companyId
+        ? { connect: { id: body.companyId } }
+        : { disconnect: true };
+    }
     if (body.ownerId !== undefined) data.ownerId = body.ownerId ?? null;
     if (body.birthday !== undefined)
       data.birthday = body.birthday ? new Date(body.birthday) : null;

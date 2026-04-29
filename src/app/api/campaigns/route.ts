@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError, parseAndValidate } from "@/lib/api-utils";
 import { createCampaignSchema } from "@/lib/validators/campaigns";
 import { dispatchBlockEvent } from "@/lib/routines/dispatcher";
-import type { Prisma } from "@prisma/client";
+import type { Prisma, CampaignChannel } from "@prisma/client";
 
 export async function GET(request: Request) {
   try {
@@ -18,8 +18,7 @@ export async function GET(request: Request) {
 
     const where: Prisma.CampaignWhereInput = {};
     if (status) where.status = status as Prisma.CampaignWhereInput["status"];
-    if (channel)
-      where.channels = { has: channel as Prisma.Enumerable<never> as never };
+    if (channel) where.channels = { has: channel as CampaignChannel };
     if (objective)
       where.objective = objective as Prisma.CampaignWhereInput["objective"];
     if (ownerId) where.ownerId = ownerId;
