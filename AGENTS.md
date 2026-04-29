@@ -33,29 +33,29 @@ npx tsx scripts/create-block.ts --name "rewards" --display "Rewards" --model "Re
 
 Then: add Prisma model, register in registry.ts and data-retrieval.ts, run `npx prisma db push`.
 
-# Solution Architecture
+# Tools Architecture
 
-Solutions sit above blocks — they compose blocks to serve specific business goals. Each solution contains tools that connect to blocks and services.
+Tools sit above blocks — they compose blocks into focused, goal-oriented capabilities. Tools are grouped by **Category** (business area, e.g. Finances, Legal, Marketing, Sales, Operations). Tools are exposed to both users (UI) and agents (orchestrator). The "Solution" concept — a higher-level composition of tools toward a specific outcome — will return as a separate layer once that design lands; it is intentionally not modeled today.
 
 ## For Developers (Claude Code Agents)
 
-Each solution has a specialized agent definition in `.agents/solutions/{solution}/AGENT.md`. Spawn these agents when working on a specific solution.
+Each tool category has a specialized agent definition in `.agents/tools/{category}/AGENT.md`. Spawn these agents when working on tools inside a specific category.
 
-Available solution agents: finances, legal, marketing, sales.
+Available tool category agents: finances, legal, marketing, sales.
 
-Template for new solutions: `.agents/solutions/_template/AGENT.md`
+Template for new categories: `.agents/tools/_template/AGENT.md`
 
 ## For Runtime (Chat Orchestrator)
 
-Each solution declares its tools and capabilities via a manifest in `src/lib/solutions/solutions/{solution}.solution.ts`. Tool actions are injected into the orchestrator system prompt alongside block actions.
+Each category declares its tools and capabilities via a manifest in `src/lib/tools/categories/{category}.category.ts`. Tool actions are injected into the orchestrator system prompt alongside block actions and called via `execute_action`.
 
-Registry: `src/lib/solutions/registry.ts`
-Manifest types: `src/lib/solutions/manifest.ts`
+Registry: `src/lib/tools/registry.ts`
+Manifest types: `src/lib/tools/manifest.ts`
 
-## Creating New Solutions
+## Creating New Tool Categories
 
 ```bash
-npx tsx scripts/create-solution.ts --name "hr" --display "Human Resources" --tools "recruiting,onboarding,performance"
+npx tsx scripts/create-tool-category.ts --name "hr" --display "Human Resources" --tools "recruiting,onboarding,performance"
 ```
 
-Then: import and register in `src/lib/solutions/registry.ts`, add icon mapping in `solution-meta.ts`.
+Then: import and register in `src/lib/tools/registry.ts`, add icon mapping in `category-meta.ts`.
