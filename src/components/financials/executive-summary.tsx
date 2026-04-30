@@ -304,6 +304,7 @@ function ProvenanceRow({
   source: string;
   isLive?: boolean;
 }) {
+  const t = useT();
   return (
     <div className="flex items-start gap-2.5 py-1.5">
       <span className="text-muted-foreground shrink-0 mt-0.5">{icon}</span>
@@ -312,7 +313,7 @@ function ProvenanceRow({
           <span className="text-xs font-semibold">{label}</span>
           {isLive && (
             <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400 font-semibold uppercase tracking-wider">
-              Live
+              {t("financials.summary.provenance.live_badge")}
             </span>
           )}
         </div>

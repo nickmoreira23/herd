@@ -879,6 +879,7 @@ export const messages = {
   "financials.summary.provenance.source_operations_live":
     "Página de Operações (ao vivo)",
   "financials.summary.provenance.source_manual_override": "Override manual",
+  "financials.summary.provenance.live_badge": "Ao vivo",
   "financials.summary.provenance.source_manual_input": "Entrada manual",
   "financials.summary.provenance.source_brands": "Página de Marcas",
 
@@ -1005,6 +1006,243 @@ export const messages = {
   "financials.cohort.column.metric": "Métrica",
   "financials.cohort.column.month_long": "Mês {month}",
   "financials.cohort.column.total": "Total",
+
+  // Toolbar — financial-page-client
+  "financials.toolbar.breadcrumb_finances": "Finanças",
+  "financials.toolbar.assumptions_title": "Premissas",
+  "financials.toolbar.projection_title": "Projeção",
+  "financials.toolbar.model_name_placeholder": "Nome do modelo...",
+  "financials.toolbar.button.save_model": "Salvar modelo",
+  "financials.toolbar.button.saving": "Salvando...",
+  "financials.toolbar.button.remix": "Remix",
+  "financials.toolbar.button.remixing": "Remixando...",
+  "financials.toolbar.button.duplicate": "Duplicar",
+  "financials.toolbar.button.duplicating": "Duplicando...",
+  "financials.toolbar.button.deleting": "Excluindo...",
+  "financials.toolbar.button.full_screen": "Tela cheia",
+  "financials.toolbar.button.exit_full_screen": "Sair da tela cheia",
+  "financials.toolbar.tab.summary": "Resumo",
+  "financials.toolbar.tab.statement": "DRE",
+  "financials.toolbar.tab.spreadsheet": "Planilha",
+  "financials.toolbar.tab.cohort": "Cohort",
+  "financials.toolbar.tab.metrics": "Métricas",
+  "financials.toolbar.tab.charts": "Gráficos",
+  "financials.toolbar.time_period.month": "Mês",
+  "financials.toolbar.time_period.quarter": "Trimestre",
+  "financials.toolbar.time_period.semester": "Semestre",
+  "financials.toolbar.time_period.year": "Ano",
+  "financials.toolbar.time_period.custom": "Personalizado",
+  "financials.toolbar.time_period.custom_months": "{months} meses",
+  "financials.toolbar.time_period.month_short": "mês",
+  "financials.toolbar.color.green": "Verde",
+  "financials.toolbar.color.blue": "Azul",
+  "financials.toolbar.color.yellow": "Amarelo",
+  "financials.toolbar.color.orange": "Laranja",
+  "financials.toolbar.color.red": "Vermelho",
+  "financials.toolbar.color.purple": "Roxo",
+  "financials.toolbar.color.gray": "Cinza",
+  "financials.toolbar.error.enter_model_name": "Digite um nome para o modelo",
+  "financials.toolbar.error.no_results_to_save":
+    "Sem resultados para salvar — execute o cenário primeiro",
+  "financials.toolbar.error.save_failed": "Falha ao salvar",
+  "financials.toolbar.error.save_failed_connection":
+    "Falha ao salvar — verifique sua conexão",
+  "financials.toolbar.error.describe_changes": "Descreva as mudanças desejadas",
+  "financials.toolbar.error.remix_failed": "Falha no remix",
+  "financials.toolbar.error.enter_duplicate_name": "Digite um nome para a cópia",
+  "financials.toolbar.error.no_results_to_duplicate": "Sem resultados para duplicar",
+  "financials.toolbar.error.duplicate_failed": "Falha ao duplicar",
+  "financials.toolbar.error.delete_failed": "Falha ao excluir",
+  "financials.toolbar.feedback.remixed":
+    "Modelo remixado — revise as premissas atualizadas",
+  "financials.toolbar.feedback.duplicated": "Modelo duplicado",
+  "financials.toolbar.remix_dialog.title": "Remix do Modelo",
+  "financials.toolbar.remix_dialog.description":
+    "Descreva como você quer mudar a projeção. Um agente de IA ajustará os valores das premissas e gerará projeções atualizadas.",
+  "financials.toolbar.remix_dialog.placeholder":
+    "Ex.: Torne mais agressivo — comece com 20 reps crescendo a 15%/mês, reduza overhead para R$15k, e aumente o residual para 8%...",
+  "financials.toolbar.duplicate_dialog.title": "Duplicar Modelo",
+  "financials.toolbar.duplicate_dialog.description":
+    "Crie uma cópia deste modelo com novo nome e cor. Todas as premissas e projeções serão duplicadas.",
+  "financials.toolbar.duplicate_dialog.color_label": "Cor",
+  "financials.toolbar.duplicate_dialog.name_label": "Nome do Modelo",
+  "financials.toolbar.delete_dialog.title": "Excluir Modelo",
+  "financials.toolbar.delete_dialog.description_prefix": "Tem certeza que deseja excluir",
+  "financials.toolbar.delete_dialog.description_suffix": "?",
+
+  // Builder — scenario-builder.tsx
+  "financials.builder.linked_badge.expenses": "Despesas",
+  "financials.builder.linked_badge.from_plans": "Dos Planos",
+  "financials.builder.linked_badge.plans_linked": "{count} planos vinculados",
+
+  "financials.builder.overhead.title": "Overhead",
+  "financials.builder.overhead.description_fixed": "Custos operacionais mensais fixos",
+  "financials.builder.overhead.description_auto_scaled":
+    "Auto-escalado da página de Operações",
+  "financials.builder.overhead.tooltip":
+    "Custos operacionais como aluguel, salários, software e admin. Pode ser um valor mensal fixo ou auto-escalado da página de Operações com base em milestones de assinantes.",
+  "financials.builder.overhead.mode_fixed": "Fixo",
+  "financials.builder.overhead.mode_auto_scaled": "Auto-escalado",
+  "financials.builder.overhead.field_monthly_overhead": "Overhead Mensal ($)",
+  "financials.builder.overhead.field_monthly_overhead_tooltip":
+    "Seus custos mensais fixos totais que não escalam com assinantes — aluguel, salários, software, seguros, admin etc.",
+  "financials.builder.overhead.operations_categories": "Categorias da Página de Operações",
+  "financials.builder.overhead.per_month_amount": "{amount}/mês",
+  "financials.builder.overhead.scale_note_prefix":
+    "Custos escalam automaticamente conforme assinantes ultrapassam milestones definidos na",
+  "financials.builder.overhead.operations_page_link": "página de Operações",
+  "financials.builder.overhead.no_opex_prefix": "Nenhum dado de OPEX encontrado. Configure milestones de custos na",
+  "financials.builder.overhead.no_opex_suffix": "primeiro.",
+
+  "financials.builder.sales_reps.title": "Representantes de Vendas",
+  "financials.builder.sales_reps.description":
+    "Reps, produtividade & crescimento mensal",
+  "financials.builder.sales_reps.tooltip":
+    "Sua força de vendas porta-a-porta. Defina headcount inicial, produtividade e quão rápido a equipe cresce a cada mês. Reps compõem — 10 reps crescendo 10%/mês viram 26 reps no mês 12.",
+  "financials.builder.sales_reps.field_starting_reps": "Reps Iniciais",
+  "financials.builder.sales_reps.field_starting_reps_tooltip":
+    "Quantos reps de vendas você começa no mês 1. Esta é sua linha base — a equipe cresce a partir daqui com base na taxa de crescimento mensal.",
+  "financials.builder.sales_reps.field_sales_per_rep": "Vendas/Rep/Mês",
+  "financials.builder.sales_reps.field_sales_per_rep_tooltip":
+    "Quantas novas assinaturas cada rep fecha por mês em média. Multiplique pelos reps ativos para o total mensal de aquisição deste canal.",
+  "financials.builder.sales_reps.field_growth_rate": "Crescimento %/Mês",
+  "financials.builder.sales_reps.field_growth_rate_tooltip":
+    "Quão rápido sua equipe de vendas cresce a cada mês. A 10%, você vai de 10 reps a 11 no próximo mês, 12 no seguinte, e assim por diante — composto.",
+  "financials.builder.sales_reps.summary_mo1": "Mês 1: {reps} reps × {sales} vendas =",
+  "financials.builder.sales_reps.summary_new_subs": "{count} novos subs",
+  "financials.builder.sales_reps.summary_mo12_prefix": "Mês 12:",
+  "financials.builder.sales_reps.summary_mo12_value": "{reps} reps → {subs} subs",
+
+  "financials.builder.commission.title": "Estrutura de Comissão",
+  "financials.builder.commission.description": "Como reps são pagos por venda",
+  "financials.builder.commission.tooltip":
+    "Defina como os reps de vendas D2D são compensados — bônus upfront (flat $ ou % do preço do plano), residual contínuo, aceleradores e prazo de pagamento.",
+  "financials.builder.commission.upfront_section": "Comissão Upfront",
+  "financials.builder.commission.residual_section": "Residual (contínuo)",
+  "financials.builder.commission.accelerator_section": "Acelerador",
+  "financials.builder.commission.type_flat": "$ Fixo",
+  "financials.builder.commission.type_percent": "% do Plano",
+  "financials.builder.commission.field_bonus_per_sale": "Bônus por Venda ($)",
+  "financials.builder.commission.field_bonus_per_sale_tooltip":
+    "Um valor fixo em dólares pago ao rep por cada nova assinatura fechada, independente do plano que o assinante escolheu.",
+  "financials.builder.commission.field_percent_of_plan": "% do Preço do Plano",
+  "financials.builder.commission.field_percent_of_plan_tooltip":
+    "O rep ganha esta porcentagem do preço mensal do plano do assinante como bônus upfront. 100% significa que o rep ganha a receita total do primeiro mês.",
+  "financials.builder.commission.field_payout_delay": "Atraso de Pagamento (meses)",
+  "financials.builder.commission.field_payout_delay_tooltip":
+    "Quantos meses após a venda antes da comissão upfront ser paga. 0 = imediato. 2 = pago dois meses após a venda fechar. Atrasos melhoram o fluxo de caixa.",
+  "financials.builder.commission.field_residual_percent": "Residual %/mês",
+  "financials.builder.commission.field_residual_percent_tooltip":
+    "Uma porcentagem mensal contínua da receita de cada assinante paga ao rep que vendeu. Repete todo mês que o assinante permanece ativo.",
+  "financials.builder.commission.field_residual_delay": "Inicia Após (meses)",
+  "financials.builder.commission.field_residual_delay_tooltip":
+    "Quantos meses após a venda antes do rep começar a ganhar residual. 0 = residual começa imediatamente. 3 = o rep não recebe nada por 3 meses, então o residual começa a partir do mês 4.",
+  "financials.builder.commission.field_percent_hitting": "% Atingindo Acelerador",
+  "financials.builder.commission.field_percent_hitting_tooltip":
+    "Que porcentagem dos seus reps excedem a meta de vendas e ganham o bônus do acelerador.",
+  "financials.builder.commission.field_multiplier": "Multiplicador",
+  "financials.builder.commission.field_multiplier_tooltip":
+    "Multiplicador de bônus para reps de alto desempenho. Em 1.5x, um rep ganhando $50 de bônus recebe $75 quando atinge a meta do acelerador.",
+  "financials.builder.commission.summary_upfront_label": "Upfront",
+  "financials.builder.commission.summary_upfront_percent": "{percent} do preço do plano",
+  "financials.builder.commission.summary_upfront_flat": "{amount} fixo",
+  "financials.builder.commission.summary_paid_immediately": "pago imediatamente",
+  "financials.builder.commission.summary_paid_after": "pago após {months} mês(es)",
+  "financials.builder.commission.summary_residual_value": "{percent}/mês",
+  "financials.builder.commission.summary_residual_word": "residual",
+  "financials.builder.commission.summary_residual_delay": " (começa após {months} mês(es))",
+
+  "financials.builder.profit_split.title": "Divisão de Lucros",
+  "financials.builder.profit_split.description":
+    "Como o lucro do canal é dividido entre as partes",
+  "financials.builder.profit_split.tooltip":
+    "Após todos os custos (COGS, comissões, overhead), o lucro restante deste canal de vendas é dividido entre as partes definidas aqui. Os percentuais devem totalizar 100%.",
+  "financials.builder.profit_split.empty":
+    "Nenhuma parte definida. Adicione partes para dividir o lucro do canal.",
+  "financials.builder.profit_split.party_name_label": "Nome da Parte",
+  "financials.builder.profit_split.party_name_placeholder":
+    "Ex.: HERD, Investidor, Parceiro",
+  "financials.builder.profit_split.split_percent_label": "Divisão %",
+  "financials.builder.profit_split.split_percent_tooltip":
+    "Que porcentagem do lucro líquido do canal esta parte recebe.",
+  "financials.builder.profit_split.add_party": "Adicionar Parte",
+  "financials.builder.profit_split.unnamed": "Sem nome",
+  "financials.builder.profit_split.total_label": "Total",
+  "financials.builder.profit_split.must_be_100": "(deve ser 100%)",
+
+  "financials.builder.chargebacks.title": "Chargebacks",
+  "financials.builder.chargebacks.description": "Taxa projetada de chargeback e taxas",
+  "financials.builder.chargebacks.tooltip":
+    "Porcentagem de novos assinantes que farão chargeback da compra. Chargebacks reduzem assinantes líquidos e geram taxas do processador mais perda de COGS dos produtos enviados.",
+  "financials.builder.chargebacks.field_rate": "Taxa de Chargeback %",
+  "financials.builder.chargebacks.field_rate_tooltip":
+    "Que porcentagem dos novos assinantes fará chargeback a cada mês. Ex.: 2% significa 2 a cada 100 novas vendas resultam em chargeback.",
+  "financials.builder.chargebacks.field_fee": "Taxa por Chargeback ($)",
+  "financials.builder.chargebacks.field_fee_tooltip":
+    "A taxa cobrada pelo processador de pagamento por evento de chargeback, tipicamente $15-25.",
+  "financials.builder.chargebacks.summary":
+    "~{cbs} chargebacks/mês de {gross} novas vendas → {net} novos assinantes líquidos",
+
+  "financials.builder.plans.title": "Planos",
+  "financials.builder.plans.description":
+    "Estrutura dos planos & alavancas de desempenho",
+  "financials.builder.plans.tooltip":
+    "A estrutura dos planos é somente leitura das suas configurações de Planos. As premissas de desempenho — mix de assinantes, churn, comportamento de cobrança — são as alavancas que movem suas projeções.",
+  "financials.builder.plans.global_defaults": "Padrões Globais",
+  "financials.builder.plans.field_monthly_pct": "Mensal %",
+  "financials.builder.plans.field_monthly_pct_tooltip":
+    "% padrão de assinantes pagando mês-a-mês. Planos individuais podem sobrescrever isso na seção de Sobreposições.",
+  "financials.builder.plans.field_quarterly_pct": "Trimestral %",
+  "financials.builder.plans.field_quarterly_pct_tooltip":
+    "% padrão de assinantes pagando trimestralmente.",
+  "financials.builder.plans.field_annual_pct": "Anual %",
+  "financials.builder.plans.field_annual_pct_tooltip":
+    "% padrão de assinantes pagando anualmente.",
+  "financials.builder.plans.must_total_100": "Deve totalizar 100% (atual {current})",
+  "financials.builder.plans.field_credit_redemption": "Resgate de Crédito %",
+  "financials.builder.plans.field_credit_redemption_tooltip":
+    "% padrão de créditos que assinantes realmente usam. Planos podem sobrescrever individualmente. Créditos não resgatados viram lucro de breakage.",
+  "financials.builder.plans.plan_structure": "Estrutura do Plano",
+  "financials.builder.plans.price_per_month": "{amount}/mês",
+  "financials.builder.plans.price_per_quarter": "{amount}/tri",
+  "financials.builder.plans.price_per_year": "{amount}/ano",
+  "financials.builder.plans.credits_per_month": "{amount} créditos/mês",
+  "financials.builder.plans.apparel_per_month": "{amount} vestuário/mês",
+  "financials.builder.plans.no_credits_apparel": "Sem créditos ou vestuário",
+  "financials.builder.plans.trial_days": "trial de {days} dias",
+  "financials.builder.plans.setup_fee": "{amount} taxa de setup",
+  "financials.builder.plans.est_cost_label": "Custo est.",
+  "financials.builder.plans.est_cost_value": "{amount}/sub/mês",
+  "financials.builder.plans.performance_section": "Desempenho",
+  "financials.builder.plans.field_subscriber_mix": "Mix de Assinantes %",
+  "financials.builder.plans.field_subscriber_mix_tooltip":
+    "Que porcentagem dos seus assinantes totais escolhe este plano. Todos os planos devem somar 100%.",
+  "financials.builder.plans.field_monthly_churn": "Churn Mensal %",
+  "financials.builder.plans.field_monthly_churn_tooltip":
+    "Taxa mensal de cancelamento deste plano. 6% de churn mensal = ~17 meses de tempo médio de vida. Churn só começa após o período de compromisso mínimo.",
+  "financials.builder.plans.field_min_commit": "Compromisso Mín. (meses)",
+  "financials.builder.plans.field_min_commit_tooltip":
+    "Meses mínimos que um assinante fica preso antes de poder cancelar. Durante esse período o churn é 0 (assinantes não podem sair). Vem das suas configurações de plano.",
+
+  "financials.builder.overrides.title": "Sobreposições",
+  "financials.builder.overrides.tag_billing": "cobrança",
+  "financials.builder.overrides.tag_redemption": "resgate",
+  "financials.builder.overrides.billing_mix": "Mix de Cobrança",
+  "financials.builder.overrides.billing_mix_global": "Mix de Cobrança (global)",
+  "financials.builder.overrides.field_mo": "Mês %",
+  "financials.builder.overrides.field_mo_tooltip":
+    "Porcentagem dos assinantes deste plano pagando mensalmente. Sobrescreve o mix global para este plano específico.",
+  "financials.builder.overrides.field_qtr": "Tri %",
+  "financials.builder.overrides.field_qtr_tooltip":
+    "Porcentagem dos assinantes deste plano pagando trimestralmente.",
+  "financials.builder.overrides.field_ann": "Ano %",
+  "financials.builder.overrides.field_ann_tooltip":
+    "Porcentagem dos assinantes deste plano pagando anualmente.",
+  "financials.builder.overrides.credit_redemption": "Resgate de Crédito",
+  "financials.builder.overrides.credit_redemption_global": "Resgate de Crédito (global)",
+  "financials.builder.overrides.field_redemption": "Resgate %",
+  "financials.builder.overrides.field_redemption_tooltip":
+    "Que porcentagem dos créditos é resgatada pelos assinantes deste plano. Membros de planos superiores tendem a resgatar mais. Sobrescreve a taxa global.",
 } as const;
 
 export type MessageKey = keyof typeof messages;

@@ -61,20 +61,23 @@ import {
   Minimize2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import type { Locale } from "@/lib/i18n/locales";
+import type { MessageKey } from "@/lib/i18n/messages/pt-BR";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
 import Link from "next/link";
 
 export type TimePeriod = "month" | "quarter" | "semester" | "year" | "custom";
 
 export const TIME_PERIOD_CONFIG: Record<
   TimePeriod,
-  { label: string; multiplier: number; months: number }
+  { multiplier: number; months: number }
 > = {
-  month: { label: "Month", multiplier: 1, months: 1 },
-  quarter: { label: "Quarter", multiplier: 3, months: 3 },
-  semester: { label: "Semester", multiplier: 6, months: 6 },
-  year: { label: "Year", multiplier: 12, months: 12 },
-  custom: { label: "Custom", multiplier: 1, months: 1 }, // placeholder, overridden by customMonths
+  month: { multiplier: 1, months: 1 },
+  quarter: { multiplier: 3, months: 3 },
+  semester: { multiplier: 6, months: 6 },
+  year: { multiplier: 12, months: 12 },
+  custom: { multiplier: 1, months: 1 }, // placeholder, overridden by customMonths
 };
 
 export function getTimePeriodMultiplier(
@@ -85,12 +88,20 @@ export function getTimePeriodMultiplier(
   return TIME_PERIOD_CONFIG[timePeriod].multiplier;
 }
 
+/**
+ * Returns the localized label for a time period selector.
+ * For custom periods, formats as "{N}-Month" via the parameterized
+ * `financials.toolbar.time_period.custom_months` key.
+ */
 export function getTimePeriodLabel(
   timePeriod: TimePeriod,
-  customMonths: number
+  customMonths: number,
+  t: (key: MessageKey, params?: Record<string, string | number>) => string,
 ): string {
-  if (timePeriod === "custom") return `${customMonths}-Month`;
-  return TIME_PERIOD_CONFIG[timePeriod].label;
+  if (timePeriod === "custom") {
+    return t("financials.toolbar.time_period.custom_months", { months: customMonths });
+  }
+  return t(`financials.toolbar.time_period.${timePeriod}` as MessageKey);
 }
 
 const MODEL_COLORS = [
@@ -102,6 +113,16 @@ const MODEL_COLORS = [
   { name: "Purple", value: "#A855F7" },
   { name: "Gray", value: "#6B7280" },
 ];
+
+const MODEL_COLOR_NAME_KEYS: Record<string, MessageKey> = {
+  Green: "financials.toolbar.color.green",
+  Blue: "financials.toolbar.color.blue",
+  Yellow: "financials.toolbar.color.yellow",
+  Orange: "financials.toolbar.color.orange",
+  Red: "financials.toolbar.color.red",
+  Purple: "financials.toolbar.color.purple",
+  Gray: "financials.toolbar.color.gray",
+};
 
 interface FinancialPageClientProps {
   tierData: TierFinancialInput[];
@@ -126,7 +147,7 @@ interface FinancialPageClientProps {
   // New: tier display metadata for read-only plan structure display
   tierDisplayMeta?: TierDisplayMeta[];
   // 1.5.6a-bis: required for locale-aware formatting in children
-  locale: import("@/lib/i18n/locales").Locale;
+  locale: Locale;
 }
 
 export function FinancialPageClient({
@@ -150,6 +171,7 @@ export function FinancialPageClient({
   locale,
 }: FinancialPageClientProps) {
   const router = useRouter();
+  const t = useT();
   const { setInputs, inputs, results, loadInputs } = useFinancialStore();
   const initialized = useRef<boolean | null>(null);
   const [modelName, setModelName] = useState(initialName);
@@ -207,11 +229,11 @@ export function FinancialPageClient({
 
   const handleSave = useCallback(async () => {
     if (!modelName.trim()) {
-      toast.error("Enter a model name");
+      notifyError("financials.toolbar.error.enter_model_name", t);
       return;
     }
     if (!results) {
-      toast.error("No results to save — run the scenario first");
+      notifyError("financials.toolbar.error.no_results_to_save", t);
       return;
     }
     setSaving(true);
@@ -229,12 +251,16 @@ export function FinancialPageClient({
         }),
       });
       if (!res.ok) {
-        const json = await res.json().catch(() => ({}));
-        toast.error(json.error || `Failed to save (${res.status})`);
+        notifyError("financials.toolbar.error.save_failed", t);
         return;
       }
       const json = await res.json();
-      toast.success(modelId ? "Model updated" : "Model saved");
+      notifySuccess(
+        modelId
+          ? "common.feedback.updated_successfully"
+          : "common.feedback.saved_successfully",
+        t,
+      );
       if (modelId) {
         // Existing model — stay on detail view, exit edit mode
         setEditing(false);
@@ -247,16 +273,16 @@ export function FinancialPageClient({
           router.push("/admin/operation/finances/projections");
         }
       }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to save — check your connection");
+    } catch {
+      notifyError("financials.toolbar.error.save_failed_connection", t);
     } finally {
       setSaving(false);
     }
-  }, [modelName, modelColor, inputs, results, modelId, router]);
+  }, [modelName, modelColor, inputs, results, modelId, router, t]);
 
   const handleRemix = useCallback(async () => {
     if (!remixPrompt.trim()) {
-      toast.error("Describe the changes you want");
+      notifyError("financials.toolbar.error.describe_changes", t);
       return;
     }
     setRemixing(true);
@@ -270,8 +296,7 @@ export function FinancialPageClient({
         }),
       });
       if (!res.ok) {
-        const json = await res.json();
-        toast.error(json.error || "Remix failed");
+        notifyError("financials.toolbar.error.remix_failed", t);
         return;
       }
       const { inputs: newInputs } = await res.json();
@@ -279,21 +304,21 @@ export function FinancialPageClient({
       setEditing(true);
       setRemixOpen(false);
       setRemixPrompt("");
-      toast.success("Model remixed — review the updated assumptions");
+      notifySuccess("financials.toolbar.feedback.remixed", t);
     } catch {
-      toast.error("Something went wrong");
+      notifyError("common.feedback.error_occurred", t);
     } finally {
       setRemixing(false);
     }
-  }, [remixPrompt, inputs, loadInputs, modelName]);
+  }, [remixPrompt, inputs, loadInputs, modelName, t]);
 
   const handleDuplicate = useCallback(async () => {
     if (!duplicateName.trim()) {
-      toast.error("Enter a name for the duplicate");
+      notifyError("financials.toolbar.error.enter_duplicate_name", t);
       return;
     }
     if (!results) {
-      toast.error("No results to duplicate");
+      notifyError("financials.toolbar.error.no_results_to_duplicate", t);
       return;
     }
     setDuplicating(true);
@@ -309,21 +334,20 @@ export function FinancialPageClient({
         }),
       });
       if (!res.ok) {
-        const json = await res.json();
-        toast.error(json.error || "Failed to duplicate");
+        notifyError("financials.toolbar.error.duplicate_failed", t);
         return;
       }
       const newSnapshot = await res.json();
-      toast.success("Model duplicated");
+      notifySuccess("financials.toolbar.feedback.duplicated", t);
       setDuplicateOpen(false);
       setDuplicateName("");
       router.push(`/admin/operation/finances/projections/${newSnapshot.data.id}`);
     } catch {
-      toast.error("Something went wrong");
+      notifyError("common.feedback.error_occurred", t);
     } finally {
       setDuplicating(false);
     }
-  }, [duplicateName, duplicateColor, inputs, results, router]);
+  }, [duplicateName, duplicateColor, inputs, results, router, t]);
 
   const handleDelete = useCallback(async () => {
     if (!modelId) return;
@@ -333,24 +357,23 @@ export function FinancialPageClient({
         method: "DELETE",
       });
       if (!res.ok) {
-        const json = await res.json();
-        toast.error(json.error || "Failed to delete");
+        notifyError("financials.toolbar.error.delete_failed", t);
         return;
       }
-      toast.success("Model deleted");
+      notifySuccess("common.feedback.deleted_successfully", t);
       setDeleteOpen(false);
       router.push("/admin/operation/finances/projections");
     } catch {
-      toast.error("Something went wrong");
+      notifyError("common.feedback.error_occurred", t);
     } finally {
       setDeleting(false);
     }
-  }, [modelId, router]);
+  }, [modelId, router, t]);
 
   const isNewModel = !modelId;
 
   const periodMultiplier = getTimePeriodMultiplier(timePeriod, customMonths);
-  const periodLabel = getTimePeriodLabel(timePeriod, customMonths);
+  const periodLabel = getTimePeriodLabel(timePeriod, customMonths, t);
 
   return (
     <div className="flex flex-col -m-6 h-[100vh] overflow-hidden">
@@ -362,7 +385,7 @@ export function FinancialPageClient({
             href="/admin/operation/finances/projections"
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
-            Finances
+            {t("financials.toolbar.breadcrumb_finances")}
           </Link>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
           {editing ? (
@@ -372,7 +395,7 @@ export function FinancialPageClient({
                   <button
                     key={c.value}
                     type="button"
-                    title={c.name}
+                    title={t(MODEL_COLOR_NAME_KEYS[c.name])}
                     onClick={() => setModelColor(c.value)}
                     className={cn(
                       "h-4 w-4 rounded-full border-2 flex items-center justify-center transition-all",
@@ -389,7 +412,7 @@ export function FinancialPageClient({
                 ))}
               </div>
               <Input
-                placeholder="Model name..."
+                placeholder={t("financials.toolbar.model_name_placeholder")}
                 value={modelName}
                 onChange={(e) => setModelName(e.target.value)}
                 className="h-8 w-52 text-base font-medium border-dashed"
@@ -411,7 +434,9 @@ export function FinancialPageClient({
           {editing ? (
             <Button size="sm" onClick={handleSave} disabled={saving}>
               <Save className="h-3.5 w-3.5 mr-1.5" />
-              {saving ? "Saving..." : "Save Model"}
+              {saving
+                ? t("financials.toolbar.button.saving")
+                : t("financials.toolbar.button.save_model")}
             </Button>
           ) : (
             <DropdownMenu>
@@ -421,11 +446,11 @@ export function FinancialPageClient({
               <DropdownMenuContent align="end" className="w-40">
                 <DropdownMenuItem onClick={() => setEditing(true)}>
                   <Pencil className="h-3.5 w-3.5 mr-2" />
-                  Edit
+                  {t("common.actions.edit")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setRemixOpen(true)}>
                   <Sparkles className="h-3.5 w-3.5 mr-2" />
-                  Remix
+                  {t("financials.toolbar.button.remix")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => {
@@ -435,7 +460,7 @@ export function FinancialPageClient({
                   }}
                 >
                   <Copy className="h-3.5 w-3.5 mr-2" />
-                  Duplicate
+                  {t("financials.toolbar.button.duplicate")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -443,7 +468,7 @@ export function FinancialPageClient({
                   className="text-red-500 focus:text-red-500"
                 >
                   <Trash2 className="h-3.5 w-3.5 mr-2" />
-                  Delete
+                  {t("common.actions.delete")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -460,11 +485,19 @@ export function FinancialPageClient({
         {!fullScreen && (
           <div className="rounded-xl border bg-card flex flex-col min-h-0">
             <div className="px-4 flex items-center shrink-0" style={{ height: 68 }}>
-              <h2 className="text-sm font-semibold">Assumptions</h2>
+              <h2 className="text-sm font-semibold">
+                {t("financials.toolbar.assumptions_title")}
+              </h2>
             </div>
             <div className="border-t" />
             <div className="flex-1 overflow-y-auto p-4 scrollbar-thin">
-              <ScenarioBuilder readOnly={!editing} defaultOpen={editing || isNewModel} dataSourceMeta={dataSourceMeta} tierDisplayMeta={tierDisplayMeta} />
+              <ScenarioBuilder
+                readOnly={!editing}
+                defaultOpen={editing || isNewModel}
+                dataSourceMeta={dataSourceMeta}
+                tierDisplayMeta={tierDisplayMeta}
+                locale={locale}
+              />
             </div>
           </div>
         )}
@@ -474,7 +507,9 @@ export function FinancialPageClient({
           <div className="rounded-xl border bg-card flex flex-col min-h-0 flex-1">
             <div className="px-4 flex items-center justify-between shrink-0" style={{ height: 68 }}>
               <div className="flex items-center gap-3">
-                <h2 className="text-sm font-semibold">Projection</h2>
+                <h2 className="text-sm font-semibold">
+                  {t("financials.toolbar.projection_title")}
+                </h2>
                 <div className="flex items-center gap-2">
                   <Select
                     value={timePeriod}
@@ -484,11 +519,21 @@ export function FinancialPageClient({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="month" className="text-xs">Month</SelectItem>
-                      <SelectItem value="quarter" className="text-xs">Quarter</SelectItem>
-                      <SelectItem value="semester" className="text-xs">Semester</SelectItem>
-                      <SelectItem value="year" className="text-xs">Year</SelectItem>
-                      <SelectItem value="custom" className="text-xs">Custom</SelectItem>
+                      <SelectItem value="month" className="text-xs">
+                        {t("financials.toolbar.time_period.month")}
+                      </SelectItem>
+                      <SelectItem value="quarter" className="text-xs">
+                        {t("financials.toolbar.time_period.quarter")}
+                      </SelectItem>
+                      <SelectItem value="semester" className="text-xs">
+                        {t("financials.toolbar.time_period.semester")}
+                      </SelectItem>
+                      <SelectItem value="year" className="text-xs">
+                        {t("financials.toolbar.time_period.year")}
+                      </SelectItem>
+                      <SelectItem value="custom" className="text-xs">
+                        {t("financials.toolbar.time_period.custom")}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                   {timePeriod === "custom" && (
@@ -505,7 +550,9 @@ export function FinancialPageClient({
                         }
                         className="h-7 w-14 text-xs text-center border-dashed"
                       />
-                      <span className="text-[10px] text-muted-foreground">mo</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {t("financials.toolbar.time_period.month_short")}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -513,29 +560,33 @@ export function FinancialPageClient({
               <div className="flex items-center gap-2">
                 <TabsList className="h-8">
                   <TabsTrigger value="summary" className="text-xs px-3 h-6">
-                    Summary
+                    {t("financials.toolbar.tab.summary")}
                   </TabsTrigger>
                   <TabsTrigger value="statement" className="text-xs px-3 h-6">
-                    Statement
+                    {t("financials.toolbar.tab.statement")}
                   </TabsTrigger>
                   <TabsTrigger value="spreadsheet" className="text-xs px-3 h-6">
-                    Spreadsheet
+                    {t("financials.toolbar.tab.spreadsheet")}
                   </TabsTrigger>
                   <TabsTrigger value="cohort" className="text-xs px-3 h-6">
-                    Cohort
+                    {t("financials.toolbar.tab.cohort")}
                   </TabsTrigger>
                   <TabsTrigger value="metrics" className="text-xs px-3 h-6">
-                    Metrics
+                    {t("financials.toolbar.tab.metrics")}
                   </TabsTrigger>
                   <TabsTrigger value="charts" className="text-xs px-3 h-6">
-                    Charts
+                    {t("financials.toolbar.tab.charts")}
                   </TabsTrigger>
                 </TabsList>
                 <button
                   type="button"
                   onClick={() => setFullScreen(!fullScreen)}
                   className="inline-flex items-center justify-center rounded-md h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                  title={fullScreen ? "Exit full screen" : "Full screen"}
+                  title={
+                    fullScreen
+                      ? t("financials.toolbar.button.exit_full_screen")
+                      : t("financials.toolbar.button.full_screen")
+                  }
                 >
                   {fullScreen ? (
                     <Minimize2 className="h-3.5 w-3.5" />
@@ -576,15 +627,14 @@ export function FinancialPageClient({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="h-4 w-4" />
-              Remix Model
+              {t("financials.toolbar.remix_dialog.title")}
             </DialogTitle>
             <DialogDescription>
-              Describe how you want to change the projection. An AI agent will
-              adjust the premise values and generate updated projections.
+              {t("financials.toolbar.remix_dialog.description")}
             </DialogDescription>
           </DialogHeader>
           <Textarea
-            placeholder="e.g., Make this more aggressive — start with 20 reps growing at 15%/mo, reduce overhead to $15k, and increase the residual to 8%..."
+            placeholder={t("financials.toolbar.remix_dialog.placeholder")}
             value={remixPrompt}
             onChange={(e) => setRemixPrompt(e.target.value)}
             className="min-h-[140px] resize-none"
@@ -595,11 +645,13 @@ export function FinancialPageClient({
               onClick={() => setRemixOpen(false)}
               disabled={remixing}
             >
-              Cancel
+              {t("common.actions.cancel")}
             </Button>
             <Button onClick={handleRemix} disabled={remixing}>
               <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-              {remixing ? "Remixing..." : "Remix"}
+              {remixing
+                ? t("financials.toolbar.button.remixing")
+                : t("financials.toolbar.button.remix")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -611,22 +663,23 @@ export function FinancialPageClient({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Copy className="h-4 w-4" />
-              Duplicate Model
+              {t("financials.toolbar.duplicate_dialog.title")}
             </DialogTitle>
             <DialogDescription>
-              Create a copy of this model with a new name and color. All assumptions
-              and projections will be duplicated.
+              {t("financials.toolbar.duplicate_dialog.description")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Color</label>
+              <label className="text-sm font-medium">
+                {t("financials.toolbar.duplicate_dialog.color_label")}
+              </label>
               <div className="flex items-center gap-1.5">
                 {MODEL_COLORS.map((c) => (
                   <button
                     key={c.value}
                     type="button"
-                    title={c.name}
+                    title={t(MODEL_COLOR_NAME_KEYS[c.name])}
                     onClick={() => setDuplicateColor(c.value)}
                     className={cn(
                       "h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all",
@@ -644,9 +697,11 @@ export function FinancialPageClient({
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Model Name</label>
+              <label className="text-sm font-medium">
+                {t("financials.toolbar.duplicate_dialog.name_label")}
+              </label>
               <Input
-                placeholder="Model name..."
+                placeholder={t("financials.toolbar.model_name_placeholder")}
                 value={duplicateName}
                 onChange={(e) => setDuplicateName(e.target.value)}
                 className="text-sm"
@@ -660,11 +715,13 @@ export function FinancialPageClient({
               onClick={() => setDuplicateOpen(false)}
               disabled={duplicating}
             >
-              Cancel
+              {t("common.actions.cancel")}
             </Button>
             <Button onClick={handleDuplicate} disabled={duplicating}>
               <Copy className="h-3.5 w-3.5 mr-1.5" />
-              {duplicating ? "Duplicating..." : "Duplicate"}
+              {duplicating
+                ? t("financials.toolbar.button.duplicating")
+                : t("financials.toolbar.button.duplicate")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -676,11 +733,13 @@ export function FinancialPageClient({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-500">
               <Trash2 className="h-4 w-4" />
-              Delete Model
+              {t("financials.toolbar.delete_dialog.title")}
             </DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete <strong>{modelName}</strong>? This
-              action cannot be undone.
+              {t("financials.toolbar.delete_dialog.description_prefix")}{" "}
+              <strong>{modelName}</strong>
+              {t("financials.toolbar.delete_dialog.description_suffix")}{" "}
+              {t("common.confirmations.this_cannot_be_undone")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -689,7 +748,7 @@ export function FinancialPageClient({
               onClick={() => setDeleteOpen(false)}
               disabled={deleting}
             >
-              Cancel
+              {t("common.actions.cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -697,7 +756,9 @@ export function FinancialPageClient({
               disabled={deleting}
             >
               <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-              {deleting ? "Deleting..." : "Delete"}
+              {deleting
+                ? t("financials.toolbar.button.deleting")
+                : t("common.actions.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -856,6 +856,7 @@ export const messages: Record<MessageKey, string> = {
   "financials.summary.provenance.source_operations_live":
     "Operations page (live)",
   "financials.summary.provenance.source_manual_override": "Manual override",
+  "financials.summary.provenance.live_badge": "Live",
   "financials.summary.provenance.source_manual_input": "Manual input",
   "financials.summary.provenance.source_brands": "Brands page",
 
@@ -982,4 +983,241 @@ export const messages: Record<MessageKey, string> = {
   "financials.cohort.column.metric": "Metric",
   "financials.cohort.column.month_long": "Month {month}",
   "financials.cohort.column.total": "Total",
+
+  // Toolbar — financial-page-client
+  "financials.toolbar.breadcrumb_finances": "Finances",
+  "financials.toolbar.assumptions_title": "Assumptions",
+  "financials.toolbar.projection_title": "Projection",
+  "financials.toolbar.model_name_placeholder": "Model name...",
+  "financials.toolbar.button.save_model": "Save Model",
+  "financials.toolbar.button.saving": "Saving...",
+  "financials.toolbar.button.remix": "Remix",
+  "financials.toolbar.button.remixing": "Remixing...",
+  "financials.toolbar.button.duplicate": "Duplicate",
+  "financials.toolbar.button.duplicating": "Duplicating...",
+  "financials.toolbar.button.deleting": "Deleting...",
+  "financials.toolbar.button.full_screen": "Full screen",
+  "financials.toolbar.button.exit_full_screen": "Exit full screen",
+  "financials.toolbar.tab.summary": "Summary",
+  "financials.toolbar.tab.statement": "Statement",
+  "financials.toolbar.tab.spreadsheet": "Spreadsheet",
+  "financials.toolbar.tab.cohort": "Cohort",
+  "financials.toolbar.tab.metrics": "Metrics",
+  "financials.toolbar.tab.charts": "Charts",
+  "financials.toolbar.time_period.month": "Month",
+  "financials.toolbar.time_period.quarter": "Quarter",
+  "financials.toolbar.time_period.semester": "Semester",
+  "financials.toolbar.time_period.year": "Year",
+  "financials.toolbar.time_period.custom": "Custom",
+  "financials.toolbar.time_period.custom_months": "{months}-Month",
+  "financials.toolbar.time_period.month_short": "mo",
+  "financials.toolbar.color.green": "Green",
+  "financials.toolbar.color.blue": "Blue",
+  "financials.toolbar.color.yellow": "Yellow",
+  "financials.toolbar.color.orange": "Orange",
+  "financials.toolbar.color.red": "Red",
+  "financials.toolbar.color.purple": "Purple",
+  "financials.toolbar.color.gray": "Gray",
+  "financials.toolbar.error.enter_model_name": "Enter a model name",
+  "financials.toolbar.error.no_results_to_save":
+    "No results to save — run the scenario first",
+  "financials.toolbar.error.save_failed": "Failed to save",
+  "financials.toolbar.error.save_failed_connection":
+    "Failed to save — check your connection",
+  "financials.toolbar.error.describe_changes": "Describe the changes you want",
+  "financials.toolbar.error.remix_failed": "Remix failed",
+  "financials.toolbar.error.enter_duplicate_name": "Enter a name for the duplicate",
+  "financials.toolbar.error.no_results_to_duplicate": "No results to duplicate",
+  "financials.toolbar.error.duplicate_failed": "Failed to duplicate",
+  "financials.toolbar.error.delete_failed": "Failed to delete",
+  "financials.toolbar.feedback.remixed":
+    "Model remixed — review the updated assumptions",
+  "financials.toolbar.feedback.duplicated": "Model duplicated",
+  "financials.toolbar.remix_dialog.title": "Remix Model",
+  "financials.toolbar.remix_dialog.description":
+    "Describe how you want to change the projection. An AI agent will adjust the premise values and generate updated projections.",
+  "financials.toolbar.remix_dialog.placeholder":
+    "e.g., Make this more aggressive — start with 20 reps growing at 15%/mo, reduce overhead to $15k, and increase the residual to 8%...",
+  "financials.toolbar.duplicate_dialog.title": "Duplicate Model",
+  "financials.toolbar.duplicate_dialog.description":
+    "Create a copy of this model with a new name and color. All assumptions and projections will be duplicated.",
+  "financials.toolbar.duplicate_dialog.color_label": "Color",
+  "financials.toolbar.duplicate_dialog.name_label": "Model Name",
+  "financials.toolbar.delete_dialog.title": "Delete Model",
+  "financials.toolbar.delete_dialog.description_prefix": "Are you sure you want to delete",
+  "financials.toolbar.delete_dialog.description_suffix": "?",
+
+  // Builder — scenario-builder.tsx
+  "financials.builder.linked_badge.expenses": "Expenses",
+  "financials.builder.linked_badge.from_plans": "From Plans",
+  "financials.builder.linked_badge.plans_linked": "{count} plans linked",
+
+  "financials.builder.overhead.title": "Overhead",
+  "financials.builder.overhead.description_fixed": "Fixed monthly operating costs",
+  "financials.builder.overhead.description_auto_scaled":
+    "Auto-scaled from Operations page",
+  "financials.builder.overhead.tooltip":
+    "Operational costs like rent, salaries, software, and admin. Can be a fixed monthly amount or automatically scaled from your Operations page based on subscriber milestones.",
+  "financials.builder.overhead.mode_fixed": "Fixed",
+  "financials.builder.overhead.mode_auto_scaled": "Auto-scaled",
+  "financials.builder.overhead.field_monthly_overhead": "Monthly Overhead ($)",
+  "financials.builder.overhead.field_monthly_overhead_tooltip":
+    "Your total fixed monthly costs that don't scale with subscribers — office rent, salaries, software subscriptions, insurance, admin, etc.",
+  "financials.builder.overhead.operations_categories": "Operations Page Categories",
+  "financials.builder.overhead.per_month_amount": "{amount}/mo",
+  "financials.builder.overhead.scale_note_prefix":
+    "Costs scale automatically as subscribers cross milestone thresholds defined on the",
+  "financials.builder.overhead.operations_page_link": "Operations page",
+  "financials.builder.overhead.no_opex_prefix": "No OPEX data found. Set up cost milestones on the",
+  "financials.builder.overhead.no_opex_suffix": "first.",
+
+  "financials.builder.sales_reps.title": "Sales Representatives",
+  "financials.builder.sales_reps.description":
+    "Reps, productivity & monthly growth",
+  "financials.builder.sales_reps.tooltip":
+    "Your door-to-door sales force. Define starting headcount, productivity, and how fast the team grows each month. Reps compound — 10 reps growing at 10%/mo becomes 26 reps by month 12.",
+  "financials.builder.sales_reps.field_starting_reps": "Starting Reps",
+  "financials.builder.sales_reps.field_starting_reps_tooltip":
+    "How many sales reps you start with in month 1. This is your baseline — the team grows from here based on your monthly growth rate.",
+  "financials.builder.sales_reps.field_sales_per_rep": "Sales/Rep/Mo",
+  "financials.builder.sales_reps.field_sales_per_rep_tooltip":
+    "How many new subscriptions each rep closes per month on average. Multiply by active reps to get total monthly acquisition from this channel.",
+  "financials.builder.sales_reps.field_growth_rate": "Growth %/Mo",
+  "financials.builder.sales_reps.field_growth_rate_tooltip":
+    "How fast your sales team grows each month. At 10%, you go from 10 reps to 11 next month, 12 the month after, and so on — compounding over time.",
+  "financials.builder.sales_reps.summary_mo1": "Mo 1: {reps} reps × {sales} sales =",
+  "financials.builder.sales_reps.summary_new_subs": "{count} new subs",
+  "financials.builder.sales_reps.summary_mo12_prefix": "Mo 12:",
+  "financials.builder.sales_reps.summary_mo12_value": "{reps} reps → {subs} subs",
+
+  "financials.builder.commission.title": "Commission Structure",
+  "financials.builder.commission.description": "How reps are paid per sale",
+  "financials.builder.commission.tooltip":
+    "Define how your D2D sales reps are compensated — upfront bonus (flat $ or % of plan price), ongoing residual, accelerators, and payout timing.",
+  "financials.builder.commission.upfront_section": "Upfront Commission",
+  "financials.builder.commission.residual_section": "Residual (ongoing)",
+  "financials.builder.commission.accelerator_section": "Accelerator",
+  "financials.builder.commission.type_flat": "Flat $",
+  "financials.builder.commission.type_percent": "% of Plan",
+  "financials.builder.commission.field_bonus_per_sale": "Bonus per Sale ($)",
+  "financials.builder.commission.field_bonus_per_sale_tooltip":
+    "A fixed dollar amount paid to the rep for each new subscription they close, regardless of which plan the subscriber chose.",
+  "financials.builder.commission.field_percent_of_plan": "% of Plan Price",
+  "financials.builder.commission.field_percent_of_plan_tooltip":
+    "The rep earns this percentage of the subscriber's monthly plan price as their upfront bonus. 100% means the rep earns the full first month's revenue.",
+  "financials.builder.commission.field_payout_delay": "Payout Delay (months)",
+  "financials.builder.commission.field_payout_delay_tooltip":
+    "How many months after the sale before the upfront commission is paid. 0 = immediate. 2 = paid two months after the sale closes. Delays improve cash flow.",
+  "financials.builder.commission.field_residual_percent": "Residual %/mo",
+  "financials.builder.commission.field_residual_percent_tooltip":
+    "An ongoing monthly percentage of each subscriber's revenue paid to the rep who sold them. This repeats every month the subscriber stays active.",
+  "financials.builder.commission.field_residual_delay": "Starts After (months)",
+  "financials.builder.commission.field_residual_delay_tooltip":
+    "How many months after the sale before the rep starts earning residual. 0 = residual begins immediately. 3 = the rep gets nothing for 3 months, then residual kicks in from month 4 onward.",
+  "financials.builder.commission.field_percent_hitting": "% Hitting Accelerator",
+  "financials.builder.commission.field_percent_hitting_tooltip":
+    "What percentage of your reps exceed their sales quota and earn the accelerator bonus.",
+  "financials.builder.commission.field_multiplier": "Multiplier",
+  "financials.builder.commission.field_multiplier_tooltip":
+    "The bonus multiplier for top-performing reps. At 1.5x, a rep earning a $50 bonus gets $75 when they hit their accelerator threshold.",
+  "financials.builder.commission.summary_upfront_label": "Upfront",
+  "financials.builder.commission.summary_upfront_percent": "{percent} of plan price",
+  "financials.builder.commission.summary_upfront_flat": "{amount} flat",
+  "financials.builder.commission.summary_paid_immediately": "paid immediately",
+  "financials.builder.commission.summary_paid_after": "paid after {months} mo",
+  "financials.builder.commission.summary_residual_value": "{percent}/mo",
+  "financials.builder.commission.summary_residual_word": "residual",
+  "financials.builder.commission.summary_residual_delay": " (starts after {months} mo)",
+
+  "financials.builder.profit_split.title": "Profit Split",
+  "financials.builder.profit_split.description":
+    "How channel profits are divided between parties",
+  "financials.builder.profit_split.tooltip":
+    "After all costs (COGS, commissions, overhead), the remaining profit from this sales channel is split between the parties defined here. Percentages should total 100%.",
+  "financials.builder.profit_split.empty":
+    "No parties defined. Add parties to split the channel profits.",
+  "financials.builder.profit_split.party_name_label": "Party Name",
+  "financials.builder.profit_split.party_name_placeholder":
+    "e.g. HERD, Investor, Partner",
+  "financials.builder.profit_split.split_percent_label": "Split %",
+  "financials.builder.profit_split.split_percent_tooltip":
+    "What percentage of the channel's net profit this party receives.",
+  "financials.builder.profit_split.add_party": "Add Party",
+  "financials.builder.profit_split.unnamed": "Unnamed",
+  "financials.builder.profit_split.total_label": "Total",
+  "financials.builder.profit_split.must_be_100": "(must be 100%)",
+
+  "financials.builder.chargebacks.title": "Chargebacks",
+  "financials.builder.chargebacks.description": "Projected chargeback rate and fees",
+  "financials.builder.chargebacks.tooltip":
+    "Percentage of new subscribers who will dispute/chargeback their purchase. Chargebacks reduce your net subscribers and incur processor fees plus lost COGS on shipped products.",
+  "financials.builder.chargebacks.field_rate": "Chargeback Rate %",
+  "financials.builder.chargebacks.field_rate_tooltip":
+    "What percentage of new subscribers will chargeback each month. E.g., 2% means 2 out of every 100 new sales result in a chargeback.",
+  "financials.builder.chargebacks.field_fee": "Fee per Chargeback ($)",
+  "financials.builder.chargebacks.field_fee_tooltip":
+    "The payment processor fee you pay per chargeback event, typically $15-25.",
+  "financials.builder.chargebacks.summary":
+    "~{cbs} chargebacks/mo from {gross} new sales → {net} net new subscribers",
+
+  "financials.builder.plans.title": "Plans",
+  "financials.builder.plans.description":
+    "Plan structure & performance levers",
+  "financials.builder.plans.tooltip":
+    "Plan structure is read-only from your Plans settings. Performance assumptions — subscriber mix, churn, billing behavior — are the levers that move your projections.",
+  "financials.builder.plans.global_defaults": "Global Defaults",
+  "financials.builder.plans.field_monthly_pct": "Monthly %",
+  "financials.builder.plans.field_monthly_pct_tooltip":
+    "Default % of subscribers paying month-to-month. Individual plans can override this in their Overrides section.",
+  "financials.builder.plans.field_quarterly_pct": "Quarterly %",
+  "financials.builder.plans.field_quarterly_pct_tooltip":
+    "Default % of subscribers paying quarterly.",
+  "financials.builder.plans.field_annual_pct": "Annual %",
+  "financials.builder.plans.field_annual_pct_tooltip":
+    "Default % of subscribers paying annually.",
+  "financials.builder.plans.must_total_100": "Must total 100% (now {current})",
+  "financials.builder.plans.field_credit_redemption": "Credit Redemption %",
+  "financials.builder.plans.field_credit_redemption_tooltip":
+    "Default % of credits subscribers actually use. Plans can override this individually. Unredeemed credits become breakage profit.",
+  "financials.builder.plans.plan_structure": "Plan Structure",
+  "financials.builder.plans.price_per_month": "{amount}/mo",
+  "financials.builder.plans.price_per_quarter": "{amount}/qtr",
+  "financials.builder.plans.price_per_year": "{amount}/yr",
+  "financials.builder.plans.credits_per_month": "{amount} credits/mo",
+  "financials.builder.plans.apparel_per_month": "{amount} apparel/mo",
+  "financials.builder.plans.no_credits_apparel": "No credits or apparel",
+  "financials.builder.plans.trial_days": "{days}-day trial",
+  "financials.builder.plans.setup_fee": "{amount} setup fee",
+  "financials.builder.plans.est_cost_label": "Est. cost",
+  "financials.builder.plans.est_cost_value": "{amount}/sub/mo",
+  "financials.builder.plans.performance_section": "Performance",
+  "financials.builder.plans.field_subscriber_mix": "Subscriber Mix %",
+  "financials.builder.plans.field_subscriber_mix_tooltip":
+    "What percentage of your total subscribers choose this plan. All plans should add up to 100%.",
+  "financials.builder.plans.field_monthly_churn": "Monthly Churn %",
+  "financials.builder.plans.field_monthly_churn_tooltip":
+    "Monthly cancellation rate for this plan. 6% monthly churn = ~17 month average lifetime. Churn only starts after the minimum commitment period expires.",
+  "financials.builder.plans.field_min_commit": "Min Commit (mo)",
+  "financials.builder.plans.field_min_commit_tooltip":
+    "Minimum months a subscriber is locked in before they can cancel. During this period churn is 0 (subscribers can't leave). Sourced from your plan settings.",
+
+  "financials.builder.overrides.title": "Overrides",
+  "financials.builder.overrides.tag_billing": "billing",
+  "financials.builder.overrides.tag_redemption": "redemption",
+  "financials.builder.overrides.billing_mix": "Billing Mix",
+  "financials.builder.overrides.billing_mix_global": "Billing Mix (global)",
+  "financials.builder.overrides.field_mo": "Mo %",
+  "financials.builder.overrides.field_mo_tooltip":
+    "Percentage of this plan's subscribers paying monthly. Override the global billing mix for this specific plan.",
+  "financials.builder.overrides.field_qtr": "Qtr %",
+  "financials.builder.overrides.field_qtr_tooltip":
+    "Percentage of this plan's subscribers paying quarterly.",
+  "financials.builder.overrides.field_ann": "Ann %",
+  "financials.builder.overrides.field_ann_tooltip":
+    "Percentage of this plan's subscribers paying annually.",
+  "financials.builder.overrides.credit_redemption": "Credit Redemption",
+  "financials.builder.overrides.credit_redemption_global": "Credit Redemption (global)",
+  "financials.builder.overrides.field_redemption": "Redemption %",
+  "financials.builder.overrides.field_redemption_tooltip":
+    "What percentage of credits get redeemed by this plan's subscribers. Higher-tier members tend to redeem more. Overrides the global rate.",
 };
