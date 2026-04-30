@@ -42,6 +42,7 @@ import {
   Dumbbell,
   Apple,
   MessageSquare,
+  Receipt,
   type LucideIcon,
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
@@ -86,6 +87,7 @@ const navItems: NavItem[] = [
   { type: "link", href: "/admin/organization/knowledge", label: "Knowledge", icon: BookOpen },
   { type: "link", href: "/admin/network", label: "Network", icon: Network },
   { type: "link", href: "/admin/marketplace", label: "Marketplace", icon: ShoppingBag },
+  { type: "link", href: "/admin/ledger", label: "Ledger", icon: Receipt },
   { type: "link", href: "/admin/agents", label: "Agents", icon: Bot },
   { type: "link", href: "/admin/tools", label: "Tools", icon: Lightbulb },
   { type: "link", href: "/admin/blocks", label: "Blocks", icon: Blocks },
