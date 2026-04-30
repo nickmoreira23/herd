@@ -93,3 +93,24 @@ export class IdempotencyConflictError extends LedgerError {
     this.name = "IdempotencyConflictError";
   }
 }
+
+export class EntryNotFoundError extends LedgerError {
+  constructor(public entryId: string) {
+    super(`Journal entry with id "${entryId}" not found.`);
+    this.name = "EntryNotFoundError";
+  }
+}
+
+export class InvalidCursorError extends LedgerError {
+  constructor(public received: string) {
+    super(`Invalid statement cursor: "${received}".`);
+    this.name = "InvalidCursorError";
+  }
+}
+
+export class StatementLimitExceededError extends LedgerError {
+  constructor(public received: number, public max: number) {
+    super(`Statement limit ${received} exceeds maximum ${max}.`);
+    this.name = "StatementLimitExceededError";
+  }
+}

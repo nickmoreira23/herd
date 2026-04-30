@@ -22,3 +22,8 @@ pipeline with a disposable Postgres (planned post-Phase 1), the
 Note: integration tests create and leave behind test accounts
 (`test:*` codes). A teardown step is intentionally omitted to keep them
 simple. Run against a disposable database.
+
+**Tempo em testes de integração**: nunca use `Date.now()` para construir
+seeds que serão filtrados depois por `asOf`/`from`/`to`. Use timestamps
+absolutos e fixos via `postJournalEntry({ postedAt: new Date("2024-...") })`.
+Isso garante determinismo independente da velocidade do CI.
