@@ -67,6 +67,48 @@ const eslintConfig = defineConfig([
   //
   // Ledger UI was internationalized in Etapa 1.5.4 and is now strict.
   // ============================================================
+  // ============================================================
+  // LEGACY FORMATTERS — barrar uso novo de utils.ts formatters.
+  // Cravado em 1.5.6a-bis. Cada feature já migrada (Ledger, Commissions,
+  // Financials, chrome) é proibida de importar formatCurrency/formatPercent/
+  // formatNumber de @/lib/utils. Features ainda hardcoded ficam na ignore
+  // list e migram nas suas próprias etapas. utils.ts legacy será deletado
+  // em 1.5.7 Capstone.
+  // ============================================================
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: [
+      // Features ainda hardcoded podem usar legacy temporariamente.
+      "src/components/{knowledge,network,organization,agents,tiers,products,packages,brands,brand-kit,perks,marketplace,operations,operation,deals,companies,contacts,meetings,tasks,events,services,partners,campaigns,locations,apps,feeds,community,documents,videos,images,audios,tables,forms,notes,links,routines,experiences,integrations,blocks,tools,chat,feedbacks,settings,dashboard,sales,landing-page}/**/*.{ts,tsx}",
+      "src/app/admin/{knowledge,network,organization,agents,tiers,products,packages,brands,brand-kit,perks,marketplace,operations,operation,deals,companies,contacts,meetings,tasks,events,services,partners,campaigns,locations,apps,feeds,community,documents,videos,images,audios,tables,forms,notes,links,routines,experiences,integrations,blocks,tools,chat,feedbacks,settings,sales}/**/*.{ts,tsx}",
+      "src/app/admin/page.tsx",
+      "src/app/admin/finances/**/*.{ts,tsx}",
+      "src/app/admin/profile/**/*.{ts,tsx}",
+      // src/lib helpers and store and other shared infra still use legacy.
+      "src/lib/services/**/*.{ts,tsx}",
+      "src/lib/financial-engine.ts",
+      "src/stores/**/*.{ts,tsx}",
+      "src/lib/utils.ts",
+      // Financials Phase B files — migrated in 1.5.6a-bis Phase B.
+      // Each is removed from this list as it's migrated.
+      "src/components/financials/cohort-spreadsheet.tsx",
+      "src/components/financials/models-list.tsx",
+      "src/components/financials/pl-statement.tsx",
+      "src/components/financials/projection-spreadsheet.tsx",
+    ],
+    rules: {
+      "no-restricted-imports": ["error", {
+        paths: [
+          {
+            name: "@/lib/utils",
+            importNames: ["formatCurrency", "formatPercent", "formatNumber"],
+            message: "Legacy formatters from utils.ts are deprecated. Use formatMoney from @/lib/money/format for currency, or formatNumber from @/lib/i18n/format-number for non-currency numbers. Both require locale: Locale as parameter.",
+          },
+        ],
+      }],
+    },
+  },
+
   {
     files: [
       "src/lib/i18n/**/*.{ts,tsx}",

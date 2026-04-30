@@ -9,12 +9,18 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Locale-aware currency formatting (USD only — these helpers are scoped to
- * legacy code that assumed USD). Accepts optional `locale` for migrated
- * callers; defaults to "en-US" for back-compat with pre-1.5.6 callers.
+ * @deprecated Since etapa 1.5.6a-bis. Use `formatMoney` from
+ * `@/lib/money/format` for currency, or `formatNumber` from
+ * `@/lib/i18n/format-number` for non-currency numbers. Both accept
+ * `locale: Locale` as required parameter and integrate with the i18n
+ * system properly.
  *
- * For new code, prefer `formatMoney(money, locale)` from `@/lib/money` with
- * an explicit Money tuple.
+ * This function is retained for backward compatibility with features not
+ * yet migrated. New code should not use it. ESLint rule
+ * `no-restricted-imports` flags new usages.
+ *
+ * Will be deleted in Etapa 1.5.7 (Capstone) after confirming zero
+ * references across the codebase.
  */
 export function formatCurrency(
   amount: number | DecimalLike,
@@ -30,9 +36,12 @@ export function formatCurrency(
 }
 
 /**
- * Percent with locale-aware decimal mark. Input is the percent value
- * (e.g. 6.5 → "6,5%" in pt-BR / "6.5%" in en-US). Default locale is
- * "en-US" for back-compat.
+ * @deprecated Since etapa 1.5.6a-bis. Use `formatNumber` from
+ * `@/lib/i18n/format-number` with the `"percent"` preset (note: that
+ * preset expects a 0-1 ratio, this helper takes 0-100 percent values).
+ *
+ * Retained for back-compat with features not yet migrated. ESLint rule
+ * `no-restricted-imports` flags new usages. Deleted in 1.5.7 Capstone.
  */
 export function formatPercent(
   value: number | DecimalLike,
@@ -47,6 +56,14 @@ export function formatPercent(
   return `${formatted}%`;
 }
 
+/**
+ * @deprecated Since etapa 1.5.6a-bis. Use `formatNumber` from
+ * `@/lib/i18n/format-number` (different module, same name) which provides
+ * presets (`integer`, `decimal`, `percent`, `compact`) and required locale
+ * parameter.
+ *
+ * Retained for back-compat. Deleted in 1.5.7 Capstone.
+ */
 export function formatNumber(value: number, locale: Locale = "en-US"): string {
   return new Intl.NumberFormat(locale).format(value);
 }

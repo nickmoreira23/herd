@@ -409,6 +409,15 @@ export const messages = {
   "common.feedback.updated_successfully": "Atualizado com sucesso",
   "common.feedback.error_occurred": "Ocorreu um erro",
 
+  // Units (cravado em 1.5.6a-bis)
+  "common.units.months_one": "{count} mês",
+  "common.units.months_other": "{count} meses",
+  "common.units.models_one": "{count} modelo",
+  "common.units.models_other": "{count} modelos",
+  "common.units.scenarios_one": "{count} cenário",
+  "common.units.scenarios_other": "{count} cenários",
+  "common.units.of_total": "{current} de {total}",
+
   // Time
   "common.time.today": "Hoje",
   "common.time.yesterday": "Ontem",
@@ -609,6 +618,288 @@ export const messages = {
   "commissions.feedback.activated": "Estrutura ativada.",
   "commissions.feedback.deactivated": "Estrutura desativada.",
   "commissions.feedback.save_failed": "Falha ao salvar a estrutura.",
+
+  // ============================================================
+  // Financials - Phase 1.5.6a-bis
+  // ============================================================
+
+  // Projections Agent panel
+  "financials.agent.display_name": "Arquiteto de Projeções",
+  "financials.agent.subtitle": "Modelagem financeira & análise what-if",
+  "financials.agent.placeholder": "Pergunte sobre projeções…",
+  "financials.agent.empty_state":
+    "Eu gerencio todas as suas projeções financeiras. Peça para rodar cenários, ajustar premissas, comparar modelos, ou construir novas projeções a partir de dados ao vivo do sistema.",
+  "financials.agent.prompt_what_scenarios": "Quais cenários temos?",
+  "financials.agent.prompt_default_run":
+    "Rode uma projeção com os defaults atuais do sistema",
+  "financials.agent.prompt_what_if_reps":
+    "O que acontece se dobrarmos os reps de vendas?",
+
+  // Scenario manager (saved scenarios)
+  "financials.scenarios.title": "Cenários",
+  "financials.scenarios.placeholder": "Nome do cenário…",
+  "financials.scenarios.action_save": "Salvar",
+  "financials.scenarios.section_saved": "Salvos",
+  "financials.scenarios.action_load_title": "Carregar este cenário",
+  "financials.scenarios.action_delete_title": "Excluir este cenário",
+  "financials.scenarios.error_enter_name":
+    "Digite um nome para o cenário",
+  "financials.scenarios.error_no_results": "Sem resultados para salvar",
+  "financials.scenarios.error_save_failed": "Falha ao salvar",
+  "financials.scenarios.confirm_delete": 'Excluir cenário "{name}"?',
+  "financials.scenarios.feedback.saved": "Cenário salvo",
+  "financials.scenarios.feedback.loaded": "Cenário carregado",
+  "financials.scenarios.feedback.deleted": "Cenário excluído",
+
+  // Charts
+  "financials.charts.projection_title": "Projeção de {months} meses",
+  "financials.charts.projection_description":
+    "Receita, custos, lucro e lucro acumulado ao longo de {months} meses",
+  "financials.charts.legend_revenue": "Receita",
+  "financials.charts.legend_costs": "Custos",
+  "financials.charts.legend_profit": "Lucro",
+  "financials.charts.legend_cumulative_profit": "Lucro acumulado",
+  "financials.charts.no_data": "Sem dados para exibir",
+  "financials.charts.empty_title": "Sem resultados para o gráfico",
+  "financials.charts.empty_description":
+    "Configure os inputs do cenário para gerar gráficos.",
+  "financials.charts.revenue_by_tier_title": "Receita por faixa em {label}",
+  "financials.charts.revenue_by_tier_description":
+    "Contribuição de receita em {label} por cada faixa de assinatura",
+  "financials.charts.pl_waterfall_title": "Cascata de DRE em {label}",
+  "financials.charts.pl_waterfall_description":
+    "Como a receita flui pelos custos até a margem líquida",
+  "financials.charts.cost_breakdown_title": "Composição de custos em {label}",
+  "financials.charts.cost_breakdown_description":
+    "Para onde sua receita vai — margem, COGS, comissões e overhead",
+  "financials.charts.operation_breakeven_title": "Breakeven da operação",
+  "financials.charts.operation_breakeven_description":
+    "Lucro acumulado ao longo de 24 meses — breakeven {status}",
+  "financials.charts.operation_breakeven_not_reached": "não alcançado",
+  "financials.charts.operation_breakeven_at_month": "no mês {month}",
+  "financials.charts.month_label": "M{month}",
+  "financials.charts.opex_scaled_legend": "OPEX (escalado)",
+  "financials.charts.bar_revenue": "Receita",
+  "financials.charts.bar_product": "Produto",
+  "financials.charts.bar_fulfillment": "Fulfillment",
+  "financials.charts.bar_commission": "Comissão",
+  "financials.charts.bar_kickbacks": "Kickbacks",
+  "financials.charts.bar_overhead": "Overhead",
+  "financials.charts.bar_net": "Líquido",
+  "financials.charts.pie_net_margin": "Margem líquida",
+  "financials.charts.pie_cogs": "COGS",
+  "financials.charts.pie_commissions": "Comissões",
+  "financials.charts.pie_overhead": "Overhead",
+
+  // Metrics panel
+  "financials.metrics.empty_title": "Nenhum resultado ainda",
+  "financials.metrics.empty_description":
+    "Configure os inputs do cenário para ver as projeções financeiras.",
+  "financials.metrics.per_tier_breakdown": "Detalhamento por faixa",
+
+  "financials.metrics.ltv_cac.title": "Análise LTV / CAC",
+  "financials.metrics.ltv_cac.description":
+    "Valor vitalício vs custo de aquisição por cliente",
+  "financials.metrics.ltv_cac.tooltip":
+    "Compara quanto um cliente vale ao longo da sua vida (LTV) com quanto custa adquiri-lo (CAC). Uma razão de 3x+ é saudável.",
+  "financials.metrics.ltv_cac.blended_ltv": "LTV Combinado",
+  "financials.metrics.ltv_cac.blended_ltv_sub": "Valor vitalício por cliente",
+  "financials.metrics.ltv_cac.blended_cac": "CAC Combinado",
+  "financials.metrics.ltv_cac.blended_cac_sub": "Custo para adquirir um cliente",
+  "financials.metrics.ltv_cac.ratio": "LTV : CAC",
+  "financials.metrics.ltv_cac.ratio_short": "LTV:CAC",
+  "financials.metrics.ltv_cac.payback_period": "Período de Payback",
+  "financials.metrics.ltv_cac.healthy": "Saudável (3x+ é ótimo)",
+  "financials.metrics.ltv_cac.needs_improvement":
+    "Precisa melhorar (mire em 3x+)",
+  "financials.metrics.ltv_cac.losing_money": "Perdendo dinheiro na aquisição",
+  "financials.metrics.ltv_cac.months_to_recover": "Meses para recuperar o CAC",
+  "financials.metrics.ltv_cac.ltv_label": "LTV",
+  "financials.metrics.ltv_cac.cac_label": "CAC",
+  "financials.metrics.ltv_cac.payback_label": "Payback",
+
+  "financials.metrics.sales.title": "Canal de Reps de Vendas",
+  "financials.metrics.sales.description":
+    "Quantidade de reps, novos assinantes e crescimento",
+  "financials.metrics.sales.tooltip":
+    "Métricas do seu canal de aquisição via reps — reps iniciais, geração de assinantes no mês 1, e reps projetados no mês 12.",
+  "financials.metrics.sales.mo1_reps": "Reps Mês 1",
+  "financials.metrics.sales.mo1_new_subs": "Novos Subs Mês 1",
+  "financials.metrics.sales.reps_mo12": "Reps no Mês 12",
+
+  "financials.metrics.revenue.title": "Receita",
+  "financials.metrics.revenue.description":
+    "Receita total e receita por assinante",
+  "financials.metrics.revenue.tooltip":
+    "Receita recorrente total para o período selecionado, mais a receita média combinada por assinante em todas as faixas e ciclos de cobrança.",
+  "financials.metrics.revenue.label": "Receita",
+  "financials.metrics.revenue.revenue_per_sub": "Receita/Sub",
+  "financials.metrics.revenue.arr": "ARR",
+
+  "financials.metrics.cogs.title": "COGS",
+  "financials.metrics.cogs.description":
+    "Custos de produto, fulfillment e por assinante",
+  "financials.metrics.cogs.tooltip":
+    "Custo dos bens vendidos — custos totais de produto, despesas de fulfillment e o custo combinado por assinante.",
+  "financials.metrics.cogs.total": "COGS Total",
+  "financials.metrics.cogs.fulfillment": "Fulfillment",
+  "financials.metrics.cogs.cost_per_sub": "Custo/Sub",
+
+  "financials.metrics.commissions.title": "Comissões",
+  "financials.metrics.commissions.description":
+    "Despesa total, por sub e % da receita",
+  "financials.metrics.commissions.tooltip":
+    "Despesa total com comissões incluindo bônus iniciais e pagamentos residuais, detalhada por assinante e como percentual da receita total.",
+  "financials.metrics.commissions.total": "Comissão Total",
+  "financials.metrics.commissions.per_sub": "Comissão/Sub",
+  "financials.metrics.commissions.percent_of_revenue": "% da Receita",
+
+  "financials.metrics.partners.title": "Parceiros & Breakage",
+  "financials.metrics.partners.description":
+    "Receita de kickback e economias de crédito",
+  "financials.metrics.partners.tooltip":
+    "Receita proveniente de kickbacks de marcas parceiras. Economias de breakage representam COGS evitados por créditos não resgatados — já refletido em valores menores de COGS.",
+  "financials.metrics.partners.kickback_revenue": "Receita de Kickback",
+  "financials.metrics.partners.breakage_savings": "Economia de Breakage",
+
+  "financials.metrics.margins.title": "Margens",
+  "financials.metrics.margins.description":
+    "Margem bruta e líquida em valores e percentual",
+  "financials.metrics.margins.tooltip":
+    "Margem bruta (receita menos COGS) e margem líquida (após todas as despesas, incluindo comissões e overhead).",
+  "financials.metrics.margins.gross": "Margem Bruta",
+  "financials.metrics.margins.gross_percent": "Margem Bruta %",
+  "financials.metrics.margins.net": "Margem Líquida",
+  "financials.metrics.margins.net_percent": "Margem Líquida %",
+
+  "financials.metrics.profit_split.title": "Divisão de Lucro",
+  "financials.metrics.profit_split.description":
+    "Como os lucros do canal são divididos entre as partes",
+  "financials.metrics.profit_split.tooltip":
+    "Após todos os custos, o lucro líquido restante é dividido entre as partes definidas conforme os percentuais acordados.",
+  "financials.metrics.profit_split.unnamed": "Sem nome",
+  "financials.metrics.profit_split.undistributed_percent":
+    "Não distribuído ({percent}%)",
+
+  "financials.metrics.tier_details.title": "Detalhes por Faixa",
+  "financials.metrics.tier_details.description":
+    "Receita, COGS e margem por faixa de assinatura",
+  "financials.metrics.tier_details.tooltip":
+    "Análise detalhada por faixa mostrando contagem de assinantes, receita por assinante, estrutura de custos, margem e valor vitalício para cada faixa.",
+  "financials.metrics.tier_details.subscribers_count": "{count} assinantes",
+  "financials.metrics.tier_details.margin_label": "{value} de margem",
+  "financials.metrics.tier_details.rev_per_sub": "Rec: {value}/sub",
+  "financials.metrics.tier_details.cogs_per_sub": "COGS: {value}/sub",
+  "financials.metrics.tier_details.ltv_label": "LTV: {value}",
+  "financials.metrics.tier_details.avg_life": "Vida média",
+  "financials.metrics.tier_details.months_short": "{months} m",
+
+  // Executive summary
+  "financials.summary.empty_title": "Nenhum resultado ainda",
+  "financials.summary.empty_description":
+    "Configure os inputs do cenário para ver o resumo executivo.",
+
+  "financials.summary.verdict.net_margin": "Margem Líquida",
+  "financials.summary.verdict.net_margin_sub": "{value}/mês",
+  "financials.summary.verdict.ltv_cac": "Razão LTV:CAC",
+  "financials.summary.verdict.ltv_cac_sub": "LTV {ltv} / CAC {cac}",
+  "financials.summary.verdict.breakeven": "Breakeven",
+  "financials.summary.verdict.breakeven_month": "Mês {month}",
+  "financials.summary.verdict.breakeven_year1": "Dentro do Ano 1",
+  "financials.summary.verdict.breakeven_year2": "Ano 2",
+  "financials.summary.verdict.breakeven_negative":
+    "Lucro acumulado permanece negativo",
+
+  "financials.summary.margin.interpretation.strong":
+    "Economia unitária forte — sustenta escala agressiva",
+  "financials.summary.margin.interpretation.healthy":
+    "Margens saudáveis — espaço para investir em crescimento",
+  "financials.summary.margin.interpretation.thin":
+    "Margens apertadas — monitore os custos de perto",
+  "financials.summary.margin.interpretation.breakeven":
+    "Empatando — otimize antes de escalar",
+  "financials.summary.margin.interpretation.negative":
+    "Margens negativas — reestruture custos antes de escalar",
+
+  "financials.summary.ltvcac.interpretation.infinite":
+    "Infinito — churn zero significa que clientes nunca saem",
+  "financials.summary.ltvcac.interpretation.excellent":
+    "Excelente — cada dólar gasto adquire 5x+ em valor vitalício",
+  "financials.summary.ltvcac.interpretation.healthy":
+    "Saudável — economia unitária sustenta a escala",
+  "financials.summary.ltvcac.interpretation.cautious":
+    "Cauteloso — positivo mas com pouca margem para erro",
+  "financials.summary.ltvcac.interpretation.barely_positive":
+    "Mal positivo — custo de aquisição quase iguala valor vitalício",
+  "financials.summary.ltvcac.interpretation.negative":
+    "Negativo — você perde dinheiro em cada cliente adquirido",
+
+  "financials.summary.breakeven.interpretation.never":
+    "Não atinge breakeven dentro de 24 meses",
+  "financials.summary.breakeven.interpretation.fast":
+    "Payback rápido — modelo eficiente em capital",
+  "financials.summary.breakeven.interpretation.solid":
+    "Sólido — lucratividade dentro do Ano 1",
+  "financials.summary.breakeven.interpretation.moderate":
+    "Runway moderado — planeje 18 meses de financiamento",
+  "financials.summary.breakeven.interpretation.long":
+    "Runway longo necessário — 2+ anos para lucratividade",
+
+  "financials.summary.key_metrics.title": "Métricas-chave",
+  "financials.summary.key_metrics.mrr": "MRR",
+  "financials.summary.key_metrics.arr": "ARR",
+  "financials.summary.key_metrics.gross_margin": "Margem Bruta",
+  "financials.summary.key_metrics.new_subs_per_mo": "Novos Subs/Mês",
+  "financials.summary.key_metrics.commission_pct_revenue":
+    "Comissão % da Receita",
+  "financials.summary.key_metrics.cost_per_sub": "Custo/Assinante",
+  "financials.summary.key_metrics.payback_period": "Período de Payback",
+  "financials.summary.key_metrics.months_value": "{months} meses",
+  "financials.summary.key_metrics.mo24_subscribers": "Assinantes no Mês 24",
+
+  "financials.summary.provenance.title": "Fontes das Premissas",
+  "financials.summary.provenance.tier_pricing": "Preços por Faixa",
+  "financials.summary.provenance.tiers_configured":
+    "{count} faixas configuradas",
+  "financials.summary.provenance.commissions": "Comissões",
+  "financials.summary.provenance.commissions_detail":
+    "${bonus} de bônus + {residual}% residual",
+  "financials.summary.provenance.opex": "OPEX",
+  "financials.summary.provenance.opex_scaled":
+    "Auto-escalado a partir de {count} categorias",
+  "financials.summary.provenance.opex_fixed": "Fixo em {value}/mês",
+  "financials.summary.provenance.sales_rep_channel": "Canal de Reps de Vendas",
+  "financials.summary.provenance.sales_rep_detail":
+    "{reps} reps, {sales} vendas/rep/mês",
+  "financials.summary.provenance.partner_kickbacks": "Kickbacks de Parceiros",
+  "financials.summary.provenance.partners_count":
+    "{count} parceiros ativos",
+  "financials.summary.provenance.source_plans": "Página de Planos",
+  "financials.summary.provenance.source_promoters": "Página de Promoters",
+  "financials.summary.provenance.source_operations_live":
+    "Página de Operações (ao vivo)",
+  "financials.summary.provenance.source_manual_override": "Override manual",
+  "financials.summary.provenance.source_manual_input": "Entrada manual",
+  "financials.summary.provenance.source_brands": "Página de Marcas",
+
+  "financials.summary.trajectory.title": "Trajetória de 24 Meses",
+  "financials.summary.trajectory.month_label": "Mês {month}",
+  "financials.summary.trajectory.subs_label": "{count} subs",
+  "financials.summary.trajectory.cum_label": "Acum: {value}",
+
+  "financials.summary.validation.title": "Notas de Validação",
+  "financials.summary.validation.billing_distribution":
+    "Distribuição de cobrança soma {value}%, não 100%",
+  "financials.summary.validation.tier_distribution":
+    "Distribuição de assinantes por faixa soma {value}%, não 100%",
+  "financials.summary.validation.deeply_negative":
+    "Margem líquida está profundamente negativa — revise as premissas de custos",
+  "financials.summary.validation.profit_split_total":
+    "Percentuais de divisão de lucro totalizam {value}%, não 100%",
+  "financials.summary.validation.churn_optimistic":
+    "Churn médio abaixo de 2% é muito otimista para um negócio de assinatura",
+  "financials.summary.validation.churn_high":
+    "Churn médio acima de 15% é muito alto — estratégia de retenção necessária",
 } as const;
 
 export type MessageKey = keyof typeof messages;

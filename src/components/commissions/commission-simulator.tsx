@@ -22,7 +22,9 @@ import {
   HelpCircle,
   AlertTriangle,
 } from "lucide-react";
-import { formatCurrency, formatPercent, toNumber } from "@/lib/utils";
+import { toNumber } from "@/lib/utils";
+import { formatNumberAsMoney } from "@/lib/money/format";
+import { formatNumber } from "@/lib/i18n/format-number";
 import {
   calculateBlendedRevenue,
   calculateCommissionPerNewSub,
@@ -280,7 +282,7 @@ export function CommissionSimulator({ structure, tiers, locale }: SimulatorProps
                         <p className="text-xs font-medium leading-tight">{tier.name}</p>
                         <p className="text-[10px] text-muted-foreground">
                           {t("commissions.simulator.input.tier_bonus_label", {
-                            value: formatCurrency(bonus, locale),
+                            value: formatNumberAsMoney(bonus, locale),
                           })}
                         </p>
                       </div>
@@ -320,19 +322,19 @@ export function CommissionSimulator({ structure, tiers, locale }: SimulatorProps
                   />
                   <MetricCard
                     label={t("commissions.simulator.metric.signup_bonuses")}
-                    value={formatCurrency(results.totalUpfront, locale)}
+                    value={formatNumberAsMoney(results.totalUpfront, locale)}
                     sublabel={t("commissions.simulator.metric.signup_bonuses_sublabel")}
                     accent="amber"
                   />
                   <MetricCard
                     label={t("commissions.simulator.metric.monthly_residuals")}
-                    value={formatCurrency(results.totalResidual, locale)}
+                    value={formatNumberAsMoney(results.totalResidual, locale)}
                     sublabel={t("commissions.simulator.metric.monthly_residuals_sublabel")}
                     accent="purple"
                   />
                   <MetricCard
                     label={t("commissions.simulator.metric.total_commission")}
-                    value={formatCurrency(results.totalCommission, locale)}
+                    value={formatNumberAsMoney(results.totalCommission, locale)}
                     sublabel={t("commissions.simulator.metric.total_commission_sublabel")}
                     accent="green"
                     highlight
@@ -343,20 +345,20 @@ export function CommissionSimulator({ structure, tiers, locale }: SimulatorProps
                 <div className="grid grid-cols-4 gap-2">
                   <MiniMetric
                     label={t("commissions.simulator.mini.pct_of_revenue")}
-                    value={formatPercent(results.commissionPctOfRevenue, 1, locale)}
+                    value={formatNumber(results.commissionPctOfRevenue / 100, locale, "percent")}
                     warn={results.commissionPctOfRevenue > 15}
                   />
                   <MiniMetric
                     label={t("commissions.simulator.mini.annual_cost")}
-                    value={formatCurrency(results.annualCommission, locale)}
+                    value={formatNumberAsMoney(results.annualCommission, locale)}
                   />
                   <MiniMetric
                     label={t("commissions.simulator.mini.cost_per_new_sub")}
-                    value={formatCurrency(results.costPerNewSub, locale)}
+                    value={formatNumberAsMoney(results.costPerNewSub, locale)}
                   />
                   <MiniMetric
                     label={t("commissions.simulator.mini.residual_rate")}
-                    value={formatPercent(results.residualPercent, 1, locale)}
+                    value={formatNumber(results.residualPercent / 100, locale, "percent")}
                   />
                 </div>
 
@@ -387,7 +389,7 @@ export function CommissionSimulator({ structure, tiers, locale }: SimulatorProps
                                 </span>
                               </div>
                               <span className="text-xs font-bold tabular-nums">
-                                {formatCurrency(total, locale)}
+                                {formatNumberAsMoney(total, locale)}
                                 <span className="font-normal text-muted-foreground">
                                   {t("commissions.simulator.breakdown.per_month_suffix")}
                                 </span>
@@ -403,17 +405,17 @@ export function CommissionSimulator({ structure, tiers, locale }: SimulatorProps
                             <div className="flex gap-3 text-[10px] text-muted-foreground">
                               <span>
                                 {t("commissions.simulator.breakdown.bonus_per_sub", {
-                                  value: formatCurrency(tr.effectiveBonus, locale),
+                                  value: formatNumberAsMoney(tr.effectiveBonus, locale),
                                 })}
                               </span>
                               <span>
                                 {t("commissions.simulator.breakdown.upfront", {
-                                  value: formatCurrency(tr.upfrontCost, locale),
+                                  value: formatNumberAsMoney(tr.upfrontCost, locale),
                                 })}
                               </span>
                               <span>
                                 {t("commissions.simulator.breakdown.residual", {
-                                  value: formatCurrency(tr.residualCost, locale),
+                                  value: formatNumberAsMoney(tr.residualCost, locale),
                                 })}
                               </span>
                             </div>

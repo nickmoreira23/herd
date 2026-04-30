@@ -22,15 +22,21 @@ import {
   ChevronDown,
   PieChart,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { formatCurrency, formatPercent, getMarginColorClass } from "@/lib/utils";
+import { cn, getMarginColorClass } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale-context";
+import type { Locale } from "@/lib/i18n/locales";
+import { formatNumberAsMoney } from "@/lib/money/format";
+import { formatNumber } from "@/lib/i18n/format-number";
+
 interface MetricsPanelProps {
   multiplier: number;
   periodLabel: string;
+  locale: Locale;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function MetricsPanel({ multiplier: m, periodLabel }: MetricsPanelProps) {
+export function MetricsPanel({ multiplier: m, periodLabel, locale }: MetricsPanelProps) {
+  const t = useT();
   const results = useFinancialStore((s) => s.results);
 
   if (!results) {
@@ -38,16 +44,23 @@ export function MetricsPanel({ multiplier: m, periodLabel }: MetricsPanelProps) 
       <Card>
         <CardContent className="py-12 text-center">
           <BarChart3 className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
-          <p className="font-medium">No results yet</p>
+          <p className="font-medium">{t("financials.metrics.empty_title")}</p>
           <p className="text-sm text-muted-foreground mt-1">
-            Configure the scenario inputs to see financial projections.
+            {t("financials.metrics.empty_description")}
           </p>
         </CardContent>
       </Card>
     );
   }
 
-  const totalSubs = results.revenueByTier.reduce((s, t) => s + t.subscribers, 0) || 1;
+  const totalSubs = results.revenueByTier.reduce((s, tier) => s + tier.subscribers, 0) || 1;
+
+  const ltvCacInterpretation =
+    results.ltvCac.ltvCacRatio >= 3
+      ? t("financials.metrics.ltv_cac.healthy")
+      : results.ltvCac.ltvCacRatio >= 1
+        ? t("financials.metrics.ltv_cac.needs_improvement")
+        : t("financials.metrics.ltv_cac.losing_money");
 
   return (
     <TooltipProvider>
@@ -55,39 +68,39 @@ export function MetricsPanel({ multiplier: m, periodLabel }: MetricsPanelProps) 
         {/* LTV / CAC Analysis */}
         <CollapsibleCard
           icon={<Target className="h-3.5 w-3.5" />}
-          title="LTV / CAC Analysis"
-          description="Lifetime value vs acquisition cost per customer"
-          tooltip="Compares how much a customer is worth over their lifetime (LTV) to how much it costs to acquire them (CAC). A ratio of 3x+ is healthy."
+          title={t("financials.metrics.ltv_cac.title")}
+          description={t("financials.metrics.ltv_cac.description")}
+          tooltip={t("financials.metrics.ltv_cac.tooltip")}
         >
           {/* Top-line LTV:CAC metrics */}
           <div className="grid grid-cols-4 gap-2 mb-4">
             <div className="rounded-xl border bg-gradient-to-br from-green-500/10 to-transparent border-green-500/20 p-3">
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
-                Blended LTV
+                {t("financials.metrics.ltv_cac.blended_ltv")}
               </p>
               <p className="text-lg font-bold mt-0.5 tabular-nums text-green-700 dark:text-green-400">
                 {results.ltvCac.blendedLTV === Infinity
                   ? "∞"
-                  : formatCurrency(results.ltvCac.blendedLTV)}
+                  : formatNumberAsMoney(results.ltvCac.blendedLTV, locale)}
               </p>
               <p className="text-[10px] text-muted-foreground mt-0.5">
-                Lifetime value per customer
+                {t("financials.metrics.ltv_cac.blended_ltv_sub")}
               </p>
             </div>
             <div className="rounded-xl border bg-gradient-to-br from-amber-500/10 to-transparent border-amber-500/20 p-3">
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
-                Blended CAC
+                {t("financials.metrics.ltv_cac.blended_cac")}
               </p>
               <p className="text-lg font-bold mt-0.5 tabular-nums text-amber-700 dark:text-amber-400">
-                {formatCurrency(results.ltvCac.blendedCAC)}
+                {formatNumberAsMoney(results.ltvCac.blendedCAC, locale)}
               </p>
               <p className="text-[10px] text-muted-foreground mt-0.5">
-                Cost to acquire a customer
+                {t("financials.metrics.ltv_cac.blended_cac_sub")}
               </p>
             </div>
             <div className="rounded-xl border bg-gradient-to-br from-blue-500/10 to-transparent border-blue-500/20 p-3">
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
-                LTV : CAC
+                {t("financials.metrics.ltv_cac.ratio")}
               </p>
               <p className={`text-lg font-bold mt-0.5 tabular-nums ${
                 results.ltvCac.ltvCacRatio >= 3
@@ -101,24 +114,20 @@ export function MetricsPanel({ multiplier: m, periodLabel }: MetricsPanelProps) 
                   : `${results.ltvCac.ltvCacRatio.toFixed(1)}x`}
               </p>
               <p className="text-[10px] text-muted-foreground mt-0.5">
-                {results.ltvCac.ltvCacRatio >= 3
-                  ? "Healthy (3x+ is great)"
-                  : results.ltvCac.ltvCacRatio >= 1
-                    ? "Needs improvement (aim for 3x+)"
-                    : "Losing money on acquisition"}
+                {ltvCacInterpretation}
               </p>
             </div>
             <div className="rounded-xl border bg-gradient-to-br from-violet-500/10 to-transparent border-violet-500/20 p-3">
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
-                Payback Period
+                {t("financials.metrics.ltv_cac.payback_period")}
               </p>
               <p className="text-lg font-bold mt-0.5 tabular-nums text-violet-700 dark:text-violet-400">
                 {results.ltvCac.monthsToPayback === Infinity
-                  ? "Never"
-                  : `${results.ltvCac.monthsToPayback.toFixed(1)} mo`}
+                  ? t("common.time.never")
+                  : t("financials.metrics.tier_details.months_short", { months: results.ltvCac.monthsToPayback.toFixed(1) })}
               </p>
               <p className="text-[10px] text-muted-foreground mt-0.5">
-                Months to recover CAC
+                {t("financials.metrics.ltv_cac.months_to_recover")}
               </p>
             </div>
           </div>
@@ -127,32 +136,32 @@ export function MetricsPanel({ multiplier: m, periodLabel }: MetricsPanelProps) 
           {results.ltvCac.perTier.length > 0 && (
             <div className="space-y-0">
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
-                Per-Tier Breakdown
+                {t("financials.metrics.per_tier_breakdown")}
               </p>
-              {results.ltvCac.perTier.map((t, idx) => {
+              {results.ltvCac.perTier.map((tier, idx) => {
                 const ratioColor =
-                  t.ltvCacRatio >= 3
+                  tier.ltvCacRatio >= 3
                     ? "text-green-600 dark:text-green-400"
-                    : t.ltvCacRatio >= 1
+                    : tier.ltvCacRatio >= 1
                       ? "text-amber-600 dark:text-amber-400"
                       : "text-red-600 dark:text-red-400";
                 const barColor =
-                  t.ltvCacRatio >= 3
+                  tier.ltvCacRatio >= 3
                     ? "bg-green-500"
-                    : t.ltvCacRatio >= 1
+                    : tier.ltvCacRatio >= 1
                       ? "bg-amber-500"
                       : "bg-red-500";
-                const barWidth = Math.min(100, (t.ltvCacRatio / 5) * 100);
+                const barWidth = Math.min(100, (tier.ltvCacRatio / 5) * 100);
 
                 return (
                   <div
-                    key={t.tierId}
+                    key={tier.tierId}
                     className={`py-2.5 ${idx < results.ltvCac.perTier.length - 1 ? "border-b" : ""}`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold">{t.tierId}</span>
+                      <span className="text-xs font-semibold">{tier.tierId}</span>
                       <span className={`text-xs font-bold tabular-nums ${ratioColor}`}>
-                        {t.ltvCacRatio === Infinity ? "∞" : `${t.ltvCacRatio.toFixed(1)}x`} LTV:CAC
+                        {tier.ltvCacRatio === Infinity ? "∞" : `${tier.ltvCacRatio.toFixed(1)}x`} {t("financials.metrics.ltv_cac.ratio_short")}
                       </span>
                     </div>
                     <div className="h-1.5 rounded-full bg-muted overflow-hidden mb-1.5">
@@ -162,10 +171,10 @@ export function MetricsPanel({ multiplier: m, periodLabel }: MetricsPanelProps) 
                       />
                     </div>
                     <div className="flex gap-3 text-[10px] text-muted-foreground tabular-nums">
-                      <span>LTV: {t.ltv === Infinity ? "∞" : formatCurrency(t.ltv)}</span>
-                      <span>CAC: {formatCurrency(t.cac)}</span>
-                      <span>Payback: {t.monthsToPayback === Infinity ? "Never" : `${t.monthsToPayback.toFixed(1)} mo`}</span>
-                      <span>Avg life: {t.avgLifetimeMonths === Infinity ? "∞" : `${t.avgLifetimeMonths.toFixed(0)} mo`}</span>
+                      <span>{t("financials.metrics.ltv_cac.ltv_label")}: {tier.ltv === Infinity ? "∞" : formatNumberAsMoney(tier.ltv, locale)}</span>
+                      <span>{t("financials.metrics.ltv_cac.cac_label")}: {formatNumberAsMoney(tier.cac, locale)}</span>
+                      <span>{t("financials.metrics.ltv_cac.payback_label")}: {tier.monthsToPayback === Infinity ? t("common.time.never") : t("financials.metrics.tier_details.months_short", { months: tier.monthsToPayback.toFixed(1) })}</span>
+                      <span>{t("financials.metrics.tier_details.avg_life")}: {tier.avgLifetimeMonths === Infinity ? "∞" : t("financials.metrics.tier_details.months_short", { months: tier.avgLifetimeMonths.toFixed(0) })}</span>
                     </div>
                   </div>
                 );
@@ -177,15 +186,15 @@ export function MetricsPanel({ multiplier: m, periodLabel }: MetricsPanelProps) 
         {/* Acquisition Channels */}
         <CollapsibleCard
           icon={<UserPlus className="h-3.5 w-3.5" />}
-          title="Sales Rep Channel"
-          description="Rep count, new subscribers & growth"
-          tooltip="Metrics from your sales rep acquisition channel — starting reps, month-1 subscriber generation, and projected reps at month 12."
+          title={t("financials.metrics.sales.title")}
+          description={t("financials.metrics.sales.description")}
+          tooltip={t("financials.metrics.sales.tooltip")}
         >
           <div className="grid grid-cols-3 gap-2">
-            <MetricCard label="Mo 1 Reps" value={String(results.month1Reps)} />
-            <MetricCard label="Mo 1 New Subs" value={String(results.newSubsFromReps)} accent="blue" />
+            <MetricCard label={t("financials.metrics.sales.mo1_reps")} value={String(results.month1Reps)} />
+            <MetricCard label={t("financials.metrics.sales.mo1_new_subs")} value={String(results.newSubsFromReps)} accent="blue" />
             <MetricCard
-              label="Reps @ Mo 12"
+              label={t("financials.metrics.sales.reps_mo12")}
               value={results.cohortProjection[11] ? String(results.cohortProjection[11].activeReps) : "—"}
             />
           </div>
@@ -194,44 +203,44 @@ export function MetricsPanel({ multiplier: m, periodLabel }: MetricsPanelProps) 
         {/* Revenue */}
         <CollapsibleCard
           icon={<TrendingUp className="h-3.5 w-3.5" />}
-          title="Revenue"
-          description="Total revenue & revenue per subscriber"
-          tooltip="Total recurring revenue for the selected period, plus the blended average revenue per subscriber across all tiers and billing cycles."
+          title={t("financials.metrics.revenue.title")}
+          description={t("financials.metrics.revenue.description")}
+          tooltip={t("financials.metrics.revenue.tooltip")}
         >
           <div className="grid grid-cols-3 gap-2">
-            <MetricCard label="Revenue" value={formatCurrency(results.mrr * m)} accent="green" />
-            <MetricCard label="Revenue/Sub" value={formatCurrency(results.mrr / totalSubs)} />
-            <MetricCard label="ARR" value={formatCurrency(results.arr)} accent="green" />
+            <MetricCard label={t("financials.metrics.revenue.label")} value={formatNumberAsMoney(results.mrr * m, locale)} accent="green" />
+            <MetricCard label={t("financials.metrics.revenue.revenue_per_sub")} value={formatNumberAsMoney(results.mrr / totalSubs, locale)} />
+            <MetricCard label={t("financials.metrics.revenue.arr")} value={formatNumberAsMoney(results.arr, locale)} accent="green" />
           </div>
         </CollapsibleCard>
 
         {/* COGS */}
         <CollapsibleCard
           icon={<Package className="h-3.5 w-3.5" />}
-          title="COGS"
-          description="Product, fulfillment & per-subscriber costs"
-          tooltip="Cost of goods sold — total product costs, fulfillment expenses, and the blended cost per subscriber."
+          title={t("financials.metrics.cogs.title")}
+          description={t("financials.metrics.cogs.description")}
+          tooltip={t("financials.metrics.cogs.tooltip")}
         >
           <div className="grid grid-cols-3 gap-2">
-            <MetricCard label="Total COGS" value={formatCurrency(results.totalProductCost * m)} accent="amber" />
-            <MetricCard label="Fulfillment" value={formatCurrency(results.totalFulfillmentCost * m)} />
-            <MetricCard label="Cost/Sub" value={formatCurrency(results.costPerSubscriber)} />
+            <MetricCard label={t("financials.metrics.cogs.total")} value={formatNumberAsMoney(results.totalProductCost * m, locale)} accent="amber" />
+            <MetricCard label={t("financials.metrics.cogs.fulfillment")} value={formatNumberAsMoney(results.totalFulfillmentCost * m, locale)} />
+            <MetricCard label={t("financials.metrics.cogs.cost_per_sub")} value={formatNumberAsMoney(results.costPerSubscriber, locale)} />
           </div>
         </CollapsibleCard>
 
         {/* Commissions */}
         <CollapsibleCard
           icon={<DollarSign className="h-3.5 w-3.5" />}
-          title="Commissions"
-          description="Total expense, per-sub & % of revenue"
-          tooltip="Total commission expense including upfront bonuses and residual payments, broken down per subscriber and as a percentage of total revenue."
+          title={t("financials.metrics.commissions.title")}
+          description={t("financials.metrics.commissions.description")}
+          tooltip={t("financials.metrics.commissions.tooltip")}
         >
           <div className="grid grid-cols-3 gap-2">
-            <MetricCard label="Total Commission" value={formatCurrency(results.totalCommissionExpense * m)} accent="purple" />
-            <MetricCard label="Commission/Sub" value={formatCurrency(results.commissionPerSubscriber)} />
+            <MetricCard label={t("financials.metrics.commissions.total")} value={formatNumberAsMoney(results.totalCommissionExpense * m, locale)} accent="purple" />
+            <MetricCard label={t("financials.metrics.commissions.per_sub")} value={formatNumberAsMoney(results.commissionPerSubscriber, locale)} />
             <MetricCard
-              label="% of Revenue"
-              value={formatPercent(results.commissionPercentOfRevenue)}
+              label={t("financials.metrics.commissions.percent_of_revenue")}
+              value={formatNumber(results.commissionPercentOfRevenue / 100, locale, "percent")}
               warn={results.commissionPercentOfRevenue > 15}
             />
           </div>
@@ -240,34 +249,34 @@ export function MetricsPanel({ multiplier: m, periodLabel }: MetricsPanelProps) 
         {/* Partners & Breakage */}
         <CollapsibleCard
           icon={<Handshake className="h-3.5 w-3.5" />}
-          title="Partners & Breakage"
-          description="Kickback revenue & credit savings"
-          tooltip="Revenue from partner brand kickbacks. Breakage savings represent COGS avoided from unredeemed credits — already reflected in lower COGS figures."
+          title={t("financials.metrics.partners.title")}
+          description={t("financials.metrics.partners.description")}
+          tooltip={t("financials.metrics.partners.tooltip")}
         >
           <div className="grid grid-cols-2 gap-2">
-            <MetricCard label="Kickback Revenue" value={formatCurrency(results.totalKickbackRevenue * m)} accent="blue" />
-            <MetricCard label="Breakage Savings" value={formatCurrency(results.totalBreakageProfit * m)} />
+            <MetricCard label={t("financials.metrics.partners.kickback_revenue")} value={formatNumberAsMoney(results.totalKickbackRevenue * m, locale)} accent="blue" />
+            <MetricCard label={t("financials.metrics.partners.breakage_savings")} value={formatNumberAsMoney(results.totalBreakageProfit * m, locale)} />
           </div>
         </CollapsibleCard>
 
         {/* Margins */}
         <CollapsibleCard
           icon={<BarChart3 className="h-3.5 w-3.5" />}
-          title="Margins"
-          description="Gross & net margin in dollars and percent"
-          tooltip="Gross margin (revenue minus COGS) and net margin (after all expenses including commissions and overhead)."
+          title={t("financials.metrics.margins.title")}
+          description={t("financials.metrics.margins.description")}
+          tooltip={t("financials.metrics.margins.tooltip")}
         >
           <div className="grid grid-cols-2 gap-2">
-            <MetricCard label="Gross Margin" value={formatCurrency(results.grossMarginDollars * m)} />
+            <MetricCard label={t("financials.metrics.margins.gross")} value={formatNumberAsMoney(results.grossMarginDollars * m, locale)} />
             <MetricCard
-              label="Gross Margin %"
-              value={formatPercent(results.grossMarginPercent)}
+              label={t("financials.metrics.margins.gross_percent")}
+              value={formatNumber(results.grossMarginPercent / 100, locale, "percent")}
               valueClassName={getMarginColorClass(results.grossMarginPercent)}
             />
-            <MetricCard label="Net Margin" value={formatCurrency(results.netMarginDollars * m)} accent="green" highlight />
+            <MetricCard label={t("financials.metrics.margins.net")} value={formatNumberAsMoney(results.netMarginDollars * m, locale)} accent="green" highlight />
             <MetricCard
-              label="Net Margin %"
-              value={formatPercent(results.netMarginPercent)}
+              label={t("financials.metrics.margins.net_percent")}
+              value={formatNumber(results.netMarginPercent / 100, locale, "percent")}
               accent="green"
               highlight
               valueClassName={getMarginColorClass(results.netMarginPercent)}
@@ -279,26 +288,27 @@ export function MetricsPanel({ multiplier: m, periodLabel }: MetricsPanelProps) 
         {results.profitSplit.parties.length > 0 && (
           <CollapsibleCard
             icon={<PieChart className="h-3.5 w-3.5" />}
-            title="Profit Split"
-            description="How channel profits are divided between parties"
-            tooltip="After all costs, the remaining net profit is split among the defined parties according to their agreed percentages."
+            title={t("financials.metrics.profit_split.title")}
+            description={t("financials.metrics.profit_split.description")}
+            tooltip={t("financials.metrics.profit_split.tooltip")}
           >
             <div className="grid grid-cols-2 gap-2">
               {results.profitSplit.parties.map((party) => (
                 <MetricCard
                   key={party.id}
-                  label={`${party.name || "Unnamed"} (${party.percent}%)`}
-                  value={formatCurrency(party.monthlyAmount * m)}
+                  label={`${party.name || t("financials.metrics.profit_split.unnamed")} (${party.percent}%)`}
+                  value={formatNumberAsMoney(party.monthlyAmount * m, locale)}
                   accent="green"
                 />
               ))}
               {results.profitSplit.undistributedPercent > 0 && (
                 <MetricCard
-                  label={`Undistributed (${results.profitSplit.undistributedPercent}%)`}
-                  value={formatCurrency(
+                  label={t("financials.metrics.profit_split.undistributed_percent", { percent: results.profitSplit.undistributedPercent })}
+                  value={formatNumberAsMoney(
                     results.netMarginDollars > 0
                       ? results.netMarginDollars * m * (results.profitSplit.undistributedPercent / 100)
-                      : 0
+                      : 0,
+                    locale
                   )}
                   accent="amber"
                 />
@@ -311,28 +321,28 @@ export function MetricsPanel({ multiplier: m, periodLabel }: MetricsPanelProps) 
         {results.tierDetails.length > 0 && (
           <CollapsibleCard
             icon={<Layers className="h-3.5 w-3.5" />}
-            title="Per-Tier Breakdown"
-            description="Revenue, COGS & margin per subscription tier"
-            tooltip="Detailed per-tier analysis showing subscriber count, revenue per subscriber, cost structure, margin, and lifetime value for each tier."
+            title={t("financials.metrics.tier_details.title")}
+            description={t("financials.metrics.tier_details.description")}
+            tooltip={t("financials.metrics.tier_details.tooltip")}
           >
             <div className="space-y-0">
-              {results.tierDetails.map((t, idx) => {
+              {results.tierDetails.map((tier, idx) => {
                 const maxRev = Math.max(...results.tierDetails.map((d) => d.revenuePerSub));
-                const barWidth = maxRev > 0 ? (t.revenuePerSub / maxRev) * 100 : 0;
+                const barWidth = maxRev > 0 ? (tier.revenuePerSub / maxRev) * 100 : 0;
                 return (
                   <div
-                    key={t.tierId}
+                    key={tier.tierId}
                     className={`py-2.5 ${idx < results.tierDetails.length - 1 ? "border-b" : ""}`}
                   >
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold">{t.tierId}</span>
+                        <span className="text-xs font-semibold">{tier.tierId}</span>
                         <span className="text-[10px] text-muted-foreground">
-                          {t.subscribers.toLocaleString()} subscribers
+                          {t("financials.metrics.tier_details.subscribers_count", { count: formatNumber(tier.subscribers, locale, "integer") })}
                         </span>
                       </div>
-                      <span className={`text-xs font-bold tabular-nums ${getMarginColorClass(t.marginPercent)}`}>
-                        {formatPercent(t.marginPercent)} margin
+                      <span className={`text-xs font-bold tabular-nums ${getMarginColorClass(tier.marginPercent)}`}>
+                        {t("financials.metrics.tier_details.margin_label", { value: formatNumber(tier.marginPercent / 100, locale, "percent") })}
                       </span>
                     </div>
                     <div className="h-1.5 rounded-full bg-muted overflow-hidden mb-1.5">
@@ -342,9 +352,9 @@ export function MetricsPanel({ multiplier: m, periodLabel }: MetricsPanelProps) 
                       />
                     </div>
                     <div className="flex gap-3 text-[10px] text-muted-foreground tabular-nums">
-                      <span>Rev: {formatCurrency(t.revenuePerSub)}/sub</span>
-                      <span>COGS: {formatCurrency(t.cogsPerSub)}/sub</span>
-                      <span>LTV: {formatCurrency(t.ltv)}</span>
+                      <span>{t("financials.metrics.tier_details.rev_per_sub", { value: formatNumberAsMoney(tier.revenuePerSub, locale) })}</span>
+                      <span>{t("financials.metrics.tier_details.cogs_per_sub", { value: formatNumberAsMoney(tier.cogsPerSub, locale) })}</span>
+                      <span>{t("financials.metrics.tier_details.ltv_label", { value: formatNumberAsMoney(tier.ltv, locale) })}</span>
                     </div>
                   </div>
                 );
