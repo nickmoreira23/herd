@@ -1243,6 +1243,279 @@ export const messages = {
   "financials.builder.overrides.field_redemption": "Resgate %",
   "financials.builder.overrides.field_redemption_tooltip":
     "Que porcentagem dos créditos é resgatada pelos assinantes deste plano. Membros de planos superiores tendem a resgatar mais. Sobrescreve a taxa global.",
+
+  // ============================================================
+  // Organization (Phase 1.5.6b — Identity & People, Phase A)
+  // ============================================================
+
+  // Sub-panel
+  "organization.subpanel.title": "Organização",
+  "organization.subpanel.profile_category": "Perfil",
+  "organization.subpanel.general_information": "Informações Gerais",
+  "organization.subpanel.contact_information": "Informações de Contato",
+  "organization.subpanel.locations": "Localizações",
+  "organization.subpanel.business_hours": "Horários de Atendimento",
+  "organization.subpanel.regional_settings": "Configurações Regionais",
+
+  // Profile (legacy aggregated form)
+  "organization.profile.title": "Perfil da Organização",
+  "organization.profile.description":
+    "Gerencie os detalhes e preferências da sua organização.",
+  "organization.profile.section.general_information": "Informações Gerais",
+  "organization.profile.section.contact_information": "Informações de Contato",
+  "organization.profile.section.regional_settings": "Configurações Regionais",
+  "organization.profile.section.legal": "Legal",
+  "organization.profile.field.organization_name": "Nome da Organização",
+  "organization.profile.field.organization_name_placeholder": "ex. HERD",
+  "organization.profile.field.description_label": "Descrição",
+  "organization.profile.field.description_placeholder":
+    "Breve descrição da sua organização",
+  "organization.profile.field.website": "Website",
+  "organization.profile.field.website_placeholder": "https://suaempresa.com",
+  "organization.profile.field.support_email": "E-mail de Suporte",
+  "organization.profile.field.support_email_placeholder":
+    "suporte@suaempresa.com",
+  "organization.profile.field.phone": "Telefone",
+  "organization.profile.field.phone_placeholder": "+55 (11) 0000-0000",
+  "organization.profile.field.address": "Endereço",
+  "organization.profile.field.address_placeholder":
+    "Endereço, cidade, estado, CEP",
+  "organization.profile.field.default_language": "Idioma Padrão",
+  "organization.profile.field.timezone": "Fuso Horário",
+  "organization.profile.field.currency": "Moeda",
+  "organization.profile.field.legal_name": "Razão Social",
+  "organization.profile.field.legal_name_placeholder": "Nome jurídico completo",
+  "organization.profile.field.tax_id": "CNPJ / Tax ID",
+  "organization.profile.field.tax_id_placeholder": "XX-XXXXXXX",
+
+  // General Information form
+  "organization.profile.general.title": "Informações Gerais",
+  "organization.profile.general.description":
+    "Detalhes básicos sobre sua organização, incluindo nome, indústria e missão.",
+  "organization.profile.general.identity_title": "Identidade da Organização",
+  "organization.profile.general.identity_description":
+    "Nome da organização, razão social e identificação fiscal.",
+  "organization.profile.general.legal_name_help":
+    "Usado em contratos, faturas e documentos oficiais.",
+  "organization.profile.general.about_title": "Sobre",
+  "organization.profile.general.about_description":
+    "Descreva sua organização, sua missão e presença online.",
+  "organization.profile.general.description_placeholder":
+    "Breve descrição da sua organização e do que ela faz",
+  "organization.profile.general.mission_label": "Missão",
+  "organization.profile.general.mission_placeholder":
+    "O que move sua organização?",
+  "organization.profile.general.details_title": "Detalhes da Empresa",
+  "organization.profile.general.details_description":
+    "Indústria, tamanho e ano de fundação.",
+  "organization.profile.general.industry_label": "Indústria",
+  "organization.profile.general.industry_placeholder": "Selecione a indústria",
+  "organization.profile.general.size_label": "Tamanho da Empresa",
+  "organization.profile.general.size_placeholder": "Selecione o tamanho",
+  "organization.profile.general.founded_label": "Ano de Fundação",
+  "organization.profile.general.founded_placeholder": "ex. 2016",
+  "organization.profile.general.org_name_placeholder": "ex. Bucked Up",
+
+  // Industries
+  "organization.industry.health_wellness": "Saúde & Bem-estar",
+  "organization.industry.supplements": "Suplementos & Nutrição",
+  "organization.industry.fitness": "Fitness & Esportes",
+  "organization.industry.ecommerce": "E-Commerce",
+  "organization.industry.saas": "SaaS / Tecnologia",
+  "organization.industry.retail": "Varejo",
+  "organization.industry.food_beverage": "Alimentação & Bebidas",
+  "organization.industry.beauty": "Beleza & Cuidados Pessoais",
+  "organization.industry.other": "Outro",
+
+  // Company sizes
+  "organization.size.1_10": "1-10 funcionários",
+  "organization.size.11_50": "11-50 funcionários",
+  "organization.size.51_200": "51-200 funcionários",
+  "organization.size.201_500": "201-500 funcionários",
+  "organization.size.501_1000": "501-1.000 funcionários",
+  "organization.size.1000_plus": "1.000+ funcionários",
+
+  // Contact form
+  "organization.contact.title": "Informações de Contato",
+  "organization.contact.description":
+    "Como clientes, parceiros e membros da equipe podem entrar em contato com sua organização.",
+  "organization.contact.primary_title": "Contato Principal",
+  "organization.contact.primary_description":
+    "Endereços de e-mail e telefones para consultas de clientes e parceiros.",
+  "organization.contact.support_email_help":
+    "Exibido a clientes e parceiros para consultas gerais.",
+  "organization.contact.sales_email_label": "E-mail Comercial",
+  "organization.contact.sales_email_placeholder": "comercial@suaempresa.com",
+  "organization.contact.main_phone_label": "Telefone Principal",
+  "organization.contact.support_phone_label": "Telefone de Suporte",
+  "organization.contact.headquarters_title": "Endereço da Sede",
+  "organization.contact.headquarters_description":
+    "A localização física principal da sua organização.",
+  "organization.contact.street_label": "Rua / Endereço",
+  "organization.contact.street_placeholder": "Rua Principal, 123",
+  "organization.contact.street2_label": "Complemento",
+  "organization.contact.street2_placeholder": "Sala 100, Bloco A",
+  "organization.contact.city_label": "Cidade",
+  "organization.contact.city_placeholder": "São Paulo",
+  "organization.contact.state_label": "Estado / Província",
+  "organization.contact.state_placeholder": "SP",
+  "organization.contact.zip_label": "CEP / Código Postal",
+  "organization.contact.zip_placeholder": "01310-000",
+  "organization.contact.country_label": "País",
+  "organization.contact.country_placeholder": "Brasil",
+  "organization.contact.social_title": "Presença Social & Web",
+  "organization.contact.social_description":
+    "Links para os perfis de mídia social e canais online da sua organização.",
+  "organization.contact.social_instagram": "Instagram",
+  "organization.contact.social_facebook": "Facebook",
+  "organization.contact.social_linkedin": "LinkedIn",
+  "organization.contact.social_twitter": "X (Twitter)",
+  "organization.contact.social_youtube": "YouTube",
+  "organization.contact.social_tiktok": "TikTok",
+
+  // Locations
+  "organization.locations.title": "Localizações",
+  "organization.locations.description":
+    "Gerencie as lojas, escritórios e outras localizações físicas da sua organização.",
+  "organization.locations.add": "Adicionar Localização",
+  "organization.locations.add_first": "Adicionar Primeira Localização",
+  "organization.locations.empty_title": "Nenhuma localização ainda",
+  "organization.locations.empty_description":
+    "Adicione sua sede, lojas e outras localizações para que sua equipe e parceiros saibam onde você opera.",
+  "organization.locations.headquarters_title": "Sede",
+  "organization.locations.headquarters_description":
+    "A localização principal da sua organização.",
+  "organization.locations.other_title": "Outras Localizações",
+  "organization.locations.all_title": "Todas as Localizações",
+  "organization.locations.other_description":
+    "Lojas, escritórios, depósitos e outras localizações físicas.",
+  "organization.locations.other_empty":
+    "Nenhuma localização adicional ainda.",
+  "organization.locations.dialog.add_title": "Adicionar Localização",
+  "organization.locations.dialog.edit_title": "Editar Localização",
+  "organization.locations.dialog.add_description":
+    "Adicione uma nova loja, escritório ou depósito à sua organização.",
+  "organization.locations.dialog.edit_description":
+    "Atualize os detalhes desta localização.",
+  "organization.locations.field.name": "Nome da Localização",
+  "organization.locations.field.name_placeholder": "ex. Loja Centro",
+  "organization.locations.field.type": "Tipo",
+  "organization.locations.field.is_headquarters":
+    "Esta é a localização da sede",
+  "organization.locations.field.street": "Rua / Endereço",
+  "organization.locations.field.street_placeholder": "Rua Principal, 123",
+  "organization.locations.field.street2": "Complemento",
+  "organization.locations.field.street2_placeholder": "Sala 100",
+  "organization.locations.field.city": "Cidade",
+  "organization.locations.field.city_placeholder": "Cidade",
+  "organization.locations.field.state": "Estado",
+  "organization.locations.field.state_placeholder": "Estado",
+  "organization.locations.field.zip": "CEP",
+  "organization.locations.field.zip_placeholder": "CEP",
+  "organization.locations.field.country": "País",
+  "organization.locations.field.country_placeholder": "Brasil",
+  "organization.locations.field.phone": "Telefone",
+  "organization.locations.field.phone_placeholder": "+55 (11) 0000-0000",
+  "organization.locations.field.email": "E-mail",
+  "organization.locations.field.email_placeholder": "local@empresa.com",
+  "organization.locations.field.notes": "Notas",
+  "organization.locations.field.notes_placeholder":
+    "Quaisquer detalhes adicionais sobre esta localização...",
+  "organization.locations.action.update": "Atualizar",
+  "organization.locations.action.add": "Adicionar Localização",
+  "organization.locations.no_address": "Nenhum endereço informado",
+  "organization.locations.hq_badge": "SEDE",
+  "organization.locations.type.headquarters": "Sede",
+  "organization.locations.type.office": "Escritório",
+  "organization.locations.type.store": "Loja / Varejo",
+  "organization.locations.type.warehouse": "Depósito",
+  "organization.locations.type.other": "Outro",
+
+  // Business hours
+  "organization.business_hours.title": "Horários de Atendimento",
+  "organization.business_hours.description":
+    "Defina os horários de funcionamento da sua organização. Eles são exibidos a parceiros e clientes.",
+  "organization.business_hours.weekly_title": "Programação Semanal",
+  "organization.business_hours.weekly_description":
+    "Ative ou desative cada dia e defina os horários de funcionamento.",
+  "organization.business_hours.support_title": "Disponibilidade de Suporte",
+  "organization.business_hours.support_description":
+    "Expectativas de tempo de resposta e informações sobre programação de feriados.",
+  "organization.business_hours.response_label": "Tempo de Resposta do Suporte",
+  "organization.business_hours.response_help":
+    "Tempo de resposta esperado exibido a parceiros e clientes.",
+  "organization.business_hours.response.1h": "Em até 1 hora",
+  "organization.business_hours.response.4h": "Em até 4 horas",
+  "organization.business_hours.response.8h": "Em até 8 horas",
+  "organization.business_hours.response.24h": "Em até 24 horas",
+  "organization.business_hours.response.48h": "Em até 48 horas",
+  "organization.business_hours.holiday_label": "Aviso de Feriados",
+  "organization.business_hours.holiday_placeholder":
+    "ex. Fechado em todos os principais feriados nacionais",
+  "organization.business_hours.holiday_help":
+    "Uma breve nota sobre programação de feriados exibida a parceiros.",
+  "organization.business_hours.closed": "Fechado",
+  "organization.business_hours.to": "às",
+  "organization.business_hours.day.monday": "Segunda-feira",
+  "organization.business_hours.day.tuesday": "Terça-feira",
+  "organization.business_hours.day.wednesday": "Quarta-feira",
+  "organization.business_hours.day.thursday": "Quinta-feira",
+  "organization.business_hours.day.friday": "Sexta-feira",
+  "organization.business_hours.day.saturday": "Sábado",
+  "organization.business_hours.day.sunday": "Domingo",
+
+  // Regional settings
+  "organization.regional.title": "Configurações Regionais",
+  "organization.regional.description":
+    "Configure idioma, fuso horário, moeda e preferências de formatação para sua organização.",
+  "organization.regional.language_section_title": "Idioma & Fuso Horário",
+  "organization.regional.language_section_description":
+    "Idioma e fuso horário principais usados em toda a plataforma.",
+  "organization.regional.language_label": "Idioma Padrão",
+  "organization.regional.language_help":
+    "Idioma principal usado em toda a plataforma e nas comunicações.",
+  "organization.regional.timezone_label": "Fuso Horário",
+  "organization.regional.timezone_help":
+    "Usado para agendamento, relatórios e exibição de horários em toda a plataforma.",
+  "organization.regional.currency_section_title": "Moeda & Números",
+  "organization.regional.currency_section_description":
+    "Moeda padrão e formatação numérica para comissões, pagamentos e preços.",
+  "organization.regional.currency_label": "Moeda Principal",
+  "organization.regional.currency_help":
+    "Moeda padrão para comissões, pagamentos e preços de produtos.",
+  "organization.regional.number_format_label": "Formato Numérico",
+  "organization.regional.formatting_section_title": "Formatação",
+  "organization.regional.formatting_section_description":
+    "Preferências de exibição de datas e sistema de medidas.",
+  "organization.regional.date_format_label": "Formato de Data",
+  "organization.regional.measurement_label": "Sistema de Medidas",
+  "organization.regional.measurement_help":
+    "Usado para pesos de produtos, dimensões de envio e cálculos relacionados.",
+  "organization.regional.measurement.imperial": "Imperial (lb, oz, in)",
+  "organization.regional.measurement.metric": "Métrico (kg, g, cm)",
+
+  // Feedback (toasts)
+  "organization.feedback.profile_saved": "Perfil salvo",
+  "organization.feedback.general_information_saved":
+    "Informações gerais salvas",
+  "organization.feedback.contact_information_saved":
+    "Informações de contato salvas",
+  "organization.feedback.business_hours_saved":
+    "Horários de atendimento salvos",
+  "organization.feedback.regional_settings_saved":
+    "Configurações regionais salvas",
+  "organization.feedback.location_added": "Localização adicionada",
+  "organization.feedback.location_updated": "Localização atualizada",
+  "organization.feedback.location_deleted": "Localização excluída",
+
+  // Errors
+  "error.organization.save_failed": "Falha ao salvar",
+  "error.organization.location_save_failed": "Falha ao salvar localização",
+  "error.organization.location_delete_failed": "Falha ao excluir localização",
+  "error.organization.locations_load_failed":
+    "Falha ao carregar localizações",
+  "error.organization.location_name_required":
+    "Nome da localização é obrigatório",
 } as const;
 
 export type MessageKey = keyof typeof messages;

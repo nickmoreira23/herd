@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { GeneralInformationForm } from "@/components/organization/general-information-form";
 import { connection } from "next/server";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 export default async function GeneralInformationPage() {
   await connection();
+  const locale = await getLocale();
   const settings = await prisma.setting.findMany({
     orderBy: { key: "asc" },
   });
@@ -13,5 +15,5 @@ export default async function GeneralInformationPage() {
     map[s.key] = String(s.value ?? "");
   }
 
-  return <GeneralInformationForm initialSettings={map} />;
+  return <GeneralInformationForm initialSettings={map} locale={locale} />;
 }

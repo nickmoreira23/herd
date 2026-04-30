@@ -13,35 +13,63 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import type { Locale } from "@/lib/i18n/locales";
+import type { MessageKey } from "@/lib/i18n/t";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
 import { PageHeader } from "@/components/layout/page-header";
 
-const INDUSTRIES = [
-  { value: "health-wellness", label: "Health & Wellness" },
-  { value: "supplements", label: "Supplements & Nutrition" },
-  { value: "fitness", label: "Fitness & Sports" },
-  { value: "ecommerce", label: "E-Commerce" },
-  { value: "saas", label: "SaaS / Technology" },
-  { value: "retail", label: "Retail" },
-  { value: "food-beverage", label: "Food & Beverage" },
-  { value: "beauty", label: "Beauty & Personal Care" },
-  { value: "other", label: "Other" },
-];
+const INDUSTRY_VALUES = [
+  "health-wellness",
+  "supplements",
+  "fitness",
+  "ecommerce",
+  "saas",
+  "retail",
+  "food-beverage",
+  "beauty",
+  "other",
+] as const;
+type IndustryValue = (typeof INDUSTRY_VALUES)[number];
 
-const COMPANY_SIZES = [
-  { value: "1-10", label: "1-10 employees" },
-  { value: "11-50", label: "11-50 employees" },
-  { value: "51-200", label: "51-200 employees" },
-  { value: "201-500", label: "201-500 employees" },
-  { value: "501-1000", label: "501-1,000 employees" },
-  { value: "1000+", label: "1,000+ employees" },
-];
+const INDUSTRY_KEYS = {
+  "health-wellness": "organization.industry.health_wellness",
+  supplements: "organization.industry.supplements",
+  fitness: "organization.industry.fitness",
+  ecommerce: "organization.industry.ecommerce",
+  saas: "organization.industry.saas",
+  retail: "organization.industry.retail",
+  "food-beverage": "organization.industry.food_beverage",
+  beauty: "organization.industry.beauty",
+  other: "organization.industry.other",
+} as const satisfies Record<IndustryValue, MessageKey>;
+
+const COMPANY_SIZE_VALUES = [
+  "1-10",
+  "11-50",
+  "51-200",
+  "201-500",
+  "501-1000",
+  "1000+",
+] as const;
+type CompanySizeValue = (typeof COMPANY_SIZE_VALUES)[number];
+
+const COMPANY_SIZE_KEYS = {
+  "1-10": "organization.size.1_10",
+  "11-50": "organization.size.11_50",
+  "51-200": "organization.size.51_200",
+  "201-500": "organization.size.201_500",
+  "501-1000": "organization.size.501_1000",
+  "1000+": "organization.size.1000_plus",
+} as const satisfies Record<CompanySizeValue, MessageKey>;
 
 interface Props {
   initialSettings: Record<string, string>;
+  locale: Locale;
 }
 
 export function GeneralInformationForm({ initialSettings }: Props) {
+  const t = useT();
   const [settings, setSettings] = useState(initialSettings);
   const [saving, setSaving] = useState(false);
 
@@ -58,24 +86,23 @@ export function GeneralInformationForm({ initialSettings }: Props) {
         body: JSON.stringify(settings),
       });
       if (!res.ok) {
-        const json = await res.json();
-        toast.error(json.error || "Failed to save");
+        notifyError("error.organization.save_failed", t);
         return;
       }
-      toast.success("General information saved");
+      notifySuccess("organization.feedback.general_information_saved", t);
     } finally {
       setSaving(false);
     }
-  }, [settings]);
+  }, [settings, t]);
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="General Information"
-        description="Basic details about your organization, including name, industry, and mission."
+        title={t("organization.profile.general.title")}
+        description={t("organization.profile.general.description")}
         action={
           <Button onClick={handleSave} disabled={saving}>
-            {saving ? "Saving..." : "Save Changes"}
+            {saving ? t("common.states.saving") : t("common.actions.save")}
           </Button>
         }
       />
@@ -84,40 +111,50 @@ export function GeneralInformationForm({ initialSettings }: Props) {
         {/* Organization Identity */}
         <Card>
           <CardHeader className="border-b">
-            <CardTitle>Organization Identity</CardTitle>
+            <CardTitle>
+              {t("organization.profile.general.identity_title")}
+            </CardTitle>
             <CardDescription>
-              Your organization&apos;s name, legal entity, and tax identification.
+              {t("organization.profile.general.identity_description")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div>
-                <Label>Organization Name</Label>
+                <Label>
+                  {t("organization.profile.field.organization_name")}
+                </Label>
                 <Input
                   value={settings.companyName || ""}
                   onChange={(e) => set("companyName", e.target.value)}
-                  placeholder="e.g. Bucked Up"
+                  placeholder={t(
+                    "organization.profile.general.org_name_placeholder",
+                  )}
                   className="mt-2"
                 />
               </div>
               <div>
-                <Label>Legal Entity Name</Label>
+                <Label>{t("organization.profile.field.legal_name")}</Label>
                 <Input
                   value={settings.companyLegalName || ""}
                   onChange={(e) => set("companyLegalName", e.target.value)}
-                  placeholder="Full legal name of your company"
+                  placeholder={t(
+                    "organization.profile.field.legal_name_placeholder",
+                  )}
                   className="mt-2"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Used in contracts, invoices, and official documents.
+                  {t("organization.profile.general.legal_name_help")}
                 </p>
               </div>
               <div>
-                <Label>Tax ID / EIN</Label>
+                <Label>{t("organization.profile.field.tax_id")}</Label>
                 <Input
                   value={settings.companyTaxId || ""}
                   onChange={(e) => set("companyTaxId", e.target.value)}
-                  placeholder="XX-XXXXXXX"
+                  placeholder={t(
+                    "organization.profile.field.tax_id_placeholder",
+                  )}
                   className="mt-2"
                 />
               </div>
@@ -128,40 +165,48 @@ export function GeneralInformationForm({ initialSettings }: Props) {
         {/* About */}
         <Card>
           <CardHeader className="border-b">
-            <CardTitle>About</CardTitle>
+            <CardTitle>{t("organization.profile.general.about_title")}</CardTitle>
             <CardDescription>
-              Describe your organization, its mission, and online presence.
+              {t("organization.profile.general.about_description")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div>
-                <Label>Description</Label>
+                <Label>{t("organization.profile.field.description_label")}</Label>
                 <Textarea
                   value={settings.companyDescription || ""}
                   onChange={(e) => set("companyDescription", e.target.value)}
-                  placeholder="Brief description of your organization and what you do"
+                  placeholder={t(
+                    "organization.profile.general.description_placeholder",
+                  )}
                   rows={3}
                   className="mt-2"
                 />
               </div>
               <div>
-                <Label>Mission Statement</Label>
+                <Label>
+                  {t("organization.profile.general.mission_label")}
+                </Label>
                 <Textarea
                   value={settings.companyMission || ""}
                   onChange={(e) => set("companyMission", e.target.value)}
-                  placeholder="What drives your organization?"
+                  placeholder={t(
+                    "organization.profile.general.mission_placeholder",
+                  )}
                   rows={2}
                   className="mt-2"
                 />
               </div>
               <div>
-                <Label>Website</Label>
+                <Label>{t("organization.profile.field.website")}</Label>
                 <Input
                   type="url"
                   value={settings.companyWebsite || ""}
                   onChange={(e) => set("companyWebsite", e.target.value)}
-                  placeholder="https://yourcompany.com"
+                  placeholder={t(
+                    "organization.profile.field.website_placeholder",
+                  )}
                   className="mt-2"
                 />
               </div>
@@ -172,55 +217,71 @@ export function GeneralInformationForm({ initialSettings }: Props) {
         {/* Company Details */}
         <Card>
           <CardHeader className="border-b">
-            <CardTitle>Company Details</CardTitle>
+            <CardTitle>
+              {t("organization.profile.general.details_title")}
+            </CardTitle>
             <CardDescription>
-              Industry, size, and founding information.
+              {t("organization.profile.general.details_description")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <Label>Industry</Label>
+                <Label>
+                  {t("organization.profile.general.industry_label")}
+                </Label>
                 <Select
                   value={settings.companyIndustry || ""}
                   onValueChange={(val) => set("companyIndustry", val ?? "")}
                 >
                   <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select industry" />
+                    <SelectValue
+                      placeholder={t(
+                        "organization.profile.general.industry_placeholder",
+                      )}
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    {INDUSTRIES.map((i) => (
-                      <SelectItem key={i.value} value={i.value}>
-                        {i.label}
+                    {INDUSTRY_VALUES.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {t(INDUSTRY_KEYS[value])}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label>Company Size</Label>
+                <Label>{t("organization.profile.general.size_label")}</Label>
                 <Select
                   value={settings.companySize || ""}
                   onValueChange={(val) => set("companySize", val ?? "")}
                 >
                   <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select size" />
+                    <SelectValue
+                      placeholder={t(
+                        "organization.profile.general.size_placeholder",
+                      )}
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    {COMPANY_SIZES.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>
-                        {s.label}
+                    {COMPANY_SIZE_VALUES.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {t(COMPANY_SIZE_KEYS[value])}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label>Year Founded</Label>
+                <Label>
+                  {t("organization.profile.general.founded_label")}
+                </Label>
                 <Input
                   value={settings.companyFounded || ""}
                   onChange={(e) => set("companyFounded", e.target.value)}
-                  placeholder="e.g. 2016"
+                  placeholder={t(
+                    "organization.profile.general.founded_placeholder",
+                  )}
                   className="mt-2"
                 />
               </div>
