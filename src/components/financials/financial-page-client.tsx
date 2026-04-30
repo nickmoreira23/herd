@@ -551,13 +551,13 @@ export function FinancialPageClient({
                 <ExecutiveSummary locale={locale} />
               </TabsContent>
               <TabsContent value="statement" className="mt-0">
-                <PLStatement multiplier={periodMultiplier} periodLabel={periodLabel} />
+                <PLStatement multiplier={periodMultiplier} periodLabel={periodLabel} locale={locale} />
               </TabsContent>
               <TabsContent value="spreadsheet" className="mt-0">
-                <ProjectionSpreadsheet months={12} />
+                <ProjectionSpreadsheet months={12} locale={locale} />
               </TabsContent>
               <TabsContent value="cohort" className="mt-0">
-                <CohortSpreadsheet months={12} />
+                <CohortSpreadsheet months={12} locale={locale} />
               </TabsContent>
               <TabsContent value="metrics" className="mt-0">
                 <MetricsPanel multiplier={periodMultiplier} periodLabel={periodLabel} locale={locale} />

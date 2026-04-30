@@ -86,12 +86,6 @@ const eslintConfig = defineConfig([
       "src/lib/financial-engine.ts",
       "src/stores/**/*.{ts,tsx}",
       "src/lib/utils.ts",
-      // Financials Phase B files — migrated in 1.5.6a-bis Phase B.
-      // Each is removed from this list as it's migrated.
-      "src/components/financials/cohort-spreadsheet.tsx",
-      "src/components/financials/models-list.tsx",
-      "src/components/financials/pl-statement.tsx",
-      "src/components/financials/projection-spreadsheet.tsx",
     ],
     rules: {
       "no-restricted-imports": ["error", {
