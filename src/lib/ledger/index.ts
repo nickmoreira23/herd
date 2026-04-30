@@ -6,6 +6,10 @@ export { getEntryDetails } from "./get-entry-details";
 export { reverseJournalEntry } from "./reverse-journal-entry";
 export type { ReverseJournalEntryOptions } from "./reverse-journal-entry";
 export { findReversalsOf } from "./find-reversals-of";
+export { seedPlatformAccounts } from "./seed-platform-accounts";
+export type { SeedPlatformAccountsResult } from "./seed-platform-accounts";
+export { PLATFORM_ACCOUNTS, PLATFORM_ACCOUNT_TEMPLATES } from "./platform-accounts-spec";
+export type { PlatformAccountSpec } from "./platform-accounts-spec";
 export type {
   PostJournalEntryInput,
   PostJournalLineInput,

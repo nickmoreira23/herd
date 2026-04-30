@@ -68,6 +68,22 @@ This project uses `prisma migrate`, not `db push`.
 - Production/CI: `npm run db:deploy` (applies pending migrations without prompting).
 - Never run `prisma db push` — it bypasses the migration history.
 
+# Account seeding
+
+The platform's chart of accounts (the structural ledger accounts referenced by
+the rest of the system) is declared in `src/lib/ledger/platform-accounts-spec.ts`
+and seeded via `npm run db:seed:ledger`.
+
+The seed is **idempotent**: running it 1, 5, or 100 times produces the same end
+state. Run it at least once after `npm run db:migrate` on any new environment.
+
+- **Adding** an account: edit `PLATFORM_ACCOUNT_TEMPLATES` and re-run the seed.
+- **Renaming** an account (just the display name): edit and re-run.
+- **Changing accountType or currency** of an existing code: NOT allowed via
+  seed. Create a new code; archive the old one.
+- **Per-profile accounts** (`profile:{uuid}:...`): not seeded — created on-demand
+  by services that handle profile registration.
+
 # Lint debt
 
 This project carries pre-existing lint debt in legacy paths
