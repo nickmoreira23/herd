@@ -1,17 +1,24 @@
-# Ledger integration tests
+# Ledger tests
 
-These tests exercise the ledger schema and constraints directly against a
-running Postgres database. They are NOT part of the default `npm test` run.
+The ledger has two categories of tests, distinguished by file naming:
 
-To run them locally:
+- **Pure tests** — `*.test.ts`. No database. Run as part of the default
+  `npm test` (and CI).
+- **Integration tests** — `*.integration.test.ts`. Touch a real Postgres
+  database. Run via `npm run test:ledger`. NOT part of the default CI.
+
+To run integration tests locally:
 
   DATABASE_URL=<your_test_db_url> npm run test:ledger
 
-Why excluded from CI: the default CI run does not provision a Postgres
-instance. The ledger service tests (Etapa 1.3) will be the entry point
-for ledger-aware CI execution; integration of these constraint tests
-into CI is decided then.
+(`.env` / `.env.local` are auto-loaded by the dedicated `vitest.ledger.config.ts`
+via `dotenv/config`, so usually you just run `npm run test:ledger`.)
 
-Note: these tests create and leave behind test accounts (`test:*` codes).
-A teardown step is intentionally omitted to keep them simple. Run against
-a disposable database.
+Why integration tests are excluded from CI: the default CI run does not
+provision a Postgres instance. When the ledger is wired through a CI
+pipeline with a disposable Postgres (planned post-Phase 1), the
+`*.integration.test.ts` pattern is the entry point.
+
+Note: integration tests create and leave behind test accounts
+(`test:*` codes). A teardown step is intentionally omitted to keep them
+simple. Run against a disposable database.
