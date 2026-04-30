@@ -199,3 +199,19 @@ route to apply the change.
 codebase via `t()` or derivative calls exists in `pt-BR.ts`. Running this
 in CI prevents regressions where a key is referenced but forgotten in the
 dictionary.
+
+
+## i18n implementation pattern
+
+When internationalizing UI strings of a feature, follow the canonical pattern
+documented in `docs/discovery/I18N_PATTERN.md`. Key points:
+
+- Server Components read locale via `getLocale()` and pass as prop.
+- Client Components use `useT()` for translation keys; receive `locale` as
+  prop for formatters.
+- Utility components (`<Money>`, `<DateLabel>`, etc.) accept `locale` as prop.
+- Error classes carry a `code: string`; UI consumes via `translateError` /
+  `translateErrorWithT` from `src/lib/i18n/translate-error.ts`.
+- Enum-to-key mapping uses `as const satisfies Record<Enum, MessageKey>`.
+
+The Ledger (Phase 1.5.4) is the reference implementation. Mirror its structure.

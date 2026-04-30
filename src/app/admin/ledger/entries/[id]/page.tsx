@@ -7,6 +7,7 @@ import {
 } from "@/lib/ledger";
 import { EntryDetailClient } from "@/components/ledger/entry-detail-client";
 import type { EntryDetails } from "@/lib/ledger";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 export default async function EntryDetailPage({
   params,
@@ -24,5 +25,7 @@ export default async function EntryDetailPage({
     throw e;
   }
 
-  return <EntryDetailClient entry={serializeEntryDetails(entry)} />;
+  const locale = await getLocale();
+
+  return <EntryDetailClient entry={serializeEntryDetails(entry)} locale={locale} />;
 }

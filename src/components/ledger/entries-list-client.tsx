@@ -1,29 +1,33 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { format } from "date-fns";
 import { FileText } from "lucide-react";
 import { BlockListPage } from "@/components/shared/block-list-page";
 import type { FilterDef } from "@/components/shared/block-list-page";
-import { Badge } from "@/components/ui/badge";
+import { SourceKindBadge } from "./source-kind-badge";
 import type { SerializedRecentEntry } from "@/lib/ledger";
 import type { ColumnDef } from "@tanstack/react-table";
+import { useT } from "@/lib/i18n/locale-context";
+import type { Locale } from "@/lib/i18n/locales";
+import { formatDate } from "@/lib/i18n/format-date";
 
 interface EntriesListClientProps {
   initialData: SerializedRecentEntry[];
+  locale: Locale;
 }
 
-export function EntriesListClient({ initialData }: EntriesListClientProps) {
+export function EntriesListClient({ initialData, locale }: EntriesListClientProps) {
   const router = useRouter();
+  const t = useT();
 
   const columns: ColumnDef<SerializedRecentEntry, unknown>[] = [
     {
       id: "postedAt",
-      header: "Posted at",
+      header: t("ledger.entry.detail.posted_at"),
       accessorFn: (row) => row.postedAt,
       cell: ({ row }) => (
         <span className="font-mono text-xs">
-          {format(new Date(row.original.postedAt), "yyyy-MM-dd HH:mm")}
+          {formatDate(new Date(row.original.postedAt), locale, "dateTime")}
         </span>
       ),
       sortingFn: (a, b) => {
@@ -34,17 +38,13 @@ export function EntriesListClient({ initialData }: EntriesListClientProps) {
     },
     {
       id: "sourceKind",
-      header: "Source",
+      header: t("ledger.entry.detail.source"),
       accessorFn: (row) => row.sourceKind,
-      cell: ({ row }) => (
-        <Badge variant="outline" className="text-xs">
-          {row.original.sourceKind}
-        </Badge>
-      ),
+      cell: ({ row }) => <SourceKindBadge kind={row.original.sourceKind} />,
     },
     {
       id: "description",
-      header: "Description",
+      header: t("ledger.entry.detail.description"),
       accessorFn: (row) => row.description ?? "",
       cell: ({ row }) =>
         row.original.description ? (
@@ -55,7 +55,7 @@ export function EntriesListClient({ initialData }: EntriesListClientProps) {
     },
     {
       id: "lineCount",
-      header: "Lines",
+      header: t("ledger.entry.detail.lines_title"),
       accessorFn: (row) => row.lineCount,
       cell: ({ row }) => (
         <span className="text-sm tabular-nums">{row.original.lineCount}</span>
@@ -63,7 +63,7 @@ export function EntriesListClient({ initialData }: EntriesListClientProps) {
     },
     {
       id: "id",
-      header: "Entry ID",
+      header: t("ledger.statement.column.entry"),
       accessorFn: (row) => row.id,
       cell: ({ row }) => (
         <code className="text-xs text-muted-foreground font-mono">
@@ -76,14 +76,17 @@ export function EntriesListClient({ initialData }: EntriesListClientProps) {
   const filters: FilterDef<SerializedRecentEntry>[] = [
     {
       key: "sourceKind",
-      label: "All Sources",
+      label: t("ledger.entry.detail.source"),
       options: [
-        { label: "Transaction", value: "TRANSACTION" },
-        { label: "Commission", value: "COMMISSION" },
-        { label: "Refund", value: "REFUND" },
-        { label: "Manual Adjustment", value: "MANUAL_ADJUSTMENT" },
-        { label: "Seed", value: "SEED" },
-        { label: "Reversal", value: "REVERSAL" },
+        { label: t("ledger.source_kind.transaction"), value: "TRANSACTION" },
+        { label: t("ledger.source_kind.commission"), value: "COMMISSION" },
+        { label: t("ledger.source_kind.refund"), value: "REFUND" },
+        {
+          label: t("ledger.source_kind.manual_adjustment"),
+          value: "MANUAL_ADJUSTMENT",
+        },
+        { label: t("ledger.source_kind.seed"), value: "SEED" },
+        { label: t("ledger.source_kind.reversal"), value: "REVERSAL" },
       ],
       filterFn: (row, value) => row.sourceKind === value,
     },
@@ -92,13 +95,13 @@ export function EntriesListClient({ initialData }: EntriesListClientProps) {
   return (
     <BlockListPage<SerializedRecentEntry>
       blockName="ledger-entries"
-      title="Journal Entries"
-      description="As 100 entradas mais recentes do ledger, ordenadas por data de postagem."
+      title={t("ledger.entries.list.title")}
+      description={t("ledger.entries.list.description")}
       data={initialData}
       getId={(row) => row.id}
       columns={columns}
       onRowClick={(row) => router.push(`/admin/ledger/entries/${row.id}`)}
-      searchPlaceholder="Buscar por description, source ID ou ID..."
+      searchPlaceholder={t("ledger.accounts.list.search_placeholder")}
       searchFn={(row, query) => {
         const q = query.toLowerCase();
         return (
@@ -109,8 +112,8 @@ export function EntriesListClient({ initialData }: EntriesListClientProps) {
       }}
       filters={filters}
       emptyIcon={FileText}
-      emptyTitle="Nenhuma entry registrada"
-      emptyDescription="O ledger ainda não tem journal entries. Elas aparecerão aqui quando código de domínio começar a postar (Fase 2+)."
+      emptyTitle={t("ledger.entries.list.empty_state")}
+      emptyDescription=""
     />
   );
 }

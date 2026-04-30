@@ -9,6 +9,7 @@ import {
 } from "@/lib/ledger";
 import type { AccountBalance, AccountStatement } from "@/lib/ledger";
 import { AccountDetailClient } from "@/components/ledger/account-detail-client";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 export default async function AccountDetailPage({
   params,
@@ -31,10 +32,13 @@ export default async function AccountDetailPage({
     throw e;
   }
 
+  const locale = await getLocale();
+
   return (
     <AccountDetailClient
       balance={serializeAccountBalance(balance)}
       firstPage={serializeAccountStatement(firstPage)}
+      locale={locale}
     />
   );
 }

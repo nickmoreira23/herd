@@ -2,7 +2,7 @@
 title: Ledger (Double-Entry Bookkeeping)
 phase: "1"
 etapa: "1.9"
-version: "1.0"
+version: "1.1"
 last_updated: "2026-04-30"
 aggregates:
   - Account
@@ -198,6 +198,25 @@ sums use them; callers that want "the saldo" use `balance`.
 This is fundamental accounting, not project convention. Codified in
 `src/lib/ledger/account-polarity.ts`.
 
+### Invariant 13: User-facing strings are internationalized
+
+> All user-facing strings in the ledger UI go through `t()` (RSC) or `useT()`
+> (Client). Error classes have a `code: string` field. Money, dates, and
+> numbers use the helpers in `src/lib/i18n/` with `locale` as prop.
+
+Enforced by ESLint rule `react/jsx-no-literals` applied to
+`src/components/ledger/**` and `src/app/admin/ledger/**` paths.
+
+The error class `code` field powers `translateError` /
+`translateErrorWithT` in `src/lib/i18n/translate-error.ts` — the helpers
+look up `error.{code}` in the dictionary and auto-extract
+string/number/bigint fields from the error as interpolation params.
+Technical messages (`Error.message`) stay in English for logs; user-facing
+copy comes from the dictionary. See
+`docs/discovery/I18N_PATTERN.md` for the canonical pattern.
+
+Audit: visual smoke test in both pt-BR and en-US.
+
 ## Conventions
 
 These are not invariants (no constraint enforces them), but they are project
@@ -345,6 +364,13 @@ When a future etapa changes ledger behavior or introduces a new invariant:
    Don't merge the etapa code without the SKILL update.
 
 ## Changelog
+
+### v1.1 — 2026-04-30 (Etapa 1.5.4)
+
+- Added Invariant 13: ledger UI strings internationalized via t()/useT().
+- Error classes (ledger + domain-events + money — 23 total) gained
+  `code: string` field, consumed by `translateError*` helpers.
+- Sub-panel labels use translation keys via `SubPanelLink.labelKey`.
 
 ### v1.0 — 2026-04-30 (Etapa 1.9)
 Initial publication, codifying invariants and conventions established in

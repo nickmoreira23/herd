@@ -1,59 +1,65 @@
 "use client";
 
 import Link from "next/link";
-import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Money } from "./money";
 import { AccountTypeBadge } from "./account-type-badge";
+import { SourceKindBadge } from "./source-kind-badge";
 import type { SerializedEntryDetails } from "@/lib/ledger";
+import { useT } from "@/lib/i18n/locale-context";
+import type { Locale } from "@/lib/i18n/locales";
+import { formatDate } from "@/lib/i18n/format-date";
 
 interface EntryDetailClientProps {
   entry: SerializedEntryDetails;
+  locale: Locale;
 }
 
-export function EntryDetailClient({ entry }: EntryDetailClientProps) {
+export function EntryDetailClient({ entry, locale }: EntryDetailClientProps) {
+  const t = useT();
+
   return (
     <div className="p-6 space-y-6">
       <div className="space-y-2">
-        <h1 className="text-2xl font-semibold">Journal Entry</h1>
+        <h1 className="text-2xl font-semibold">{t("ledger.entry.detail.title")}</h1>
         <code className="text-sm text-muted-foreground font-mono">{entry.id}</code>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Detalhes</CardTitle>
+          <CardTitle>{t("ledger.entry.detail.section_details")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <DetailRow label="Source kind">
-            <Badge variant="outline">{entry.sourceKind}</Badge>
+          <DetailRow label={t("ledger.entry.detail.source")}>
+            <SourceKindBadge kind={entry.sourceKind} />
           </DetailRow>
-          <DetailRow label="Source ID">
+          <DetailRow label={t("ledger.entry.detail.source_id")}>
             <code className="text-xs font-mono">{entry.sourceId}</code>
           </DetailRow>
-          <DetailRow label="Posted at">
+          <DetailRow label={t("ledger.entry.detail.posted_at")}>
             <span className="font-mono text-sm">
-              {format(new Date(entry.postedAt), "yyyy-MM-dd HH:mm:ss")}
+              {formatDate(new Date(entry.postedAt), locale, "dateTime")}
             </span>
           </DetailRow>
-          <DetailRow label="Created at">
+          <DetailRow label={t("ledger.entry.detail.created_at")}>
             <span className="font-mono text-sm text-muted-foreground">
-              {format(new Date(entry.createdAt), "yyyy-MM-dd HH:mm:ss")}
+              {formatDate(new Date(entry.createdAt), locale, "dateTime")}
             </span>
           </DetailRow>
           {entry.description && (
-            <DetailRow label="Descrição">
+            <DetailRow label={t("ledger.entry.detail.description")}>
               <span className="text-sm">{entry.description}</span>
             </DetailRow>
           )}
           {entry.idempotencyKey && (
-            <DetailRow label="Idempotency key">
+            <DetailRow label={t("ledger.entry.detail.idempotency_key")}>
               <code className="text-xs font-mono">{entry.idempotencyKey}</code>
             </DetailRow>
           )}
           {Object.keys(entry.metadata).length > 0 && (
-            <DetailRow label="Metadata">
+            <DetailRow label={t("ledger.entry.detail.metadata")}>
               <pre className="text-xs bg-muted p-2 rounded font-mono whitespace-pre-wrap">
                 {JSON.stringify(entry.metadata, null, 2)}
               </pre>
@@ -64,16 +70,22 @@ export function EntryDetailClient({ entry }: EntryDetailClientProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Lines ({entry.lines.length})</CardTitle>
+          <CardTitle>
+            {t("ledger.entry.detail.lines_with_count", { count: entry.lines.length })}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Conta</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead className="text-right">Direction</TableHead>
-                <TableHead className="text-right">Valor</TableHead>
+                <TableHead>{t("ledger.entry.detail.line.account")}</TableHead>
+                <TableHead>{t("ledger.entry.detail.line.type")}</TableHead>
+                <TableHead className="text-right">
+                  {t("ledger.entry.detail.line.direction")}
+                </TableHead>
+                <TableHead className="text-right">
+                  {t("ledger.entry.detail.line.amount")}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -97,7 +109,7 @@ export function EntryDetailClient({ entry }: EntryDetailClientProps) {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Money money={line.amount} tone="muted" />
+                    <Money money={line.amount} locale={locale} tone="muted" />
                   </TableCell>
                 </TableRow>
               ))}

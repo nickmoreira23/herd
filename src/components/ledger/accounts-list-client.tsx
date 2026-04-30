@@ -9,18 +9,22 @@ import { Money } from "./money";
 import { AccountTypeBadge } from "./account-type-badge";
 import type { SerializedAccountBalance } from "@/lib/ledger";
 import type { ColumnDef } from "@tanstack/react-table";
+import { useT } from "@/lib/i18n/locale-context";
+import type { Locale } from "@/lib/i18n/locales";
 
 interface AccountsListClientProps {
   initialData: SerializedAccountBalance[];
+  locale: Locale;
 }
 
-export function AccountsListClient({ initialData }: AccountsListClientProps) {
+export function AccountsListClient({ initialData, locale }: AccountsListClientProps) {
   const router = useRouter();
+  const t = useT();
 
   const columns: ColumnDef<SerializedAccountBalance, unknown>[] = [
     {
       id: "code",
-      header: "Code",
+      header: t("ledger.accounts.column.code"),
       accessorFn: (row) => row.account.code,
       cell: ({ row }) => (
         <Link
@@ -34,26 +38,26 @@ export function AccountsListClient({ initialData }: AccountsListClientProps) {
     },
     {
       id: "name",
-      header: "Name",
+      header: t("ledger.accounts.column.name"),
       accessorFn: (row) => row.account.name,
       cell: ({ row }) => <span>{row.original.account.name}</span>,
     },
     {
       id: "accountType",
-      header: "Type",
+      header: t("ledger.accounts.column.type"),
       accessorFn: (row) => row.account.accountType,
       cell: ({ row }) => <AccountTypeBadge type={row.original.account.accountType} />,
     },
     {
       id: "currency",
-      header: "Currency",
+      header: t("ledger.accounts.column.currency"),
       accessorFn: (row) => row.account.currency,
       cell: ({ row }) => <span className="font-mono text-sm">{row.original.account.currency}</span>,
     },
     {
       id: "balance",
-      header: "Balance",
-      cell: ({ row }) => <Money money={row.original.balance} />,
+      header: t("ledger.accounts.column.balance"),
+      cell: ({ row }) => <Money money={row.original.balance} locale={locale} />,
       sortingFn: (a, b) => {
         const av = BigInt(a.original.balance.amountCents);
         const bv = BigInt(b.original.balance.amountCents);
@@ -64,7 +68,7 @@ export function AccountsListClient({ initialData }: AccountsListClientProps) {
     },
     {
       id: "lineCount",
-      header: "Lines",
+      header: t("ledger.statement.column.entry"),
       accessorFn: (row) => row.lineCount,
       cell: ({ row }) => <span className="text-sm tabular-nums">{row.original.lineCount}</span>,
     },
@@ -75,19 +79,19 @@ export function AccountsListClient({ initialData }: AccountsListClientProps) {
   const filters: FilterDef<SerializedAccountBalance>[] = [
     {
       key: "accountType",
-      label: "All Types",
+      label: t("ledger.accounts.column.type"),
       options: [
-        { label: "Asset", value: "ASSET" },
-        { label: "Liability", value: "LIABILITY" },
-        { label: "Revenue", value: "REVENUE" },
-        { label: "Expense", value: "EXPENSE" },
-        { label: "Equity", value: "EQUITY" },
+        { label: t("ledger.account_type.asset"), value: "ASSET" },
+        { label: t("ledger.account_type.liability"), value: "LIABILITY" },
+        { label: t("ledger.account_type.revenue"), value: "REVENUE" },
+        { label: t("ledger.account_type.expense"), value: "EXPENSE" },
+        { label: t("ledger.account_type.equity"), value: "EQUITY" },
       ],
       filterFn: (row, value) => row.account.accountType === value,
     },
     {
       key: "currency",
-      label: "All Currencies",
+      label: t("ledger.accounts.column.currency"),
       options: [
         { label: "BRL", value: "BRL" },
         { label: "USD", value: "USD" },
@@ -99,15 +103,15 @@ export function AccountsListClient({ initialData }: AccountsListClientProps) {
   return (
     <BlockListPage<SerializedAccountBalance>
       blockName="ledger"
-      title="Plano de Contas"
-      description="Contas estruturais da plataforma e seus saldos atuais."
+      title={t("ledger.accounts.list.title")}
+      description={t("ledger.accounts.list.description")}
       data={initialData}
       getId={(row) => row.account.id}
       columns={columns}
       onRowClick={(row) =>
         router.push(`/admin/ledger/accounts/${encodeURIComponent(row.account.code)}`)
       }
-      searchPlaceholder="Buscar por código ou nome..."
+      searchPlaceholder={t("ledger.accounts.list.search_placeholder")}
       searchFn={(row, query) => {
         const q = query.toLowerCase();
         return (
@@ -117,8 +121,8 @@ export function AccountsListClient({ initialData }: AccountsListClientProps) {
       }}
       filters={filters}
       emptyIcon={Receipt}
-      emptyTitle="Nenhuma conta cadastrada"
-      emptyDescription="Execute o seed do plano de contas: npm run db:seed:ledger"
+      emptyTitle={t("ledger.accounts.list.empty_state")}
+      emptyDescription="npm run db:seed:ledger"
     />
   );
 }
