@@ -12,10 +12,13 @@ export { PLATFORM_ACCOUNTS, PLATFORM_ACCOUNT_TEMPLATES } from "./platform-accoun
 export type { PlatformAccountSpec } from "./platform-accounts-spec";
 export { listAccountsWithBalance } from "./list-accounts";
 export type { ListAccountsFilter } from "./list-accounts";
+export { listRecentEntries } from "./list-recent-entries";
+export type { ListRecentEntriesInput, RecentEntryRow } from "./list-recent-entries";
 export {
   serializeAccountBalance,
   serializeAccountStatement,
   serializeEntryDetails,
+  serializeRecentEntry,
 } from "./serialize";
 export type {
   SerializedMoney,
@@ -25,6 +28,7 @@ export type {
   SerializedAccountStatement,
   SerializedEntryLine,
   SerializedEntryDetails,
+  SerializedRecentEntry,
 } from "./serialize";
 export {
   checkAllInvariants,
