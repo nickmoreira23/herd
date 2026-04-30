@@ -220,6 +220,137 @@ export const messages = {
   "common.view.kanban": "Visualização kanban",
   "common.view.list": "Visualização lista",
   "common.view.grid": "Visualização grid",
+
+  // ============================================================
+  // Ledger - Phase 1.5.4
+  // ============================================================
+
+  // Sub-panel
+  "ledger.subpanel.chart_of_accounts": "Plano de Contas",
+  "ledger.subpanel.journal_entries": "Lançamentos",
+
+  // Page titles & headers
+  "ledger.accounts.list.title": "Plano de Contas",
+  "ledger.accounts.list.description":
+    "Visualize todas as contas e seus saldos atuais.",
+  "ledger.accounts.list.empty_state": "Nenhuma conta encontrada.",
+  "ledger.accounts.list.search_placeholder": "Buscar por código ou nome",
+
+  // Accounts list columns
+  "ledger.accounts.column.code": "Código",
+  "ledger.accounts.column.name": "Nome",
+  "ledger.accounts.column.type": "Tipo",
+  "ledger.accounts.column.currency": "Moeda",
+  "ledger.accounts.column.balance": "Saldo",
+
+  // Account types (singular)
+  "ledger.account_type.asset": "Ativo",
+  "ledger.account_type.liability": "Passivo",
+  "ledger.account_type.equity": "Patrimônio",
+  "ledger.account_type.revenue": "Receita",
+  "ledger.account_type.expense": "Despesa",
+
+  // Account detail page
+  "ledger.account.detail.balance_label": "Saldo atual",
+  "ledger.account.detail.total_debits": "Total de débitos",
+  "ledger.account.detail.total_credits": "Total de créditos",
+  "ledger.account.detail.statement_title": "Extrato",
+  "ledger.account.detail.statement_with_count": "Extrato — {count} linhas",
+  "ledger.account.detail.statement_with_count_one": "Extrato — 1 linha",
+  "ledger.account.detail.load_more": "Carregar mais",
+  "ledger.account.detail.no_movements": "Nenhuma movimentação registrada.",
+  "ledger.account.detail.statement_empty":
+    "Esta conta ainda não tem lançamentos.",
+
+  // Statement table columns
+  "ledger.statement.column.date": "Data",
+  "ledger.statement.column.description": "Descrição",
+  "ledger.statement.column.debit": "Débito",
+  "ledger.statement.column.credit": "Crédito",
+  "ledger.statement.column.balance": "Saldo",
+  "ledger.statement.column.entry": "Lançamento",
+  "ledger.statement.column.source": "Origem",
+  "ledger.statement.column.direction": "Direção",
+  "ledger.statement.column.amount": "Valor",
+  "ledger.statement.action.view": "Ver",
+  "ledger.statement.loading": "Carregando…",
+  "ledger.statement.empty": "Nenhuma movimentação nesta conta.",
+  "ledger.statement.load_failed": "Falha ao carregar mais linhas.",
+
+  // Entries list page
+  "ledger.entries.list.title": "Lançamentos Contábeis",
+  "ledger.entries.list.description":
+    "Histórico completo de todas as movimentações financeiras.",
+  "ledger.entries.list.empty_state": "Nenhum lançamento encontrado.",
+
+  // Entry detail page
+  "ledger.entry.detail.title": "Detalhes do Lançamento",
+  "ledger.entry.detail.posted_at": "Data",
+  "ledger.entry.detail.description": "Descrição",
+  "ledger.entry.detail.source": "Origem",
+  "ledger.entry.detail.lines_title": "Linhas",
+  "ledger.entry.detail.reversal_badge": "Estorno",
+  "ledger.entry.detail.reversed_badge": "Estornado",
+  "ledger.entry.detail.reversed_by": "Estornado por",
+  "ledger.entry.detail.reverses": "Estorna",
+  "ledger.entry.detail.section_details": "Detalhes",
+  "ledger.entry.detail.source_id": "ID de origem",
+  "ledger.entry.detail.created_at": "Criado em",
+  "ledger.entry.detail.idempotency_key": "Chave de idempotência",
+  "ledger.entry.detail.metadata": "Metadados",
+  "ledger.entry.detail.lines_with_count": "Linhas ({count})",
+  "ledger.entry.detail.line.account": "Conta",
+  "ledger.entry.detail.line.type": "Tipo",
+  "ledger.entry.detail.line.direction": "Direção",
+  "ledger.entry.detail.line.amount": "Valor",
+
+  // Source kinds (badges) — matches JournalEntrySourceKind enum
+  "ledger.source_kind.transaction": "Transação",
+  "ledger.source_kind.commission": "Comissão",
+  "ledger.source_kind.refund": "Reembolso",
+  "ledger.source_kind.manual_adjustment": "Ajuste manual",
+  "ledger.source_kind.seed": "Seed inicial",
+  "ledger.source_kind.reversal": "Estorno",
+
+  // Common errors
+  "error.common.unknown": "Ocorreu um erro inesperado. Tente novamente.",
+
+  // Ledger errors
+  "error.ledger.account_not_found": "Conta {accountCode} não encontrada.",
+  "error.ledger.account_archived": "A conta {accountCode} está arquivada.",
+  "error.ledger.invalid_currency": "Moeda inválida: {received}.",
+  "error.ledger.unsupported_currency": "Moeda não suportada: {received}.",
+  "error.ledger.currency_mismatch":
+    "Conflito de moeda na conta {accountCode}: esperado {accountCurrency}, recebido {lineCurrency}.",
+  "error.ledger.insufficient_lines":
+    "Lançamento precisa ter ao menos duas linhas.",
+  "error.ledger.non_positive_amount": "Valores devem ser maiores que zero.",
+  "error.ledger.unbalanced_entry": "Lançamento desbalanceado.",
+  "error.ledger.invalid_source_id": "Identificador de origem inválido: {received}.",
+  "error.ledger.invalid_source_kind": "Tipo de origem inválido: {received}.",
+  "error.ledger.idempotency_conflict":
+    "Conflito de idempotência: a chave {idempotencyKey} já foi usada com payload diferente.",
+  "error.ledger.entry_not_found": "Lançamento {entryId} não encontrado.",
+  "error.ledger.invalid_cursor": "Cursor de paginação inválido.",
+  "error.ledger.statement_limit_exceeded":
+    "Limite de extrato excedido (máximo {max}).",
+  "error.ledger.cannot_reverse_reversal":
+    "Não é possível estornar um estorno.",
+  "error.ledger.entry_already_reversed":
+    "Lançamento {originalEntryId} já foi estornado.",
+  "error.ledger.missing_reversal_reason": "Motivo do estorno é obrigatório.",
+  "error.ledger.error": "Erro no sistema contábil.",
+
+  // Domain events errors (used by UI when these surface)
+  "error.domain_events.idempotency_conflict":
+    "Conflito de idempotência ao gravar evento.",
+  "error.domain_events.handler_execution": "Erro ao processar evento.",
+  "error.domain_events.error": "Erro no sistema de eventos.",
+
+  // Money errors
+  "error.money.currency_mismatch":
+    "Operação entre valores em moedas diferentes.",
+  "error.money.invalid": "Valor monetário inválido.",
 } as const;
 
 export type MessageKey = keyof typeof messages;

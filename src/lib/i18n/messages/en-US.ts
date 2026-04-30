@@ -218,4 +218,133 @@ export const messages: Record<MessageKey, string> = {
   "common.view.kanban": "Kanban view",
   "common.view.list": "List view",
   "common.view.grid": "Grid view",
+
+  // ============================================================
+  // Ledger - Phase 1.5.4
+  // ============================================================
+
+  // Sub-panel
+  "ledger.subpanel.chart_of_accounts": "Chart of Accounts",
+  "ledger.subpanel.journal_entries": "Journal Entries",
+
+  // Page titles & headers
+  "ledger.accounts.list.title": "Chart of Accounts",
+  "ledger.accounts.list.description":
+    "View all accounts and their current balances.",
+  "ledger.accounts.list.empty_state": "No accounts found.",
+  "ledger.accounts.list.search_placeholder": "Search by code or name",
+
+  // Accounts list columns
+  "ledger.accounts.column.code": "Code",
+  "ledger.accounts.column.name": "Name",
+  "ledger.accounts.column.type": "Type",
+  "ledger.accounts.column.currency": "Currency",
+  "ledger.accounts.column.balance": "Balance",
+
+  // Account types (singular)
+  "ledger.account_type.asset": "Asset",
+  "ledger.account_type.liability": "Liability",
+  "ledger.account_type.equity": "Equity",
+  "ledger.account_type.revenue": "Revenue",
+  "ledger.account_type.expense": "Expense",
+
+  // Account detail page
+  "ledger.account.detail.balance_label": "Current balance",
+  "ledger.account.detail.total_debits": "Total debits",
+  "ledger.account.detail.total_credits": "Total credits",
+  "ledger.account.detail.statement_title": "Statement",
+  "ledger.account.detail.statement_with_count": "Statement — {count} lines",
+  "ledger.account.detail.statement_with_count_one": "Statement — 1 line",
+  "ledger.account.detail.load_more": "Load more",
+  "ledger.account.detail.no_movements": "No movements recorded.",
+  "ledger.account.detail.statement_empty":
+    "This account has no entries yet.",
+
+  // Statement table columns
+  "ledger.statement.column.date": "Date",
+  "ledger.statement.column.description": "Description",
+  "ledger.statement.column.debit": "Debit",
+  "ledger.statement.column.credit": "Credit",
+  "ledger.statement.column.balance": "Balance",
+  "ledger.statement.column.entry": "Entry",
+  "ledger.statement.column.source": "Source",
+  "ledger.statement.column.direction": "Direction",
+  "ledger.statement.column.amount": "Amount",
+  "ledger.statement.action.view": "View",
+  "ledger.statement.loading": "Loading…",
+  "ledger.statement.empty": "No movements in this account.",
+  "ledger.statement.load_failed": "Failed to load more lines.",
+
+  // Entries list page
+  "ledger.entries.list.title": "Journal Entries",
+  "ledger.entries.list.description":
+    "Complete history of all financial movements.",
+  "ledger.entries.list.empty_state": "No entries found.",
+
+  // Entry detail page
+  "ledger.entry.detail.title": "Entry Details",
+  "ledger.entry.detail.posted_at": "Date",
+  "ledger.entry.detail.description": "Description",
+  "ledger.entry.detail.source": "Source",
+  "ledger.entry.detail.lines_title": "Lines",
+  "ledger.entry.detail.reversal_badge": "Reversal",
+  "ledger.entry.detail.reversed_badge": "Reversed",
+  "ledger.entry.detail.reversed_by": "Reversed by",
+  "ledger.entry.detail.reverses": "Reverses",
+  "ledger.entry.detail.section_details": "Details",
+  "ledger.entry.detail.source_id": "Source ID",
+  "ledger.entry.detail.created_at": "Created at",
+  "ledger.entry.detail.idempotency_key": "Idempotency key",
+  "ledger.entry.detail.metadata": "Metadata",
+  "ledger.entry.detail.lines_with_count": "Lines ({count})",
+  "ledger.entry.detail.line.account": "Account",
+  "ledger.entry.detail.line.type": "Type",
+  "ledger.entry.detail.line.direction": "Direction",
+  "ledger.entry.detail.line.amount": "Amount",
+
+  // Source kinds (badges) — matches JournalEntrySourceKind enum
+  "ledger.source_kind.transaction": "Transaction",
+  "ledger.source_kind.commission": "Commission",
+  "ledger.source_kind.refund": "Refund",
+  "ledger.source_kind.manual_adjustment": "Manual adjustment",
+  "ledger.source_kind.seed": "Initial seed",
+  "ledger.source_kind.reversal": "Reversal",
+
+  // Common errors
+  "error.common.unknown": "An unexpected error occurred. Please try again.",
+
+  // Ledger errors
+  "error.ledger.account_not_found": "Account {accountCode} not found.",
+  "error.ledger.account_archived": "Account {accountCode} is archived.",
+  "error.ledger.invalid_currency": "Invalid currency: {received}.",
+  "error.ledger.unsupported_currency": "Unsupported currency: {received}.",
+  "error.ledger.currency_mismatch":
+    "Currency mismatch on account {accountCode}: expected {accountCurrency}, got {lineCurrency}.",
+  "error.ledger.insufficient_lines": "Entry must have at least two lines.",
+  "error.ledger.non_positive_amount": "Amounts must be greater than zero.",
+  "error.ledger.unbalanced_entry": "Unbalanced entry.",
+  "error.ledger.invalid_source_id": "Invalid source identifier: {received}.",
+  "error.ledger.invalid_source_kind": "Invalid source kind: {received}.",
+  "error.ledger.idempotency_conflict":
+    "Idempotency conflict: key {idempotencyKey} was already used with different payload.",
+  "error.ledger.entry_not_found": "Entry {entryId} not found.",
+  "error.ledger.invalid_cursor": "Invalid pagination cursor.",
+  "error.ledger.statement_limit_exceeded":
+    "Statement limit exceeded (max {max}).",
+  "error.ledger.cannot_reverse_reversal": "Cannot reverse a reversal.",
+  "error.ledger.entry_already_reversed":
+    "Entry {originalEntryId} has already been reversed.",
+  "error.ledger.missing_reversal_reason": "Reversal reason is required.",
+  "error.ledger.error": "Ledger error.",
+
+  // Domain events errors
+  "error.domain_events.idempotency_conflict":
+    "Idempotency conflict while recording event.",
+  "error.domain_events.handler_execution": "Error processing event.",
+  "error.domain_events.error": "Domain events error.",
+
+  // Money errors
+  "error.money.currency_mismatch":
+    "Operation between values in different currencies.",
+  "error.money.invalid": "Invalid monetary value.",
 };

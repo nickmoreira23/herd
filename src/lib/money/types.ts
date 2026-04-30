@@ -14,15 +14,21 @@ export interface Money {
 }
 
 export class CurrencyMismatchError extends Error {
+  readonly code = "money.currency_mismatch" as const;
+  public left: CurrencyCode;
+  public right: CurrencyCode;
   constructor(left: CurrencyCode, right: CurrencyCode) {
     super(
       `Currency mismatch: cannot operate on ${left} and ${right} without explicit conversion.`,
     );
     this.name = "CurrencyMismatchError";
+    this.left = left;
+    this.right = right;
   }
 }
 
 export class InvalidMoneyError extends Error {
+  readonly code = "money.invalid" as const;
   constructor(message: string) {
     super(message);
     this.name = "InvalidMoneyError";

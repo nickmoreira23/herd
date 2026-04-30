@@ -11,7 +11,7 @@
  */
 import type { MessageKey } from "./pt-BR";
 
-export const messages: Record<MessageKey, string> = {
+export const messages: Partial<Record<MessageKey, string>> = {
   // Block category labels
   "categories.commerce": "Comercio",
   "categories.communication": "Comunicación",

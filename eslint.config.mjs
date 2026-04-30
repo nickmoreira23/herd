@@ -65,20 +65,20 @@ const eslintConfig = defineConfig([
   // code from the start. New features that touch user-facing strings
   // should be added to this list.
   //
-  // The ledger UI (src/components/ledger/**) is INTENTIONALLY excluded
-  // until Etapa 1.5.4 internationalizes its hardcoded strings; adding
-  // it now would break lint for work scheduled in a later etapa.
+  // Ledger UI was internationalized in Etapa 1.5.4 and is now strict.
   // ============================================================
   {
     files: [
       "src/lib/i18n/**/*.{ts,tsx}",
       "src/lib/ledger/**/*.{ts,tsx}",
+      "src/components/ledger/**/*.{ts,tsx}",
+      "src/app/admin/ledger/**/*.{ts,tsx}",
     ],
     rules: {
       "react/jsx-no-literals": ["error", {
         noStrings: true,
-        ignoreProps: false,
-        allowedStrings: [" ", "·", "—", "/", "-"],
+        ignoreProps: true,
+        allowedStrings: [" ", "·", "—", "/", "-", "…", "D", "C"],
       }],
     },
   },

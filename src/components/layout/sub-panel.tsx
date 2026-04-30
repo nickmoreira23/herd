@@ -54,7 +54,8 @@ import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
 import { BLOCK_ICON_MAP, BLOCK_LABEL_MAP } from "@/lib/blocks/block-meta";
 import { getBlockLabel, getCategoryLabel } from "@/lib/blocks/block-labels";
-import { useLocale } from "@/lib/i18n/locale-context";
+import { useLocale, useT } from "@/lib/i18n/locale-context";
+import type { MessageKey } from "@/lib/i18n/t";
 import { getAllToolCategories } from "@/lib/tools/registry";
 import { TOOL_ICON_MAP } from "@/lib/tools/category-meta";
 import type { BlockCategory } from "@/lib/blocks/block-categories";
@@ -90,6 +91,12 @@ import {
 export interface SubPanelLink {
   href: string;
   label: string;
+  /**
+   * Optional i18n key. When present, takes precedence over `label`.
+   * Type kept loose (`string`) to avoid coupling sub-panel registry to
+   * the entire MessageKey union; the renderer casts at lookup time.
+   */
+  labelKey?: string;
   icon?: LucideIcon;
 }
 
@@ -195,8 +202,18 @@ export const subPanelRegistry: Record<string, SubPanelConfig> = {
     id: "ledger",
     label: "Ledger",
     links: [
-      { href: "/admin/ledger", label: "Plano de Contas", icon: LayoutGrid },
-      { href: "/admin/ledger/entries", label: "Journal Entries", icon: FileText },
+      {
+        href: "/admin/ledger",
+        label: "Plano de Contas",
+        labelKey: "ledger.subpanel.chart_of_accounts",
+        icon: LayoutGrid,
+      },
+      {
+        href: "/admin/ledger/entries",
+        label: "Journal Entries",
+        labelKey: "ledger.subpanel.journal_entries",
+        icon: FileText,
+      },
     ],
   },
   handbook: {
@@ -1165,6 +1182,7 @@ function HandbookSubPanel() {
 function GenericSubPanel({ config }: { config: SubPanelConfig }) {
   const pathname = usePathname();
   const { setSubPanelCollapsed } = useUIStore();
+  const t = useT();
 
   const isActive = (href: string) => {
     // First link gets exact match only (e.g. "All Users" not when on sub-pages)
@@ -1207,7 +1225,9 @@ function GenericSubPanel({ config }: { config: SubPanelConfig }) {
               )}
             >
               {link.icon && <link.icon className="h-4 w-4 shrink-0" />}
-              <span className="truncate">{link.label}</span>
+              <span className="truncate">
+                {link.labelKey ? t(link.labelKey as MessageKey) : link.label}
+              </span>
             </Link>
           );
         })}

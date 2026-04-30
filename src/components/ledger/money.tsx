@@ -1,11 +1,17 @@
 import { cn } from "@/lib/utils";
 import { formatMoney } from "@/lib/money";
 import type { SerializedMoney } from "@/lib/ledger";
+import type { Locale } from "@/lib/i18n/locales";
 
 type MoneyTone = "natural" | "positive" | "negative" | "muted";
 
 interface MoneyProps {
   money: SerializedMoney;
+  /**
+   * Locale used for number formatting. Threaded from the page (RSC reads
+   * via getLocale()) or from useLocale() in Client Components.
+   */
+  locale: Locale;
   /**
    * - "natural" (default): green if positive, red if negative, muted if zero.
    * - "positive": always green tone.
@@ -16,12 +22,10 @@ interface MoneyProps {
   className?: string;
 }
 
-export function Money({ money, tone = "natural", className }: MoneyProps) {
+export function Money({ money, locale, tone = "natural", className }: MoneyProps) {
   const cents = BigInt(money.amountCents);
   const reconstructed = { amountCents: cents, currency: money.currency as "BRL" | "USD" };
-  // Hardcoded "pt-BR" until Etapa 1.5.4 internationalizes the ledger UI and
-  // threads the user locale through. See docs/discovery/I18N_AUDIT.md §11.
-  const formatted = formatMoney(reconstructed, "pt-BR");
+  const formatted = formatMoney(reconstructed, locale);
 
   let toneClass: string;
   if (tone === "positive") toneClass = "text-positive";
