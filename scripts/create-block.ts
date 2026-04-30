@@ -527,6 +527,6 @@ Done! Next steps:
   1. Add the Prisma model for ${pascal} to prisma/schema.prisma
   2. Import and register the block manifest in src/lib/blocks/registry.ts
   3. Import and register the DataProvider in src/lib/chat/data-retrieval.ts
-  4. Run: npx prisma db push
+  4. Run: npm run db:migrate
   5. Customize the generated files for your specific block needs
 `);
