@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useMemo } from "react";
+import { createContext, useContext, useState } from "react";
 import { useFinancialStore } from "@/stores/financial-store";
 import { calculateCreditCOGS, calculateTotalCOGSPerSub } from "@/lib/financial-engine";
 
@@ -16,8 +16,6 @@ import {
 import type { DataSourceMeta, TierDisplayMeta } from "@/app/admin/financials/data";
 import {
   Users,
-  CreditCard,
-  Package,
   DollarSign,
   Building2,
   Layers,
@@ -34,8 +32,31 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale-context";
+import type { Locale } from "@/lib/i18n/locales";
+import type { MessageKey } from "@/lib/i18n/messages/pt-BR";
+import { formatNumberAsMoney } from "@/lib/money/format";
+import { formatNumber } from "@/lib/i18n/format-number";
 
-export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSourceMeta, tierDisplayMeta }: { readOnly?: boolean; defaultOpen?: boolean; dataSourceMeta?: DataSourceMeta; tierDisplayMeta?: TierDisplayMeta[] }) {
+type TFunction = (
+  key: MessageKey,
+  params?: Record<string, string | number>,
+) => string;
+
+export function ScenarioBuilder({
+  readOnly = false,
+  defaultOpen = true,
+  dataSourceMeta,
+  tierDisplayMeta,
+  locale,
+}: {
+  readOnly?: boolean;
+  defaultOpen?: boolean;
+  dataSourceMeta?: DataSourceMeta;
+  tierDisplayMeta?: TierDisplayMeta[];
+  locale: Locale;
+}) {
+  const t = useT();
   const { inputs, setInputs } = useFinancialStore();
 
   const billingTotal =
@@ -50,11 +71,20 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
         {/* Overhead */}
         <InputCard
           icon={<Building2 className="h-3.5 w-3.5" />}
-          title="Overhead"
-          description={inputs.operationalOverhead.mode === "milestone-scaled" ? "Auto-scaled from Operations page" : "Fixed monthly operating costs"}
-          tooltip="Operational costs like rent, salaries, software, and admin. Can be a fixed monthly amount or automatically scaled from your Operations page based on subscriber milestones."
+          title={t("financials.builder.overhead.title")}
+          description={
+            inputs.operationalOverhead.mode === "milestone-scaled"
+              ? t("financials.builder.overhead.description_auto_scaled")
+              : t("financials.builder.overhead.description_fixed")
+          }
+          tooltip={t("financials.builder.overhead.tooltip")}
           defaultOpen={defaultOpen}
-          linkedBadge={dataSourceMeta?.linked.opexMilestones && inputs.operationalOverhead.mode === "milestone-scaled" ? <LinkedBadge label="Expenses" /> : undefined}
+          linkedBadge={
+            dataSourceMeta?.linked.opexMilestones &&
+            inputs.operationalOverhead.mode === "milestone-scaled" ? (
+              <LinkedBadge label={t("financials.builder.linked_badge.expenses")} />
+            ) : undefined
+          }
         >
           <div className="space-y-2">
             {/* Mode toggle */}
@@ -72,7 +102,7 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
                       : "bg-background text-muted-foreground border-input hover:bg-muted/50"
                   )}
                 >
-                  Fixed
+                  {t("financials.builder.overhead.mode_fixed")}
                 </button>
                 <button
                   type="button"
@@ -88,15 +118,15 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
                     !inputs.operationalOverhead.opexData?.length && "opacity-50 cursor-not-allowed"
                   )}
                 >
-                  Auto-scaled
+                  {t("financials.builder.overhead.mode_auto_scaled")}
                 </button>
               </div>
             )}
 
             {inputs.operationalOverhead.mode === "fixed" ? (
               <NumberField
-                label="Monthly Overhead ($)"
-                tooltip="Your total fixed monthly costs that don't scale with subscribers — office rent, salaries, software subscriptions, insurance, admin, etc."
+                label={t("financials.builder.overhead.field_monthly_overhead")}
+                tooltip={t("financials.builder.overhead.field_monthly_overhead_tooltip")}
                 value={inputs.operationalOverhead.fixedMonthly}
                 step={1000}
                 onChange={(v) => setInputs({
@@ -109,7 +139,7 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
                   <>
                     <div className="rounded-lg bg-muted/30 px-2.5 py-2 space-y-1">
                       <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                        Operations Page Categories
+                        {t("financials.builder.overhead.operations_categories")}
                       </p>
                       {inputs.operationalOverhead.opexData.map((cat) => {
                         const catTotal = cat.items.reduce((sum, item) => {
@@ -121,7 +151,11 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
                         return (
                           <div key={cat.id} className="flex items-center justify-between text-[11px]">
                             <span className="text-muted-foreground">{cat.name}</span>
-                            <span className="font-medium tabular-nums">${catTotal.toLocaleString()}/mo</span>
+                            <span className="font-medium tabular-nums">
+                              {t("financials.builder.overhead.per_month_amount", {
+                                amount: formatNumberAsMoney(catTotal, locale),
+                              })}
+                            </span>
                           </div>
                         );
                       })}
@@ -129,20 +163,20 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
                     <div className="rounded-lg bg-muted/30 px-2.5 py-1.5 text-[11px] text-muted-foreground flex items-center gap-1.5">
                       <Building2 className="h-3 w-3 shrink-0" />
                       <span>
-                        Costs scale automatically as subscribers cross milestone thresholds defined on the{" "}
+                        {t("financials.builder.overhead.scale_note_prefix")}{" "}
                         <a href="/admin/operation" className="text-foreground underline underline-offset-2 hover:no-underline">
-                          Operations page
+                          {t("financials.builder.overhead.operations_page_link")}
                         </a>
                       </span>
                     </div>
                   </>
                 ) : (
                   <div className="rounded-lg bg-muted/30 px-2.5 py-2 text-[11px] text-muted-foreground">
-                    No OPEX data found. Set up cost milestones on the{" "}
+                    {t("financials.builder.overhead.no_opex_prefix")}{" "}
                     <a href="/admin/operation" className="text-foreground underline underline-offset-2 hover:no-underline">
-                      Operations page
+                      {t("financials.builder.overhead.operations_page_link")}
                     </a>{" "}
-                    first.
+                    {t("financials.builder.overhead.no_opex_suffix")}
                   </div>
                 )}
               </div>
@@ -153,16 +187,16 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
         {/* Sales Representatives */}
         <InputCard
           icon={<UserPlus className="h-3.5 w-3.5" />}
-          title="Sales Representatives"
-          description="Reps, productivity & monthly growth"
-          tooltip="Your door-to-door sales force. Define starting headcount, productivity, and how fast the team grows each month. Reps compound — 10 reps growing at 10%/mo becomes 26 reps by month 12."
+          title={t("financials.builder.sales_reps.title")}
+          description={t("financials.builder.sales_reps.description")}
+          tooltip={t("financials.builder.sales_reps.tooltip")}
           defaultOpen={defaultOpen}
         >
           <div className="space-y-2">
             <div className="grid grid-cols-3 gap-2">
               <NumberField
-                label="Starting Reps"
-                tooltip="How many sales reps you start with in month 1. This is your baseline — the team grows from here based on your monthly growth rate."
+                label={t("financials.builder.sales_reps.field_starting_reps")}
+                tooltip={t("financials.builder.sales_reps.field_starting_reps_tooltip")}
                 value={inputs.salesRepChannel.startingReps}
                 step={1}
                 onChange={(v) =>
@@ -172,8 +206,8 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
                 }
               />
               <NumberField
-                label="Sales/Rep/Mo"
-                tooltip="How many new subscriptions each rep closes per month on average. Multiply by active reps to get total monthly acquisition from this channel."
+                label={t("financials.builder.sales_reps.field_sales_per_rep")}
+                tooltip={t("financials.builder.sales_reps.field_sales_per_rep_tooltip")}
                 value={inputs.salesRepChannel.salesPerRepPerMonth}
                 step={1}
                 onChange={(v) =>
@@ -183,8 +217,8 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
                 }
               />
               <NumberField
-                label="Growth %/Mo"
-                tooltip="How fast your sales team grows each month. At 10%, you go from 10 reps to 11 next month, 12 the month after, and so on — compounding over time."
+                label={t("financials.builder.sales_reps.field_growth_rate")}
+                tooltip={t("financials.builder.sales_reps.field_growth_rate_tooltip")}
                 value={inputs.salesRepChannel.monthlyGrowthRate}
                 step={1}
                 max={100}
@@ -198,9 +232,46 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
             <div className="rounded-lg bg-muted/30 px-2.5 py-1.5 text-[11px] text-muted-foreground flex items-center gap-1.5">
               <Users className="h-3 w-3 shrink-0" />
               <span>
-                Mo 1: {inputs.salesRepChannel.startingReps} reps × {inputs.salesRepChannel.salesPerRepPerMonth} sales = <strong className="text-foreground">{inputs.salesRepChannel.startingReps * inputs.salesRepChannel.salesPerRepPerMonth} new subs</strong>
+                {t("financials.builder.sales_reps.summary_mo1", {
+                  reps: formatNumber(inputs.salesRepChannel.startingReps, locale, "integer"),
+                  sales: formatNumber(inputs.salesRepChannel.salesPerRepPerMonth, locale, "integer"),
+                })}{" "}
+                <strong className="text-foreground">
+                  {t("financials.builder.sales_reps.summary_new_subs", {
+                    count: formatNumber(
+                      inputs.salesRepChannel.startingReps *
+                        inputs.salesRepChannel.salesPerRepPerMonth,
+                      locale,
+                      "integer",
+                    ),
+                  })}
+                </strong>
                 {inputs.salesRepChannel.monthlyGrowthRate > 0 && (
-                  <span> · Mo 12: <strong className="text-foreground">{Math.round(inputs.salesRepChannel.startingReps * Math.pow(1 + inputs.salesRepChannel.monthlyGrowthRate / 100, 11))} reps → {Math.round(inputs.salesRepChannel.startingReps * Math.pow(1 + inputs.salesRepChannel.monthlyGrowthRate / 100, 11) * inputs.salesRepChannel.salesPerRepPerMonth)} subs</strong></span>
+                  <span>
+                    {" · "}
+                    {t("financials.builder.sales_reps.summary_mo12_prefix")}{" "}
+                    <strong className="text-foreground">
+                      {t("financials.builder.sales_reps.summary_mo12_value", {
+                        reps: formatNumber(
+                          Math.round(
+                            inputs.salesRepChannel.startingReps *
+                              Math.pow(1 + inputs.salesRepChannel.monthlyGrowthRate / 100, 11),
+                          ),
+                          locale,
+                          "integer",
+                        ),
+                        subs: formatNumber(
+                          Math.round(
+                            inputs.salesRepChannel.startingReps *
+                              Math.pow(1 + inputs.salesRepChannel.monthlyGrowthRate / 100, 11) *
+                              inputs.salesRepChannel.salesPerRepPerMonth,
+                          ),
+                          locale,
+                          "integer",
+                        ),
+                      })}
+                    </strong>
+                  </span>
                 )}
               </span>
             </div>
@@ -210,15 +281,17 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
         {/* Commission Structure */}
         <InputCard
           icon={<DollarSign className="h-3.5 w-3.5" />}
-          title="Commission Structure"
-          description="How reps are paid per sale"
-          tooltip="Define how your D2D sales reps are compensated — upfront bonus (flat $ or % of plan price), ongoing residual, accelerators, and payout timing."
+          title={t("financials.builder.commission.title")}
+          description={t("financials.builder.commission.description")}
+          tooltip={t("financials.builder.commission.tooltip")}
           defaultOpen={defaultOpen}
         >
           <div className="space-y-3">
             {/* Upfront Commission */}
             <div className="space-y-2">
-              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Upfront Commission</span>
+              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                {t("financials.builder.commission.upfront_section")}
+              </span>
 
               {/* Type toggle */}
               {!readOnly && (
@@ -235,7 +308,7 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
                         : "bg-background text-muted-foreground border-input hover:bg-muted/50"
                     )}
                   >
-                    Flat $
+                    {t("financials.builder.commission.type_flat")}
                   </button>
                   <button
                     type="button"
@@ -249,7 +322,7 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
                         : "bg-background text-muted-foreground border-input hover:bg-muted/50"
                     )}
                   >
-                    % of Plan
+                    {t("financials.builder.commission.type_percent")}
                   </button>
                 </div>
               )}
@@ -257,8 +330,8 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
               <div className="grid grid-cols-2 gap-2">
                 {(inputs.commissionStructure.upfrontType ?? "flat") === "flat" ? (
                   <NumberField
-                    label="Bonus per Sale ($)"
-                    tooltip="A fixed dollar amount paid to the rep for each new subscription they close, regardless of which plan the subscriber chose."
+                    label={t("financials.builder.commission.field_bonus_per_sale")}
+                    tooltip={t("financials.builder.commission.field_bonus_per_sale_tooltip")}
                     value={inputs.commissionStructure.flatBonusPerSale}
                     step={5}
                     onChange={(v) =>
@@ -269,8 +342,8 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
                   />
                 ) : (
                   <NumberField
-                    label="% of Plan Price"
-                    tooltip="The rep earns this percentage of the subscriber's monthly plan price as their upfront bonus. 100% means the rep earns the full first month's revenue."
+                    label={t("financials.builder.commission.field_percent_of_plan")}
+                    tooltip={t("financials.builder.commission.field_percent_of_plan_tooltip")}
                     value={inputs.commissionStructure.upfrontPercent ?? 100}
                     step={5}
                     max={500}
@@ -282,8 +355,8 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
                   />
                 )}
                 <NumberField
-                  label="Payout Delay (months)"
-                  tooltip="How many months after the sale before the upfront commission is paid. 0 = immediate. 2 = paid two months after the sale closes. Delays improve cash flow."
+                  label={t("financials.builder.commission.field_payout_delay")}
+                  tooltip={t("financials.builder.commission.field_payout_delay_tooltip")}
                   value={inputs.commissionStructure.payoutDelayMonths ?? 0}
                   step={1}
                   max={12}
@@ -298,11 +371,13 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
 
             {/* Residual */}
             <div className="space-y-1.5">
-              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Residual (ongoing)</span>
+              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                {t("financials.builder.commission.residual_section")}
+              </span>
               <div className="grid grid-cols-2 gap-2">
                 <NumberField
-                  label="Residual %/mo"
-                  tooltip="An ongoing monthly percentage of each subscriber's revenue paid to the rep who sold them. This repeats every month the subscriber stays active."
+                  label={t("financials.builder.commission.field_residual_percent")}
+                  tooltip={t("financials.builder.commission.field_residual_percent_tooltip")}
                   value={inputs.commissionStructure.residualPercent}
                   step={0.5}
                   max={100}
@@ -313,8 +388,8 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
                   }
                 />
                 <NumberField
-                  label="Starts After (months)"
-                  tooltip="How many months after the sale before the rep starts earning residual. 0 = residual begins immediately. 3 = the rep gets nothing for 3 months, then residual kicks in from month 4 onward."
+                  label={t("financials.builder.commission.field_residual_delay")}
+                  tooltip={t("financials.builder.commission.field_residual_delay_tooltip")}
                   value={inputs.commissionStructure.residualDelayMonths ?? 0}
                   step={1}
                   max={12}
@@ -329,11 +404,13 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
 
             {/* Accelerator */}
             <div className="space-y-1.5">
-              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Accelerator</span>
+              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                {t("financials.builder.commission.accelerator_section")}
+              </span>
               <div className="grid grid-cols-2 gap-2">
                 <NumberField
-                  label="% Hitting Accelerator"
-                  tooltip="What percentage of your reps exceed their sales quota and earn the accelerator bonus."
+                  label={t("financials.builder.commission.field_percent_hitting")}
+                  tooltip={t("financials.builder.commission.field_percent_hitting_tooltip")}
                   value={inputs.commissionStructure.percentHittingAccelerator}
                   step={5}
                   max={100}
@@ -344,8 +421,8 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
                   }
                 />
                 <NumberField
-                  label="Multiplier"
-                  tooltip="The bonus multiplier for top-performing reps. At 1.5x, a rep earning a $50 bonus gets $75 when they hit their accelerator threshold."
+                  label={t("financials.builder.commission.field_multiplier")}
+                  tooltip={t("financials.builder.commission.field_multiplier_tooltip")}
                   value={inputs.commissionStructure.acceleratorMultiplier}
                   step={0.1}
                   onChange={(v) =>
@@ -361,20 +438,49 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
             {(() => {
               const isPercent = inputs.commissionStructure.upfrontType === "percent";
               const upfrontLabel = isPercent
-                ? `${inputs.commissionStructure.upfrontPercent ?? 100}% of plan price`
-                : `$${inputs.commissionStructure.flatBonusPerSale} flat`;
+                ? t("financials.builder.commission.summary_upfront_percent", {
+                    percent: formatNumber(
+                      (inputs.commissionStructure.upfrontPercent ?? 100) / 100,
+                      locale,
+                      "percent",
+                    ),
+                  })
+                : t("financials.builder.commission.summary_upfront_flat", {
+                    amount: formatNumberAsMoney(
+                      inputs.commissionStructure.flatBonusPerSale,
+                      locale,
+                    ),
+                  });
               const delay = inputs.commissionStructure.payoutDelayMonths ?? 0;
-              const delayLabel = delay === 0 ? "paid immediately" : `paid after ${delay} mo`;
+              const delayLabel =
+                delay === 0
+                  ? t("financials.builder.commission.summary_paid_immediately")
+                  : t("financials.builder.commission.summary_paid_after", { months: delay });
               const residual = inputs.commissionStructure.residualPercent;
               const resDelay = inputs.commissionStructure.residualDelayMonths ?? 0;
-              const resDelayLabel = resDelay === 0 ? "" : ` (starts after ${resDelay} mo)`;
+              const resDelayLabel =
+                resDelay === 0
+                  ? ""
+                  : t("financials.builder.commission.summary_residual_delay", {
+                      months: resDelay,
+                    });
               return (
                 <div className="rounded-lg bg-muted/30 px-2.5 py-1.5 text-[11px] text-muted-foreground flex items-center gap-1.5">
                   <DollarSign className="h-3 w-3 shrink-0" />
                   <span>
-                    Upfront: <strong className="text-foreground">{upfrontLabel}</strong> ({delayLabel})
+                    {t("financials.builder.commission.summary_upfront_label")}:{" "}
+                    <strong className="text-foreground">{upfrontLabel}</strong> ({delayLabel})
                     {residual > 0 && (
-                      <> + <strong className="text-foreground">{residual}%/mo</strong> residual{resDelayLabel}</>
+                      <>
+                        {" + "}
+                        <strong className="text-foreground">
+                          {t("financials.builder.commission.summary_residual_value", {
+                            percent: formatNumber(residual / 100, locale, "percent"),
+                          })}
+                        </strong>{" "}
+                        {t("financials.builder.commission.summary_residual_word")}
+                        {resDelayLabel}
+                      </>
                     )}
                   </span>
                 </div>
@@ -386,29 +492,31 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
         {/* Profit Split */}
         <InputCard
           icon={<PieChart className="h-3.5 w-3.5" />}
-          title="Profit Split"
-          description="How channel profits are divided between parties"
-          tooltip="After all costs (COGS, commissions, overhead), the remaining profit from this sales channel is split between the parties defined here. Percentages should total 100%."
+          title={t("financials.builder.profit_split.title")}
+          description={t("financials.builder.profit_split.description")}
+          tooltip={t("financials.builder.profit_split.tooltip")}
           defaultOpen={defaultOpen}
         >
           <div className="space-y-2">
             {inputs.profitSplitParties.length === 0 && (
               <div className="rounded-lg bg-muted/30 px-2.5 py-2 text-[11px] text-muted-foreground">
-                No parties defined. Add parties to split the channel profits.
+                {t("financials.builder.profit_split.empty")}
               </div>
             )}
 
             {inputs.profitSplitParties.map((party, idx) => (
               <div key={party.id} className="flex items-end gap-2">
                 <div className="flex-1">
-                  <Label className="text-[11px] text-muted-foreground mb-0.5 block">Party Name</Label>
+                  <Label className="text-[11px] text-muted-foreground mb-0.5 block">
+                    {t("financials.builder.profit_split.party_name_label")}
+                  </Label>
                   {readOnly ? (
                     <div className="h-8 flex items-center text-sm font-medium">{party.name}</div>
                   ) : (
                     <Input
                       type="text"
                       value={party.name}
-                      placeholder="e.g. HERD, Investor, Partner"
+                      placeholder={t("financials.builder.profit_split.party_name_placeholder")}
                       onChange={(e) => {
                         const updated = [...inputs.profitSplitParties];
                         updated[idx] = { ...updated[idx], name: e.target.value };
@@ -420,8 +528,8 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
                 </div>
                 <div className="w-[80px]">
                   <NumberField
-                    label="Split %"
-                    tooltip="What percentage of the channel's net profit this party receives."
+                    label={t("financials.builder.profit_split.split_percent_label")}
+                    tooltip={t("financials.builder.profit_split.split_percent_tooltip")}
                     value={party.percent}
                     step={5}
                     max={100}
@@ -463,7 +571,7 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
                 className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5 rounded-md hover:bg-muted/50 w-full justify-center border border-dashed border-border/50"
               >
                 <Plus className="h-3 w-3" />
-                Add Party
+                {t("financials.builder.profit_split.add_party")}
               </button>
             )}
 
@@ -482,12 +590,21 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
                   <span>
                     {inputs.profitSplitParties.map((p) => (
                       <span key={p.id}>
-                        <strong className={isValid ? "text-foreground" : ""}>{p.name || "Unnamed"}</strong>: {p.percent}%
+                        <strong className={isValid ? "text-foreground" : ""}>
+                          {p.name || t("financials.builder.profit_split.unnamed")}
+                        </strong>
+                        {": "}
+                        {formatNumber(p.percent / 100, locale, "percent")}
                         {" · "}
                       </span>
                     ))}
-                    Total: <strong className={isValid ? "text-foreground" : ""}>{totalPercent}%</strong>
-                    {!isValid && <span> (must be 100%)</span>}
+                    {t("financials.builder.profit_split.total_label")}:{" "}
+                    <strong className={isValid ? "text-foreground" : ""}>
+                      {formatNumber(totalPercent / 100, locale, "percent")}
+                    </strong>
+                    {!isValid && (
+                      <span> {t("financials.builder.profit_split.must_be_100")}</span>
+                    )}
                   </span>
                 </div>
               );
@@ -498,23 +615,23 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
         {/* Chargebacks */}
         <InputCard
           icon={<ShieldAlert className="h-3.5 w-3.5" />}
-          title="Chargebacks"
-          description="Projected chargeback rate and fees"
-          tooltip="Percentage of new subscribers who will dispute/chargeback their purchase. Chargebacks reduce your net subscribers and incur processor fees plus lost COGS on shipped products."
+          title={t("financials.builder.chargebacks.title")}
+          description={t("financials.builder.chargebacks.description")}
+          tooltip={t("financials.builder.chargebacks.tooltip")}
           defaultOpen={defaultOpen}
         >
           <div className="grid grid-cols-2 gap-1.5">
             <NumberField
-              label="Chargeback Rate %"
-              tooltip="What percentage of new subscribers will chargeback each month. E.g., 2% means 2 out of every 100 new sales result in a chargeback."
+              label={t("financials.builder.chargebacks.field_rate")}
+              tooltip={t("financials.builder.chargebacks.field_rate_tooltip")}
               value={inputs.chargebackPercent ?? 0}
               step={0.5}
               max={100}
               onChange={(v) => setInputs({ chargebackPercent: v })}
             />
             <NumberField
-              label="Fee per Chargeback ($)"
-              tooltip="The payment processor fee you pay per chargeback event, typically $15-25."
+              label={t("financials.builder.chargebacks.field_fee")}
+              tooltip={t("financials.builder.chargebacks.field_fee_tooltip")}
               value={inputs.chargebackFee ?? 15}
               step={5}
               max={100}
@@ -522,11 +639,17 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
             />
           </div>
           {(inputs.chargebackPercent ?? 0) > 0 && (() => {
-            const grossSubs = Math.round(inputs.salesRepChannel.startingReps * inputs.salesRepChannel.salesPerRepPerMonth);
+            const grossSubs = Math.round(
+              inputs.salesRepChannel.startingReps * inputs.salesRepChannel.salesPerRepPerMonth,
+            );
             const cbs = Math.round(grossSubs * ((inputs.chargebackPercent ?? 0) / 100));
             return (
               <div className="rounded-lg bg-muted/30 px-2.5 py-1.5 text-[11px] text-muted-foreground mt-1.5">
-                ~{cbs} chargebacks/mo from {grossSubs} new sales → {grossSubs - cbs} net new subscribers
+                {t("financials.builder.chargebacks.summary", {
+                  cbs: formatNumber(cbs, locale, "integer"),
+                  gross: formatNumber(grossSubs, locale, "integer"),
+                  net: formatNumber(grossSubs - cbs, locale, "integer"),
+                })}
               </div>
             );
           })()}
@@ -536,20 +659,30 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
         {inputs.tiers.length > 0 && (
           <InputCard
             icon={<Layers className="h-3.5 w-3.5" />}
-            title="Plans"
-            description="Plan structure & performance levers"
-            tooltip="Plan structure is read-only from your Plans settings. Performance assumptions — subscriber mix, churn, billing behavior — are the levers that move your projections."
+            title={t("financials.builder.plans.title")}
+            description={t("financials.builder.plans.description")}
+            tooltip={t("financials.builder.plans.tooltip")}
             defaultOpen={false}
-            linkedBadge={dataSourceMeta?.linked.tierPricing ? <LinkedBadge label={`${dataSourceMeta.sources.tierCount} plans linked`} /> : undefined}
+            linkedBadge={
+              dataSourceMeta?.linked.tierPricing ? (
+                <LinkedBadge
+                  label={t("financials.builder.linked_badge.plans_linked", {
+                    count: dataSourceMeta.sources.tierCount ?? 0,
+                  })}
+                />
+              ) : undefined
+            }
           >
             <div className="space-y-3">
               {/* Global Defaults */}
               <div className="rounded-md bg-muted/30 px-2.5 py-2.5 space-y-2">
-                <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Global Defaults</span>
+                <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                  {t("financials.builder.plans.global_defaults")}
+                </span>
                 <div className="grid grid-cols-3 gap-1.5">
                   <NumberField
-                    label="Monthly %"
-                    tooltip="Default % of subscribers paying month-to-month. Individual plans can override this in their Overrides section."
+                    label={t("financials.builder.plans.field_monthly_pct")}
+                    tooltip={t("financials.builder.plans.field_monthly_pct_tooltip")}
                     value={inputs.billingCycleDistribution.monthly}
                     step={5}
                     max={100}
@@ -560,8 +693,8 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
                     }
                   />
                   <NumberField
-                    label="Quarterly %"
-                    tooltip="Default % of subscribers paying quarterly."
+                    label={t("financials.builder.plans.field_quarterly_pct")}
+                    tooltip={t("financials.builder.plans.field_quarterly_pct_tooltip")}
                     value={inputs.billingCycleDistribution.quarterly}
                     step={5}
                     max={100}
@@ -572,8 +705,8 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
                     }
                   />
                   <NumberField
-                    label="Annual %"
-                    tooltip="Default % of subscribers paying annually."
+                    label={t("financials.builder.plans.field_annual_pct")}
+                    tooltip={t("financials.builder.plans.field_annual_pct_tooltip")}
                     value={inputs.billingCycleDistribution.annual}
                     step={5}
                     max={100}
@@ -585,12 +718,16 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
                   />
                 </div>
                 {billingTotal !== 100 && (
-                  <p className="text-[10px] text-red-500">Must total 100% (now {billingTotal}%)</p>
+                  <p className="text-[10px] text-red-500">
+                    {t("financials.builder.plans.must_total_100", {
+                      current: formatNumber(billingTotal / 100, locale, "percent"),
+                    })}
+                  </p>
                 )}
                 <div className="grid grid-cols-1 gap-1.5 max-w-[140px]">
                   <NumberField
-                    label="Credit Redemption %"
-                    tooltip="Default % of credits subscribers actually use. Plans can override this individually. Unredeemed credits become breakage profit."
+                    label={t("financials.builder.plans.field_credit_redemption")}
+                    tooltip={t("financials.builder.plans.field_credit_redemption_tooltip")}
                     value={Math.round(inputs.creditRedemptionRate * 100)}
                     step={5}
                     max={100}
@@ -639,50 +776,100 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
                     <div className="rounded-md bg-muted/50 px-2.5 py-2 space-y-1">
                       <div className="flex items-center gap-1.5 mb-1">
                         <Lock className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Plan Structure</span>
-                        <LinkedBadge label="From Plans" />
+                        <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                          {t("financials.builder.plans.plan_structure")}
+                        </span>
+                        <LinkedBadge label={t("financials.builder.linked_badge.from_plans")} />
                       </div>
                       <div className="text-xs text-muted-foreground leading-relaxed">
-                        <span className="text-foreground font-medium">${tier.monthlyPrice}/mo</span>
+                        <span className="text-foreground font-medium">
+                          {t("financials.builder.plans.price_per_month", {
+                            amount: formatNumberAsMoney(tier.monthlyPrice, locale),
+                          })}
+                        </span>
                         {meta && meta.quarterlyPriceTotal > 0 && (
-                          <> · ${meta.quarterlyPriceTotal}/qtr <span className="text-muted-foreground">(${tier.quarterlyPricePerMonth}/mo)</span></>
+                          <>
+                            {" · "}
+                            {t("financials.builder.plans.price_per_quarter", {
+                              amount: formatNumberAsMoney(meta.quarterlyPriceTotal, locale),
+                            })}{" "}
+                            <span className="text-muted-foreground">
+                              ({t("financials.builder.plans.price_per_month", {
+                                amount: formatNumberAsMoney(tier.quarterlyPricePerMonth, locale),
+                              })})
+                            </span>
+                          </>
                         )}
                         {meta && meta.annualPriceTotal > 0 && (
-                          <> · ${meta.annualPriceTotal}/yr <span className="text-muted-foreground">(${tier.annualPricePerMonth}/mo)</span></>
+                          <>
+                            {" · "}
+                            {t("financials.builder.plans.price_per_year", {
+                              amount: formatNumberAsMoney(meta.annualPriceTotal, locale),
+                            })}{" "}
+                            <span className="text-muted-foreground">
+                              ({t("financials.builder.plans.price_per_month", {
+                                amount: formatNumberAsMoney(tier.annualPricePerMonth, locale),
+                              })})
+                            </span>
+                          </>
                         )}
                       </div>
                       <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
                         {tier.monthlyCredits > 0 && (
-                          <span>${tier.monthlyCredits} credits/mo</span>
+                          <span>
+                            {t("financials.builder.plans.credits_per_month", {
+                              amount: formatNumberAsMoney(tier.monthlyCredits, locale),
+                            })}
+                          </span>
                         )}
                         {tier.apparelCOGSPerMonth > 0 && (
-                          <span>${tier.apparelCOGSPerMonth} apparel/mo</span>
+                          <span>
+                            {t("financials.builder.plans.apparel_per_month", {
+                              amount: formatNumberAsMoney(tier.apparelCOGSPerMonth, locale),
+                            })}
+                          </span>
                         )}
                         {tier.monthlyCredits === 0 && tier.apparelCOGSPerMonth === 0 && (
-                          <span>No credits or apparel</span>
+                          <span>{t("financials.builder.plans.no_credits_apparel")}</span>
                         )}
                         {meta && meta.trialDays > 0 && (
-                          <span>{meta.trialDays}-day trial</span>
+                          <span>
+                            {t("financials.builder.plans.trial_days", { days: meta.trialDays })}
+                          </span>
                         )}
                         {meta && meta.setupFee > 0 && (
-                          <span>${meta.setupFee} setup fee</span>
+                          <span>
+                            {t("financials.builder.plans.setup_fee", {
+                              amount: formatNumberAsMoney(meta.setupFee, locale),
+                            })}
+                          </span>
                         )}
                       </div>
-                      {/* Estimated cost per subscriber — derived from plan + product data */}
+                      {/* Estimated cost per subscriber */}
                       <div className="pt-1 border-t border-border/30 mt-1.5">
                         <span className="text-xs">
-                          Est. cost: <span className="text-foreground font-medium">${Math.round(estCostPerSub * 100) / 100}/sub/mo</span>
+                          {t("financials.builder.plans.est_cost_label")}:{" "}
+                          <span className="text-foreground font-medium">
+                            {t("financials.builder.plans.est_cost_value", {
+                              amount: formatNumberAsMoney(
+                                Math.round(estCostPerSub * 100) / 100,
+                                locale,
+                              ),
+                            })}
+                          </span>
                         </span>
                       </div>
                     </div>
 
                     {/* Performance Assumptions — editable */}
                     <div className="space-y-1.5">
-                      <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Performance</span>
+                      <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                        {t("financials.builder.plans.performance_section")}
+                      </span>
                       <div className="grid grid-cols-3 gap-1.5">
                         <NumberField
-                          label="Subscriber Mix %"
-                          tooltip="What percentage of your total subscribers choose this plan. All plans should add up to 100%."
+                          label={t("financials.builder.plans.field_subscriber_mix")}
+                          tooltip={t("financials.builder.plans.field_subscriber_mix_tooltip")}
                           value={tier.subscriberPercent}
                           step={5}
                           max={100}
@@ -693,8 +880,8 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
                           }}
                         />
                         <NumberField
-                          label="Monthly Churn %"
-                          tooltip="Monthly cancellation rate for this plan. 6% monthly churn = ~17 month average lifetime. Churn only starts after the minimum commitment period expires."
+                          label={t("financials.builder.plans.field_monthly_churn")}
+                          tooltip={t("financials.builder.plans.field_monthly_churn_tooltip")}
                           value={tier.churnRateMonthly}
                           step={0.5}
                           max={50}
@@ -705,8 +892,8 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
                           }}
                         />
                         <NumberField
-                          label="Min Commit (mo)"
-                          tooltip="Minimum months a subscriber is locked in before they can cancel. During this period churn is 0 (subscribers can't leave). Sourced from your plan settings."
+                          label={t("financials.builder.plans.field_min_commit")}
+                          tooltip={t("financials.builder.plans.field_min_commit_tooltip")}
                           value={tier.minimumCommitMonths ?? 1}
                           step={1}
                           max={24}
@@ -721,6 +908,8 @@ export function ScenarioBuilder({ readOnly = false, defaultOpen = true, dataSour
 
                     {/* Advanced Overrides — collapsible */}
                     <TierAdvancedOverrides
+                      t={t}
+                      locale={locale}
                       tier={tier}
                       tierIdx={idx}
                       globalBilling={inputs.billingCycleDistribution}
@@ -769,9 +958,13 @@ function LinkedBadge({ label }: { label: string }) {
   );
 }
 
+// Suppress unused-var warning — `tierIdx` kept on the prop list for future use.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function TierAdvancedOverrides({
+  t,
+  locale,
   tier,
-  tierIdx,
+  tierIdx: _tierIdx,
   globalBilling,
   globalRedemptionRate,
   hasBillingOverride,
@@ -781,6 +974,8 @@ function TierAdvancedOverrides({
   onResetBilling,
   onResetRedemption,
 }: {
+  t: TFunction;
+  locale: Locale;
   tier: import("@/lib/financial-engine").TierFinancialInput;
   tierIdx: number;
   globalBilling: import("@/lib/financial-engine").BillingDistribution;
@@ -804,10 +999,17 @@ function TierAdvancedOverrides({
         className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors w-full"
       >
         <ChevronRight className={cn("h-3 w-3 transition-transform duration-150", open && "rotate-90")} />
-        <span className="font-medium uppercase tracking-wider">Overrides</span>
+        <span className="font-medium uppercase tracking-wider">
+          {t("financials.builder.overrides.title")}
+        </span>
         {hasAnyOverride && (
           <span className="ml-auto text-[9px] rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 font-semibold">
-            {[hasBillingOverride && "billing", hasRedemptionOverride && "redemption"].filter(Boolean).join(", ")}
+            {[
+              hasBillingOverride && t("financials.builder.overrides.tag_billing"),
+              hasRedemptionOverride && t("financials.builder.overrides.tag_redemption"),
+            ]
+              .filter(Boolean)
+              .join(", ")}
           </span>
         )}
       </button>
@@ -818,7 +1020,9 @@ function TierAdvancedOverrides({
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                Billing Mix {hasBillingOverride ? "" : "(global)"}
+                {hasBillingOverride
+                  ? t("financials.builder.overrides.billing_mix")
+                  : t("financials.builder.overrides.billing_mix_global")}
               </span>
               {hasBillingOverride && !readOnly && (
                 <button
@@ -826,14 +1030,14 @@ function TierAdvancedOverrides({
                   onClick={onResetBilling}
                   className="flex items-center gap-0.5 text-[9px] text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  <RotateCcw className="h-2.5 w-2.5" /> Reset
+                  <RotateCcw className="h-2.5 w-2.5" /> {t("common.actions.reset")}
                 </button>
               )}
             </div>
             <div className="grid grid-cols-3 gap-1.5">
               <NumberField
-                label="Mo %"
-                tooltip="Percentage of this plan's subscribers paying monthly. Override the global billing mix for this specific plan."
+                label={t("financials.builder.overrides.field_mo")}
+                tooltip={t("financials.builder.overrides.field_mo_tooltip")}
                 value={hasBillingOverride ? tier.billingDistribution!.monthly : globalBilling.monthly}
                 step={5}
                 max={100}
@@ -844,8 +1048,8 @@ function TierAdvancedOverrides({
                 }}
               />
               <NumberField
-                label="Qtr %"
-                tooltip="Percentage of this plan's subscribers paying quarterly."
+                label={t("financials.builder.overrides.field_qtr")}
+                tooltip={t("financials.builder.overrides.field_qtr_tooltip")}
                 value={hasBillingOverride ? tier.billingDistribution!.quarterly : globalBilling.quarterly}
                 step={5}
                 max={100}
@@ -856,8 +1060,8 @@ function TierAdvancedOverrides({
                 }}
               />
               <NumberField
-                label="Ann %"
-                tooltip="Percentage of this plan's subscribers paying annually."
+                label={t("financials.builder.overrides.field_ann")}
+                tooltip={t("financials.builder.overrides.field_ann_tooltip")}
                 value={hasBillingOverride ? tier.billingDistribution!.annual : globalBilling.annual}
                 step={5}
                 max={100}
@@ -869,7 +1073,11 @@ function TierAdvancedOverrides({
               />
             </div>
             {hasBillingOverride && billingOverrideTotal !== 100 && (
-              <p className="text-[10px] text-red-500">Must total 100% (now {billingOverrideTotal}%)</p>
+              <p className="text-[10px] text-red-500">
+                {t("financials.builder.plans.must_total_100", {
+                  current: formatNumber(billingOverrideTotal / 100, locale, "percent"),
+                })}
+              </p>
             )}
           </div>
 
@@ -877,7 +1085,9 @@ function TierAdvancedOverrides({
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                Credit Redemption {hasRedemptionOverride ? "" : "(global)"}
+                {hasRedemptionOverride
+                  ? t("financials.builder.overrides.credit_redemption")
+                  : t("financials.builder.overrides.credit_redemption_global")}
               </span>
               {hasRedemptionOverride && !readOnly && (
                 <button
@@ -885,14 +1095,14 @@ function TierAdvancedOverrides({
                   onClick={onResetRedemption}
                   className="flex items-center gap-0.5 text-[9px] text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  <RotateCcw className="h-2.5 w-2.5" /> Reset
+                  <RotateCcw className="h-2.5 w-2.5" /> {t("common.actions.reset")}
                 </button>
               )}
             </div>
             <div className="max-w-[140px]">
               <NumberField
-                label="Redemption %"
-                tooltip="What percentage of credits get redeemed by this plan's subscribers. Higher-tier members tend to redeem more. Overrides the global rate."
+                label={t("financials.builder.overrides.field_redemption")}
+                tooltip={t("financials.builder.overrides.field_redemption_tooltip")}
                 value={hasRedemptionOverride ? Math.round(tier.creditRedemptionRate! * 100) : Math.round(globalRedemptionRate * 100)}
                 step={5}
                 max={100}

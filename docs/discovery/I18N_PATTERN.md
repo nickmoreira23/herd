@@ -2,7 +2,7 @@
 
 > Estabelecido na Etapa 1.5.4 (Ledger Internationalization).
 > Pattern canônico para internacionalizar features do HERD.
-> Versão: 1.2 — última atualização: 2026-04-30 (Etapa 1.5.6a).
+> Versão: 1.3 — última atualização: 2026-04-30 (Etapa 1.5.6a-bis).
 
 Este documento é a referência única de **como** internacionalizar uma feature.
 Ele captura as decisões e templates cravados na Etapa 1.5.4 e serve de base
@@ -217,6 +217,24 @@ de compor mensagem traduzida. **`notifyError` discrimina pelo tipo do
 primeiro argumento**: string ⇒ trata como MessageKey; outro ⇒ trata como
 Error e usa `translateErrorWithT`.
 
+### Template H: Deprecation gradual de funções legacy
+
+Quando uma função do projeto vira legacy mas tem muitos call-sites:
+
+1. Adiciona `@deprecated` JSDoc com mensagem clara apontando para o
+   substituto e explicação do motivo.
+2. Adiciona ESLint rule `no-restricted-imports` que falha quando a
+   função é importada em paths "modernos" (já migrados).
+3. Mantém lista de `ignores` com paths que ainda dependem do legacy.
+4. Cada migração de feature **remove o path correspondente da
+   ignore list** + faz refactor in-place dos call-sites.
+5. Capstone final confirma zero references e deleta a função.
+
+Exemplo: `formatCurrency`/`formatPercent`/`formatNumber` em `utils.ts`
+foram marcados deprecated em 1.5.6a-bis. Função permanece operacional
+para features ainda hardcoded; será deletada em 1.5.7 quando todas
+features tiverem migrado.
+
 ### Pattern: `labelKey` em interfaces hierárquicas
 
 Quando uma interface representa hierarquia visível na UI (sidebar items,
@@ -294,6 +312,10 @@ quando migrar e a hierarquia inteira passa a falar a língua do usuário.
 - ❌ Esquecer `await connection()` no topo de RSC com Prisma.
 - ❌ Adicionar todas as chaves no dicionário sem usar (vira lixo).
 - ❌ Traduzir dados authored pelo usuário (`description`, `reason`, `notes`).
+- ❌ Traduzir valores authored pelo usuário. Nomes de cenário criados
+  via input livre, descriptions, notes, reasons — são dados de domínio,
+  vão crus para o banco e voltam crus para a UI. UI strings são apenas
+  o chrome ao redor (labels, buttons, headers).
 - ❌ Traduzir o `message` técnico das classes de erro — permanece em inglês
   para logs; o que vai à UI vem da chave de dicionário via `translateError*`.
 - ❌ Criar chaves `common.*` "para o futuro" sem caso de uso real. Cada
@@ -362,6 +384,16 @@ ou refinar um existente, atualize este arquivo:
 Este é um documento vivo. A última atualização vai estar no header.
 
 ## Changelog
+
+### v1.3 — 2026-04-30 (Etapa 1.5.6a-bis)
+
+- `common.units.*` cravado oficialmente (chaves para months, models, scenarios, of_total com forms one/other).
+- Pattern de deprecation gradual de funções legacy documentado como Template H:
+  `@deprecated` JSDoc + `no-restricted-imports` ESLint + ignore list por path,
+  com remoção progressiva da ignore list a cada feature migrada. Final delete na 1.5.7 Capstone.
+- Anti-pattern adicionado: traduzir valores authored pelo usuário.
+- Bridge helper `formatNumberAsMoney(amount, locale, currency?)` em `@/lib/money/format`
+  para legacy code com `number` representando dinheiro USD/BRL sem refatorar para Money tuple.
 
 ### v1.2 — 2026-04-30 (Etapa 1.5.6a)
 

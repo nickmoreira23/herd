@@ -121,6 +121,8 @@ const eslintConfig = defineConfig([
       // Phase 1.5.6a — brand-critical features
       "src/components/commissions/**/*.{ts,tsx}",
       "src/app/admin/commissions/**/*.{ts,tsx}",
+      "src/components/financials/**/*.{ts,tsx}",
+      "src/app/admin/financials/**/*.{ts,tsx}",
       // integrations/error.tsx (and [id]/error.tsx) are INTENTIONALLY
       // excluded: per Etapa 1.5.5 decision (Opção 2), shell-generic
       // strings were extracted to shell.error.* but feature-specific
@@ -131,7 +133,10 @@ const eslintConfig = defineConfig([
       "react/jsx-no-literals": ["error", {
         noStrings: true,
         ignoreProps: true,
-        allowedStrings: [" ", "·", "—", "/", "-", "…", "D", "C", "%", "$"],
+        allowedStrings: [
+          " ", "·", "—", "/", "-", "…", "D", "C", "%", "$",
+          ":", "(", ")", "ℹ", "→", "+",
+        ],
       }],
     },
   },
