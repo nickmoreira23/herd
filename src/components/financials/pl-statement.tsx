@@ -4,14 +4,20 @@ import { useFinancialStore } from "@/stores/financial-store";
 import { resolveOverhead } from "@/lib/financial-engine";
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText } from "lucide-react";
-import { formatCurrency, formatPercent, getMarginColorClass } from "@/lib/utils";
+import { getMarginColorClass } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale-context";
+import type { Locale } from "@/lib/i18n/locales";
+import { formatNumberAsMoney } from "@/lib/money/format";
+import { formatNumber } from "@/lib/i18n/format-number";
 
 interface PLStatementProps {
   multiplier: number;
   periodLabel: string;
+  locale: Locale;
 }
 
-export function PLStatement({ multiplier, periodLabel }: PLStatementProps) {
+export function PLStatement({ multiplier, periodLabel, locale }: PLStatementProps) {
+  const t = useT();
   const results = useFinancialStore((s) => s.results);
   const inputs = useFinancialStore((s) => s.inputs);
 
@@ -20,9 +26,9 @@ export function PLStatement({ multiplier, periodLabel }: PLStatementProps) {
       <Card>
         <CardContent className="py-12 text-center">
           <FileText className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
-          <p className="font-medium">No results yet</p>
+          <p className="font-medium">{t("financials.pl.empty_title")}</p>
           <p className="text-sm text-muted-foreground mt-1">
-            Configure the scenario inputs to see the P&L statement.
+            {t("financials.pl.empty_description")}
           </p>
         </CardContent>
       </Card>
@@ -50,73 +56,86 @@ export function PLStatement({ multiplier, periodLabel }: PLStatementProps) {
       {/* Title */}
       <div className="pb-1">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          {periodLabel} P&L Statement
+          {t("financials.pl.title", { period: periodLabel })}
         </h3>
       </div>
 
       {/* Revenue Section */}
       <PLSection
-        label="Revenue"
+        label={t("financials.pl.revenue")}
         total={totalRevenue}
-        totalLabel="Total Revenue"
+        totalLabel={t("financials.pl.total_revenue")}
         variant="revenue"
+        locale={locale}
       >
-        {results.revenueByTier.map((t) => (
+        {results.revenueByTier.map((tier) => (
           <LineItem
-            key={t.tierId}
-            label={`${t.tierId} (${t.subscribers.toLocaleString()} subs)`}
-            value={t.revenue * m}
+            key={tier.tierId}
+            label={t("financials.pl.tier_subs", {
+              tier: tier.tierId,
+              count: formatNumber(tier.subscribers, locale, "integer"),
+            })}
+            value={tier.revenue * m}
+            locale={locale}
           />
         ))}
       </PLSection>
 
       {/* COGS Section */}
       <PLSection
-        label="Cost of Goods Sold"
+        label={t("financials.pl.cogs")}
         total={-totalCOGS}
-        totalLabel="Total COGS"
+        totalLabel={t("financials.pl.total_cogs")}
         variant="expense"
+        locale={locale}
       >
-        <LineItem label="Product Costs (Credits & Apparel)" value={-productOnlyCost} />
-        <LineItem label="Fulfillment & Shipping" value={-fulfillmentCost} />
+        <LineItem label={t("financials.pl.product_costs")} value={-productOnlyCost} locale={locale} />
+        <LineItem label={t("financials.pl.fulfillment_shipping")} value={-fulfillmentCost} locale={locale} />
       </PLSection>
 
       {/* Gross Profit Highlight */}
       <div className="rounded-lg border bg-muted/30 px-4 py-3 flex items-center justify-between">
-        <span className="text-sm font-bold">Gross Profit</span>
+        <span className="text-sm font-bold">{t("financials.pl.gross_profit")}</span>
         <div className="flex items-center gap-3">
           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full bg-muted ${getMarginColorClass(results.grossMarginPercent)}`}>
-            {formatPercent(results.grossMarginPercent)}
+            {formatNumber(results.grossMarginPercent / 100, locale, "percent")}
           </span>
           <span className={`text-sm font-bold tabular-nums ${grossProfit >= 0 ? "" : "text-red-500"}`}>
-            {formatCurrency(grossProfit)}
+            {formatNumberAsMoney(grossProfit, locale)}
           </span>
         </div>
       </div>
 
       {/* Operating Expenses Section */}
       <PLSection
-        label="Operating Expenses"
+        label={t("financials.pl.opex")}
         total={-totalOpEx}
-        totalLabel="Total OpEx"
+        totalLabel={t("financials.pl.total_opex")}
         variant="expense"
+        locale={locale}
       >
-        <LineItem label="Sales Commissions" value={-commissionExpense} />
+        <LineItem label={t("financials.pl.sales_commissions")} value={-commissionExpense} locale={locale} />
         <LineItem
-          label={inputs.operationalOverhead.mode === "milestone-scaled" ? "Operational Overhead (scaled)" : "Operational Overhead"}
+          label={
+            inputs.operationalOverhead.mode === "milestone-scaled"
+              ? t("financials.pl.overhead_scaled")
+              : t("financials.pl.overhead")
+          }
           value={-overhead}
+          locale={locale}
         />
       </PLSection>
 
       {/* Other Income Section */}
       {totalOtherIncome > 0 && (
         <PLSection
-          label="Other Income"
+          label={t("financials.pl.other_income")}
           total={totalOtherIncome}
-          totalLabel="Total Other Income"
+          totalLabel={t("financials.pl.total_other_income")}
           variant="income"
+          locale={locale}
         >
-          <LineItem label="Partner Kickbacks" value={kickbackRevenue} />
+          <LineItem label={t("financials.pl.partner_kickbacks")} value={kickbackRevenue} locale={locale} />
         </PLSection>
       )}
 
@@ -125,44 +144,53 @@ export function PLStatement({ multiplier, periodLabel }: PLStatementProps) {
         <div className="rounded-lg border bg-muted/20 px-4 py-2 text-[11px] text-muted-foreground flex items-center gap-2">
           <span className="text-muted-foreground/60">ℹ</span>
           <span>
-            Credit breakage savings of <strong className="text-foreground">{formatCurrency(results.totalBreakageProfit * m)}</strong> already reflected in reduced COGS ({formatPercent(100 - inputs.creditRedemptionRate * 100)} unredeemed)
+            {t("financials.pl.breakage_note", {
+              value: formatNumberAsMoney(results.totalBreakageProfit * m, locale),
+              percent: formatNumber((100 - inputs.creditRedemptionRate * 100) / 100, locale, "percent"),
+            })}
           </span>
         </div>
       )}
 
-      {/* Net Income Highlight — same styling as Gross Profit */}
+      {/* Net Income Highlight */}
       <div className="rounded-lg border bg-muted/30 px-4 py-3 flex items-center justify-between">
-        <span className="text-sm font-bold">Net Income</span>
+        <span className="text-sm font-bold">{t("financials.pl.net_income")}</span>
         <div className="flex items-center gap-3">
           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full bg-muted ${getMarginColorClass(results.netMarginPercent)}`}>
-            {formatPercent(results.netMarginPercent)}
+            {formatNumber(results.netMarginPercent / 100, locale, "percent")}
           </span>
           <span className={`text-sm font-bold tabular-nums ${netIncome >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500"}`}>
-            {formatCurrency(netIncome)}
+            {formatNumberAsMoney(netIncome, locale)}
           </span>
         </div>
       </div>
 
-      {/* Profit Split Section (only show when parties are defined) */}
+      {/* Profit Split Section */}
       {results.profitSplit.parties.length > 0 && (
         <>
           <PLSection
-            label="Profit Distribution"
+            label={t("financials.pl.profit_distribution")}
             total={results.profitSplit.parties.reduce((s, p) => s + p.monthlyAmount * m, 0)}
-            totalLabel={`Distributed (${results.profitSplit.totalDistributedPercent}%)`}
+            totalLabel={t("financials.pl.distributed", { percent: results.profitSplit.totalDistributedPercent })}
             variant="income"
+            locale={locale}
           >
             {results.profitSplit.parties.map((party) => (
               <LineItem
                 key={party.id}
-                label={`${party.name || "Unnamed"} (${party.percent}%)`}
+                label={t("financials.pl.party_label", {
+                  name: party.name || t("financials.pl.unnamed"),
+                  percent: party.percent,
+                })}
                 value={party.monthlyAmount * m}
+                locale={locale}
               />
             ))}
             {results.profitSplit.undistributedPercent > 0 && (
               <LineItem
-                label={`Undistributed (${results.profitSplit.undistributedPercent}%)`}
+                label={t("financials.pl.undistributed", { percent: results.profitSplit.undistributedPercent })}
                 value={netIncome > 0 ? netIncome * (results.profitSplit.undistributedPercent / 100) : 0}
+                locale={locale}
               />
             )}
           </PLSection>
@@ -179,12 +207,14 @@ function PLSection({
   total,
   totalLabel,
   variant,
+  locale,
   children,
 }: {
   label: string;
   total: number;
   totalLabel: string;
   variant: "revenue" | "expense" | "income";
+  locale: Locale;
   children: React.ReactNode;
 }) {
   const accentClasses = {
@@ -206,7 +236,7 @@ function PLSection({
       <div className="border-t bg-muted/20 px-4 py-2 flex items-center justify-between">
         <span className="text-xs font-semibold">{totalLabel}</span>
         <span className={`text-sm font-bold tabular-nums ${total < 0 ? "text-red-500" : ""}`}>
-          {formatCurrency(total)}
+          {formatNumberAsMoney(total, locale)}
         </span>
       </div>
     </div>
@@ -216,15 +246,17 @@ function PLSection({
 function LineItem({
   label,
   value,
+  locale,
 }: {
   label: string;
   value: number;
+  locale: Locale;
 }) {
   return (
     <div className="flex justify-between text-sm py-0.5">
       <span className="text-muted-foreground">{label}</span>
       <span className={`tabular-nums ${value < 0 ? "text-red-500" : ""}`}>
-        {formatCurrency(value)}
+        {formatNumberAsMoney(value, locale)}
       </span>
     </div>
   );
