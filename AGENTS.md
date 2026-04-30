@@ -99,3 +99,23 @@ properly instead.
 The cleanup of legacy lint debt is tracked as a future task
 (planned: "Etapa 1.1.5 — Lint cleanup"). It is not blocking for
 Phase 1 of the marketplace+opportunities work.
+
+# Domain events outbox
+
+Cross-context communication uses an outbox pattern in the `domain_events` table.
+
+- **Emitting**: services that produce a state change in their own bounded context
+  call `emitDomainEvent(...)` within the same transaction. Event existence is
+  transactionally tied to the change.
+- **Processing**: a CLI worker (`npm run worker:domain-events`) picks pending
+  events, looks up the handler in the static registry, runs it, and updates the
+  event's status. Concurrent workers are safe via `SELECT FOR UPDATE SKIP LOCKED`.
+- **Adding a handler**: implement the handler function, then add it to
+  `src/lib/domain-events/handler-registry.ts` keyed by event type.
+- **Retry policy**: 5 attempts with exponential backoff (1m, 5m, 30m, 2h, then exhaust).
+  Exhausted events stop auto-retrying; manual intervention via SQL is the path forward.
+- **Convention**: event types are `{aggregate}.{verb}` in lowercase, e.g.
+  `transaction.paid`, `commission.computed`. Verbs may include hyphens.
+
+The Phase 1 etapa 1.8 establishes the infrastructure but leaves the registry
+empty — actual events start being emitted in Phase 2.

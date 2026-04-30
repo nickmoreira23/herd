@@ -20,6 +20,13 @@ export default defineConfig({
     // that batch many sequential calls (e.g. seed twice = 40 round-trips)
     // don't flake on slower network days.
     testTimeout: 30000,
+    // Serialize integration test files. Some suites share global tables
+    // (e.g. domain_events) and parallel execution causes one suite's worker
+    // to consume rows another suite's beforeAll just created. Network
+    // latency to Supabase already serializes execution effectively; this
+    // makes the ordering explicit. Vitest 4 syntax — replaces the deprecated
+    // `poolOptions.threads.singleThread`.
+    fileParallelism: false,
   },
   resolve: {
     alias: {

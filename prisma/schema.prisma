@@ -3409,3 +3409,30 @@ model JournalLine {
   @@index([accountId])
   @@map("journal_lines")
 }
+
+// ============================================================
+// Domain events outbox — Phase 1, Etapa 1.8
+// Cross-bounded-context communication via outbox pattern. Events are
+// emitted within the same transaction that produces the domain change,
+// then drained by a worker (npm run worker:domain-events).
+// ============================================================
+
+model DomainEvent {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  aggregateType   String
+  aggregateId     String    @db.Uuid
+  eventType       String
+  payload         Json      @default("{}")
+  idempotencyKey  String?   @unique
+  occurredAt      DateTime
+  createdAt       DateTime  @default(now())
+  processedAt     DateTime?
+  attempts        Int       @default(0)
+  lastError       String?
+  nextAttemptAt   DateTime?
+
+  @@index([processedAt, nextAttemptAt])
+  @@index([aggregateType, aggregateId])
+  @@index([eventType])
+  @@map("domain_events")
+}
