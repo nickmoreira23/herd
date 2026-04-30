@@ -15,6 +15,11 @@ export default defineConfig({
     include: ["src/**/*.integration.test.{ts,tsx}"],
     exclude: ["node_modules", ".next", "dist"],
     setupFiles: ["dotenv/config"],
+    // Integration tests run against the remote Supabase pooler; per-test
+    // round-trip latency is non-trivial. Bump from the 5s default so suites
+    // that batch many sequential calls (e.g. seed twice = 40 round-trips)
+    // don't flake on slower network days.
+    testTimeout: 30000,
   },
   resolve: {
     alias: {
