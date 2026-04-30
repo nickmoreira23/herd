@@ -145,3 +145,57 @@ Use as operational audit (post-restore, periodic, after major schema
 changes). Not wired into CI because CI does not provision a database.
 The constraints from Etapas 1.2 and 1.6 should make violations impossible —
 the script is defense-in-depth.
+
+# Internationalization (i18n)
+
+The system supports `pt-BR` (default) and `en-US` as production locales.
+`es-ES` is preserved as a template but not in production rotation.
+
+## Adding a new locale
+
+1. Add the tag to `SUPPORTED_LOCALES` in `src/lib/i18n/locales.ts`.
+2. Create `src/lib/i18n/messages/{tag}.ts` mirroring `pt-BR.ts`.
+3. Create a Prisma migration that drops and recreates the
+   `chk_network_profile_locale_supported` constraint with the new locale.
+4. Update `normalizeLocale()` if input mapping needs adjustment.
+5. Add formatter tests for the new locale.
+
+## Translation keys
+
+All user-facing strings must use `useT()` (in client components) or `t()`
+(in server code). Literal strings in JSX are flagged by ESLint in strict
+paths (`src/lib/i18n/**`, `src/lib/ledger/**` today; more added per etapa).
+Key naming convention: `{domain}.{feature}.{context}.{snake_case}`. The
+`pt-BR.ts` dictionary is the source of truth for the `MessageKey` type.
+
+## Localized formatting helpers
+
+For locale-aware values, use the helpers in `src/lib/i18n/`:
+
+- `formatDate(date, locale, preset)` — short, long, dateTime, time
+- `formatNumber(value, locale, preset)` — integer, decimal, percent, compact
+- `formatRelativeTime(date, locale, now?)` — "2 hours ago" / "há 2 horas"
+- `pluralize(count, locale, forms)` — picks the right plural form
+- `compareCollation(locale, options?)` — sort comparator respecting locale
+- `formatMoney(money, locale)` — currency display in user's locale
+
+Never use `Intl.*` APIs or `toLocaleString` directly. Always go through
+the helpers — they centralize locale handling and avoid drift.
+
+## Locale persistence
+
+User locale choice is persisted twice:
+
+- Cookie `locale` for immediate effect (1-year expiry).
+- `NetworkProfile.locale` for cross-device stickiness (when authenticated).
+
+The server action `setLocaleCookie(locale)` writes both. The hook
+`useSetLocale()` invokes it from client components and refreshes the
+route to apply the change.
+
+## CI gate
+
+`npm run check:i18n` validates that every translation key used in the
+codebase via `t()` or derivative calls exists in `pt-BR.ts`. Running this
+in CI prevents regressions where a key is referenced but forgotten in the
+dictionary.

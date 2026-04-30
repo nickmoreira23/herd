@@ -115,8 +115,7 @@ export interface RoutineDetail extends RoutineRow {
 
 const CRONSTRUE_LOCALE: Record<Locale, string> = {
   "pt-BR": "pt_BR",
-  en: "en",
-  es: "es",
+  "en-US": "en",
 };
 
 /** Human-readable cron description in the active locale. Falls back to the raw expression. */

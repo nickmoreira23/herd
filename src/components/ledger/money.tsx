@@ -19,7 +19,9 @@ interface MoneyProps {
 export function Money({ money, tone = "natural", className }: MoneyProps) {
   const cents = BigInt(money.amountCents);
   const reconstructed = { amountCents: cents, currency: money.currency as "BRL" | "USD" };
-  const formatted = formatMoney(reconstructed);
+  // Hardcoded "pt-BR" until Etapa 1.5.4 internationalizes the ledger UI and
+  // threads the user locale through. See docs/discovery/I18N_AUDIT.md §11.
+  const formatted = formatMoney(reconstructed, "pt-BR");
 
   let toneClass: string;
   if (tone === "positive") toneClass = "text-positive";
