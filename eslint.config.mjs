@@ -70,6 +70,23 @@ const eslintConfig = defineConfig([
       "src/lib/ledger/**/*.{ts,tsx}",
       "src/components/ledger/**/*.{ts,tsx}",
       "src/app/admin/ledger/**/*.{ts,tsx}",
+      // Phase 1.5.5 — admin shell.
+      // sub-panel.tsx is INTENTIONALLY excluded: it contains specialized
+      // sub-panels for features (Blocks, Knowledge, Network, Tools,
+      // Marketplace) whose internal strings will be migrated together with
+      // the feature in 1.5.6a-e. The framework parts (labelKey support,
+      // collapse/expand titles) were migrated in 1.5.5.
+      "src/components/layout/sidebar.tsx",
+      "src/components/layout/breadcrumbs.tsx",
+      "src/components/layout/sub-panel-expand-button.tsx",
+      "src/components/layout/top-bar.tsx",
+      "src/components/i18n/**/*.{ts,tsx}",
+      "src/app/admin/not-found.tsx",
+      // integrations/error.tsx (and [id]/error.tsx) are INTENTIONALLY
+      // excluded: per Etapa 1.5.5 decision (Opção 2), shell-generic
+      // strings were extracted to shell.error.* but feature-specific
+      // titles ("Integrations", "Failed to load integrations") stay
+      // hardcoded until the integrations feature is migrated in 1.5.6.
     ],
     rules: {
       "react/jsx-no-literals": ["error", {

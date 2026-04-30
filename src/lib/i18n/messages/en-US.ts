@@ -347,4 +347,118 @@ export const messages: Record<MessageKey, string> = {
   "error.money.currency_mismatch":
     "Operation between values in different currencies.",
   "error.money.invalid": "Invalid monetary value.",
+
+  // ============================================================
+  // Common (shared across ≥3 features) - Phase 1.5.5
+  // ============================================================
+
+  // Actions
+  "common.actions.save": "Save",
+  "common.actions.cancel": "Cancel",
+  "common.actions.delete": "Delete",
+  "common.actions.edit": "Edit",
+  "common.actions.create": "Create",
+  "common.actions.close": "Close",
+  "common.actions.confirm": "Confirm",
+  "common.actions.back": "Back",
+  "common.actions.next": "Next",
+  "common.actions.submit": "Submit",
+  "common.actions.search": "Search",
+  "common.actions.filter": "Filter",
+  "common.actions.sort": "Sort",
+  "common.actions.export": "Export",
+  "common.actions.import": "Import",
+  "common.actions.reset": "Reset",
+  "common.actions.apply": "Apply",
+  "common.actions.refresh": "Refresh",
+  "common.actions.try_again": "Try again",
+  "common.actions.load_more": "Load more",
+  "common.actions.view_details": "View details",
+
+  // States
+  "common.states.loading": "Loading…",
+  "common.states.error": "Failed to load",
+  "common.states.empty": "No results",
+  "common.states.success": "Done",
+  "common.states.saving": "Saving…",
+  "common.states.deleting": "Deleting…",
+  "common.states.processing": "Processing…",
+  "common.states.no_results": "No results found",
+  "common.states.no_results_for_query": "No results for \"{query}\"",
+
+  // Placeholders
+  "common.placeholders.search": "Search…",
+  "common.placeholders.select": "Select…",
+  "common.placeholders.type_to_filter": "Type to filter",
+
+  // Confirmations
+  "common.confirmations.are_you_sure": "Are you sure?",
+  "common.confirmations.this_cannot_be_undone":
+    "This action cannot be undone.",
+  "common.confirmations.type_to_confirm":
+    "Type \"{value}\" to confirm",
+
+  // Feedback
+  "common.feedback.saved_successfully": "Saved successfully",
+  "common.feedback.deleted_successfully": "Deleted successfully",
+  "common.feedback.created_successfully": "Created successfully",
+  "common.feedback.updated_successfully": "Updated successfully",
+  "common.feedback.error_occurred": "An error occurred",
+
+  // Time
+  "common.time.today": "Today",
+  "common.time.yesterday": "Yesterday",
+  "common.time.this_week": "This week",
+  "common.time.this_month": "This month",
+  "common.time.last_updated": "Last updated",
+  "common.time.never": "Never",
+
+  // ============================================================
+  // Navigation - Phase 1.5.5
+  // ============================================================
+
+  "nav.sidebar.dashboard": "Dashboard",
+  "nav.sidebar.chat": "Chat",
+  "nav.sidebar.organization": "Organization",
+  "nav.sidebar.knowledge": "Knowledge",
+  "nav.sidebar.network": "Network",
+  "nav.sidebar.marketplace": "Marketplace",
+  "nav.sidebar.ledger": "Ledger",
+  "nav.sidebar.agents": "Agents",
+  "nav.sidebar.tools": "Tools",
+  "nav.sidebar.blocks": "Blocks",
+  "nav.sidebar.integrations": "Integrations",
+
+  "nav.subpanel.collapse": "Collapse panel",
+  "nav.subpanel.expand": "Expand panel",
+
+  "nav.breadcrumb.home": "Home",
+  "nav.breadcrumb.new": "New",
+  "nav.breadcrumb.settings": "Settings",
+
+  // ============================================================
+  // Shell - Phase 1.5.5
+  // ============================================================
+
+  "shell.sidebar.pin": "Pin sidebar",
+  "shell.sidebar.unpin": "Unpin sidebar",
+  "shell.sidebar.administrator": "Administrator",
+
+  "shell.profile.view_profile": "View profile",
+  "shell.profile.settings": "Settings",
+  "shell.profile.appearance": "Appearance",
+  "shell.profile.theme.light": "Light",
+  "shell.profile.theme.dark": "Dark",
+  "shell.profile.language": "Language",
+  "shell.profile.logout": "Sign out",
+
+  "shell.error.something_went_wrong": "Something went wrong",
+  "shell.error.try_again": "Try again",
+  "shell.error.go_home": "Back to home",
+  "shell.error.go_back": "Go back",
+  "shell.error.page_not_found": "Page not found",
+  "shell.error.page_not_found_description":
+    "The page you are looking for does not exist or has been moved.",
+  "shell.error.temporary_issue":
+    "Something went wrong. This is usually a temporary issue.",
 };

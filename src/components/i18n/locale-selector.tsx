@@ -1,7 +1,7 @@
 "use client";
 
 import { Languages } from "lucide-react";
-import { useLocale } from "@/lib/i18n/locale-context";
+import { useLocale, useT } from "@/lib/i18n/locale-context";
 import { useSetLocale } from "@/lib/i18n/use-set-locale";
 import { SUPPORTED_LOCALES, LOCALE_LABELS } from "@/lib/i18n/locales";
 
@@ -16,12 +16,13 @@ import { SUPPORTED_LOCALES, LOCALE_LABELS } from "@/lib/i18n/locales";
 export function LocaleSelector() {
   const currentLocale = useLocale();
   const { setLocale, isPending } = useSetLocale();
+  const t = useT();
 
   return (
     <div className="px-4 py-2">
       <p className="text-[11px] font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
         <Languages className="h-3.5 w-3.5" />
-        Idioma
+        {t("shell.profile.language")}
       </p>
       <div className="flex flex-col gap-1.5">
         {SUPPORTED_LOCALES.map((locale) => (

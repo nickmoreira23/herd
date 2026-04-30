@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { RefreshCw, AlertTriangle } from "lucide-react";
+import { useT } from "@/lib/i18n/locale-context";
 
 export default function IntegrationsError({
   error,
@@ -12,6 +13,8 @@ export default function IntegrationsError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const t = useT();
+
   useEffect(() => {
     console.error("Integrations page error:", error);
   }, [error]);
@@ -32,11 +35,11 @@ export default function IntegrationsError({
             Failed to load integrations
           </h2>
           <p className="text-sm text-muted-foreground mb-6">
-            Something went wrong. This is usually a temporary issue.
+            {t("shell.error.temporary_issue")}
           </p>
           <Button onClick={reset}>
             <RefreshCw className="h-4 w-4 mr-1.5" />
-            Try Again
+            {t("shell.error.try_again")}
           </Button>
         </CardContent>
       </Card>

@@ -351,6 +351,127 @@ export const messages = {
   "error.money.currency_mismatch":
     "Operação entre valores em moedas diferentes.",
   "error.money.invalid": "Valor monetário inválido.",
+
+  // ============================================================
+  // Common (shared across ≥3 features) - Phase 1.5.5
+  // ============================================================
+
+  // Actions
+  "common.actions.save": "Salvar",
+  "common.actions.cancel": "Cancelar",
+  "common.actions.delete": "Excluir",
+  "common.actions.edit": "Editar",
+  "common.actions.create": "Criar",
+  "common.actions.close": "Fechar",
+  "common.actions.confirm": "Confirmar",
+  "common.actions.back": "Voltar",
+  "common.actions.next": "Próximo",
+  "common.actions.submit": "Enviar",
+  "common.actions.search": "Buscar",
+  "common.actions.filter": "Filtrar",
+  "common.actions.sort": "Ordenar",
+  "common.actions.export": "Exportar",
+  "common.actions.import": "Importar",
+  "common.actions.reset": "Redefinir",
+  "common.actions.apply": "Aplicar",
+  "common.actions.refresh": "Atualizar",
+  "common.actions.try_again": "Tentar novamente",
+  "common.actions.load_more": "Carregar mais",
+  "common.actions.view_details": "Ver detalhes",
+
+  // States
+  "common.states.loading": "Carregando…",
+  "common.states.error": "Erro ao carregar",
+  "common.states.empty": "Nenhum resultado",
+  "common.states.success": "Concluído",
+  "common.states.saving": "Salvando…",
+  "common.states.deleting": "Excluindo…",
+  "common.states.processing": "Processando…",
+  "common.states.no_results": "Nenhum resultado encontrado",
+  "common.states.no_results_for_query": "Nenhum resultado para \"{query}\"",
+
+  // Placeholders
+  "common.placeholders.search": "Buscar…",
+  "common.placeholders.select": "Selecione…",
+  "common.placeholders.type_to_filter": "Digite para filtrar",
+
+  // Confirmations
+  "common.confirmations.are_you_sure": "Tem certeza?",
+  "common.confirmations.this_cannot_be_undone":
+    "Esta ação não pode ser desfeita.",
+  "common.confirmations.type_to_confirm":
+    "Digite \"{value}\" para confirmar",
+
+  // Feedback
+  "common.feedback.saved_successfully": "Salvo com sucesso",
+  "common.feedback.deleted_successfully": "Excluído com sucesso",
+  "common.feedback.created_successfully": "Criado com sucesso",
+  "common.feedback.updated_successfully": "Atualizado com sucesso",
+  "common.feedback.error_occurred": "Ocorreu um erro",
+
+  // Time
+  "common.time.today": "Hoje",
+  "common.time.yesterday": "Ontem",
+  "common.time.this_week": "Esta semana",
+  "common.time.this_month": "Este mês",
+  "common.time.last_updated": "Última atualização",
+  "common.time.never": "Nunca",
+
+  // ============================================================
+  // Navigation (sidebar + sub-panel chrome) - Phase 1.5.5
+  // ============================================================
+
+  // Sidebar top-level
+  "nav.sidebar.dashboard": "Dashboard",
+  "nav.sidebar.chat": "Chat",
+  "nav.sidebar.organization": "Organização",
+  "nav.sidebar.knowledge": "Conhecimento",
+  "nav.sidebar.network": "Rede",
+  "nav.sidebar.marketplace": "Marketplace",
+  "nav.sidebar.ledger": "Ledger",
+  "nav.sidebar.agents": "Agentes",
+  "nav.sidebar.tools": "Ferramentas",
+  "nav.sidebar.blocks": "Blocos",
+  "nav.sidebar.integrations": "Integrações",
+
+  // Sub-panel chrome (generic, used in every panel)
+  "nav.subpanel.collapse": "Recolher painel",
+  "nav.subpanel.expand": "Expandir painel",
+
+  // Breadcrumb (only segments that are NOT top-level features —
+  // top-level segments reuse nav.sidebar.*)
+  "nav.breadcrumb.home": "Início",
+  "nav.breadcrumb.new": "Novo",
+  "nav.breadcrumb.settings": "Configurações",
+
+  // ============================================================
+  // Shell (top-bar / profile dropdown / errors) - Phase 1.5.5
+  // ============================================================
+
+  // Sidebar header
+  "shell.sidebar.pin": "Fixar barra lateral",
+  "shell.sidebar.unpin": "Desfixar barra lateral",
+  "shell.sidebar.administrator": "Administrador",
+
+  // Profile dropdown
+  "shell.profile.view_profile": "Ver perfil",
+  "shell.profile.settings": "Configurações",
+  "shell.profile.appearance": "Aparência",
+  "shell.profile.theme.light": "Claro",
+  "shell.profile.theme.dark": "Escuro",
+  "shell.profile.language": "Idioma",
+  "shell.profile.logout": "Sair",
+
+  // Error boundaries (generic chrome)
+  "shell.error.something_went_wrong": "Algo deu errado",
+  "shell.error.try_again": "Tentar novamente",
+  "shell.error.go_home": "Voltar ao início",
+  "shell.error.go_back": "Voltar",
+  "shell.error.page_not_found": "Página não encontrada",
+  "shell.error.page_not_found_description":
+    "A página que você procura não existe ou foi movida.",
+  "shell.error.temporary_issue":
+    "Algo deu errado. Geralmente é um problema temporário.",
 } as const;
 
 export type MessageKey = keyof typeof messages;

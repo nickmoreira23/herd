@@ -215,3 +215,12 @@ documented in `docs/discovery/I18N_PATTERN.md`. Key points:
 - Enum-to-key mapping uses `as const satisfies Record<Enum, MessageKey>`.
 
 The Ledger (Phase 1.5.4) is the reference implementation. Mirror its structure.
+
+### Common namespace
+
+Strings reused across ≥3 features live in `common.*` (subnamespaces:
+`actions`, `states`, `placeholders`, `confirmations`, `feedback`, `time`,
+`units`). Strings used in 1-2 features stay in the feature's namespace.
+
+The structure was established in Etapa 1.5.5 (Admin Shell) and should be
+extended only when new shared concepts emerge across multiple features.
