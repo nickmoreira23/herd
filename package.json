@@ -16,6 +16,8 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "npx prisma db seed",
     "db:seed:ledger": "tsx prisma/seeds/seed-ledger.ts",
+    "worker:domain-events": "tsx src/scripts/worker-domain-events.ts",
+    "check:invariants": "tsx src/scripts/check-invariants.ts",
     "db:generate": "npx prisma generate",
     "db:studio": "npx prisma studio",
     "db:enable-rls": "psql $DIRECT_URL -f scripts/enable-rls.sql",

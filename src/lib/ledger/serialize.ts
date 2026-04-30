@@ -5,6 +5,7 @@ import type {
   StatementLineDetail,
   EntryLineDetail,
 } from "./types";
+import type { RecentEntryRow } from "./list-recent-entries";
 
 /**
  * Serialized variants of the ledger query types — `BigInt` rendered as `string`,
@@ -150,6 +151,28 @@ function serializeEntryLine(l: EntryLineDetail): SerializedEntryLine {
       name: l.account.name,
       accountType: l.account.accountType,
     },
+  };
+}
+
+export interface SerializedRecentEntry {
+  id: string;
+  sourceKind: string;
+  sourceId: string;
+  description: string | null;
+  postedAt: string;
+  createdAt: string;
+  lineCount: number;
+}
+
+export function serializeRecentEntry(e: RecentEntryRow): SerializedRecentEntry {
+  return {
+    id: e.id,
+    sourceKind: e.sourceKind,
+    sourceId: e.sourceId,
+    description: e.description,
+    postedAt: e.postedAt.toISOString(),
+    createdAt: e.createdAt.toISOString(),
+    lineCount: e.lineCount,
   };
 }
 
