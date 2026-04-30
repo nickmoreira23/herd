@@ -2,7 +2,7 @@
 
 > Estabelecido na Etapa 1.5.4 (Ledger Internationalization).
 > Pattern canônico para internacionalizar features do HERD.
-> Versão: 1.3 — última atualização: 2026-04-30 (Etapa 1.5.6a-bis).
+> Versão: 1.4 — última atualização: 2026-04-30 (Etapa 1.5.6b).
 
 Este documento é a referência única de **como** internacionalizar uma feature.
 Ele captura as decisões e templates cravados na Etapa 1.5.4 e serve de base
@@ -235,6 +235,23 @@ foram marcados deprecated em 1.5.6a-bis. Função permanece operacional
 para features ainda hardcoded; será deletada em 1.5.7 quando todas
 features tiverem migrado.
 
+### Template I: Bridge para number-as-money sem refatorar tipo
+
+Quando você tem `number` raw representando dinheiro mas converter para
+`Money` tuple seria refactor invasivo (ex: campo Prisma é Decimal,
+retorno de API legacy):
+
+```tsx
+import { formatNumberAsMoney } from "@/lib/money/format";
+
+<span>{formatNumberAsMoney(value, locale)}</span>           // default USD
+<span>{formatNumberAsMoney(value, locale, "BRL")}</span>    // explicit BRL
+```
+
+Bridge documentado, controlado. NÃO use como solução geral — para tipos
+novos, comece com `Money` tuple desde o design. Helper existe para
+preservar tipo de dado upstream onde já é `number` por razões legítimas.
+
 ### Pattern: `labelKey` em interfaces hierárquicas
 
 Quando uma interface representa hierarquia visível na UI (sidebar items,
@@ -333,6 +350,15 @@ quando migrar e a hierarquia inteira passa a falar a língua do usuário.
   `data-testid`), gerando ~100 falsos positivos por feature. A regra é sobre
   **texto visível ao usuário em JSX content**, não sobre valores técnicos de
   props. Sempre use `ignoreProps: true`.
+- ❌ Lógica de matching/comparação usando string visível ao usuário.
+  Match por chave traduzida quebra ao trocar locale. Sempre use
+  identificador estável (id, enum value, slug). Ex: detectar tipo de
+  conta pela label "Ativo" vs "Asset" é frágil; use `account.type ===
+  "ASSET"` direto. Pattern emergiu na 1.5.6a-bis (projection-spreadsheet).
+- ❌ Exportar configurações com campo `label` literal hardcoded. Separa
+  dados (multipliers, options, ids) de apresentação (labels). Forneça
+  helper `getXLabel(item, t)` que recebe a função de tradução. Pattern
+  emergiu com TIME_PERIOD_CONFIG em Financials.
 
 ## ESLint config recomendada
 
@@ -354,6 +380,24 @@ Para ativar `react/jsx-no-literals` em paths de uma feature já internacionaliza
 },
 ```
 
+## Allowed strings canônica (ESLint react/jsx-no-literals)
+
+A regra `react/jsx-no-literals` não deve flag glyphs visuais e
+caracteres sem semântica de tradução. Lista canônica:
+
+```js
+allowedStrings: [
+  " ", "·", "—", "/", "-",
+  ":", "(", ")", "→", "+", "ℹ",
+  "…", "D", "C", "%", "$",
+],
+```
+
+Caracteres adicionados conforme aparecem casos legítimos. Se aparecer
+caso novo (símbolo monetário, separador decimal específico, glyph
+técnico), adicione à lista global em `eslint.config.mjs` e atualize
+este pattern doc.
+
 ## Namespace `common.*`
 
 Estabelecido na Etapa 1.5.5. Strings reutilizadas em **≥3 features** vivem em
@@ -370,6 +414,43 @@ Estabelecido na Etapa 1.5.5. Strings reutilizadas em **≥3 features** vivem em
 **Regra dura**: chave `common.*` só é criada se for usada em ≥3 contextos.
 Uso em 1-2 lugares fica na chave da feature específica.
 
+## Deferred work — registered for future etapas
+
+### Brand-kit promotion to block
+
+Brand-kit (currently at `src/app/admin/organization/brand-kit/*` and
+`src/components/brand-kit/*`) is intentionally NOT internationalized in
+Fase 1.5. Reason: needs architectural promotion to a reusable block
+(consumable by agents, surfaces, other parts of the system) before
+i18n. Doing i18n at the wrong path would create rework when the
+promotion happens.
+
+Status: deferred. See `docs/discovery/BRAND_KIT_PROMOTION_TO_BLOCK.md`
+for future discovery work.
+
+The ESLint ignore list preserves brand-kit paths through Fase 1.5.
+When the promotion etapa runs, those paths get migrated as part of the
+new architecture, not as standalone i18n work.
+
+### Network feature
+
+Network feature (`/admin/network/*` + `src/components/network/**` +
+network-located files in `src/components/organization/`) was deferred
+from 1.5.6b to a dedicated 1.5.6b-bis etapa due to scope explosion
+discovered during inventory: ~6.800 lines, ~50 files, ~700-1000
+strings. The 1.5.6b-bis spec is calibrated against the actual
+surface to support 4-5 internal sub-phases.
+
+### Audit underestimation note
+
+The 1.5.1 audit (line counts and string estimates) systematically
+underestimated features with **wizards, matrices, and config-heavy
+components** by 3-4x. Examples: Financials (estimated ~120 strings,
+actual ~400), Network (estimated ~150 strings, actual ~700-1000).
+Future audits should multiply estimates by 3-4x for any feature with
+multi-step wizards, permission matrices, profile-types with custom
+fields, or scenario builders.
+
 ## Quando atualizar este documento
 
 Sempre que uma etapa de internacionalização introduzir um pattern novo
@@ -384,6 +465,19 @@ ou refinar um existente, atualize este arquivo:
 Este é um documento vivo. A última atualização vai estar no header.
 
 ## Changelog
+
+### v1.4 — 2026-04-30 (Etapa 1.5.6b)
+
+- Template I added: `formatNumberAsMoney` bridge for number-as-money
+  without refactoring upstream type (cravado em 1.5.6a-bis;
+  documentado oficialmente aqui).
+- Anti-pattern: matching logic using user-visible strings (use stable
+  identifier).
+- Anti-pattern: exporting configs with hardcoded label fields.
+- Allowed strings list canonicalized.
+- Brand-kit deferral registered with rationale.
+- Network deferral to 1.5.6b-bis registered with rationale.
+- Audit underestimation note (3-4x for wizards/matrices/configs).
 
 ### v1.3 — 2026-04-30 (Etapa 1.5.6a-bis)
 

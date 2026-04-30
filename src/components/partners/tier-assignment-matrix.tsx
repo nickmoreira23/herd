@@ -5,7 +5,8 @@ import type { PartnerBrand, PartnerTierAssignment, SubscriptionTier } from "@/ty
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toNumber } from "@/lib/utils";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
 
 type PartnerWithAssignments = PartnerBrand & {
   tierAssignments: (PartnerTierAssignment & { tier: SubscriptionTier })[];
@@ -22,7 +23,7 @@ export function TierAssignmentMatrix({
   tiers,
   onRefresh,
 }: TierAssignmentMatrixProps) {
-  // Build initial matrix: partnerId -> tierId -> discountPercent string
+  const t = useT();
   const [matrix, setMatrix] = useState<Record<string, Record<string, string>>>(() => {
     const m: Record<string, Record<string, string>> = {};
     for (const partner of partners) {
@@ -79,24 +80,23 @@ export function TierAssignmentMatrix({
       });
 
       if (!res.ok) {
-        const json = await res.json();
-        toast.error(json.error || "Failed to save assignments");
+        notifyError("error.partners.matrix_save_failed", t);
         return;
       }
 
       onRefresh();
-      toast.success("Tier assignments saved");
+      notifySuccess("partners.feedback.matrix_saved", t);
     } finally {
       setSaving(false);
     }
-  }, [matrix, onRefresh]);
+  }, [matrix, onRefresh, t]);
 
   const activePartners = partners.filter((p) => p.isActive);
 
   if (activePartners.length === 0) {
     return (
       <div className="rounded-lg border p-8 text-center text-muted-foreground">
-        No active partners. Create and activate partners first.
+        {t("partners.tier_assignment.empty")}
       </div>
     );
   }
@@ -105,10 +105,12 @@ export function TierAssignmentMatrix({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Set discount percentages for each partner × tier combination.
+          {t("partners.tier_assignment.description")}
         </p>
         <Button size="sm" onClick={handleSave} disabled={saving}>
-          {saving ? "Saving..." : "Save All"}
+          {saving
+            ? t("common.states.saving")
+            : t("partners.tier_assignment.save_all")}
         </Button>
       </div>
 
@@ -116,7 +118,9 @@ export function TierAssignmentMatrix({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/50">
-              <th className="p-3 text-left font-medium">Partner</th>
+              <th className="p-3 text-left font-medium">
+                {t("partners.tier_assignment.column_partner")}
+              </th>
               {tiers.map((tier) => (
                 <th key={tier.id} className="p-3 text-center font-medium">
                   {tier.name}

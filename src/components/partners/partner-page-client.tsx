@@ -17,7 +17,9 @@ import { ExportModal } from "@/components/shared/export-modal";
 import { ImportModal } from "@/components/shared/import-modal";
 import { partnerConfig } from "@/lib/import-export/entity-config";
 import { Plus, MoreHorizontal, Download, Upload } from "lucide-react";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import type { Locale } from "@/lib/i18n/locales";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
 
 type PartnerWithAssignments = PartnerBrand & {
   tierAssignments: (PartnerTierAssignment & { tier: SubscriptionTier })[];
@@ -26,12 +28,15 @@ type PartnerWithAssignments = PartnerBrand & {
 interface PartnerPageClientProps {
   initialPartners: PartnerWithAssignments[];
   tiers: SubscriptionTier[];
+  locale: Locale;
 }
 
 export function PartnerPageClient({
   initialPartners,
   tiers,
+  locale,
 }: PartnerPageClientProps) {
+  const t = useT();
   const [partners, setPartners] = useState(initialPartners);
   const [editPartner, setEditPartner] = useState<PartnerWithAssignments | null>(null);
   const [showCreate, setShowCreate] = useState(false);
@@ -57,24 +62,30 @@ export function PartnerPageClient({
         body: JSON.stringify(data),
       });
       if (!res.ok) {
-        const json = await res.json();
-        toast.error(json.error || "Failed to save");
+        notifyError("error.partners.save_failed", t);
         return;
       }
       await refresh();
-      toast.success(editPartner ? "Updated" : "Created");
+      notifySuccess(
+        editPartner ? "partners.feedback.updated" : "partners.feedback.created",
+        t,
+      );
     },
-    [editPartner, refresh]
+    [editPartner, refresh, t]
   );
 
   const handleDelete = useCallback(
     async (partner: PartnerWithAssignments) => {
-      if (!confirm(`Delete "${partner.name}"?`)) return;
-      await fetch(`/api/partners/${partner.id}`, { method: "DELETE" });
+      if (!confirm(t("common.confirmDelete", { name: partner.name }))) return;
+      const res = await fetch(`/api/partners/${partner.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        notifyError("error.partners.delete_failed", t);
+        return;
+      }
       await refresh();
-      toast.success("Deleted");
+      notifySuccess("partners.feedback.deleted", t);
     },
-    [refresh]
+    [refresh, t]
   );
 
   return (
@@ -85,21 +96,21 @@ export function PartnerPageClient({
           size="sm"
           onClick={() => setTab("partners")}
         >
-          Partners
+          {t("partners.list.tab_partners")}
         </Button>
         <Button
           variant={tab === "matrix" ? "default" : "outline"}
           size="sm"
           onClick={() => setTab("matrix")}
         >
-          Tier Matrix
+          {t("partners.list.tab_matrix")}
         </Button>
         <Button
           variant={tab === "estimator" ? "default" : "outline"}
           size="sm"
           onClick={() => setTab("estimator")}
         >
-          Revenue Estimator
+          {t("partners.list.tab_estimator")}
         </Button>
       </div>
 
@@ -108,7 +119,7 @@ export function PartnerPageClient({
           <div className="flex justify-end gap-2">
             <Button size="sm" onClick={() => setShowCreate(true)}>
               <Plus className="mr-1 h-3 w-3" />
-              New Partner
+              {t("partners.list.new_partner")}
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger render={<Button variant="outline" size="sm" />}>
@@ -117,11 +128,11 @@ export function PartnerPageClient({
               <DropdownMenuContent align="end" className="w-44">
                 <DropdownMenuItem onClick={() => setShowImport(true)}>
                   <Upload className="mr-2 h-3.5 w-3.5" />
-                  Import Spreadsheet
+                  {t("partners.list.import")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowExport(true)}>
                   <Download className="mr-2 h-3.5 w-3.5" />
-                  Export Spreadsheet
+                  {t("partners.list.export")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -131,6 +142,7 @@ export function PartnerPageClient({
               <PartnerCard
                 key={partner.id}
                 partner={partner}
+                locale={locale}
                 onEdit={setEditPartner}
                 onDelete={handleDelete}
               />
@@ -138,7 +150,7 @@ export function PartnerPageClient({
           </div>
           {partners.length === 0 && (
             <div className="rounded-lg border p-8 text-center text-muted-foreground">
-              No partners yet. Click &quot;New Partner&quot; to add one.
+              {t("partners.list.empty")}
             </div>
           )}
         </div>
@@ -152,7 +164,9 @@ export function PartnerPageClient({
         />
       )}
 
-      {tab === "estimator" && <KickbackEstimator partners={partners} />}
+      {tab === "estimator" && (
+        <KickbackEstimator partners={partners} locale={locale} />
+      )}
 
       <PartnerFormModal
         partner={editPartner}
