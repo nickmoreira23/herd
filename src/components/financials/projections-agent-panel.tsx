@@ -1,12 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { AgentPanel } from "@/components/agents/shared/agent-panel";
 import { useFinancialStore } from "@/stores/financial-store";
+import { useT } from "@/lib/i18n/locale-context";
 
 export function ProjectionsAgentPanel() {
   const router = useRouter();
+  const t = useT();
   const inputs = useFinancialStore((s) => s.inputs);
   const results = useFinancialStore((s) => s.results);
 
@@ -54,19 +56,24 @@ export function ProjectionsAgentPanel() {
     [router]
   );
 
+  const suggestedPrompts = useMemo(
+    () => [
+      t("financials.agent.prompt_what_scenarios"),
+      t("financials.agent.prompt_default_run"),
+      t("financials.agent.prompt_what_if_reps"),
+    ],
+    [t]
+  );
+
   return (
     <AgentPanel
       agentKey="projections-architect"
-      displayName="Projections Architect"
-      subtitle="Financial modeling & what-if analysis"
+      displayName={t("financials.agent.display_name")}
+      subtitle={t("financials.agent.subtitle")}
       iconGradient="from-emerald-500 to-teal-600"
-      placeholder="Ask about projections..."
-      emptyStateText="I manage all your financial projections. Ask me to run scenarios, tweak assumptions, compare models, or build new projections from live system data."
-      suggestedPrompts={[
-        "What scenarios do we have?",
-        "Run a projection with current system defaults",
-        "What happens if we double our sales reps?",
-      ]}
+      placeholder={t("financials.agent.placeholder")}
+      emptyStateText={t("financials.agent.empty_state")}
+      suggestedPrompts={suggestedPrompts}
       onSSEEvent={handleSSEEvent}
       getContext={getContext}
     />

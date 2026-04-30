@@ -405,6 +405,15 @@ export const messages: Record<MessageKey, string> = {
   "common.feedback.updated_successfully": "Updated successfully",
   "common.feedback.error_occurred": "An error occurred",
 
+  // Units (cravado em 1.5.6a-bis)
+  "common.units.months_one": "{count} month",
+  "common.units.months_other": "{count} months",
+  "common.units.models_one": "{count} model",
+  "common.units.models_other": "{count} models",
+  "common.units.scenarios_one": "{count} scenario",
+  "common.units.scenarios_other": "{count} scenarios",
+  "common.units.of_total": "{current} of {total}",
+
   // Time
   "common.time.today": "Today",
   "common.time.yesterday": "Yesterday",
@@ -592,4 +601,280 @@ export const messages: Record<MessageKey, string> = {
   "commissions.feedback.activated": "Structure activated.",
   "commissions.feedback.deactivated": "Structure deactivated.",
   "commissions.feedback.save_failed": "Failed to save structure.",
+
+  // ============================================================
+  // Financials - Phase 1.5.6a-bis
+  // ============================================================
+
+  "financials.agent.display_name": "Projections Architect",
+  "financials.agent.subtitle": "Financial modeling & what-if analysis",
+  "financials.agent.placeholder": "Ask about projections…",
+  "financials.agent.empty_state":
+    "I manage all your financial projections. Ask me to run scenarios, tweak assumptions, compare models, or build new projections from live system data.",
+  "financials.agent.prompt_what_scenarios": "What scenarios do we have?",
+  "financials.agent.prompt_default_run":
+    "Run a projection with current system defaults",
+  "financials.agent.prompt_what_if_reps":
+    "What happens if we double our sales reps?",
+
+  "financials.scenarios.title": "Scenarios",
+  "financials.scenarios.placeholder": "Scenario name…",
+  "financials.scenarios.action_save": "Save",
+  "financials.scenarios.section_saved": "Saved",
+  "financials.scenarios.action_load_title": "Load this scenario",
+  "financials.scenarios.action_delete_title": "Delete this scenario",
+  "financials.scenarios.error_enter_name": "Enter a scenario name",
+  "financials.scenarios.error_no_results": "No results to save",
+  "financials.scenarios.error_save_failed": "Failed to save",
+  "financials.scenarios.confirm_delete": 'Delete scenario "{name}"?',
+  "financials.scenarios.feedback.saved": "Scenario saved",
+  "financials.scenarios.feedback.loaded": "Scenario loaded",
+  "financials.scenarios.feedback.deleted": "Deleted",
+
+  "financials.charts.projection_title": "{months}-Month Projection",
+  "financials.charts.projection_description":
+    "Revenue, costs, profit, and cumulative profit over {months} months",
+  "financials.charts.legend_revenue": "Revenue",
+  "financials.charts.legend_costs": "Costs",
+  "financials.charts.legend_profit": "Profit",
+  "financials.charts.legend_cumulative_profit": "Cumulative profit",
+  "financials.charts.no_data": "No data to display",
+  "financials.charts.empty_title": "No results to chart",
+  "financials.charts.empty_description":
+    "Configure the scenario inputs to generate charts.",
+  "financials.charts.revenue_by_tier_title": "{label} Revenue by Tier",
+  "financials.charts.revenue_by_tier_description":
+    "{label} revenue contribution from each subscription tier",
+  "financials.charts.pl_waterfall_title": "{label} P&L Waterfall",
+  "financials.charts.pl_waterfall_description":
+    "How revenue flows through costs to net margin",
+  "financials.charts.cost_breakdown_title": "{label} Cost Breakdown",
+  "financials.charts.cost_breakdown_description":
+    "Where your revenue goes — margin, COGS, commissions, and overhead",
+  "financials.charts.operation_breakeven_title": "Operation Breakeven",
+  "financials.charts.operation_breakeven_description":
+    "Cumulative profit over 24 months — breakeven {status}",
+  "financials.charts.operation_breakeven_not_reached": "not reached",
+  "financials.charts.operation_breakeven_at_month": "at month {month}",
+  "financials.charts.month_label": "M{month}",
+  "financials.charts.opex_scaled_legend": "OPEX (scaled)",
+  "financials.charts.bar_revenue": "Revenue",
+  "financials.charts.bar_product": "Product",
+  "financials.charts.bar_fulfillment": "Fulfillment",
+  "financials.charts.bar_commission": "Commission",
+  "financials.charts.bar_kickbacks": "Kickbacks",
+  "financials.charts.bar_overhead": "Overhead",
+  "financials.charts.bar_net": "Net",
+  "financials.charts.pie_net_margin": "Net Margin",
+  "financials.charts.pie_cogs": "COGS",
+  "financials.charts.pie_commissions": "Commissions",
+  "financials.charts.pie_overhead": "Overhead",
+
+  // Metrics panel
+  "financials.metrics.empty_title": "No results yet",
+  "financials.metrics.empty_description":
+    "Configure the scenario inputs to see financial projections.",
+  "financials.metrics.per_tier_breakdown": "Per-Tier Breakdown",
+
+  "financials.metrics.ltv_cac.title": "LTV / CAC Analysis",
+  "financials.metrics.ltv_cac.description":
+    "Lifetime value vs acquisition cost per customer",
+  "financials.metrics.ltv_cac.tooltip":
+    "Compares how much a customer is worth over their lifetime (LTV) to how much it costs to acquire them (CAC). A ratio of 3x+ is healthy.",
+  "financials.metrics.ltv_cac.blended_ltv": "Blended LTV",
+  "financials.metrics.ltv_cac.blended_ltv_sub": "Lifetime value per customer",
+  "financials.metrics.ltv_cac.blended_cac": "Blended CAC",
+  "financials.metrics.ltv_cac.blended_cac_sub": "Cost to acquire a customer",
+  "financials.metrics.ltv_cac.ratio": "LTV : CAC",
+  "financials.metrics.ltv_cac.ratio_short": "LTV:CAC",
+  "financials.metrics.ltv_cac.payback_period": "Payback Period",
+  "financials.metrics.ltv_cac.healthy": "Healthy (3x+ is great)",
+  "financials.metrics.ltv_cac.needs_improvement":
+    "Needs improvement (aim for 3x+)",
+  "financials.metrics.ltv_cac.losing_money": "Losing money on acquisition",
+  "financials.metrics.ltv_cac.months_to_recover": "Months to recover CAC",
+  "financials.metrics.ltv_cac.ltv_label": "LTV",
+  "financials.metrics.ltv_cac.cac_label": "CAC",
+  "financials.metrics.ltv_cac.payback_label": "Payback",
+
+  "financials.metrics.sales.title": "Sales Rep Channel",
+  "financials.metrics.sales.description":
+    "Rep count, new subscribers & growth",
+  "financials.metrics.sales.tooltip":
+    "Metrics from your sales rep acquisition channel — starting reps, month-1 subscriber generation, and projected reps at month 12.",
+  "financials.metrics.sales.mo1_reps": "Mo 1 Reps",
+  "financials.metrics.sales.mo1_new_subs": "Mo 1 New Subs",
+  "financials.metrics.sales.reps_mo12": "Reps @ Mo 12",
+
+  "financials.metrics.revenue.title": "Revenue",
+  "financials.metrics.revenue.description":
+    "Total revenue & revenue per subscriber",
+  "financials.metrics.revenue.tooltip":
+    "Total recurring revenue for the selected period, plus the blended average revenue per subscriber across all tiers and billing cycles.",
+  "financials.metrics.revenue.label": "Revenue",
+  "financials.metrics.revenue.revenue_per_sub": "Revenue/Sub",
+  "financials.metrics.revenue.arr": "ARR",
+
+  "financials.metrics.cogs.title": "COGS",
+  "financials.metrics.cogs.description":
+    "Product, fulfillment & per-subscriber costs",
+  "financials.metrics.cogs.tooltip":
+    "Cost of goods sold — total product costs, fulfillment expenses, and the blended cost per subscriber.",
+  "financials.metrics.cogs.total": "Total COGS",
+  "financials.metrics.cogs.fulfillment": "Fulfillment",
+  "financials.metrics.cogs.cost_per_sub": "Cost/Sub",
+
+  "financials.metrics.commissions.title": "Commissions",
+  "financials.metrics.commissions.description":
+    "Total expense, per-sub & % of revenue",
+  "financials.metrics.commissions.tooltip":
+    "Total commission expense including upfront bonuses and residual payments, broken down per subscriber and as a percentage of total revenue.",
+  "financials.metrics.commissions.total": "Total Commission",
+  "financials.metrics.commissions.per_sub": "Commission/Sub",
+  "financials.metrics.commissions.percent_of_revenue": "% of Revenue",
+
+  "financials.metrics.partners.title": "Partners & Breakage",
+  "financials.metrics.partners.description":
+    "Kickback revenue & credit savings",
+  "financials.metrics.partners.tooltip":
+    "Revenue from partner brand kickbacks. Breakage savings represent COGS avoided from unredeemed credits — already reflected in lower COGS figures.",
+  "financials.metrics.partners.kickback_revenue": "Kickback Revenue",
+  "financials.metrics.partners.breakage_savings": "Breakage Savings",
+
+  "financials.metrics.margins.title": "Margins",
+  "financials.metrics.margins.description":
+    "Gross & net margin in dollars and percent",
+  "financials.metrics.margins.tooltip":
+    "Gross margin (revenue minus COGS) and net margin (after all expenses including commissions and overhead).",
+  "financials.metrics.margins.gross": "Gross Margin",
+  "financials.metrics.margins.gross_percent": "Gross Margin %",
+  "financials.metrics.margins.net": "Net Margin",
+  "financials.metrics.margins.net_percent": "Net Margin %",
+
+  "financials.metrics.profit_split.title": "Profit Split",
+  "financials.metrics.profit_split.description":
+    "How channel profits are divided between parties",
+  "financials.metrics.profit_split.tooltip":
+    "After all costs, the remaining net profit is split among the defined parties according to their agreed percentages.",
+  "financials.metrics.profit_split.unnamed": "Unnamed",
+  "financials.metrics.profit_split.undistributed_percent":
+    "Undistributed ({percent}%)",
+
+  "financials.metrics.tier_details.title": "Per-Tier Details",
+  "financials.metrics.tier_details.description":
+    "Revenue, COGS & margin per subscription tier",
+  "financials.metrics.tier_details.tooltip":
+    "Detailed per-tier analysis showing subscriber count, revenue per subscriber, cost structure, margin, and lifetime value for each tier.",
+  "financials.metrics.tier_details.subscribers_count": "{count} subscribers",
+  "financials.metrics.tier_details.margin_label": "{value} margin",
+  "financials.metrics.tier_details.rev_per_sub": "Rev: {value}/sub",
+  "financials.metrics.tier_details.cogs_per_sub": "COGS: {value}/sub",
+  "financials.metrics.tier_details.ltv_label": "LTV: {value}",
+  "financials.metrics.tier_details.avg_life": "Avg life",
+  "financials.metrics.tier_details.months_short": "{months} mo",
+
+  // Executive summary
+  "financials.summary.empty_title": "No results yet",
+  "financials.summary.empty_description":
+    "Configure the scenario inputs to see the executive summary.",
+
+  "financials.summary.verdict.net_margin": "Net Margin",
+  "financials.summary.verdict.net_margin_sub": "{value}/mo",
+  "financials.summary.verdict.ltv_cac": "LTV:CAC Ratio",
+  "financials.summary.verdict.ltv_cac_sub": "LTV {ltv} / CAC {cac}",
+  "financials.summary.verdict.breakeven": "Breakeven",
+  "financials.summary.verdict.breakeven_month": "Month {month}",
+  "financials.summary.verdict.breakeven_year1": "Within Year 1",
+  "financials.summary.verdict.breakeven_year2": "Year 2",
+  "financials.summary.verdict.breakeven_negative":
+    "Cumulative profit stays negative",
+
+  "financials.summary.margin.interpretation.strong":
+    "Strong unit economics — supports aggressive scaling",
+  "financials.summary.margin.interpretation.healthy":
+    "Healthy margins — room to invest in growth",
+  "financials.summary.margin.interpretation.thin":
+    "Thin margins — monitor costs closely",
+  "financials.summary.margin.interpretation.breakeven":
+    "Breaking even — optimize before scaling",
+  "financials.summary.margin.interpretation.negative":
+    "Negative margins — restructure costs before scaling",
+
+  "financials.summary.ltvcac.interpretation.infinite":
+    "Infinite — zero churn means customers never leave",
+  "financials.summary.ltvcac.interpretation.excellent":
+    "Excellent — every dollar spent acquires 5x+ in lifetime value",
+  "financials.summary.ltvcac.interpretation.healthy":
+    "Healthy — unit economics support scaling",
+  "financials.summary.ltvcac.interpretation.cautious":
+    "Cautious — positive but low margin for error",
+  "financials.summary.ltvcac.interpretation.barely_positive":
+    "Barely positive — acquisition cost nearly equals lifetime value",
+  "financials.summary.ltvcac.interpretation.negative":
+    "Negative — you lose money on every customer acquired",
+
+  "financials.summary.breakeven.interpretation.never":
+    "Does not break even within 24 months",
+  "financials.summary.breakeven.interpretation.fast":
+    "Fast payback — capital efficient model",
+  "financials.summary.breakeven.interpretation.solid":
+    "Solid — profitability within Year 1",
+  "financials.summary.breakeven.interpretation.moderate":
+    "Moderate runway — plan for 18 months of funding",
+  "financials.summary.breakeven.interpretation.long":
+    "Long runway needed — 2+ years to profitability",
+
+  "financials.summary.key_metrics.title": "Key Metrics",
+  "financials.summary.key_metrics.mrr": "MRR",
+  "financials.summary.key_metrics.arr": "ARR",
+  "financials.summary.key_metrics.gross_margin": "Gross Margin",
+  "financials.summary.key_metrics.new_subs_per_mo": "New Subs/Mo",
+  "financials.summary.key_metrics.commission_pct_revenue":
+    "Commission % of Revenue",
+  "financials.summary.key_metrics.cost_per_sub": "Cost/Subscriber",
+  "financials.summary.key_metrics.payback_period": "Payback Period",
+  "financials.summary.key_metrics.months_value": "{months} months",
+  "financials.summary.key_metrics.mo24_subscribers": "Mo 24 Subscribers",
+
+  "financials.summary.provenance.title": "Assumption Sources",
+  "financials.summary.provenance.tier_pricing": "Tier Pricing",
+  "financials.summary.provenance.tiers_configured": "{count} tiers configured",
+  "financials.summary.provenance.commissions": "Commissions",
+  "financials.summary.provenance.commissions_detail":
+    "${bonus} bonus + {residual}% residual",
+  "financials.summary.provenance.opex": "OPEX",
+  "financials.summary.provenance.opex_scaled":
+    "Auto-scaled from {count} categories",
+  "financials.summary.provenance.opex_fixed": "Fixed at {value}/mo",
+  "financials.summary.provenance.sales_rep_channel": "Sales Rep Channel",
+  "financials.summary.provenance.sales_rep_detail":
+    "{reps} reps, {sales} sales/rep/mo",
+  "financials.summary.provenance.partner_kickbacks": "Partner Kickbacks",
+  "financials.summary.provenance.partners_count": "{count} active partners",
+  "financials.summary.provenance.source_plans": "Plans page",
+  "financials.summary.provenance.source_promoters": "Promoters page",
+  "financials.summary.provenance.source_operations_live":
+    "Operations page (live)",
+  "financials.summary.provenance.source_manual_override": "Manual override",
+  "financials.summary.provenance.source_manual_input": "Manual input",
+  "financials.summary.provenance.source_brands": "Brands page",
+
+  "financials.summary.trajectory.title": "24-Month Trajectory",
+  "financials.summary.trajectory.month_label": "Mo {month}",
+  "financials.summary.trajectory.subs_label": "{count} subs",
+  "financials.summary.trajectory.cum_label": "Cum: {value}",
+
+  "financials.summary.validation.title": "Validation Notes",
+  "financials.summary.validation.billing_distribution":
+    "Billing distribution sums to {value}%, not 100%",
+  "financials.summary.validation.tier_distribution":
+    "Tier subscriber distribution sums to {value}%, not 100%",
+  "financials.summary.validation.deeply_negative":
+    "Net margin is deeply negative — review cost assumptions",
+  "financials.summary.validation.profit_split_total":
+    "Profit split percentages total {value}%, not 100%",
+  "financials.summary.validation.churn_optimistic":
+    "Average churn below 2% is very optimistic for a subscription business",
+  "financials.summary.validation.churn_high":
+    "Average churn above 15% is very high — retention strategy needed",
 };

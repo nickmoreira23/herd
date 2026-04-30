@@ -9,7 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Plus, Pencil, Trash2, Power, DollarSign, Clock, Percent, BarChart3 } from "lucide-react";
-import { formatPercent, formatCurrency, toNumber } from "@/lib/utils";
+import { toNumber } from "@/lib/utils";
+import { formatNumberAsMoney } from "@/lib/money/format";
+import { formatNumber } from "@/lib/i18n/format-number";
 import { useT } from "@/lib/i18n/locale-context";
 import type { Locale } from "@/lib/i18n/locales";
 import { notifySuccess, notifyError } from "@/lib/i18n/notify";
@@ -204,7 +206,7 @@ export function CommissionPageClient({
                             {t("commissions.structures.stat_residual")}
                           </p>
                           <p className="font-semibold text-sm">
-                            {formatPercent(toNumber(structure.residualPercent), 1, locale)}
+                            {formatNumber(toNumber(structure.residualPercent) / 100, locale, "percent")}
                           </p>
                         </div>
                       </div>
@@ -244,7 +246,7 @@ export function CommissionPageClient({
                               {rate.subscriptionTier.name}
                             </p>
                             <p className="font-semibold text-sm">
-                              {formatCurrency(toNumber(rate.flatBonusAmount), locale)}
+                              {formatNumberAsMoney(toNumber(rate.flatBonusAmount), locale)}
                             </p>
                             {rate.acceleratorMultiplier && (
                               <p className="text-[10px] text-muted-foreground">

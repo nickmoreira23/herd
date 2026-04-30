@@ -1,7 +1,12 @@
 import { FinancialPageClient } from "@/components/financials/financial-page-client";
 import { getFinancialDefaults } from "../../data";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 export default async function NewProjectionPage() {
+  const [defaults, locale] = await Promise.all([
+    getFinancialDefaults(),
+    getLocale(),
+  ]);
   const {
     tierData,
     commissionData,
@@ -16,7 +21,7 @@ export default async function NewProjectionPage() {
     fullyLoadedCommissionData,
     dataSourceMeta,
     tierDisplayMeta,
-  } = await getFinancialDefaults();
+  } = defaults;
 
   return (
     <FinancialPageClient
@@ -33,6 +38,7 @@ export default async function NewProjectionPage() {
       fullyLoadedCommissionData={fullyLoadedCommissionData}
       dataSourceMeta={dataSourceMeta}
       tierDisplayMeta={tierDisplayMeta}
+      locale={locale}
     />
   );
 }

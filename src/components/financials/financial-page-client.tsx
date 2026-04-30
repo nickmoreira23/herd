@@ -125,6 +125,8 @@ interface FinancialPageClientProps {
   dataSourceMeta?: DataSourceMeta;
   // New: tier display metadata for read-only plan structure display
   tierDisplayMeta?: TierDisplayMeta[];
+  // 1.5.6a-bis: required for locale-aware formatting in children
+  locale: import("@/lib/i18n/locales").Locale;
 }
 
 export function FinancialPageClient({
@@ -145,6 +147,7 @@ export function FinancialPageClient({
   fullyLoadedCommissionData,
   dataSourceMeta,
   tierDisplayMeta,
+  locale,
 }: FinancialPageClientProps) {
   const router = useRouter();
   const { setInputs, inputs, results, loadInputs } = useFinancialStore();
@@ -545,7 +548,7 @@ export function FinancialPageClient({
             <div className="border-t" />
             <div className="flex-1 overflow-y-auto p-4 scrollbar-thin">
               <TabsContent value="summary" className="mt-0">
-                <ExecutiveSummary />
+                <ExecutiveSummary locale={locale} />
               </TabsContent>
               <TabsContent value="statement" className="mt-0">
                 <PLStatement multiplier={periodMultiplier} periodLabel={periodLabel} />
@@ -557,10 +560,10 @@ export function FinancialPageClient({
                 <CohortSpreadsheet months={12} />
               </TabsContent>
               <TabsContent value="metrics" className="mt-0">
-                <MetricsPanel multiplier={periodMultiplier} periodLabel={periodLabel} />
+                <MetricsPanel multiplier={periodMultiplier} periodLabel={periodLabel} locale={locale} />
               </TabsContent>
               <TabsContent value="charts" className="mt-0">
-                <FinancialCharts multiplier={periodMultiplier} periodLabel={periodLabel} />
+                <FinancialCharts multiplier={periodMultiplier} periodLabel={periodLabel} locale={locale} />
               </TabsContent>
             </div>
           </div>

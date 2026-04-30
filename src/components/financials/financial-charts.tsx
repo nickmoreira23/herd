@@ -4,7 +4,9 @@ import { useFinancialStore } from "@/stores/financial-store";
 import { resolveOverhead } from "@/lib/financial-engine";
 import { Card, CardContent } from "@/components/ui/card";
 import { BarChart3 } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { formatNumberAsMoney } from "@/lib/money/format";
+import { useT } from "@/lib/i18n/locale-context";
+import type { Locale } from "@/lib/i18n/locales";
 import {
   BarChart,
   Bar,
@@ -27,9 +29,11 @@ const COLORS = ["#FF0000", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#10b981"
 interface FinancialChartsProps {
   multiplier: number;
   periodLabel: string;
+  locale: Locale;
 }
 
-export function FinancialCharts({ multiplier, periodLabel }: FinancialChartsProps) {
+export function FinancialCharts({ multiplier, periodLabel, locale }: FinancialChartsProps) {
+  const t = useT();
   const results = useFinancialStore((s) => s.results);
   const inputs = useFinancialStore((s) => s.inputs);
 
@@ -38,9 +42,9 @@ export function FinancialCharts({ multiplier, periodLabel }: FinancialChartsProp
       <Card>
         <CardContent className="py-12 text-center">
           <BarChart3 className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
-          <p className="font-medium">No results to chart</p>
+          <p className="font-medium">{t("financials.charts.empty_title")}</p>
           <p className="text-sm text-muted-foreground mt-1">
-            Configure the scenario inputs to generate charts.
+            {t("financials.charts.empty_description")}
           </p>
         </CardContent>
       </Card>
@@ -49,31 +53,32 @@ export function FinancialCharts({ multiplier, periodLabel }: FinancialChartsProp
 
   const m = multiplier;
   const label = periodLabel;
+  const fmt = (v: number) => formatNumberAsMoney(v, locale);
 
   // Revenue by tier data (scaled by period)
-  const revenueByTierData = results.revenueByTier.map((t) => ({
-    name: t.tierId,
-    revenue: Math.round(t.revenue * m),
-    subscribers: t.subscribers,
+  const revenueByTierData = results.revenueByTier.map((tier) => ({
+    name: tier.tierId,
+    revenue: Math.round(tier.revenue * m),
+    subscribers: tier.subscribers,
   }));
 
   // Margin waterfall data (scaled by period)
-  // totalProductCost includes fulfillment+shipping, so split them for the waterfall
   const productOnlyCost = results.totalProductCost - results.totalFulfillmentCost;
   const waterfallData = [
-    { name: "Revenue", value: Math.round(results.mrr * m) },
-    { name: "Product", value: -Math.round(productOnlyCost * m) },
-    { name: "Fulfillment", value: -Math.round(results.totalFulfillmentCost * m) },
-    { name: "Commission", value: -Math.round(results.totalCommissionExpense * m) },
-    ...(results.totalKickbackRevenue > 0 ? [{ name: "Kickbacks", value: Math.round(results.totalKickbackRevenue * m) }] : []),
-    { name: "Overhead", value: -Math.round(resolveOverhead(inputs.operationalOverhead, 0) * m) },
-    { name: "Net", value: Math.round(results.netMarginDollars * m) },
+    { name: t("financials.charts.bar_revenue"), value: Math.round(results.mrr * m) },
+    { name: t("financials.charts.bar_product"), value: -Math.round(productOnlyCost * m) },
+    { name: t("financials.charts.bar_fulfillment"), value: -Math.round(results.totalFulfillmentCost * m) },
+    { name: t("financials.charts.bar_commission"), value: -Math.round(results.totalCommissionExpense * m) },
+    ...(results.totalKickbackRevenue > 0
+      ? [{ name: t("financials.charts.bar_kickbacks"), value: Math.round(results.totalKickbackRevenue * m) }]
+      : []),
+    { name: t("financials.charts.bar_overhead"), value: -Math.round(resolveOverhead(inputs.operationalOverhead, 0) * m) },
+    { name: t("financials.charts.bar_net"), value: Math.round(results.netMarginDollars * m) },
   ];
 
-  // Cohort projection data — show months up to the period length (or all 24)
   const monthsToShow = Math.min(24, m <= 1 ? 12 : 24);
   const cohortData = results.cohortProjection.slice(0, monthsToShow).map((mo) => ({
-    month: `M${mo.month}`,
+    month: t("financials.charts.month_label", { month: mo.month }),
     subscribers: mo.subscribers,
     revenue: Math.round(mo.revenue),
     costs: Math.round(mo.costs),
@@ -82,47 +87,55 @@ export function FinancialCharts({ multiplier, periodLabel }: FinancialChartsProp
     cumulative: Math.round(mo.cumulativeProfit),
   }));
 
-  // Breakeven data — 24-month cumulative profit
   const breakevenData = results.cohortProjection.map((mo) => ({
-    month: `M${mo.month}`,
+    month: t("financials.charts.month_label", { month: mo.month }),
     cumulative: Math.round(mo.cumulativeProfit),
   }));
 
-  // Margin breakdown donut (scaled by period)
-  // totalProductCost already includes fulfillment — don't double-count
   const marginPieData = [
-    { name: "Net Margin", value: Math.max(0, Math.round(results.netMarginDollars * m)) },
-    { name: "COGS", value: Math.round(results.totalProductCost * m) },
-    { name: "Commissions", value: Math.round(results.totalCommissionExpense * m) },
+    { name: t("financials.charts.pie_net_margin"), value: Math.max(0, Math.round(results.netMarginDollars * m)) },
+    { name: t("financials.charts.pie_cogs"), value: Math.round(results.totalProductCost * m) },
+    { name: t("financials.charts.pie_commissions"), value: Math.round(results.totalCommissionExpense * m) },
     {
-      name: "Overhead",
+      name: t("financials.charts.pie_overhead"),
       value: Math.round(resolveOverhead(inputs.operationalOverhead, 0) * m),
     },
   ].filter((d) => d.value > 0);
 
+  const breakevenStatus =
+    results.operationBreakevenMonth === Infinity
+      ? t("financials.charts.operation_breakeven_not_reached")
+      : t("financials.charts.operation_breakeven_at_month", {
+          month: results.operationBreakevenMonth,
+        });
+
   return (
     <div className="space-y-4">
-      {/* Revenue by Tier */}
-      <ChartCard title={`${label} Revenue by Tier`} description={`${label} revenue contribution from each subscription tier`}>
+      <ChartCard
+        title={t("financials.charts.revenue_by_tier_title", { label })}
+        description={t("financials.charts.revenue_by_tier_description", { label })}
+      >
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={revenueByTierData}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} />
             <XAxis dataKey="name" tick={{ fontSize: 11 }} />
             <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-            <Tooltip formatter={(v) => formatCurrency(Number(v))} />
+            <Tooltip formatter={(v) => fmt(Number(v))} />
             <Bar dataKey="revenue" fill="#FF0000" radius={[6, 6, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </ChartCard>
 
-      {/* P&L Waterfall */}
-      <ChartCard title={`${label} P&L Waterfall`} description="How revenue flows through costs to net margin">
+      <ChartCard
+        title={t("financials.charts.pl_waterfall_title", { label })}
+        description={t("financials.charts.pl_waterfall_description")}
+      >
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={waterfallData}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} />
             <XAxis dataKey="name" tick={{ fontSize: 10 }} />
             <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-            <Tooltip formatter={(v) => formatCurrency(Number(v))} />
+            <Tooltip formatter={(v) => fmt(Number(v))} />
             <Bar dataKey="value" radius={[6, 6, 0, 0]}>
               {waterfallData.map((entry, i) => (
                 <Cell
@@ -135,19 +148,29 @@ export function FinancialCharts({ multiplier, periodLabel }: FinancialChartsProp
         </ResponsiveContainer>
       </ChartCard>
 
-      {/* Multi-Month Projection */}
-      <ChartCard title={`${monthsToShow}-Month Projection`} description={`Revenue, costs, profit, and cumulative profit over ${monthsToShow} months`}>
+      <ChartCard
+        title={t("financials.charts.projection_title", { months: monthsToShow })}
+        description={t("financials.charts.projection_description", { months: monthsToShow })}
+      >
         <ResponsiveContainer width="100%" height={260}>
           <LineChart data={cohortData}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} />
             <XAxis dataKey="month" tick={{ fontSize: 11 }} />
             <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-            <Tooltip formatter={(v) => formatCurrency(Number(v))} />
+            <Tooltip formatter={(v) => fmt(Number(v))} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
             <Line type="monotone" dataKey="revenue" stroke="#FF0000" strokeWidth={2} dot={false} />
             <Line type="monotone" dataKey="costs" stroke="#ef4444" strokeWidth={2} dot={false} />
             {inputs.operationalOverhead.mode === "milestone-scaled" && (
-              <Line type="stepAfter" dataKey="overhead" stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="4 4" dot={false} name="OPEX (scaled)" />
+              <Line
+                type="stepAfter"
+                dataKey="overhead"
+                stroke="#f59e0b"
+                strokeWidth={1.5}
+                strokeDasharray="4 4"
+                dot={false}
+                name={t("financials.charts.opex_scaled_legend")}
+              />
             )}
             <Line type="monotone" dataKey="profit" stroke="#3b82f6" strokeWidth={2} dot={false} />
             <Line type="monotone" dataKey="cumulative" stroke="#8b5cf6" strokeWidth={2} strokeDasharray="5 5" dot={false} />
@@ -155,8 +178,10 @@ export function FinancialCharts({ multiplier, periodLabel }: FinancialChartsProp
         </ResponsiveContainer>
       </ChartCard>
 
-      {/* Margin Breakdown */}
-      <ChartCard title={`${label} Cost Breakdown`} description="Where your revenue goes — margin, COGS, commissions, and overhead">
+      <ChartCard
+        title={t("financials.charts.cost_breakdown_title", { label })}
+        description={t("financials.charts.cost_breakdown_description")}
+      >
         <ResponsiveContainer width="100%" height={240}>
           <PieChart>
             <Pie
@@ -174,22 +199,21 @@ export function FinancialCharts({ multiplier, periodLabel }: FinancialChartsProp
                 <Cell key={i} fill={COLORS[i % COLORS.length]} />
               ))}
             </Pie>
-            <Tooltip formatter={(v) => formatCurrency(Number(v))} />
+            <Tooltip formatter={(v) => fmt(Number(v))} />
           </PieChart>
         </ResponsiveContainer>
       </ChartCard>
 
-      {/* Operation Breakeven */}
       <ChartCard
-        title="Operation Breakeven"
-        description={`Cumulative profit over 24 months — breakeven ${results.operationBreakevenMonth === Infinity ? "not reached" : `at month ${results.operationBreakevenMonth}`}`}
+        title={t("financials.charts.operation_breakeven_title")}
+        description={t("financials.charts.operation_breakeven_description", { status: breakevenStatus })}
       >
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={breakevenData}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} />
             <XAxis dataKey="month" tick={{ fontSize: 10 }} interval={2} />
             <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-            <Tooltip formatter={(v) => formatCurrency(Number(v))} />
+            <Tooltip formatter={(v) => fmt(Number(v))} />
             <ReferenceLine y={0} stroke="hsl(var(--foreground))" strokeOpacity={0.3} strokeDasharray="3 3" />
             <Bar dataKey="cumulative" radius={[4, 4, 0, 0]}>
               {breakevenData.map((entry, i) => (

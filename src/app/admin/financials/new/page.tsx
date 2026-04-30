@@ -1,9 +1,10 @@
 import { FinancialPageClient } from "@/components/financials/financial-page-client";
 import { getFinancialDefaults } from "../data";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 export default async function NewModelPage() {
-  const { tierData, commissionData, salesRepData, partnerData, overheadData, opexData } =
-    await getFinancialDefaults();
+  const [{ tierData, commissionData, salesRepData, partnerData, overheadData, opexData }, locale] =
+    await Promise.all([getFinancialDefaults(), getLocale()]);
 
   return (
     <FinancialPageClient
@@ -13,6 +14,7 @@ export default async function NewModelPage() {
       partnerData={partnerData}
       overheadData={overheadData}
       opexData={opexData}
+      locale={locale}
     />
   );
 }

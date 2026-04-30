@@ -7,9 +7,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Save, Download, Trash2, FolderOpen } from "lucide-react";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
+import type { Locale } from "@/lib/i18n/locales";
+import { formatDate } from "@/lib/i18n/format-date";
 
-export function ScenarioManager() {
+interface ScenarioManagerProps {
+  locale: Locale;
+}
+
+export function ScenarioManager({ locale }: ScenarioManagerProps) {
+  const t = useT();
   const {
     inputs,
     results,
@@ -34,11 +42,11 @@ export function ScenarioManager() {
 
   const handleSave = useCallback(async () => {
     if (!scenarioName.trim()) {
-      toast.error("Enter a scenario name");
+      notifyError("financials.scenarios.error_enter_name", t);
       return;
     }
     if (!results) {
-      toast.error("No results to save");
+      notifyError("financials.scenarios.error_no_results", t);
       return;
     }
     setSaving(true);
@@ -53,16 +61,15 @@ export function ScenarioManager() {
         }),
       });
       if (!res.ok) {
-        const json = await res.json();
-        toast.error(json.error || "Failed to save");
+        notifyError("financials.scenarios.error_save_failed", t);
         return;
       }
       await fetchScenarios();
-      toast.success("Scenario saved");
+      notifySuccess("financials.scenarios.feedback.saved", t);
     } finally {
       setSaving(false);
     }
-  }, [scenarioName, inputs, results, fetchScenarios]);
+  }, [scenarioName, inputs, results, fetchScenarios, t]);
 
   const handleLoad = useCallback(
     async (id: string) => {
@@ -73,20 +80,20 @@ export function ScenarioManager() {
           json.data.assumptions as FinancialInputs,
           json.data.scenarioName || ""
         );
-        toast.success("Scenario loaded");
+        notifySuccess("financials.scenarios.feedback.loaded", t);
       }
     },
-    [loadInputs]
+    [loadInputs, t]
   );
 
   const handleDelete = useCallback(
     async (id: string, name: string) => {
-      if (!confirm(`Delete scenario "${name}"?`)) return;
+      if (!confirm(t("financials.scenarios.confirm_delete", { name }))) return;
       await fetch(`/api/financials/${id}`, { method: "DELETE" });
       await fetchScenarios();
-      toast.success("Deleted");
+      notifySuccess("financials.scenarios.feedback.deleted", t);
     },
-    [fetchScenarios]
+    [fetchScenarios, t]
   );
 
   return (
@@ -95,21 +102,23 @@ export function ScenarioManager() {
         <div className="flex items-center gap-1.5 mb-3">
           <FolderOpen className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="text-xs font-semibold uppercase tracking-wider">
-            Scenarios
+            {t("financials.scenarios.title")}
           </span>
         </div>
 
         {/* Save Current */}
         <div className="flex gap-2">
           <Input
-            placeholder="Scenario name..."
+            placeholder={t("financials.scenarios.placeholder")}
             value={scenarioName}
             onChange={(e) => setScenarioName(e.target.value)}
             className="flex-1 h-8 text-sm"
           />
           <Button size="sm" onClick={handleSave} disabled={saving} className="text-sm">
             <Save className="mr-1 h-3 w-3" />
-            {saving ? "..." : "Save"}
+            {saving
+              ? t("common.states.saving")
+              : t("financials.scenarios.action_save")}
           </Button>
         </div>
 
@@ -117,7 +126,7 @@ export function ScenarioManager() {
         {savedScenarios.length > 0 && (
           <div className="mt-3 space-y-1.5">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
-              Saved
+              {t("financials.scenarios.section_saved")}
             </p>
             {savedScenarios.map((s) => (
               <div
@@ -127,7 +136,7 @@ export function ScenarioManager() {
                 <div className="min-w-0">
                   <p className="text-xs font-medium truncate">{s.name}</p>
                   <p className="text-[10px] text-muted-foreground">
-                    {new Date(s.createdAt).toLocaleDateString()}
+                    {formatDate(new Date(s.createdAt), locale, "short")}
                   </p>
                 </div>
                 <div className="flex gap-0.5 shrink-0">
@@ -135,7 +144,7 @@ export function ScenarioManager() {
                     variant="ghost"
                     size="icon-sm"
                     onClick={() => handleLoad(s.id)}
-                    title="Load this scenario"
+                    title={t("financials.scenarios.action_load_title")}
                   >
                     <Download className="h-3 w-3" />
                   </Button>
@@ -143,7 +152,7 @@ export function ScenarioManager() {
                     variant="ghost"
                     size="icon-sm"
                     onClick={() => handleDelete(s.id, s.name)}
-                    title="Delete this scenario"
+                    title={t("financials.scenarios.action_delete_title")}
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>
