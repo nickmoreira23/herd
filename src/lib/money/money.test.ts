@@ -114,21 +114,31 @@ describe("money — basis points", () => {
 });
 
 describe("money — formatting", () => {
-  it("formats BRL with symbol", () => {
-    expect(formatMoney(money(10000n, "BRL"))).toMatch(/R\$\s*100,00/);
+  it("formats BRL with symbol in pt-BR", () => {
+    expect(formatMoney(money(10000n, "BRL"), "pt-BR")).toMatch(/R\$\s*100,00/);
   });
 
-  it("formats USD with symbol", () => {
-    expect(formatMoney(money(10000n, "USD"))).toMatch(/\$100\.00/);
+  it("formats USD with symbol in en-US", () => {
+    expect(formatMoney(money(10000n, "USD"), "en-US")).toMatch(/\$100\.00/);
   });
 
-  it("formatAmount strips symbol", () => {
-    expect(formatAmount(money(10000n, "BRL"))).toBe("100,00");
-    expect(formatAmount(money(10000n, "USD"))).toBe("100.00");
+  it("formatAmount strips symbol (pt-BR)", () => {
+    expect(formatAmount(money(10000n, "BRL"), "pt-BR")).toBe("100,00");
   });
 
-  it("formats negative", () => {
-    expect(formatMoney(money(-10000n, "BRL"))).toMatch(/-R\$\s*100,00/);
+  it("formatAmount strips symbol (en-US)", () => {
+    expect(formatAmount(money(10000n, "USD"), "en-US")).toBe("100.00");
+  });
+
+  it("formats negative in pt-BR", () => {
+    expect(formatMoney(money(-10000n, "BRL"), "pt-BR")).toMatch(/-R\$\s*100,00/);
+  });
+
+  it("locale parameter controls separators independently from currency", () => {
+    // BRL rendered with en-US locale uses dot as decimal separator.
+    expect(formatMoney(money(10000n, "BRL"), "en-US")).toMatch(/100\.00/);
+    // USD rendered with pt-BR locale uses comma as decimal separator.
+    expect(formatMoney(money(10000n, "USD"), "pt-BR")).toMatch(/100,00/);
   });
 });
 

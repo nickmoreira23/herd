@@ -56,6 +56,32 @@ const eslintConfig = defineConfig([
       "prefer-const": "warn",
     },
   },
+
+  // ============================================================
+  // I18N STRICT PATHS — code in these paths must use t() / useT()
+  // for any user-facing string. Literal JSX text is flagged as error.
+  //
+  // Adding a path here means committing to fully-internationalized
+  // code from the start. New features that touch user-facing strings
+  // should be added to this list.
+  //
+  // The ledger UI (src/components/ledger/**) is INTENTIONALLY excluded
+  // until Etapa 1.5.4 internationalizes its hardcoded strings; adding
+  // it now would break lint for work scheduled in a later etapa.
+  // ============================================================
+  {
+    files: [
+      "src/lib/i18n/**/*.{ts,tsx}",
+      "src/lib/ledger/**/*.{ts,tsx}",
+    ],
+    rules: {
+      "react/jsx-no-literals": ["error", {
+        noStrings: true,
+        ignoreProps: false,
+        allowedStrings: [" ", "·", "—", "/", "-"],
+      }],
+    },
+  },
 ]);
 
 export default eslintConfig;
