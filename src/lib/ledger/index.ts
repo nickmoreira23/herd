@@ -26,6 +26,13 @@ export type {
   SerializedEntryLine,
   SerializedEntryDetails,
 } from "./serialize";
+export {
+  checkAllInvariants,
+  checkBalancePerCurrency,
+  checkAccountCodeFormat,
+  checkLineCurrencyMatchesAccount,
+} from "./invariants";
+export type { InvariantViolation } from "./invariants";
 export type {
   PostJournalEntryInput,
   PostJournalLineInput,

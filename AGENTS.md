@@ -119,3 +119,29 @@ Cross-context communication uses an outbox pattern in the `domain_events` table.
 
 The Phase 1 etapa 1.8 establishes the infrastructure but leaves the registry
 empty — actual events start being emitted in Phase 2.
+
+# Skill references
+
+Two SKILL files codify the institutional knowledge accumulated during
+Phase 1:
+
+- `.agents/skills/ledger/SKILL.md` — invariants and conventions for the
+  double-entry ledger (accounts, journal_entries, journal_lines).
+- `.agents/skills/domain-events/SKILL.md` — invariants and conventions for
+  the domain events outbox pattern.
+
+Read the relevant SKILL before making any change that touches the
+corresponding subsystem. The SKILLs are versioned (semver) and have a
+"how to update" section explaining the procedure.
+
+# Invariant audit
+
+`npm run check:invariants` runs three database-level checks:
+1. Every journal entry balances per currency.
+2. Every account code matches the naming regex.
+3. Every journal line currency matches its account currency.
+
+Use as operational audit (post-restore, periodic, after major schema
+changes). Not wired into CI because CI does not provision a database.
+The constraints from Etapas 1.2 and 1.6 should make violations impossible —
+the script is defense-in-depth.
