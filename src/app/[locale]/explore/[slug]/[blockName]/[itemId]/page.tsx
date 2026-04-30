@@ -4,8 +4,10 @@ import { connection } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { resolveItemDetail } from "@/lib/marketplace/item-detail-resolver";
 import { MarketplaceItemDetail } from "@/components/marketplace/item-detail/marketplace-item-detail";
+import { isSupportedLocale } from "@/lib/i18n/locales";
 
 interface PageParams {
+  locale: string;
   slug: string;
   blockName: string;
   itemId: string;
@@ -55,6 +57,8 @@ export default async function PublicItemDetailPage({
   params: Promise<PageParams>;
 }) {
   const resolved = await params;
+  if (!isSupportedLocale(resolved.locale)) notFound();
+
   return (
     <div className="max-w-6xl mx-auto px-6 pb-12">
       <Suspense fallback={<ItemDetailSkeleton />}>

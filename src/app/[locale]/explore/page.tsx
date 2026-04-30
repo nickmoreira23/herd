@@ -1,9 +1,11 @@
 import { Suspense } from "react";
-import Link from "next/link";
+import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { getViewerContext } from "@/lib/marketplace/visibility-helpers";
+import { LocaleLink } from "@/components/i18n/locale-link";
+import { isSupportedLocale } from "@/lib/i18n/locales";
 
 /**
  * Async island. Wrapped in <Suspense> by the page so Next 16 can stream the
@@ -64,7 +66,7 @@ async function ExploreContent() {
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {visible.map((s) => (
-          <Link
+          <LocaleLink
             key={s.id}
             href={`/explore/${s.slug}`}
             className="group rounded-xl border bg-card hover:border-foreground/30 transition-colors overflow-hidden"
@@ -90,7 +92,7 @@ async function ExploreContent() {
                 {s.blockNames.length} block{s.blockNames.length === 1 ? "" : "s"}
               </p>
             </div>
-          </Link>
+          </LocaleLink>
         ))}
       </div>
     </>
@@ -111,7 +113,14 @@ function ExploreSkeleton() {
   );
 }
 
-export default function ExploreIndexPage() {
+export default async function ExploreIndexPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  if (!isSupportedLocale(locale)) notFound();
+
   return (
     <div className="max-w-6xl mx-auto px-6 py-10">
       <Suspense fallback={<ExploreSkeleton />}>

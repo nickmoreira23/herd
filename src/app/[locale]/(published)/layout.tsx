@@ -1,8 +1,10 @@
 import { Suspense } from "react";
+import { notFound } from "next/navigation";
 import { Inter } from "next/font/google";
-import "../globals.css";
+import "@/app/globals.css";
 import { GA4Script } from "@/components/landing-page/analytics/ga4-script";
 import { WebVitalsReporter } from "@/components/landing-page/analytics/web-vitals-reporter";
+import { isSupportedLocale } from "@/lib/i18n/locales";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -12,13 +14,18 @@ const inter = Inter({
 
 const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID || "";
 
-export default function PublishedLayout({
+export default async function PublishedLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: Promise<{ locale: string }>;
 }) {
+  const { locale } = await params;
+  if (!isSupportedLocale(locale)) notFound();
+
   return (
-    <html lang="en" className={`${inter.variable} antialiased`}>
+    <html lang={locale} className={`${inter.variable} antialiased`}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link

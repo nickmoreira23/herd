@@ -9,6 +9,7 @@ import type {
   ComponentNode,
 } from "@/types/landing-page";
 import { DEFAULT_PAGE_STYLES } from "@/lib/landing-page/defaults";
+import { isSupportedLocale, SUPPORTED_LOCALES } from "@/lib/i18n/locales";
 
 const SITE_URL = process.env.SITE_URL || process.env.NEXTAUTH_URL || "";
 
@@ -53,9 +54,9 @@ async function getPageMetadata(slug: string) {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ locale: string; slug: string }>;
 }): Promise<Metadata> {
-  const { slug } = await params;
+  const { locale, slug } = await params;
   const page = await getPageMetadata(slug);
 
   if (!page) return { title: "Not Found" };
@@ -63,14 +64,25 @@ export async function generateMetadata({
   const title = page.seoTitle || page.name;
   const description = page.seoDescription || page.description || "";
 
+  // Build hreflang alternates pointing to each supported locale variant.
+  const languages: Record<string, string> = {};
+  for (const l of SUPPORTED_LOCALES) {
+    languages[l] = `${SITE_URL}/${l}/p/${slug}`;
+  }
+
   return {
     title,
     description,
+    alternates: {
+      canonical: `${SITE_URL}/${locale}/p/${slug}`,
+      languages,
+    },
     openGraph: {
       title,
       description,
-      url: `${SITE_URL}/p/${slug}`,
+      url: `${SITE_URL}/${locale}/p/${slug}`,
       type: "website",
+      locale,
       ...(page.seoImage ? { images: [{ url: page.seoImage }] } : {}),
     },
     twitter: {
@@ -87,9 +99,11 @@ export async function generateMetadata({
 export default async function PublishedPage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ locale: string; slug: string }>;
 }) {
-  const { slug } = await params;
+  const { locale, slug } = await params;
+  if (!isSupportedLocale(locale)) notFound();
+
   const result = await getPublishedPage(slug);
 
   if (!result) notFound();
@@ -117,7 +131,8 @@ export default async function PublishedPage({
     "@type": "WebPage",
     name: page.seoTitle || page.name,
     description: page.seoDescription || page.description || undefined,
-    url: `${SITE_URL}/p/${slug}`,
+    url: `${SITE_URL}/${locale}/p/${slug}`,
+    inLanguage: locale,
   };
 
   return (
