@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import type { Locale } from "@/lib/i18n/locales";
 // Prisma Decimal type - use number | { toNumber(): number } for flexibility
 type DecimalLike = { toNumber(): number } | number;
 
@@ -7,9 +8,20 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatCurrency(amount: number | DecimalLike): string {
+/**
+ * Locale-aware currency formatting (USD only — these helpers are scoped to
+ * legacy code that assumed USD). Accepts optional `locale` for migrated
+ * callers; defaults to "en-US" for back-compat with pre-1.5.6 callers.
+ *
+ * For new code, prefer `formatMoney(money, locale)` from `@/lib/money` with
+ * an explicit Money tuple.
+ */
+export function formatCurrency(
+  amount: number | DecimalLike,
+  locale: Locale = "en-US",
+): string {
   const num = typeof amount === "number" ? amount : Number(amount);
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency: "USD",
     minimumFractionDigits: 2,
@@ -17,13 +29,26 @@ export function formatCurrency(amount: number | DecimalLike): string {
   }).format(num);
 }
 
-export function formatPercent(value: number | DecimalLike, decimals = 1): string {
+/**
+ * Percent with locale-aware decimal mark. Input is the percent value
+ * (e.g. 6.5 → "6,5%" in pt-BR / "6.5%" in en-US). Default locale is
+ * "en-US" for back-compat.
+ */
+export function formatPercent(
+  value: number | DecimalLike,
+  decimals = 1,
+  locale: Locale = "en-US",
+): string {
   const num = typeof value === "number" ? value : Number(value);
-  return `${num.toFixed(decimals)}%`;
+  const formatted = new Intl.NumberFormat(locale, {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(num);
+  return `${formatted}%`;
 }
 
-export function formatNumber(value: number): string {
-  return new Intl.NumberFormat("en-US").format(value);
+export function formatNumber(value: number, locale: Locale = "en-US"): string {
+  return new Intl.NumberFormat(locale).format(value);
 }
 
 export function toNumber(value: number | DecimalLike): number {

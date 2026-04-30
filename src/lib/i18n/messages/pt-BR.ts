@@ -472,6 +472,143 @@ export const messages = {
     "A página que você procura não existe ou foi movida.",
   "shell.error.temporary_issue":
     "Algo deu errado. Geralmente é um problema temporário.",
+
+  // ============================================================
+  // Commissions - Phase 1.5.6a
+  // ============================================================
+
+  // Page header
+  "commissions.page.title": "Estruturas de Comissão",
+  "commissions.page.description":
+    "Defina como o time de vendas D2D é remunerado e veja o impacto na margem.",
+
+  // Tabs
+  "commissions.tabs.structures": "Estruturas",
+  "commissions.tabs.simulator": "Simulador",
+
+  // Structures list
+  "commissions.structures.banner":
+    "Estruturas de comissão definem como seus reps são pagos — bônus de cadastro únicos somados a residuais mensais. Apenas uma pode estar ativa por vez.",
+  "commissions.structures.new_button": "Nova estrutura",
+  "commissions.structures.empty_title": "Nenhuma estrutura de comissão ainda",
+  "commissions.structures.empty_description":
+    "Crie sua primeira estrutura para definir como o time D2D ganha bônus e residuais.",
+  "commissions.structures.active_badge": "Ativa",
+  "commissions.structures.stat_residual": "Residual",
+  "commissions.structures.stat_clawback": "Clawback",
+  "commissions.structures.stat_clawback_days": "{days} dias",
+  "commissions.structures.stat_tiers": "Faixas",
+  "commissions.structures.stat_tiers_configured": "{count} configuradas",
+  "commissions.structures.accelerator_label": "{value}x acelerador",
+  "commissions.structures.action_edit": "Editar",
+  "commissions.structures.action_activate": "Ativar",
+  "commissions.structures.action_deactivate": "Desativar",
+  "commissions.structures.action_delete": "Excluir",
+  "commissions.structures.confirm_delete": 'Excluir "{name}"?',
+
+  // Editor
+  "commissions.editor.title_create": "Nova Estrutura de Comissão",
+  "commissions.editor.title_edit": "Editar Estrutura de Comissão",
+  "commissions.editor.subtitle_create":
+    "Configure um novo plano de remuneração para o time D2D.",
+  "commissions.editor.subtitle_edit":
+    "Atualize como os reps são remunerados sob este plano.",
+  "commissions.editor.field.name": "Nome da Estrutura",
+  "commissions.editor.field.name_placeholder":
+    'ex.: "Lançamento 2026" ou "Verão"',
+  "commissions.editor.field.active": "Ativa",
+  "commissions.editor.section.residual_clawback": "Residual & Clawback",
+  "commissions.editor.field.residual_percent": "Residual (%)",
+  "commissions.editor.field.residual_help":
+    "% do pagamento mensal de cada assinante que vai ao rep que o cadastrou, todo mês.",
+  "commissions.editor.field.clawback_window": "Janela de clawback (dias)",
+  "commissions.editor.field.clawback_help":
+    "Se um assinante cancelar dentro desta janela, o bônus de cadastro do rep é estornado. Padrão: 30-90 dias.",
+  "commissions.editor.field.notes": "Notas (opcional)",
+  "commissions.editor.field.notes_placeholder":
+    "Notas internas sobre este plano de comissão…",
+  "commissions.editor.section.tier_bonuses": "Bônus de Cadastro por Faixa",
+  "commissions.editor.section.tier_bonuses_help":
+    "Bônus único em dinheiro por novo assinante. Faixas mais altas = bônus maiores para incentivar vendas premium.",
+  "commissions.editor.field.bonus": "Bônus ($)",
+  "commissions.editor.field.threshold": "Limite Acel.",
+  "commissions.editor.field.multiplier": "Multiplicador",
+  "commissions.editor.accelerator_help":
+    "Acelerador: quando um rep ultrapassa o % de meta, o bônus é multiplicado (ex.: 1,5x = 50% a mais).",
+  "commissions.editor.action_save_create": "Criar Estrutura",
+  "commissions.editor.action_save_edit": "Salvar Alterações",
+
+  // Simulator
+  "commissions.simulator.no_active_title": "Nenhuma estrutura ativa",
+  "commissions.simulator.no_active_description":
+    "Vá para a aba Estruturas e ative uma. O simulador usa as taxas da estrutura ativa para calcular os resultados.",
+  "commissions.simulator.intro":
+    "Modele cenários para ver como mudanças afetam o custo total de comissão.",
+  "commissions.simulator.input.sales_team_title": "Time de Vendas",
+  "commissions.simulator.input.sales_team_tooltip":
+    "Quantos reps porta-a-porta você tem e a média mensal de vendas por rep.",
+  "commissions.simulator.input.reps": "Reps",
+  "commissions.simulator.input.sales_per_rep": "Vendas/Rep/Mês",
+  "commissions.simulator.input.new_subs_per_month":
+    "{count} novos assinantes/mês",
+  "commissions.simulator.input.subs_title": "Assinantes Existentes",
+  "commissions.simulator.input.subs_tooltip":
+    "Sua base ativa atual. Dirige o cálculo do residual — % mensal contínuo pago aos reps sobre assinantes retidos.",
+  "commissions.simulator.input.subs_total": "Total Ativos",
+  "commissions.simulator.input.accelerator_title": "Acelerador",
+  "commissions.simulator.input.accelerator_tooltip":
+    "Top reps que ultrapassam a meta ganham multiplicador no bônus de cadastro. Defina que % do time deve atingir esse nível.",
+  "commissions.simulator.input.accelerator_label":
+    "% Reps Ultrapassando Meta",
+  "commissions.simulator.input.billing_title": "Mix de Cobrança",
+  "commissions.simulator.input.billing_tooltip":
+    "Como assinantes pagam. Planos trimestral/anual têm desconto, então o mix afeta receita média e cálculo de residual.",
+  "commissions.simulator.input.billing_monthly": "Mensal %",
+  "commissions.simulator.input.billing_quarterly": "Trimestral %",
+  "commissions.simulator.input.billing_annual": "Anual %",
+  "commissions.simulator.input.billing_must_total":
+    "Deve totalizar 100% (atual {value}%)",
+  "commissions.simulator.input.tier_title": "Mix de Vendas por Faixa",
+  "commissions.simulator.input.tier_tooltip":
+    "% de novos cadastros em cada faixa. Faixas maiores têm bônus maiores. Afeta custo médio por cadastro.",
+  "commissions.simulator.input.tier_must_total":
+    "Deve totalizar 100% (atual {value}%)",
+  "commissions.simulator.input.tier_bonus_label": "{value} de bônus",
+  "commissions.simulator.metric.new_subs": "Novos Assinantes/Mês",
+  "commissions.simulator.metric.new_subs_sublabel":
+    "Total de cadastros novos somando todos os reps",
+  "commissions.simulator.metric.signup_bonuses": "Bônus de Cadastro",
+  "commissions.simulator.metric.signup_bonuses_sublabel":
+    "Bônus únicos pagos neste mês",
+  "commissions.simulator.metric.monthly_residuals": "Residuais Mensais",
+  "commissions.simulator.metric.monthly_residuals_sublabel":
+    "Pagamentos contínuos sobre assinantes retidos",
+  "commissions.simulator.metric.total_commission": "Comissão Total",
+  "commissions.simulator.metric.total_commission_sublabel":
+    "Bônus + residuais combinados",
+  "commissions.simulator.mini.pct_of_revenue": "% da Receita",
+  "commissions.simulator.mini.annual_cost": "Custo Anual",
+  "commissions.simulator.mini.cost_per_new_sub": "Custo/Novo Sub",
+  "commissions.simulator.mini.residual_rate": "Taxa Residual",
+  "commissions.simulator.breakdown.title": "Detalhamento por Faixa",
+  "commissions.simulator.breakdown.subs_summary":
+    "{newSubs} novos + {existingSubs} existentes",
+  "commissions.simulator.breakdown.per_month_suffix": "/mês",
+  "commissions.simulator.breakdown.bonus_per_sub": "{value}/sub bônus",
+  "commissions.simulator.breakdown.upfront": "{value} adiantado",
+  "commissions.simulator.breakdown.residual": "{value} residual",
+  "commissions.simulator.warning_title":
+    "Comissão excede 20% da receita",
+  "commissions.simulator.warning_description":
+    "Considere reduzir bônus, baixar o % residual ou apertar os limites do acelerador.",
+
+  // Toasts
+  "commissions.feedback.created": "Estrutura criada.",
+  "commissions.feedback.updated": "Estrutura atualizada.",
+  "commissions.feedback.deleted": "Estrutura excluída.",
+  "commissions.feedback.activated": "Estrutura ativada.",
+  "commissions.feedback.deactivated": "Estrutura desativada.",
+  "commissions.feedback.save_failed": "Falha ao salvar a estrutura.",
 } as const;
 
 export type MessageKey = keyof typeof messages;

@@ -27,6 +27,8 @@ import {
   calculateBlendedRevenue,
   calculateCommissionPerNewSub,
 } from "@/lib/financial-engine";
+import { useT } from "@/lib/i18n/locale-context";
+import type { Locale } from "@/lib/i18n/locales";
 
 type StructureWithRates = CommissionStructure & {
   tierRates: (CommissionTierRate & { subscriptionTier: SubscriptionTier })[];
@@ -35,9 +37,11 @@ type StructureWithRates = CommissionStructure & {
 interface SimulatorProps {
   structure: StructureWithRates | null;
   tiers: SubscriptionTier[];
+  locale: Locale;
 }
 
-export function CommissionSimulator({ structure, tiers }: SimulatorProps) {
+export function CommissionSimulator({ structure, tiers, locale }: SimulatorProps) {
+  const t = useT();
   const [reps, setReps] = useState(20);
   const [salesPerRep, setSalesPerRep] = useState(15);
   const [tierDistribution, setTierDistribution] = useState<Record<string, number>>(() => {
@@ -129,10 +133,9 @@ export function CommissionSimulator({ structure, tiers }: SimulatorProps) {
       <Card>
         <CardContent className="py-12 text-center">
           <DollarSign className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
-          <p className="font-medium">No active commission structure</p>
+          <p className="font-medium">{t("commissions.simulator.no_active_title")}</p>
           <p className="text-sm text-muted-foreground mt-1 max-w-sm mx-auto">
-            Switch to the Structures tab and activate one first. The simulator
-            uses the active structure&apos;s rates to calculate results.
+            {t("commissions.simulator.no_active_description")}
           </p>
         </CardContent>
       </Card>
@@ -148,7 +151,7 @@ export function CommissionSimulator({ structure, tiers }: SimulatorProps) {
         {/* Compact header */}
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Model different scenarios to see how changes affect your total commission costs.
+            {t("commissions.simulator.intro")}
           </p>
           <Badge variant="outline" className="gap-1.5">
             <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
@@ -162,18 +165,18 @@ export function CommissionSimulator({ structure, tiers }: SimulatorProps) {
             {/* Sales Team */}
             <InputCard
               icon={<Users className="h-3.5 w-3.5" />}
-              title="Sales Team"
-              tooltip="How many door-to-door reps you have and their average monthly sales output."
+              title={t("commissions.simulator.input.sales_team_title")}
+              tooltip={t("commissions.simulator.input.sales_team_tooltip")}
             >
               <div className="grid grid-cols-2 gap-2">
                 <NumberField
-                  label="Reps"
+                  label={t("commissions.simulator.input.reps")}
                   value={reps}
                   step={1}
                   onChange={setReps}
                 />
                 <NumberField
-                  label="Sales/Rep/Mo"
+                  label={t("commissions.simulator.input.sales_per_rep")}
                   value={salesPerRep}
                   step={1}
                   onChange={setSalesPerRep}
@@ -181,18 +184,20 @@ export function CommissionSimulator({ structure, tiers }: SimulatorProps) {
               </div>
               <div className="text-[11px] text-muted-foreground mt-1.5 flex items-center gap-1">
                 <TrendingUp className="h-3 w-3" />
-                {reps * salesPerRep} new subscribers/month
+                {t("commissions.simulator.input.new_subs_per_month", {
+                  count: reps * salesPerRep,
+                })}
               </div>
             </InputCard>
 
             {/* Subscriber Base */}
             <InputCard
               icon={<CreditCard className="h-3.5 w-3.5" />}
-              title="Existing Subscribers"
-              tooltip="Your current active subscriber count. This drives the residual commission calculation — the ongoing monthly % you pay reps on retained subscribers."
+              title={t("commissions.simulator.input.subs_title")}
+              tooltip={t("commissions.simulator.input.subs_tooltip")}
             >
               <NumberField
-                label="Total Active"
+                label={t("commissions.simulator.input.subs_total")}
                 value={totalSubscribers}
                 step={500}
                 onChange={setTotalSubscribers}
@@ -202,11 +207,11 @@ export function CommissionSimulator({ structure, tiers }: SimulatorProps) {
             {/* Accelerator */}
             <InputCard
               icon={<Zap className="h-3.5 w-3.5" />}
-              title="Accelerator"
-              tooltip="Top reps who exceed their sales quota earn a bonus multiplier on their signup commission. Set what % of your team you expect to hit this level."
+              title={t("commissions.simulator.input.accelerator_title")}
+              tooltip={t("commissions.simulator.input.accelerator_tooltip")}
             >
               <NumberField
-                label="% Reps Exceeding Quota"
+                label={t("commissions.simulator.input.accelerator_label")}
                 value={acceleratorPercent}
                 step={5}
                 max={100}
@@ -217,27 +222,33 @@ export function CommissionSimulator({ structure, tiers }: SimulatorProps) {
             {/* Billing Mix */}
             <InputCard
               icon={<PieChart className="h-3.5 w-3.5" />}
-              title="Billing Mix"
-              tooltip="How subscribers pay. Quarterly/annual plans are discounted, so this mix affects average revenue per subscriber and residual calculations."
-              error={billingTotal !== 100 ? `Must total 100% (now ${billingTotal}%)` : undefined}
+              title={t("commissions.simulator.input.billing_title")}
+              tooltip={t("commissions.simulator.input.billing_tooltip")}
+              error={
+                billingTotal !== 100
+                  ? t("commissions.simulator.input.billing_must_total", {
+                      value: billingTotal,
+                    })
+                  : undefined
+              }
             >
               <div className="grid grid-cols-3 gap-2">
                 <NumberField
-                  label="Monthly %"
+                  label={t("commissions.simulator.input.billing_monthly")}
                   value={billingDistribution.monthly}
                   step={5}
                   max={100}
                   onChange={(v) => setBillingDistribution((prev) => ({ ...prev, monthly: v }))}
                 />
                 <NumberField
-                  label="Quarterly %"
+                  label={t("commissions.simulator.input.billing_quarterly")}
                   value={billingDistribution.quarterly}
                   step={5}
                   max={100}
                   onChange={(v) => setBillingDistribution((prev) => ({ ...prev, quarterly: v }))}
                 />
                 <NumberField
-                  label="Annual %"
+                  label={t("commissions.simulator.input.billing_annual")}
                   value={billingDistribution.annual}
                   step={5}
                   max={100}
@@ -249,9 +260,15 @@ export function CommissionSimulator({ structure, tiers }: SimulatorProps) {
             {/* Tier Distribution */}
             <InputCard
               icon={<PieChart className="h-3.5 w-3.5" />}
-              title="Tier Sales Mix"
-              tooltip="What % of new signups go to each tier? Higher tiers have bigger bonuses. This mix affects your average cost per signup."
-              error={distTotal !== 100 ? `Must total 100% (now ${distTotal}%)` : undefined}
+              title={t("commissions.simulator.input.tier_title")}
+              tooltip={t("commissions.simulator.input.tier_tooltip")}
+              error={
+                distTotal !== 100
+                  ? t("commissions.simulator.input.tier_must_total", {
+                      value: distTotal,
+                    })
+                  : undefined
+              }
             >
               <div className="space-y-1.5">
                 {tiers.map((tier) => {
@@ -261,7 +278,11 @@ export function CommissionSimulator({ structure, tiers }: SimulatorProps) {
                     <div key={tier.id} className="flex items-center gap-2">
                       <div className="w-[88px] shrink-0">
                         <p className="text-xs font-medium leading-tight">{tier.name}</p>
-                        <p className="text-[10px] text-muted-foreground">{formatCurrency(bonus)} bonus</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {t("commissions.simulator.input.tier_bonus_label", {
+                            value: formatCurrency(bonus, locale),
+                          })}
+                        </p>
                       </div>
                       <div className="flex-1">
                         <Input
@@ -292,27 +313,27 @@ export function CommissionSimulator({ structure, tiers }: SimulatorProps) {
                 {/* Primary metrics */}
                 <div className="grid grid-cols-2 gap-3">
                   <MetricCard
-                    label="New Subs/Month"
+                    label={t("commissions.simulator.metric.new_subs")}
                     value={String(results.totalNewSubs)}
-                    sublabel="Total new signups across all reps"
+                    sublabel={t("commissions.simulator.metric.new_subs_sublabel")}
                     accent="blue"
                   />
                   <MetricCard
-                    label="Signup Bonuses"
-                    value={formatCurrency(results.totalUpfront)}
-                    sublabel="One-time bonuses paid this month"
+                    label={t("commissions.simulator.metric.signup_bonuses")}
+                    value={formatCurrency(results.totalUpfront, locale)}
+                    sublabel={t("commissions.simulator.metric.signup_bonuses_sublabel")}
                     accent="amber"
                   />
                   <MetricCard
-                    label="Monthly Residuals"
-                    value={formatCurrency(results.totalResidual)}
-                    sublabel="Ongoing payments on retained subs"
+                    label={t("commissions.simulator.metric.monthly_residuals")}
+                    value={formatCurrency(results.totalResidual, locale)}
+                    sublabel={t("commissions.simulator.metric.monthly_residuals_sublabel")}
                     accent="purple"
                   />
                   <MetricCard
-                    label="Total Commission"
-                    value={formatCurrency(results.totalCommission)}
-                    sublabel="Bonuses + residuals combined"
+                    label={t("commissions.simulator.metric.total_commission")}
+                    value={formatCurrency(results.totalCommission, locale)}
+                    sublabel={t("commissions.simulator.metric.total_commission_sublabel")}
                     accent="green"
                     highlight
                   />
@@ -321,21 +342,21 @@ export function CommissionSimulator({ structure, tiers }: SimulatorProps) {
                 {/* Secondary metrics */}
                 <div className="grid grid-cols-4 gap-2">
                   <MiniMetric
-                    label="% of Revenue"
-                    value={formatPercent(results.commissionPctOfRevenue)}
+                    label={t("commissions.simulator.mini.pct_of_revenue")}
+                    value={formatPercent(results.commissionPctOfRevenue, 1, locale)}
                     warn={results.commissionPctOfRevenue > 15}
                   />
                   <MiniMetric
-                    label="Annual Cost"
-                    value={formatCurrency(results.annualCommission)}
+                    label={t("commissions.simulator.mini.annual_cost")}
+                    value={formatCurrency(results.annualCommission, locale)}
                   />
                   <MiniMetric
-                    label="Cost/New Sub"
-                    value={formatCurrency(results.costPerNewSub)}
+                    label={t("commissions.simulator.mini.cost_per_new_sub")}
+                    value={formatCurrency(results.costPerNewSub, locale)}
                   />
                   <MiniMetric
-                    label="Residual Rate"
-                    value={formatPercent(results.residualPercent)}
+                    label={t("commissions.simulator.mini.residual_rate")}
+                    value={formatPercent(results.residualPercent, 1, locale)}
                   />
                 </div>
 
@@ -343,7 +364,7 @@ export function CommissionSimulator({ structure, tiers }: SimulatorProps) {
                 <Card size="sm">
                   <CardContent>
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-2">
-                      Per-Tier Breakdown
+                      {t("commissions.simulator.breakdown.title")}
                     </p>
                     <div className="space-y-0">
                       {results.tierResults.map((tr, idx) => {
@@ -359,12 +380,17 @@ export function CommissionSimulator({ structure, tiers }: SimulatorProps) {
                               <div className="flex items-center gap-2">
                                 <span className="text-xs font-semibold">{tr.tierName}</span>
                                 <span className="text-[10px] text-muted-foreground">
-                                  {tr.newSubs} new + {Math.round(tr.estimatedTotalSubs)} existing
+                                  {t("commissions.simulator.breakdown.subs_summary", {
+                                    newSubs: tr.newSubs,
+                                    existingSubs: Math.round(tr.estimatedTotalSubs),
+                                  })}
                                 </span>
                               </div>
                               <span className="text-xs font-bold tabular-nums">
-                                {formatCurrency(total)}
-                                <span className="font-normal text-muted-foreground">/mo</span>
+                                {formatCurrency(total, locale)}
+                                <span className="font-normal text-muted-foreground">
+                                  {t("commissions.simulator.breakdown.per_month_suffix")}
+                                </span>
                               </span>
                             </div>
                             {/* Bar */}
@@ -375,9 +401,21 @@ export function CommissionSimulator({ structure, tiers }: SimulatorProps) {
                               />
                             </div>
                             <div className="flex gap-3 text-[10px] text-muted-foreground">
-                              <span>{formatCurrency(tr.effectiveBonus)}/sub bonus</span>
-                              <span>{formatCurrency(tr.upfrontCost)} upfront</span>
-                              <span>{formatCurrency(tr.residualCost)} residual</span>
+                              <span>
+                                {t("commissions.simulator.breakdown.bonus_per_sub", {
+                                  value: formatCurrency(tr.effectiveBonus, locale),
+                                })}
+                              </span>
+                              <span>
+                                {t("commissions.simulator.breakdown.upfront", {
+                                  value: formatCurrency(tr.upfrontCost, locale),
+                                })}
+                              </span>
+                              <span>
+                                {t("commissions.simulator.breakdown.residual", {
+                                  value: formatCurrency(tr.residualCost, locale),
+                                })}
+                              </span>
                             </div>
                           </div>
                         );
@@ -392,11 +430,10 @@ export function CommissionSimulator({ structure, tiers }: SimulatorProps) {
                     <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
                     <div>
                       <p className="text-xs font-medium text-red-700 dark:text-red-400">
-                        Commission exceeds 20% of revenue
+                        {t("commissions.simulator.warning_title")}
                       </p>
                       <p className="text-[11px] text-red-600/80 dark:text-red-400/80 mt-0.5">
-                        Consider reducing bonuses, lowering the residual %, or tightening
-                        accelerator thresholds.
+                        {t("commissions.simulator.warning_description")}
                       </p>
                     </div>
                   </div>

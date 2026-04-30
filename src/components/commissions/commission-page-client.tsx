@@ -10,7 +10,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Plus, Pencil, Trash2, Power, DollarSign, Clock, Percent, BarChart3 } from "lucide-react";
 import { formatPercent, formatCurrency, toNumber } from "@/lib/utils";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import type { Locale } from "@/lib/i18n/locales";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
 
 type StructureWithRates = CommissionStructure & {
   tierRates: (CommissionTierRate & { subscriptionTier: SubscriptionTier })[];
@@ -19,12 +21,15 @@ type StructureWithRates = CommissionStructure & {
 interface CommissionPageClientProps {
   initialStructures: StructureWithRates[];
   tiers: SubscriptionTier[];
+  locale: Locale;
 }
 
 export function CommissionPageClient({
   initialStructures,
   tiers,
+  locale,
 }: CommissionPageClientProps) {
+  const t = useT();
   const [structures, setStructures] = useState(initialStructures);
   const [editStructure, setEditStructure] = useState<StructureWithRates | null>(null);
   const [showCreate, setShowCreate] = useState(false);
@@ -47,8 +52,7 @@ export function CommissionPageClient({
         body: JSON.stringify(data),
       });
       if (!res.ok) {
-        const json = await res.json();
-        toast.error(json.error || "Failed to save");
+        notifyError("commissions.feedback.save_failed", t);
         return;
       }
       const json = await res.json();
@@ -63,9 +67,14 @@ export function CommissionPageClient({
       }
 
       await refresh();
-      toast.success(editStructure ? "Updated" : "Created");
+      notifySuccess(
+        editStructure
+          ? "commissions.feedback.updated"
+          : "commissions.feedback.created",
+        t,
+      );
     },
-    [editStructure, refresh]
+    [editStructure, refresh, t]
   );
 
   const handleToggleActive = useCallback(
@@ -76,19 +85,24 @@ export function CommissionPageClient({
         body: JSON.stringify({ isActive: !structure.isActive }),
       });
       await refresh();
-      toast.success(structure.isActive ? "Deactivated" : "Activated");
+      notifySuccess(
+        structure.isActive
+          ? "commissions.feedback.deactivated"
+          : "commissions.feedback.activated",
+        t,
+      );
     },
-    [refresh]
+    [refresh, t]
   );
 
   const handleDelete = useCallback(
     async (structure: StructureWithRates) => {
-      if (!confirm(`Delete "${structure.name}"?`)) return;
+      if (!confirm(t("commissions.structures.confirm_delete", { name: structure.name }))) return;
       await fetch(`/api/commissions/${structure.id}`, { method: "DELETE" });
       await refresh();
-      toast.success("Deleted");
+      notifySuccess("commissions.feedback.deleted", t);
     },
-    [refresh]
+    [refresh, t]
   );
 
   const activeStructure = structures.find((s) => s.isActive);
@@ -97,8 +111,8 @@ export function CommissionPageClient({
     <>
       <Tabs defaultValue="structures">
         <TabsList>
-          <TabsTrigger value="structures">Structures</TabsTrigger>
-          <TabsTrigger value="simulator">Simulator</TabsTrigger>
+          <TabsTrigger value="structures">{t("commissions.tabs.structures")}</TabsTrigger>
+          <TabsTrigger value="simulator">{t("commissions.tabs.simulator")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="structures">
@@ -106,13 +120,11 @@ export function CommissionPageClient({
             {/* Quick-start banner */}
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground max-w-lg">
-                Commission structures define how your sales reps get paid — one-time
-                signup bonuses plus ongoing monthly residuals. Only one can be active
-                at a time.
+                {t("commissions.structures.banner")}
               </p>
               <Button size="sm" onClick={() => setShowCreate(true)}>
                 <Plus className="mr-1.5 h-3.5 w-3.5" />
-                New Structure
+                {t("commissions.structures.new_button")}
               </Button>
             </div>
 
@@ -120,10 +132,9 @@ export function CommissionPageClient({
               <Card>
                 <CardContent className="py-12 text-center">
                   <DollarSign className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
-                  <p className="font-medium">No commission structures yet</p>
+                  <p className="font-medium">{t("commissions.structures.empty_title")}</p>
                   <p className="text-sm text-muted-foreground mt-1 max-w-sm mx-auto">
-                    Create your first structure to define how your D2D sales team earns
-                    bonuses and residual income.
+                    {t("commissions.structures.empty_description")}
                   </p>
                 </CardContent>
               </Card>
@@ -151,7 +162,7 @@ export function CommissionPageClient({
                             <h3 className="font-semibold text-sm">{structure.name}</h3>
                             {structure.isActive && (
                               <Badge className="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 text-[10px] px-1.5 py-0">
-                                Active
+                                {t("commissions.structures.active_badge")}
                               </Badge>
                             )}
                           </div>
@@ -163,13 +174,22 @@ export function CommissionPageClient({
                         </div>
                       </div>
                       <div className="flex gap-0.5">
-                        <Button variant="ghost" size="icon-sm" onClick={() => setEditStructure(structure)} title="Edit">
+                        <Button variant="ghost" size="icon-sm" onClick={() => setEditStructure(structure)} title={t("commissions.structures.action_edit")}>
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
-                        <Button variant="ghost" size="icon-sm" onClick={() => handleToggleActive(structure)} title={structure.isActive ? "Deactivate" : "Activate"}>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => handleToggleActive(structure)}
+                          title={
+                            structure.isActive
+                              ? t("commissions.structures.action_deactivate")
+                              : t("commissions.structures.action_activate")
+                          }
+                        >
                           <Power className="h-3.5 w-3.5" />
                         </Button>
-                        <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(structure)} title="Delete">
+                        <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(structure)} title={t("commissions.structures.action_delete")}>
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
@@ -180,22 +200,34 @@ export function CommissionPageClient({
                       <div className="flex items-center gap-2.5 rounded-lg bg-muted/50 px-3 py-2">
                         <Percent className="h-3.5 w-3.5 text-muted-foreground" />
                         <div>
-                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Residual</p>
-                          <p className="font-semibold text-sm">{formatPercent(toNumber(structure.residualPercent))}</p>
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                            {t("commissions.structures.stat_residual")}
+                          </p>
+                          <p className="font-semibold text-sm">
+                            {formatPercent(toNumber(structure.residualPercent), 1, locale)}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2.5 rounded-lg bg-muted/50 px-3 py-2">
                         <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                         <div>
-                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Clawback</p>
-                          <p className="font-semibold text-sm">{structure.clawbackWindowDays} days</p>
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                            {t("commissions.structures.stat_clawback")}
+                          </p>
+                          <p className="font-semibold text-sm">
+                            {t("commissions.structures.stat_clawback_days", { days: structure.clawbackWindowDays })}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2.5 rounded-lg bg-muted/50 px-3 py-2">
                         <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
                         <div>
-                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Tiers</p>
-                          <p className="font-semibold text-sm">{structure.tierRates.length} configured</p>
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                            {t("commissions.structures.stat_tiers")}
+                          </p>
+                          <p className="font-semibold text-sm">
+                            {t("commissions.structures.stat_tiers_configured", { count: structure.tierRates.length })}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -212,11 +244,11 @@ export function CommissionPageClient({
                               {rate.subscriptionTier.name}
                             </p>
                             <p className="font-semibold text-sm">
-                              {formatCurrency(toNumber(rate.flatBonusAmount))}
+                              {formatCurrency(toNumber(rate.flatBonusAmount), locale)}
                             </p>
                             {rate.acceleratorMultiplier && (
                               <p className="text-[10px] text-muted-foreground">
-                                {toNumber(rate.acceleratorMultiplier)}x accelerator
+                                {t("commissions.structures.accelerator_label", { value: toNumber(rate.acceleratorMultiplier) })}
                               </p>
                             )}
                           </div>
@@ -234,6 +266,7 @@ export function CommissionPageClient({
           <CommissionSimulator
             structure={activeStructure || null}
             tiers={tiers}
+            locale={locale}
           />
         </TabsContent>
       </Tabs>

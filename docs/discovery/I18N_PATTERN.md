@@ -2,7 +2,7 @@
 
 > Estabelecido na Etapa 1.5.4 (Ledger Internationalization).
 > Pattern canônico para internacionalizar features do HERD.
-> Versão: 1.1 — última atualização: 2026-04-30 (Etapa 1.5.5).
+> Versão: 1.2 — última atualização: 2026-04-30 (Etapa 1.5.6a).
 
 Este documento é a referência única de **como** internacionalizar uma feature.
 Ele captura as decisões e templates cravados na Etapa 1.5.4 e serve de base
@@ -185,6 +185,74 @@ Se a string aparece em ≥3 contextos, vira chave em `common.*`:
 
 Se aparece em 1-2 contextos, vive na chave da feature específica.
 
+### Template G: Toast notifications
+
+Use os helpers `notifySuccess`, `notifyError`, `notifyInfo`, `notifyWarning`
+em `src/lib/i18n/notify.ts` em vez de `toast.success/error/info/warning`
+direto:
+
+```tsx
+"use client";
+
+import { useT } from "@/lib/i18n/locale-context";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
+
+const t = useT();
+
+// Sucesso simples
+notifySuccess("common.feedback.saved_successfully", t);
+
+// Sucesso com params
+notifySuccess("knowledge.feedback.uploaded", t, { count: 3 });
+
+// Erro estruturado (com .code) — extrai params automaticamente
+try { await mutation(); } catch (err) { notifyError(err, t); }
+
+// Erro custom (sem objeto Error) — primeiro arg é string ⇒ MessageKey
+notifyError("error.knowledge.upload_failed", t);
+```
+
+Os helpers centralizam o pattern e evitam que cada caller invente seu modo
+de compor mensagem traduzida. **`notifyError` discrimina pelo tipo do
+primeiro argumento**: string ⇒ trata como MessageKey; outro ⇒ trata como
+Error e usa `translateErrorWithT`.
+
+### Pattern: `labelKey` em interfaces hierárquicas
+
+Quando uma interface representa hierarquia visível na UI (sidebar items,
+sub-panel categorias, sub-panel links, breadcrumbs, etc.), **todos os
+níveis** que renderizam texto devem aceitar `labelKey?: MessageKey`
+opcional, lado a lado com o `label: string` literal de fallback.
+
+Exemplo do `SubPanelConfig` (cravado em 1.5.5):
+
+```ts
+interface SubPanelConfig {
+  label: string;
+  labelKey?: MessageKey;  // novo (1.5.5)
+  categories?: SubPanelCategory[];
+  // ...
+}
+
+interface SubPanelCategory {
+  label: string;
+  labelKey?: MessageKey;  // novo (1.5.5)
+  links: SubPanelLink[];
+}
+
+interface SubPanelLink {
+  label: string;
+  labelKey?: MessageKey;  // já existia desde 1.5.4
+  href: string;
+}
+```
+
+Renderização: `labelKey ? t(labelKey) : label`. Razão: features migradas
+em momentos diferentes precisam coexistir. Sem `labelKey` em todos os
+níveis, parte da hierarquia fica em PT-BR hardcoded mesmo após migração
+de uma feature; com a opção em todos, cada feature ativa o `labelKey`
+quando migrar e a hierarquia inteira passa a falar a língua do usuário.
+
 ## Convenções de naming
 
 | Contexto | Pattern | Exemplo |
@@ -205,7 +273,9 @@ Se aparece em 1-2 contextos, vive na chave da feature específica.
 3. **Migrar componentes em ordem**: utilitários (`<Money>`, `<Badge>`) → Client
    Components → RSCs.
 4. **Threading de locale**: cada RSC chama `getLocale()` e passa como prop.
-5. **Mensagens de erro**: classes ganham `code`, UI usa `translateError*`.
+5. **Mensagens de erro**: classes ganham `code`, UI usa
+   `notifyError(err, t)` ou `notifyError("error.feature.specific_key", t)`
+   conforme o caso. Em RSC, `translateError(err, locale)`.
 6. **Verificar gates**: `npm test`, `npm run lint`, `npm run build`,
    `npm run check:i18n`.
 7. **Ativar ESLint estrito**: adicionar paths da feature ao override de
@@ -226,6 +296,16 @@ Se aparece em 1-2 contextos, vive na chave da feature específica.
 - ❌ Traduzir dados authored pelo usuário (`description`, `reason`, `notes`).
 - ❌ Traduzir o `message` técnico das classes de erro — permanece em inglês
   para logs; o que vai à UI vem da chave de dicionário via `translateError*`.
+- ❌ Criar chaves `common.*` "para o futuro" sem caso de uso real. Cada
+  chave criada e não referenciada vira ruído no `check:i18n` e drift de
+  paridade entre dicionários. Espera primeiro caso real e cria no momento.
+- ❌ Migrar feature sem rodar backport quando uma chave local vira
+  `common.*`. Drift por duplicação aparece se ledger e knowledge têm
+  ambos `*.count_one` e `*.count_other` em vez de reusar
+  `common.units.*`. Backport é parte do **mesmo commit** que craveu a
+  chave em `common.*`.
+- ❌ Usar `toast.success/error` direto em código novo. Sempre use os
+  helpers `notify*` em `src/lib/i18n/notify.ts`.
 - ❌ Configurar `react/jsx-no-literals` com `ignoreProps: false`. O setting
   `false` flagga TODA prop com string (`className`, `variant`, `href`,
   `data-testid`), gerando ~100 falsos positivos por feature. A regra é sobre
@@ -282,6 +362,17 @@ ou refinar um existente, atualize este arquivo:
 Este é um documento vivo. A última atualização vai estar no header.
 
 ## Changelog
+
+### v1.2 — 2026-04-30 (Etapa 1.5.6a)
+
+- Template G adicionado: helpers de toast (`notifySuccess`, `notifyError`,
+  `notifyInfo`, `notifyWarning`) em `src/lib/i18n/notify.ts`.
+- Pattern de `labelKey` em interfaces hierárquicas documentado como
+  template explícito.
+- Anti-patterns adicionados: criar chaves `common.*` "para o futuro",
+  esquecer backport quando chave local vira `common.*`, usar
+  `toast.success/error` direto.
+- Procedimento passo 5 atualizado para mencionar `notifyError`.
 
 ### v1.1 — 2026-04-30 (Etapa 1.5.5)
 
