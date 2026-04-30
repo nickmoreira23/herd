@@ -103,12 +103,16 @@ export interface SubPanelLink {
 export interface SubPanelCategory {
   id: string;
   label: string;
+  /** Optional translation key. When present, takes precedence over `label`. */
+  labelKey?: string;
   links: SubPanelLink[];
 }
 
 export interface SubPanelConfig {
   id: string;
   label: string;
+  /** Optional translation key. When present, takes precedence over `label`. */
+  labelKey?: string;
   links: SubPanelLink[];
   categories?: SubPanelCategory[];
 }
@@ -201,6 +205,7 @@ export const subPanelRegistry: Record<string, SubPanelConfig> = {
   ledger: {
     id: "ledger",
     label: "Ledger",
+    labelKey: "nav.sidebar.ledger",
     links: [
       {
         href: "/admin/ledger",
@@ -267,6 +272,7 @@ function BlocksSubPanel() {
   const pathname = usePathname();
   const { setSubPanelCollapsed } = useUIStore();
   const locale = useLocale();
+  const t = useT();
   const [categories, setCategories] = useState<BlockCategory[]>(DEFAULT_BLOCK_CATEGORIES);
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -298,7 +304,7 @@ function BlocksSubPanel() {
         <button
           onClick={() => setSubPanelCollapsed(true)}
           className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-accent mr-4"
-          title="Collapse panel"
+          title={t("nav.subpanel.collapse")}
         >
           <PanelLeftClose className="h-4 w-4" />
         </button>
@@ -394,6 +400,7 @@ function KnowledgeSubPanel() {
   const pathname = usePathname();
   const { setSubPanelCollapsed } = useUIStore();
   const locale = useLocale();
+  const t = useT();
   const [categories, setCategories] = useState<BlockCategory[]>(DEFAULT_BLOCK_CATEGORIES);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -450,7 +457,7 @@ function KnowledgeSubPanel() {
         <button
           onClick={() => setSubPanelCollapsed(true)}
           className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-accent mr-4"
-          title="Collapse panel"
+          title={t("nav.subpanel.collapse")}
         >
           <PanelLeftClose className="h-4 w-4" />
         </button>
@@ -558,6 +565,7 @@ interface NetworkSidebarData {
 function NetworkSubPanel() {
   const pathname = usePathname();
   const { setSubPanelCollapsed } = useUIStore();
+  const t = useT();
   const [data, setData] = useState<NetworkSidebarData>({
     departments: [],
     channels: [],
@@ -613,7 +621,7 @@ function NetworkSubPanel() {
         <button
           onClick={() => setSubPanelCollapsed(true)}
           className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-accent mr-4"
-          title="Collapse panel"
+          title={t("nav.subpanel.collapse")}
         >
           <PanelLeftClose className="h-4 w-4" />
         </button>
@@ -733,6 +741,7 @@ function NetworkSubPanel() {
 function ToolsSubPanel() {
   const pathname = usePathname();
   const { setSubPanelCollapsed } = useUIStore();
+  const t = useT();
   const categories = getAllToolCategories();
 
   const isActive = (href: string) => {
@@ -751,7 +760,7 @@ function ToolsSubPanel() {
         <button
           onClick={() => setSubPanelCollapsed(true)}
           className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-accent mr-4"
-          title="Collapse panel"
+          title={t("nav.subpanel.collapse")}
         >
           <PanelLeftClose className="h-4 w-4" />
         </button>
@@ -845,6 +854,7 @@ interface MarketplaceSectionRow {
 function MarketplaceSubPanel() {
   const pathname = usePathname();
   const { setSubPanelCollapsed } = useUIStore();
+  const t = useT();
   // Hydrate state from cache on first render so we don't flash an empty
   // panel before the network responds. `loaded` differentiates "still
   // fetching for the first time" (show skeleton) from "fetched, empty"
@@ -903,7 +913,7 @@ function MarketplaceSubPanel() {
         <button
           onClick={() => setSubPanelCollapsed(true)}
           className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-accent mr-4"
-          title="Collapse panel"
+          title={t("nav.subpanel.collapse")}
         >
           <PanelLeftClose className="h-4 w-4" />
         </button>
@@ -986,6 +996,7 @@ function MarketplaceSubPanel() {
 function OrganizationSubPanel() {
   const pathname = usePathname();
   const { setSubPanelCollapsed } = useUIStore();
+  const t = useT();
   const config = subPanelRegistry.organization;
   const categories = config?.categories ?? [];
 
@@ -1005,7 +1016,7 @@ function OrganizationSubPanel() {
         <button
           onClick={() => setSubPanelCollapsed(true)}
           className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-accent mr-4"
-          title="Collapse panel"
+          title={t("nav.subpanel.collapse")}
         >
           <PanelLeftClose className="h-4 w-4" />
         </button>
@@ -1199,11 +1210,13 @@ function GenericSubPanel({ config }: { config: SubPanelConfig }) {
     >
       {/* Header */}
       <div className="flex items-center justify-between pt-6 pb-4">
-        <h2 className="text-[16px] font-semibold truncate pl-6">{config.label}</h2>
+        <h2 className="text-[16px] font-semibold truncate pl-6">
+          {config.labelKey ? t(config.labelKey as MessageKey) : config.label}
+        </h2>
         <button
           onClick={() => setSubPanelCollapsed(true)}
           className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-accent mr-4"
-          title="Collapse panel"
+          title={t("nav.subpanel.collapse")}
         >
           <PanelLeftClose className="h-4 w-4" />
         </button>

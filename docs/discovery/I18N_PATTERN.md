@@ -2,7 +2,7 @@
 
 > Estabelecido na Etapa 1.5.4 (Ledger Internationalization).
 > Pattern canônico para internacionalizar features do HERD.
-> Última atualização: 2026-04-30.
+> Versão: 1.1 — última atualização: 2026-04-30 (Etapa 1.5.5).
 
 Este documento é a referência única de **como** internacionalizar uma feature.
 Ele captura as decisões e templates cravados na Etapa 1.5.4 e serve de base
@@ -226,6 +226,47 @@ Se aparece em 1-2 contextos, vive na chave da feature específica.
 - ❌ Traduzir dados authored pelo usuário (`description`, `reason`, `notes`).
 - ❌ Traduzir o `message` técnico das classes de erro — permanece em inglês
   para logs; o que vai à UI vem da chave de dicionário via `translateError*`.
+- ❌ Configurar `react/jsx-no-literals` com `ignoreProps: false`. O setting
+  `false` flagga TODA prop com string (`className`, `variant`, `href`,
+  `data-testid`), gerando ~100 falsos positivos por feature. A regra é sobre
+  **texto visível ao usuário em JSX content**, não sobre valores técnicos de
+  props. Sempre use `ignoreProps: true`.
+
+## ESLint config recomendada
+
+Para ativar `react/jsx-no-literals` em paths de uma feature já internacionalizada:
+
+```js
+{
+  files: [
+    "src/components/<feature>/**/*.{ts,tsx}",
+    "src/app/admin/<feature>/**/*.{ts,tsx}",
+  ],
+  rules: {
+    "react/jsx-no-literals": ["error", {
+      noStrings: true,
+      ignoreProps: true,            // crítico — ver anti-pattern acima
+      allowedStrings: [" ", "·", "—", "/", "-", "…"],
+    }],
+  },
+},
+```
+
+## Namespace `common.*`
+
+Estabelecido na Etapa 1.5.5. Strings reutilizadas em **≥3 features** vivem em
+`common.*` com sub-categorias permanentes:
+
+- `common.actions.*` — verbos imperativos (save, cancel, delete, edit, etc.)
+- `common.states.*` — estados (loading, error, empty, saving, etc.)
+- `common.placeholders.*` — placeholders de input
+- `common.confirmations.*` — frases de modal de confirmação genérico
+- `common.feedback.*` — mensagens de toast/feedback genérico
+- `common.time.*` — labels de tempo (today, yesterday, this_week, etc.)
+- `common.units.*` — (futuro — cravado caso-a-caso a partir da 1.5.6)
+
+**Regra dura**: chave `common.*` só é criada se for usada em ≥3 contextos.
+Uso em 1-2 lugares fica na chave da feature específica.
 
 ## Quando atualizar este documento
 
@@ -239,3 +280,18 @@ ou refinar um existente, atualize este arquivo:
   preserve o histórico.
 
 Este é um documento vivo. A última atualização vai estar no header.
+
+## Changelog
+
+### v1.1 — 2026-04-30 (Etapa 1.5.5)
+
+- Anti-pattern: `ignoreProps: false` em `react/jsx-no-literals` cria falsos
+  positivos massivos. Sempre use `true`.
+- Seção "ESLint config recomendada" adicionada com config canônica.
+- Seção "Namespace `common.*`" adicionada documentando as 7 sub-categorias
+  permanentes e a regra de ≥3 contextos.
+
+### v1.0 — 2026-04-30 (Etapa 1.5.4)
+
+- Publicação inicial: 6 templates (A-F), tabela de naming conventions,
+  procedimento de internacionalização, anti-patterns.

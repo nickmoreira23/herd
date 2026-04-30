@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, RefreshCw, AlertTriangle } from "lucide-react";
+import { useT } from "@/lib/i18n/locale-context";
 
 export default function IntegrationDetailError({
   error,
@@ -14,6 +15,7 @@ export default function IntegrationDetailError({
   reset: () => void;
 }) {
   const router = useRouter();
+  const t = useT();
 
   useEffect(() => {
     console.error("Integration detail page error:", error);
@@ -36,17 +38,16 @@ export default function IntegrationDetailError({
             Failed to load integration
           </h2>
           <p className="text-sm text-muted-foreground mb-6 text-center max-w-md">
-            Something went wrong while loading this integration. This is usually
-            a temporary issue.
+            {t("shell.error.temporary_issue")}
           </p>
           <div className="flex gap-3">
             <Button variant="outline" onClick={() => router.push("/admin/integrations")}>
               <ArrowLeft className="h-4 w-4 mr-1.5" />
-              Go Back
+              {t("shell.error.go_back")}
             </Button>
             <Button onClick={reset}>
               <RefreshCw className="h-4 w-4 mr-1.5" />
-              Try Again
+              {t("shell.error.try_again")}
             </Button>
           </div>
         </CardContent>
