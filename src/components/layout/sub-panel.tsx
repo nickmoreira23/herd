@@ -189,6 +189,14 @@ export const subPanelRegistry: Record<string, SubPanelConfig> = {
     label: "Marketplace",
     links: [], // Dynamically rendered by MarketplaceSubPanel
   },
+  ledger: {
+    id: "ledger",
+    label: "Ledger",
+    links: [
+      { href: "/admin/ledger", label: "Plano de Contas", icon: LayoutGrid },
+      { href: "/admin/ledger/entries", label: "Journal Entries", icon: FileText },
+    ],
+  },
 };
 
 // Map a sidebar href to a sub-panel ID (if it should open one)
@@ -201,6 +209,7 @@ export const hrefToSubPanel: Record<string, string> = {
   "/admin/organization/knowledge": "knowledge",
   "/admin/integrations": "integrations",
   "/admin/marketplace": "marketplace",
+  "/admin/ledger": "ledger",
 };
 
 // All hrefs that belong to a sub-panel (used to auto-detect active panel from pathname)
@@ -209,6 +218,7 @@ export function getSubPanelIdForPath(pathname: string): string | null {
   if (pathname.startsWith("/admin/agents")) return "agents";
   if (pathname.startsWith("/admin/tools")) return "tools";
   if (pathname.startsWith("/admin/marketplace")) return "marketplace";
+  if (pathname.startsWith("/admin/ledger")) return "ledger";
   if (pathname.startsWith("/admin/network")) return "network";
   if (pathname.startsWith("/admin/organization/knowledge")) return "knowledge";
   if (pathname.startsWith("/admin/organization")) return "organization";
