@@ -461,4 +461,135 @@ export const messages: Record<MessageKey, string> = {
     "The page you are looking for does not exist or has been moved.",
   "shell.error.temporary_issue":
     "Something went wrong. This is usually a temporary issue.",
+
+  // ============================================================
+  // Commissions - Phase 1.5.6a
+  // ============================================================
+
+  "commissions.page.title": "Commission Structures",
+  "commissions.page.description":
+    "Define how the D2D sales team gets paid and see the margin impact.",
+
+  "commissions.tabs.structures": "Structures",
+  "commissions.tabs.simulator": "Simulator",
+
+  "commissions.structures.banner":
+    "Commission structures define how your sales reps get paid — one-time signup bonuses plus ongoing monthly residuals. Only one can be active at a time.",
+  "commissions.structures.new_button": "New Structure",
+  "commissions.structures.empty_title": "No commission structures yet",
+  "commissions.structures.empty_description":
+    "Create your first structure to define how your D2D sales team earns bonuses and residual income.",
+  "commissions.structures.active_badge": "Active",
+  "commissions.structures.stat_residual": "Residual",
+  "commissions.structures.stat_clawback": "Clawback",
+  "commissions.structures.stat_clawback_days": "{days} days",
+  "commissions.structures.stat_tiers": "Tiers",
+  "commissions.structures.stat_tiers_configured": "{count} configured",
+  "commissions.structures.accelerator_label": "{value}x accelerator",
+  "commissions.structures.action_edit": "Edit",
+  "commissions.structures.action_activate": "Activate",
+  "commissions.structures.action_deactivate": "Deactivate",
+  "commissions.structures.action_delete": "Delete",
+  "commissions.structures.confirm_delete": 'Delete "{name}"?',
+
+  "commissions.editor.title_create": "New Commission Structure",
+  "commissions.editor.title_edit": "Edit Commission Structure",
+  "commissions.editor.subtitle_create":
+    "Set up a new compensation plan for your D2D sales team.",
+  "commissions.editor.subtitle_edit":
+    "Update how your sales reps are compensated under this plan.",
+  "commissions.editor.field.name": "Structure Name",
+  "commissions.editor.field.name_placeholder":
+    'e.g. "Launch 2026" or "Summer Push"',
+  "commissions.editor.field.active": "Active",
+  "commissions.editor.section.residual_clawback": "Residual & Clawback",
+  "commissions.editor.field.residual_percent": "Residual (%)",
+  "commissions.editor.field.residual_help":
+    "% of each subscriber's monthly payment that goes to the rep who signed them up, every month.",
+  "commissions.editor.field.clawback_window": "Clawback Window (days)",
+  "commissions.editor.field.clawback_help":
+    "If a subscriber cancels within this window, the rep's signup bonus is taken back. Standard: 30-90 days.",
+  "commissions.editor.field.notes": "Notes (optional)",
+  "commissions.editor.field.notes_placeholder":
+    "Internal notes about this commission plan…",
+  "commissions.editor.section.tier_bonuses": "Per-Tier Signup Bonuses",
+  "commissions.editor.section.tier_bonuses_help":
+    "One-time cash bonus per new subscriber. Higher tiers = higher bonuses to incentivize premium sales.",
+  "commissions.editor.field.bonus": "Bonus ($)",
+  "commissions.editor.field.threshold": "Accel. Threshold",
+  "commissions.editor.field.multiplier": "Multiplier",
+  "commissions.editor.accelerator_help":
+    "Accelerator: when a rep exceeds the threshold % of quota, their bonus is multiplied (e.g. 1.5x = 50% more).",
+  "commissions.editor.action_save_create": "Create Structure",
+  "commissions.editor.action_save_edit": "Save Changes",
+
+  "commissions.simulator.no_active_title": "No active commission structure",
+  "commissions.simulator.no_active_description":
+    "Switch to the Structures tab and activate one first. The simulator uses the active structure's rates to calculate results.",
+  "commissions.simulator.intro":
+    "Model different scenarios to see how changes affect your total commission costs.",
+  "commissions.simulator.input.sales_team_title": "Sales Team",
+  "commissions.simulator.input.sales_team_tooltip":
+    "How many door-to-door reps you have and their average monthly sales output.",
+  "commissions.simulator.input.reps": "Reps",
+  "commissions.simulator.input.sales_per_rep": "Sales/Rep/Mo",
+  "commissions.simulator.input.new_subs_per_month":
+    "{count} new subscribers/month",
+  "commissions.simulator.input.subs_title": "Existing Subscribers",
+  "commissions.simulator.input.subs_tooltip":
+    "Your current active subscriber count. This drives the residual commission calculation — the ongoing monthly % you pay reps on retained subscribers.",
+  "commissions.simulator.input.subs_total": "Total Active",
+  "commissions.simulator.input.accelerator_title": "Accelerator",
+  "commissions.simulator.input.accelerator_tooltip":
+    "Top reps who exceed their sales quota earn a bonus multiplier on their signup commission. Set what % of your team you expect to hit this level.",
+  "commissions.simulator.input.accelerator_label":
+    "% Reps Exceeding Quota",
+  "commissions.simulator.input.billing_title": "Billing Mix",
+  "commissions.simulator.input.billing_tooltip":
+    "How subscribers pay. Quarterly/annual plans are discounted, so this mix affects average revenue per subscriber and residual calculations.",
+  "commissions.simulator.input.billing_monthly": "Monthly %",
+  "commissions.simulator.input.billing_quarterly": "Quarterly %",
+  "commissions.simulator.input.billing_annual": "Annual %",
+  "commissions.simulator.input.billing_must_total":
+    "Must total 100% (now {value}%)",
+  "commissions.simulator.input.tier_title": "Tier Sales Mix",
+  "commissions.simulator.input.tier_tooltip":
+    "What % of new signups go to each tier? Higher tiers have bigger bonuses. This mix affects your average cost per signup.",
+  "commissions.simulator.input.tier_must_total":
+    "Must total 100% (now {value}%)",
+  "commissions.simulator.input.tier_bonus_label": "{value} bonus",
+  "commissions.simulator.metric.new_subs": "New Subs/Month",
+  "commissions.simulator.metric.new_subs_sublabel":
+    "Total new signups across all reps",
+  "commissions.simulator.metric.signup_bonuses": "Signup Bonuses",
+  "commissions.simulator.metric.signup_bonuses_sublabel":
+    "One-time bonuses paid this month",
+  "commissions.simulator.metric.monthly_residuals": "Monthly Residuals",
+  "commissions.simulator.metric.monthly_residuals_sublabel":
+    "Ongoing payments on retained subs",
+  "commissions.simulator.metric.total_commission": "Total Commission",
+  "commissions.simulator.metric.total_commission_sublabel":
+    "Bonuses + residuals combined",
+  "commissions.simulator.mini.pct_of_revenue": "% of Revenue",
+  "commissions.simulator.mini.annual_cost": "Annual Cost",
+  "commissions.simulator.mini.cost_per_new_sub": "Cost/New Sub",
+  "commissions.simulator.mini.residual_rate": "Residual Rate",
+  "commissions.simulator.breakdown.title": "Per-Tier Breakdown",
+  "commissions.simulator.breakdown.subs_summary":
+    "{newSubs} new + {existingSubs} existing",
+  "commissions.simulator.breakdown.per_month_suffix": "/mo",
+  "commissions.simulator.breakdown.bonus_per_sub": "{value}/sub bonus",
+  "commissions.simulator.breakdown.upfront": "{value} upfront",
+  "commissions.simulator.breakdown.residual": "{value} residual",
+  "commissions.simulator.warning_title":
+    "Commission exceeds 20% of revenue",
+  "commissions.simulator.warning_description":
+    "Consider reducing bonuses, lowering the residual %, or tightening accelerator thresholds.",
+
+  "commissions.feedback.created": "Structure created.",
+  "commissions.feedback.updated": "Structure updated.",
+  "commissions.feedback.deleted": "Structure deleted.",
+  "commissions.feedback.activated": "Structure activated.",
+  "commissions.feedback.deactivated": "Structure deactivated.",
+  "commissions.feedback.save_failed": "Failed to save structure.",
 };

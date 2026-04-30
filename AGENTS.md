@@ -486,3 +486,16 @@ Strings reused across ≥3 features live in `common.*` (subnamespaces:
 
 The structure was established in Etapa 1.5.5 (Admin Shell) and should be
 extended only when new shared concepts emerge across multiple features.
+
+### Toast notifications
+
+Use the helpers in `src/lib/i18n/notify.ts` instead of `toast.*` directly:
+
+- `notifySuccess(key, t, params?)` — green success toast.
+- `notifyError(errorOrKey, t, params?)` — red error toast. Accepts either
+  an Error object (looks up by error code) or a translation key (string).
+- `notifyInfo(key, t, params?)` — neutral info toast.
+- `notifyWarning(key, t, params?)` — yellow warning toast.
+
+These are required for all user-facing notifications in migrated features.
+They centralize translation handling and make the i18n contract explicit.
