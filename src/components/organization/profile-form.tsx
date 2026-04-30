@@ -13,10 +13,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import type { Locale } from "@/lib/i18n/locales";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
 
 interface ProfileFormProps {
   initialSettings: Record<string, string>;
+  locale: Locale;
 }
 
 const LANGUAGES = [
@@ -28,6 +31,15 @@ const LANGUAGES = [
   { value: "pt-BR", label: "Portuguese (Brazil)" },
   { value: "ja", label: "Japanese" },
   { value: "zh", label: "Chinese (Simplified)" },
+];
+
+const CURRENCY_OPTIONS = [
+  { value: "USD", label: "USD ($)" },
+  { value: "EUR", label: "EUR (€)" },
+  { value: "GBP", label: "GBP (£)" },
+  { value: "CAD", label: "CAD (C$)" },
+  { value: "AUD", label: "AUD (A$)" },
+  { value: "BRL", label: "BRL (R$)" },
 ];
 
 const TIMEZONES = [
@@ -44,6 +56,7 @@ const TIMEZONES = [
 ];
 
 export function ProfileForm({ initialSettings }: ProfileFormProps) {
+  const t = useT();
   const [settings, setSettings] = useState(initialSettings);
   const [saving, setSaving] = useState(false);
 
@@ -60,62 +73,67 @@ export function ProfileForm({ initialSettings }: ProfileFormProps) {
         body: JSON.stringify(settings),
       });
       if (!res.ok) {
-        const json = await res.json();
-        toast.error(json.error || "Failed to save");
+        notifyError("error.organization.save_failed", t);
         return;
       }
-      toast.success("Profile saved");
+      notifySuccess("organization.feedback.profile_saved", t);
     } finally {
       setSaving(false);
     }
-  }, [settings]);
+  }, [settings, t]);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Organization Profile</h1>
+          <h1 className="text-2xl font-bold">{t("organization.profile.title")}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage your organization details and preferences.
+            {t("organization.profile.description")}
           </p>
         </div>
         <Button onClick={handleSave} disabled={saving}>
-          {saving ? "Saving..." : "Save Changes"}
+          {saving ? t("common.states.saving") : t("common.actions.save")}
         </Button>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 max-w-4xl">
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">General Information</CardTitle>
+            <CardTitle className="text-sm">
+              {t("organization.profile.section.general_information")}
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label>Organization Name</Label>
+              <Label>{t("organization.profile.field.organization_name")}</Label>
               <Input
                 value={settings.companyName || ""}
                 onChange={(e) => set("companyName", e.target.value)}
-                placeholder="e.g. HERD"
+                placeholder={t(
+                  "organization.profile.field.organization_name_placeholder",
+                )}
                 className="mt-1"
               />
             </div>
             <div>
-              <Label>Description</Label>
+              <Label>{t("organization.profile.field.description_label")}</Label>
               <Textarea
                 value={settings.companyDescription || ""}
                 onChange={(e) => set("companyDescription", e.target.value)}
-                placeholder="Brief description of your organization"
+                placeholder={t(
+                  "organization.profile.field.description_placeholder",
+                )}
                 rows={3}
                 className="mt-1"
               />
             </div>
             <div>
-              <Label>Website</Label>
+              <Label>{t("organization.profile.field.website")}</Label>
               <Input
                 type="url"
                 value={settings.companyWebsite || ""}
                 onChange={(e) => set("companyWebsite", e.target.value)}
-                placeholder="https://yourcompany.com"
+                placeholder={t("organization.profile.field.website_placeholder")}
                 className="mt-1"
               />
             </div>
@@ -124,34 +142,38 @@ export function ProfileForm({ initialSettings }: ProfileFormProps) {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Contact Information</CardTitle>
+            <CardTitle className="text-sm">
+              {t("organization.profile.section.contact_information")}
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label>Support Email</Label>
+              <Label>{t("organization.profile.field.support_email")}</Label>
               <Input
                 type="email"
                 value={settings.companySupportEmail || ""}
                 onChange={(e) => set("companySupportEmail", e.target.value)}
-                placeholder="support@yourcompany.com"
+                placeholder={t(
+                  "organization.profile.field.support_email_placeholder",
+                )}
                 className="mt-1"
               />
             </div>
             <div>
-              <Label>Phone Number</Label>
+              <Label>{t("organization.profile.field.phone")}</Label>
               <Input
                 value={settings.companyPhone || ""}
                 onChange={(e) => set("companyPhone", e.target.value)}
-                placeholder="+1 (555) 000-0000"
+                placeholder={t("organization.profile.field.phone_placeholder")}
                 className="mt-1"
               />
             </div>
             <div>
-              <Label>Address</Label>
+              <Label>{t("organization.profile.field.address")}</Label>
               <Textarea
                 value={settings.companyAddress || ""}
                 onChange={(e) => set("companyAddress", e.target.value)}
-                placeholder="Street address, city, state, zip"
+                placeholder={t("organization.profile.field.address_placeholder")}
                 rows={2}
                 className="mt-1"
               />
@@ -161,11 +183,13 @@ export function ProfileForm({ initialSettings }: ProfileFormProps) {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Regional Settings</CardTitle>
+            <CardTitle className="text-sm">
+              {t("organization.profile.section.regional_settings")}
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label>Default Language</Label>
+              <Label>{t("organization.profile.field.default_language")}</Label>
               <Select
                 value={settings.companyLanguage || "en-US"}
                 onValueChange={(val) => set("companyLanguage", val ?? "en-US")}
@@ -183,7 +207,7 @@ export function ProfileForm({ initialSettings }: ProfileFormProps) {
               </Select>
             </div>
             <div>
-              <Label>Timezone</Label>
+              <Label>{t("organization.profile.field.timezone")}</Label>
               <Select
                 value={settings.companyTimezone || "America/New_York"}
                 onValueChange={(val) => set("companyTimezone", val ?? "America/New_York")}
@@ -201,7 +225,7 @@ export function ProfileForm({ initialSettings }: ProfileFormProps) {
               </Select>
             </div>
             <div>
-              <Label>Currency</Label>
+              <Label>{t("organization.profile.field.currency")}</Label>
               <Select
                 value={settings.companyCurrency || "USD"}
                 onValueChange={(val) => set("companyCurrency", val ?? "USD")}
@@ -210,12 +234,11 @@ export function ProfileForm({ initialSettings }: ProfileFormProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="USD">USD ($)</SelectItem>
-                  <SelectItem value="EUR">EUR (&euro;)</SelectItem>
-                  <SelectItem value="GBP">GBP (&pound;)</SelectItem>
-                  <SelectItem value="CAD">CAD (C$)</SelectItem>
-                  <SelectItem value="AUD">AUD (A$)</SelectItem>
-                  <SelectItem value="BRL">BRL (R$)</SelectItem>
+                  {CURRENCY_OPTIONS.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -224,24 +247,28 @@ export function ProfileForm({ initialSettings }: ProfileFormProps) {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Legal</CardTitle>
+            <CardTitle className="text-sm">
+              {t("organization.profile.section.legal")}
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label>Legal Entity Name</Label>
+              <Label>{t("organization.profile.field.legal_name")}</Label>
               <Input
                 value={settings.companyLegalName || ""}
                 onChange={(e) => set("companyLegalName", e.target.value)}
-                placeholder="Full legal name of your company"
+                placeholder={t(
+                  "organization.profile.field.legal_name_placeholder",
+                )}
                 className="mt-1"
               />
             </div>
             <div>
-              <Label>Tax ID / EIN</Label>
+              <Label>{t("organization.profile.field.tax_id")}</Label>
               <Input
                 value={settings.companyTaxId || ""}
                 onChange={(e) => set("companyTaxId", e.target.value)}
-                placeholder="XX-XXXXXXX"
+                placeholder={t("organization.profile.field.tax_id_placeholder")}
                 className="mt-1"
               />
             </div>

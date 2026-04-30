@@ -1220,4 +1220,274 @@ export const messages: Record<MessageKey, string> = {
   "financials.builder.overrides.field_redemption": "Redemption %",
   "financials.builder.overrides.field_redemption_tooltip":
     "What percentage of credits get redeemed by this plan's subscribers. Higher-tier members tend to redeem more. Overrides the global rate.",
+
+  // ============================================================
+  // Organization (Phase 1.5.6b — Identity & People, Phase A)
+  // ============================================================
+
+  // Sub-panel
+  "organization.subpanel.title": "Organization",
+  "organization.subpanel.profile_category": "Profile",
+  "organization.subpanel.general_information": "General Information",
+  "organization.subpanel.contact_information": "Contact Information",
+  "organization.subpanel.locations": "Locations",
+  "organization.subpanel.business_hours": "Business Hours",
+  "organization.subpanel.regional_settings": "Regional Settings",
+
+  // Profile (legacy aggregated form)
+  "organization.profile.title": "Organization Profile",
+  "organization.profile.description":
+    "Manage your organization details and preferences.",
+  "organization.profile.section.general_information": "General Information",
+  "organization.profile.section.contact_information": "Contact Information",
+  "organization.profile.section.regional_settings": "Regional Settings",
+  "organization.profile.section.legal": "Legal",
+  "organization.profile.field.organization_name": "Organization Name",
+  "organization.profile.field.organization_name_placeholder": "e.g. HERD",
+  "organization.profile.field.description_label": "Description",
+  "organization.profile.field.description_placeholder":
+    "Brief description of your organization",
+  "organization.profile.field.website": "Website",
+  "organization.profile.field.website_placeholder": "https://yourcompany.com",
+  "organization.profile.field.support_email": "Support Email",
+  "organization.profile.field.support_email_placeholder":
+    "support@yourcompany.com",
+  "organization.profile.field.phone": "Phone Number",
+  "organization.profile.field.phone_placeholder": "+1 (555) 000-0000",
+  "organization.profile.field.address": "Address",
+  "organization.profile.field.address_placeholder":
+    "Street address, city, state, zip",
+  "organization.profile.field.default_language": "Default Language",
+  "organization.profile.field.timezone": "Timezone",
+  "organization.profile.field.currency": "Currency",
+  "organization.profile.field.legal_name": "Legal Entity Name",
+  "organization.profile.field.legal_name_placeholder":
+    "Full legal name of your company",
+  "organization.profile.field.tax_id": "Tax ID / EIN",
+  "organization.profile.field.tax_id_placeholder": "XX-XXXXXXX",
+
+  // General Information form
+  "organization.profile.general.title": "General Information",
+  "organization.profile.general.description":
+    "Basic details about your organization, including name, industry, and mission.",
+  "organization.profile.general.identity_title": "Organization Identity",
+  "organization.profile.general.identity_description":
+    "Your organization's name, legal entity, and tax identification.",
+  "organization.profile.general.legal_name_help":
+    "Used in contracts, invoices, and official documents.",
+  "organization.profile.general.about_title": "About",
+  "organization.profile.general.about_description":
+    "Describe your organization, its mission, and online presence.",
+  "organization.profile.general.description_placeholder":
+    "Brief description of your organization and what you do",
+  "organization.profile.general.mission_label": "Mission Statement",
+  "organization.profile.general.mission_placeholder":
+    "What drives your organization?",
+  "organization.profile.general.details_title": "Company Details",
+  "organization.profile.general.details_description":
+    "Industry, size, and founding information.",
+  "organization.profile.general.industry_label": "Industry",
+  "organization.profile.general.industry_placeholder": "Select industry",
+  "organization.profile.general.size_label": "Company Size",
+  "organization.profile.general.size_placeholder": "Select size",
+  "organization.profile.general.founded_label": "Year Founded",
+  "organization.profile.general.founded_placeholder": "e.g. 2016",
+  "organization.profile.general.org_name_placeholder": "e.g. Bucked Up",
+
+  // Industries
+  "organization.industry.health_wellness": "Health & Wellness",
+  "organization.industry.supplements": "Supplements & Nutrition",
+  "organization.industry.fitness": "Fitness & Sports",
+  "organization.industry.ecommerce": "E-Commerce",
+  "organization.industry.saas": "SaaS / Technology",
+  "organization.industry.retail": "Retail",
+  "organization.industry.food_beverage": "Food & Beverage",
+  "organization.industry.beauty": "Beauty & Personal Care",
+  "organization.industry.other": "Other",
+
+  // Company sizes
+  "organization.size.1_10": "1-10 employees",
+  "organization.size.11_50": "11-50 employees",
+  "organization.size.51_200": "51-200 employees",
+  "organization.size.201_500": "201-500 employees",
+  "organization.size.501_1000": "501-1,000 employees",
+  "organization.size.1000_plus": "1,000+ employees",
+
+  // Contact form
+  "organization.contact.title": "Contact Information",
+  "organization.contact.description":
+    "How customers, partners, and team members can reach your organization.",
+  "organization.contact.primary_title": "Primary Contact",
+  "organization.contact.primary_description":
+    "Email addresses and phone numbers for customer and partner inquiries.",
+  "organization.contact.support_email_help":
+    "Displayed to customers and partners for general inquiries.",
+  "organization.contact.sales_email_label": "Sales Email",
+  "organization.contact.sales_email_placeholder": "sales@yourcompany.com",
+  "organization.contact.main_phone_label": "Main Phone Number",
+  "organization.contact.support_phone_label": "Support Phone Number",
+  "organization.contact.headquarters_title": "Headquarters Address",
+  "organization.contact.headquarters_description":
+    "Your organization's primary physical location.",
+  "organization.contact.street_label": "Street Address",
+  "organization.contact.street_placeholder": "123 Main Street",
+  "organization.contact.street2_label": "Street Address Line 2",
+  "organization.contact.street2_placeholder": "Suite 100, Building A",
+  "organization.contact.city_label": "City",
+  "organization.contact.city_placeholder": "American Fork",
+  "organization.contact.state_label": "State / Province",
+  "organization.contact.state_placeholder": "UT",
+  "organization.contact.zip_label": "ZIP / Postal Code",
+  "organization.contact.zip_placeholder": "84003",
+  "organization.contact.country_label": "Country",
+  "organization.contact.country_placeholder": "United States",
+  "organization.contact.social_title": "Social & Web Presence",
+  "organization.contact.social_description":
+    "Links to your organization's social media profiles and online channels.",
+  "organization.contact.social_instagram": "Instagram",
+  "organization.contact.social_facebook": "Facebook",
+  "organization.contact.social_linkedin": "LinkedIn",
+  "organization.contact.social_twitter": "X (Twitter)",
+  "organization.contact.social_youtube": "YouTube",
+  "organization.contact.social_tiktok": "TikTok",
+
+  // Locations
+  "organization.locations.title": "Locations",
+  "organization.locations.description":
+    "Manage your organization's stores, offices, and other physical locations.",
+  "organization.locations.add": "Add Location",
+  "organization.locations.add_first": "Add Your First Location",
+  "organization.locations.empty_title": "No locations yet",
+  "organization.locations.empty_description":
+    "Add your headquarters, stores, and other locations so your team and partners know where you operate.",
+  "organization.locations.headquarters_title": "Headquarters",
+  "organization.locations.headquarters_description":
+    "Your organization's primary location.",
+  "organization.locations.other_title": "Other Locations",
+  "organization.locations.all_title": "All Locations",
+  "organization.locations.other_description":
+    "Stores, offices, warehouses, and other physical locations.",
+  "organization.locations.other_empty":
+    "No additional locations added yet.",
+  "organization.locations.dialog.add_title": "Add Location",
+  "organization.locations.dialog.edit_title": "Edit Location",
+  "organization.locations.dialog.add_description":
+    "Add a new store, office, or warehouse to your organization.",
+  "organization.locations.dialog.edit_description":
+    "Update this location's details.",
+  "organization.locations.field.name": "Location Name",
+  "organization.locations.field.name_placeholder": "e.g. Downtown Store",
+  "organization.locations.field.type": "Type",
+  "organization.locations.field.is_headquarters":
+    "This is the headquarters location",
+  "organization.locations.field.street": "Street Address",
+  "organization.locations.field.street_placeholder": "123 Main Street",
+  "organization.locations.field.street2": "Street Address Line 2",
+  "organization.locations.field.street2_placeholder": "Suite 100",
+  "organization.locations.field.city": "City",
+  "organization.locations.field.city_placeholder": "City",
+  "organization.locations.field.state": "State",
+  "organization.locations.field.state_placeholder": "State",
+  "organization.locations.field.zip": "ZIP",
+  "organization.locations.field.zip_placeholder": "ZIP",
+  "organization.locations.field.country": "Country",
+  "organization.locations.field.country_placeholder": "United States",
+  "organization.locations.field.phone": "Phone",
+  "organization.locations.field.phone_placeholder": "+1 (555) 000-0000",
+  "organization.locations.field.email": "Email",
+  "organization.locations.field.email_placeholder": "location@company.com",
+  "organization.locations.field.notes": "Notes",
+  "organization.locations.field.notes_placeholder":
+    "Any additional details about this location...",
+  "organization.locations.action.update": "Update",
+  "organization.locations.action.add": "Add Location",
+  "organization.locations.no_address": "No address provided",
+  "organization.locations.hq_badge": "HQ",
+  "organization.locations.type.headquarters": "Headquarters",
+  "organization.locations.type.office": "Office",
+  "organization.locations.type.store": "Store / Retail",
+  "organization.locations.type.warehouse": "Warehouse",
+  "organization.locations.type.other": "Other",
+
+  // Business hours
+  "organization.business_hours.title": "Business Hours",
+  "organization.business_hours.description":
+    "Set your organization's operating hours. These are displayed to partners and customers.",
+  "organization.business_hours.weekly_title": "Weekly Schedule",
+  "organization.business_hours.weekly_description":
+    "Toggle each day on or off and set the operating hours.",
+  "organization.business_hours.support_title": "Support Availability",
+  "organization.business_hours.support_description":
+    "Response time expectations and holiday schedule information.",
+  "organization.business_hours.response_label": "Support Response Time",
+  "organization.business_hours.response_help":
+    "Expected response time displayed to partners and customers.",
+  "organization.business_hours.response.1h": "Within 1 hour",
+  "organization.business_hours.response.4h": "Within 4 hours",
+  "organization.business_hours.response.8h": "Within 8 hours",
+  "organization.business_hours.response.24h": "Within 24 hours",
+  "organization.business_hours.response.48h": "Within 48 hours",
+  "organization.business_hours.holiday_label": "Holiday Closure Notice",
+  "organization.business_hours.holiday_placeholder":
+    "e.g. Closed on all major US holidays",
+  "organization.business_hours.holiday_help":
+    "A brief note about holiday schedules shown to partners.",
+  "organization.business_hours.closed": "Closed",
+  "organization.business_hours.to": "to",
+  "organization.business_hours.day.monday": "Monday",
+  "organization.business_hours.day.tuesday": "Tuesday",
+  "organization.business_hours.day.wednesday": "Wednesday",
+  "organization.business_hours.day.thursday": "Thursday",
+  "organization.business_hours.day.friday": "Friday",
+  "organization.business_hours.day.saturday": "Saturday",
+  "organization.business_hours.day.sunday": "Sunday",
+
+  // Regional settings
+  "organization.regional.title": "Regional Settings",
+  "organization.regional.description":
+    "Configure language, timezone, currency, and formatting preferences for your organization.",
+  "organization.regional.language_section_title": "Language & Timezone",
+  "organization.regional.language_section_description":
+    "Primary language and timezone used across the platform.",
+  "organization.regional.language_label": "Default Language",
+  "organization.regional.language_help":
+    "Primary language used across the platform and communications.",
+  "organization.regional.timezone_label": "Timezone",
+  "organization.regional.timezone_help":
+    "Used for scheduling, reporting, and displaying times across the platform.",
+  "organization.regional.currency_section_title": "Currency & Numbers",
+  "organization.regional.currency_section_description":
+    "Default currency and number formatting for commissions, payouts, and pricing.",
+  "organization.regional.currency_label": "Primary Currency",
+  "organization.regional.currency_help":
+    "Default currency for commissions, payouts, and product pricing.",
+  "organization.regional.number_format_label": "Number Format",
+  "organization.regional.formatting_section_title": "Formatting",
+  "organization.regional.formatting_section_description":
+    "Date display and measurement system preferences.",
+  "organization.regional.date_format_label": "Date Format",
+  "organization.regional.measurement_label": "Measurement System",
+  "organization.regional.measurement_help":
+    "Used for product weights, shipping dimensions, and related calculations.",
+  "organization.regional.measurement.imperial": "Imperial (lb, oz, in)",
+  "organization.regional.measurement.metric": "Metric (kg, g, cm)",
+
+  // Feedback (toasts)
+  "organization.feedback.profile_saved": "Profile saved",
+  "organization.feedback.general_information_saved":
+    "General information saved",
+  "organization.feedback.contact_information_saved":
+    "Contact information saved",
+  "organization.feedback.business_hours_saved": "Business hours saved",
+  "organization.feedback.regional_settings_saved": "Regional settings saved",
+  "organization.feedback.location_added": "Location added",
+  "organization.feedback.location_updated": "Location updated",
+  "organization.feedback.location_deleted": "Location deleted",
+
+  // Errors
+  "error.organization.save_failed": "Failed to save",
+  "error.organization.location_save_failed": "Failed to save location",
+  "error.organization.location_delete_failed": "Failed to delete location",
+  "error.organization.locations_load_failed": "Failed to load locations",
+  "error.organization.location_name_required": "Location name is required",
 };

@@ -11,7 +11,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import type { Locale } from "@/lib/i18n/locales";
+import type { MessageKey } from "@/lib/i18n/t";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
 import { PageHeader } from "@/components/layout/page-header";
 
 const LANGUAGES = [
@@ -40,12 +43,12 @@ const TIMEZONES = [
 
 const CURRENCIES = [
   { value: "USD", label: "USD — US Dollar ($)" },
-  { value: "EUR", label: "EUR — Euro (\u20ac)" },
-  { value: "GBP", label: "GBP — British Pound (\u00a3)" },
+  { value: "EUR", label: "EUR — Euro (€)" },
+  { value: "GBP", label: "GBP — British Pound (£)" },
   { value: "CAD", label: "CAD — Canadian Dollar (C$)" },
   { value: "AUD", label: "AUD — Australian Dollar (A$)" },
   { value: "BRL", label: "BRL — Brazilian Real (R$)" },
-  { value: "JPY", label: "JPY — Japanese Yen (\u00a5)" },
+  { value: "JPY", label: "JPY — Japanese Yen (¥)" },
   { value: "MXN", label: "MXN — Mexican Peso (MX$)" },
 ];
 
@@ -61,16 +64,21 @@ const NUMBER_FORMATS = [
   { value: "1 234.56", label: "1 234.56 (International)" },
 ];
 
-const MEASUREMENT_SYSTEMS = [
-  { value: "imperial", label: "Imperial (lb, oz, in)" },
-  { value: "metric", label: "Metric (kg, g, cm)" },
-];
+const MEASUREMENT_VALUES = ["imperial", "metric"] as const;
+type MeasurementValue = (typeof MEASUREMENT_VALUES)[number];
+
+const MEASUREMENT_KEYS = {
+  imperial: "organization.regional.measurement.imperial",
+  metric: "organization.regional.measurement.metric",
+} as const satisfies Record<MeasurementValue, MessageKey>;
 
 interface Props {
   initialSettings: Record<string, string>;
+  locale: Locale;
 }
 
 export function RegionalSettingsForm({ initialSettings }: Props) {
+  const t = useT();
   const [settings, setSettings] = useState(initialSettings);
   const [saving, setSaving] = useState(false);
 
@@ -87,24 +95,23 @@ export function RegionalSettingsForm({ initialSettings }: Props) {
         body: JSON.stringify(settings),
       });
       if (!res.ok) {
-        const json = await res.json();
-        toast.error(json.error || "Failed to save");
+        notifyError("error.organization.save_failed", t);
         return;
       }
-      toast.success("Regional settings saved");
+      notifySuccess("organization.feedback.regional_settings_saved", t);
     } finally {
       setSaving(false);
     }
-  }, [settings]);
+  }, [settings, t]);
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Regional Settings"
-        description="Configure language, timezone, currency, and formatting preferences for your organization."
+        title={t("organization.regional.title")}
+        description={t("organization.regional.description")}
         action={
           <Button onClick={handleSave} disabled={saving}>
-            {saving ? "Saving..." : "Save Changes"}
+            {saving ? t("common.states.saving") : t("common.actions.save")}
           </Button>
         }
       />
@@ -113,15 +120,17 @@ export function RegionalSettingsForm({ initialSettings }: Props) {
         {/* Language & Timezone */}
         <Card>
           <CardHeader className="border-b">
-            <CardTitle>Language & Timezone</CardTitle>
+            <CardTitle>
+              {t("organization.regional.language_section_title")}
+            </CardTitle>
             <CardDescription>
-              Primary language and timezone used across the platform.
+              {t("organization.regional.language_section_description")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div>
-                <Label>Default Language</Label>
+                <Label>{t("organization.regional.language_label")}</Label>
                 <Select
                   value={settings.companyLanguage || "en-US"}
                   onValueChange={(val) => set("companyLanguage", val ?? "en-US")}
@@ -138,11 +147,11 @@ export function RegionalSettingsForm({ initialSettings }: Props) {
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Primary language used across the platform and communications.
+                  {t("organization.regional.language_help")}
                 </p>
               </div>
               <div>
-                <Label>Timezone</Label>
+                <Label>{t("organization.regional.timezone_label")}</Label>
                 <Select
                   value={settings.companyTimezone || "America/New_York"}
                   onValueChange={(val) => set("companyTimezone", val ?? "America/New_York")}
@@ -159,7 +168,7 @@ export function RegionalSettingsForm({ initialSettings }: Props) {
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Used for scheduling, reporting, and displaying times across the platform.
+                  {t("organization.regional.timezone_help")}
                 </p>
               </div>
             </div>
@@ -169,15 +178,17 @@ export function RegionalSettingsForm({ initialSettings }: Props) {
         {/* Currency & Numbers */}
         <Card>
           <CardHeader className="border-b">
-            <CardTitle>Currency & Numbers</CardTitle>
+            <CardTitle>
+              {t("organization.regional.currency_section_title")}
+            </CardTitle>
             <CardDescription>
-              Default currency and number formatting for commissions, payouts, and pricing.
+              {t("organization.regional.currency_section_description")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div>
-                <Label>Primary Currency</Label>
+                <Label>{t("organization.regional.currency_label")}</Label>
                 <Select
                   value={settings.companyCurrency || "USD"}
                   onValueChange={(val) => set("companyCurrency", val ?? "USD")}
@@ -194,11 +205,11 @@ export function RegionalSettingsForm({ initialSettings }: Props) {
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Default currency for commissions, payouts, and product pricing.
+                  {t("organization.regional.currency_help")}
                 </p>
               </div>
               <div>
-                <Label>Number Format</Label>
+                <Label>{t("organization.regional.number_format_label")}</Label>
                 <Select
                   value={settings.companyNumberFormat || "1,234.56"}
                   onValueChange={(val) => set("companyNumberFormat", val ?? "1,234.56")}
@@ -222,15 +233,17 @@ export function RegionalSettingsForm({ initialSettings }: Props) {
         {/* Formatting */}
         <Card>
           <CardHeader className="border-b">
-            <CardTitle>Formatting</CardTitle>
+            <CardTitle>
+              {t("organization.regional.formatting_section_title")}
+            </CardTitle>
             <CardDescription>
-              Date display and measurement system preferences.
+              {t("organization.regional.formatting_section_description")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div>
-                <Label>Date Format</Label>
+                <Label>{t("organization.regional.date_format_label")}</Label>
                 <Select
                   value={settings.companyDateFormat || "MM/DD/YYYY"}
                   onValueChange={(val) => set("companyDateFormat", val ?? "MM/DD/YYYY")}
@@ -248,7 +261,7 @@ export function RegionalSettingsForm({ initialSettings }: Props) {
                 </Select>
               </div>
               <div>
-                <Label>Measurement System</Label>
+                <Label>{t("organization.regional.measurement_label")}</Label>
                 <Select
                   value={settings.companyMeasurement || "imperial"}
                   onValueChange={(val) => set("companyMeasurement", val ?? "imperial")}
@@ -257,15 +270,15 @@ export function RegionalSettingsForm({ initialSettings }: Props) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {MEASUREMENT_SYSTEMS.map((m) => (
-                      <SelectItem key={m.value} value={m.value}>
-                        {m.label}
+                    {MEASUREMENT_VALUES.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {t(MEASUREMENT_KEYS[value])}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Used for product weights, shipping dimensions, and related calculations.
+                  {t("organization.regional.measurement_help")}
                 </p>
               </div>
             </div>

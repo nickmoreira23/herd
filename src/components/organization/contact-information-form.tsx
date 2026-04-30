@@ -5,14 +5,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import type { Locale } from "@/lib/i18n/locales";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
 import { PageHeader } from "@/components/layout/page-header";
 
 interface Props {
   initialSettings: Record<string, string>;
+  locale: Locale;
 }
 
 export function ContactInformationForm({ initialSettings }: Props) {
+  const t = useT();
   const [settings, setSettings] = useState(initialSettings);
   const [saving, setSaving] = useState(false);
 
@@ -29,24 +33,23 @@ export function ContactInformationForm({ initialSettings }: Props) {
         body: JSON.stringify(settings),
       });
       if (!res.ok) {
-        const json = await res.json();
-        toast.error(json.error || "Failed to save");
+        notifyError("error.organization.save_failed", t);
         return;
       }
-      toast.success("Contact information saved");
+      notifySuccess("organization.feedback.contact_information_saved", t);
     } finally {
       setSaving(false);
     }
-  }, [settings]);
+  }, [settings, t]);
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Contact Information"
-        description="How customers, partners, and team members can reach your organization."
+        title={t("organization.contact.title")}
+        description={t("organization.contact.description")}
         action={
           <Button onClick={handleSave} disabled={saving}>
-            {saving ? "Saving..." : "Save Changes"}
+            {saving ? t("common.states.saving") : t("common.actions.save")}
           </Button>
         }
       />
@@ -55,52 +58,66 @@ export function ContactInformationForm({ initialSettings }: Props) {
         {/* Primary Contact */}
         <Card>
           <CardHeader className="border-b">
-            <CardTitle>Primary Contact</CardTitle>
+            <CardTitle>{t("organization.contact.primary_title")}</CardTitle>
             <CardDescription>
-              Email addresses and phone numbers for customer and partner inquiries.
+              {t("organization.contact.primary_description")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div>
-                <Label>Support Email</Label>
+                <Label>{t("organization.profile.field.support_email")}</Label>
                 <Input
                   type="email"
                   value={settings.companySupportEmail || ""}
                   onChange={(e) => set("companySupportEmail", e.target.value)}
-                  placeholder="support@yourcompany.com"
+                  placeholder={t(
+                    "organization.profile.field.support_email_placeholder",
+                  )}
                   className="mt-2"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Displayed to customers and partners for general inquiries.
+                  {t("organization.contact.support_email_help")}
                 </p>
               </div>
               <div>
-                <Label>Sales Email</Label>
+                <Label>
+                  {t("organization.contact.sales_email_label")}
+                </Label>
                 <Input
                   type="email"
                   value={settings.companySalesEmail || ""}
                   onChange={(e) => set("companySalesEmail", e.target.value)}
-                  placeholder="sales@yourcompany.com"
+                  placeholder={t(
+                    "organization.contact.sales_email_placeholder",
+                  )}
                   className="mt-2"
                 />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label>Main Phone Number</Label>
+                  <Label>
+                    {t("organization.contact.main_phone_label")}
+                  </Label>
                   <Input
                     value={settings.companyPhone || ""}
                     onChange={(e) => set("companyPhone", e.target.value)}
-                    placeholder="+1 (555) 000-0000"
+                    placeholder={t(
+                      "organization.profile.field.phone_placeholder",
+                    )}
                     className="mt-2"
                   />
                 </div>
                 <div>
-                  <Label>Support Phone Number</Label>
+                  <Label>
+                    {t("organization.contact.support_phone_label")}
+                  </Label>
                   <Input
                     value={settings.companySupportPhone || ""}
                     onChange={(e) => set("companySupportPhone", e.target.value)}
-                    placeholder="+1 (555) 000-0000"
+                    placeholder={t(
+                      "organization.profile.field.phone_placeholder",
+                    )}
                     className="mt-2"
                   />
                 </div>
@@ -112,66 +129,68 @@ export function ContactInformationForm({ initialSettings }: Props) {
         {/* Headquarters Address */}
         <Card>
           <CardHeader className="border-b">
-            <CardTitle>Headquarters Address</CardTitle>
+            <CardTitle>
+              {t("organization.contact.headquarters_title")}
+            </CardTitle>
             <CardDescription>
-              Your organization&apos;s primary physical location.
+              {t("organization.contact.headquarters_description")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div>
-                <Label>Street Address</Label>
+                <Label>{t("organization.contact.street_label")}</Label>
                 <Input
                   value={settings.companyStreet || ""}
                   onChange={(e) => set("companyStreet", e.target.value)}
-                  placeholder="123 Main Street"
+                  placeholder={t("organization.contact.street_placeholder")}
                   className="mt-2"
                 />
               </div>
               <div>
-                <Label>Street Address Line 2</Label>
+                <Label>{t("organization.contact.street2_label")}</Label>
                 <Input
                   value={settings.companyStreet2 || ""}
                   onChange={(e) => set("companyStreet2", e.target.value)}
-                  placeholder="Suite 100, Building A"
+                  placeholder={t("organization.contact.street2_placeholder")}
                   className="mt-2"
                 />
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 <div>
-                  <Label>City</Label>
+                  <Label>{t("organization.contact.city_label")}</Label>
                   <Input
                     value={settings.companyCity || ""}
                     onChange={(e) => set("companyCity", e.target.value)}
-                    placeholder="American Fork"
+                    placeholder={t("organization.contact.city_placeholder")}
                     className="mt-2"
                   />
                 </div>
                 <div>
-                  <Label>State / Province</Label>
+                  <Label>{t("organization.contact.state_label")}</Label>
                   <Input
                     value={settings.companyState || ""}
                     onChange={(e) => set("companyState", e.target.value)}
-                    placeholder="UT"
+                    placeholder={t("organization.contact.state_placeholder")}
                     className="mt-2"
                   />
                 </div>
                 <div>
-                  <Label>ZIP / Postal Code</Label>
+                  <Label>{t("organization.contact.zip_label")}</Label>
                   <Input
                     value={settings.companyZip || ""}
                     onChange={(e) => set("companyZip", e.target.value)}
-                    placeholder="84003"
+                    placeholder={t("organization.contact.zip_placeholder")}
                     className="mt-2"
                   />
                 </div>
               </div>
               <div>
-                <Label>Country</Label>
+                <Label>{t("organization.contact.country_label")}</Label>
                 <Input
                   value={settings.companyCountry || ""}
                   onChange={(e) => set("companyCountry", e.target.value)}
-                  placeholder="United States"
+                  placeholder={t("organization.contact.country_placeholder")}
                   className="mt-2"
                 />
               </div>
@@ -182,15 +201,15 @@ export function ContactInformationForm({ initialSettings }: Props) {
         {/* Social & Web Presence */}
         <Card>
           <CardHeader className="border-b">
-            <CardTitle>Social & Web Presence</CardTitle>
+            <CardTitle>{t("organization.contact.social_title")}</CardTitle>
             <CardDescription>
-              Links to your organization&apos;s social media profiles and online channels.
+              {t("organization.contact.social_description")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <Label>Instagram</Label>
+                <Label>{t("organization.contact.social_instagram")}</Label>
                 <Input
                   value={settings.companySocialInstagram || ""}
                   onChange={(e) => set("companySocialInstagram", e.target.value)}
@@ -199,7 +218,7 @@ export function ContactInformationForm({ initialSettings }: Props) {
                 />
               </div>
               <div>
-                <Label>Facebook</Label>
+                <Label>{t("organization.contact.social_facebook")}</Label>
                 <Input
                   value={settings.companySocialFacebook || ""}
                   onChange={(e) => set("companySocialFacebook", e.target.value)}
@@ -208,7 +227,7 @@ export function ContactInformationForm({ initialSettings }: Props) {
                 />
               </div>
               <div>
-                <Label>LinkedIn</Label>
+                <Label>{t("organization.contact.social_linkedin")}</Label>
                 <Input
                   value={settings.companySocialLinkedin || ""}
                   onChange={(e) => set("companySocialLinkedin", e.target.value)}
@@ -217,7 +236,7 @@ export function ContactInformationForm({ initialSettings }: Props) {
                 />
               </div>
               <div>
-                <Label>X (Twitter)</Label>
+                <Label>{t("organization.contact.social_twitter")}</Label>
                 <Input
                   value={settings.companySocialTwitter || ""}
                   onChange={(e) => set("companySocialTwitter", e.target.value)}
@@ -226,7 +245,7 @@ export function ContactInformationForm({ initialSettings }: Props) {
                 />
               </div>
               <div>
-                <Label>YouTube</Label>
+                <Label>{t("organization.contact.social_youtube")}</Label>
                 <Input
                   value={settings.companySocialYoutube || ""}
                   onChange={(e) => set("companySocialYoutube", e.target.value)}
@@ -235,7 +254,7 @@ export function ContactInformationForm({ initialSettings }: Props) {
                 />
               </div>
               <div>
-                <Label>TikTok</Label>
+                <Label>{t("organization.contact.social_tiktok")}</Label>
                 <Input
                   value={settings.companySocialTiktok || ""}
                   onChange={(e) => set("companySocialTiktok", e.target.value)}

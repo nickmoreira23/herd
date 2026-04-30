@@ -139,17 +139,19 @@ export const subPanelRegistry: Record<string, SubPanelConfig> = {
   organization: {
     id: "organization",
     label: "Organization",
+    labelKey: "organization.subpanel.title",
     links: [],
     categories: [
       {
         id: "profile",
         label: "Profile",
+        labelKey: "organization.subpanel.profile_category",
         links: [
-          { href: "/admin/organization/profile", label: "General Information", icon: Building2 },
-          { href: "/admin/organization/profile/contact", label: "Contact Information", icon: Phone },
-          { href: "/admin/organization/profile/locations", label: "Locations", icon: MapPin },
-          { href: "/admin/organization/profile/business-hours", label: "Business Hours", icon: Clock },
-          { href: "/admin/organization/profile/regional-settings", label: "Regional Settings", icon: Globe },
+          { href: "/admin/organization/profile", label: "General Information", labelKey: "organization.subpanel.general_information", icon: Building2 },
+          { href: "/admin/organization/profile/contact", label: "Contact Information", labelKey: "organization.subpanel.contact_information", icon: Phone },
+          { href: "/admin/organization/profile/locations", label: "Locations", labelKey: "organization.subpanel.locations", icon: MapPin },
+          { href: "/admin/organization/profile/business-hours", label: "Business Hours", labelKey: "organization.subpanel.business_hours", icon: Clock },
+          { href: "/admin/organization/profile/regional-settings", label: "Regional Settings", labelKey: "organization.subpanel.regional_settings", icon: Globe },
         ],
       },
       {
@@ -1003,7 +1005,9 @@ function OrganizationSubPanel() {
     >
       {/* Header */}
       <div className="flex items-center justify-between pt-6 pb-4">
-        <h2 className="text-[16px] font-semibold truncate pl-6">{config.label}</h2>
+        <h2 className="text-[16px] font-semibold truncate pl-6">
+          {config.labelKey ? t(config.labelKey as MessageKey) : config.label}
+        </h2>
         <button
           onClick={() => setSubPanelCollapsed(true)}
           className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-accent mr-4"
@@ -1018,7 +1022,7 @@ function OrganizationSubPanel() {
         {categories.map((cat) => (
           <div key={cat.id} className="mt-4 first:mt-0">
             <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-              {cat.label}
+              {cat.labelKey ? t(cat.labelKey as MessageKey) : cat.label}
             </p>
             {cat.links.map((link) => {
               const active = link.href === activeHref;
@@ -1034,7 +1038,9 @@ function OrganizationSubPanel() {
                   )}
                 >
                   {link.icon && <link.icon className="h-4 w-4 shrink-0" />}
-                  <span className="truncate">{link.label}</span>
+                  <span className="truncate">
+                    {link.labelKey ? t(link.labelKey as MessageKey) : link.label}
+                  </span>
                 </Link>
               );
             })}
