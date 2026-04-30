@@ -3,7 +3,10 @@
 import { useState, useMemo } from "react";
 import type { PartnerBrand, PartnerTierAssignment, SubscriptionTier } from "@/types";
 import { Input } from "@/components/ui/input";
-import { formatCurrency, toNumber } from "@/lib/utils";
+import { toNumber } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale-context";
+import type { Locale } from "@/lib/i18n/locales";
+import { formatNumberAsMoney } from "@/lib/money/format";
 
 type PartnerWithAssignments = PartnerBrand & {
   tierAssignments: (PartnerTierAssignment & { tier: SubscriptionTier })[];
@@ -11,9 +14,11 @@ type PartnerWithAssignments = PartnerBrand & {
 
 interface KickbackEstimatorProps {
   partners: PartnerWithAssignments[];
+  locale: Locale;
 }
 
-export function KickbackEstimator({ partners }: KickbackEstimatorProps) {
+export function KickbackEstimator({ partners, locale }: KickbackEstimatorProps) {
+  const t = useT();
   const activePartners = partners.filter(
     (p) => p.isActive && p.kickbackType !== "NONE"
   );
@@ -35,7 +40,6 @@ export function KickbackEstimator({ partners }: KickbackEstimatorProps) {
 
       let monthlyCost = 0;
       if (partner.kickbackType === "PERCENT_OF_SALE") {
-        // Estimate avg sale value at $50 for simplicity
         monthlyCost = monthlyReferrals * 50 * (kickbackValue / 100);
       } else if (partner.kickbackType === "FLAT_PER_REFERRAL") {
         monthlyCost = monthlyReferrals * kickbackValue;
@@ -67,7 +71,7 @@ export function KickbackEstimator({ partners }: KickbackEstimatorProps) {
   if (activePartners.length === 0) {
     return (
       <div className="rounded-lg border p-8 text-center text-muted-foreground">
-        No active partners with kickback agreements. Configure kickbacks on partner cards first.
+        {t("partners.kickback.empty")}
       </div>
     );
   }
@@ -76,9 +80,9 @@ export function KickbackEstimator({ partners }: KickbackEstimatorProps) {
     <div className="grid grid-cols-2 gap-6">
       {/* Inputs */}
       <div className="space-y-4 rounded-lg border p-4">
-        <h3 className="font-semibold">Monthly Referrals by Partner</h3>
+        <h3 className="font-semibold">{t("partners.kickback.inputs_title")}</h3>
         <p className="text-xs text-muted-foreground">
-          Estimate monthly referrals from each partner to see projected kickback costs.
+          {t("partners.kickback.inputs_description")}
         </p>
         <div className="space-y-3">
           {activePartners.map((partner) => (
@@ -95,7 +99,9 @@ export function KickbackEstimator({ partners }: KickbackEstimatorProps) {
                   }))
                 }
               />
-              <span className="text-xs text-muted-foreground">referrals/mo</span>
+              <span className="text-xs text-muted-foreground">
+                {t("partners.kickback.referrals_unit")}
+              </span>
             </div>
           ))}
         </div>
@@ -103,23 +109,40 @@ export function KickbackEstimator({ partners }: KickbackEstimatorProps) {
 
       {/* Results */}
       <div className="space-y-4 rounded-lg border p-4">
-        <h3 className="font-semibold">Kickback Cost Projection</h3>
+        <h3 className="font-semibold">
+          {t("partners.kickback.results_title")}
+        </h3>
         <div className="grid grid-cols-2 gap-3">
-          <MetricCard label="Total Referrals/Mo" value={String(results.totalReferrals)} />
-          <MetricCard label="Monthly Kickback Cost" value={formatCurrency(results.totalMonthly)} highlight />
-          <MetricCard label="Annual Kickback Cost" value={formatCurrency(results.totalAnnual)} />
           <MetricCard
-            label="Avg Cost/Referral"
+            label={t("partners.kickback.total_referrals")}
+            value={String(results.totalReferrals)}
+          />
+          <MetricCard
+            label={t("partners.kickback.monthly_cost")}
+            value={formatNumberAsMoney(results.totalMonthly, locale)}
+            highlight
+          />
+          <MetricCard
+            label={t("partners.kickback.annual_cost")}
+            value={formatNumberAsMoney(results.totalAnnual, locale)}
+          />
+          <MetricCard
+            label={t("partners.kickback.avg_per_referral")}
             value={
               results.totalReferrals > 0
-                ? formatCurrency(results.totalMonthly / results.totalReferrals)
-                : "$0.00"
+                ? formatNumberAsMoney(
+                    results.totalMonthly / results.totalReferrals,
+                    locale,
+                  )
+                : formatNumberAsMoney(0, locale)
             }
           />
         </div>
 
         <div>
-          <p className="text-xs text-muted-foreground mb-2">Per-Partner Breakdown</p>
+          <p className="text-xs text-muted-foreground mb-2">
+            {t("partners.kickback.per_partner_breakdown")}
+          </p>
           <div className="space-y-1">
             {results.partnerResults.map((r) => (
               <div
@@ -127,13 +150,20 @@ export function KickbackEstimator({ partners }: KickbackEstimatorProps) {
                 className="flex justify-between text-sm border-b pb-1"
               >
                 <span>
-                  {r.partnerName}{" "}
+                  {r.partnerName}
+                  {" "}
                   <span className="text-muted-foreground">
-                    ({r.monthlyReferrals} refs)
+                    {"("}
+                    {t("partners.kickback.refs_label", {
+                      count: r.monthlyReferrals,
+                    })}
+                    {")"}
                   </span>
                 </span>
                 <span className="font-medium">
-                  {formatCurrency(r.monthlyCost)}/mo
+                  {t("partners.kickback.per_month", {
+                    value: formatNumberAsMoney(r.monthlyCost, locale),
+                  })}
                 </span>
               </div>
             ))}

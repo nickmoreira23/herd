@@ -2,9 +2,12 @@ import { prisma } from "@/lib/prisma";
 import { PartnerPageClient } from "@/components/partners/partner-page-client";
 import { toNumber } from "@/lib/utils";
 import { connection } from "next/server";
+import { getLocale } from "@/lib/i18n/get-locale";
+import { t } from "@/lib/i18n/t";
 
 export default async function PartnersPage() {
   await connection();
+  const locale = await getLocale();
   const [partners, tiers] = await Promise.all([
     prisma.partnerBrand.findMany({
       orderBy: { name: "asc" },
@@ -38,27 +41,28 @@ export default async function PartnersPage() {
     })),
   }));
 
-  const serializedTiers = tiers.map((t) => ({
-    ...t,
-    monthlyPrice: toNumber(t.monthlyPrice),
-    quarterlyPrice: toNumber(t.quarterlyPrice),
-    annualPrice: toNumber(t.annualPrice),
-    monthlyCredits: toNumber(t.monthlyCredits),
-    partnerDiscountPercent: toNumber(t.partnerDiscountPercent),
-    apparelBudget: t.apparelBudget ? toNumber(t.apparelBudget) : null,
+  const serializedTiers = tiers.map((tier) => ({
+    ...tier,
+    monthlyPrice: toNumber(tier.monthlyPrice),
+    quarterlyPrice: toNumber(tier.quarterlyPrice),
+    annualPrice: toNumber(tier.annualPrice),
+    monthlyCredits: toNumber(tier.monthlyCredits),
+    partnerDiscountPercent: toNumber(tier.partnerDiscountPercent),
+    apparelBudget: tier.apparelBudget ? toNumber(tier.apparelBudget) : null,
   }));
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Partner Network</h1>
+        <h1 className="text-2xl font-bold">{t("partners.list.title", locale)}</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Manage partner brands and their tier-specific discount/kickback configurations.
+          {t("partners.list.description", locale)}
         </p>
       </div>
       <PartnerPageClient
         initialPartners={serializedPartners as never}
         tiers={serializedTiers as never}
+        locale={locale}
       />
     </div>
   );

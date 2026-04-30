@@ -1490,4 +1490,119 @@ export const messages: Record<MessageKey, string> = {
   "error.organization.location_delete_failed": "Failed to delete location",
   "error.organization.locations_load_failed": "Failed to load locations",
   "error.organization.location_name_required": "Location name is required",
+
+  // ============================================================
+  // Partners (Etapa 1.5.6b — Phase C)
+  // ============================================================
+  "partners.list.title": "Partner Network",
+  "partners.list.description":
+    "Manage partner brands and their tier-specific discount/kickback configurations.",
+  "partners.list.empty":
+    'No partners yet. Click "New Partner" to add one.',
+  "partners.list.tab_partners": "Partners",
+  "partners.list.tab_matrix": "Tier Matrix",
+  "partners.list.tab_estimator": "Revenue Estimator",
+  "partners.list.new_partner": "New Partner",
+  "partners.list.import": "Import Spreadsheet",
+  "partners.list.export": "Export Spreadsheet",
+
+  "partners.card.kickback_label": "Kickback",
+  "partners.card.tier_discounts_label": "Tier Discounts",
+  "partners.card.tiers_count": "{count} tiers",
+  "partners.card.inactive": "Inactive",
+
+  "partners.form.edit_title": "Edit Partner",
+  "partners.form.new_title": "New Partner",
+  "partners.form.name": "Name",
+  "partners.form.key": "Key",
+  "partners.form.key_placeholder": "lowercase_snake_case",
+  "partners.form.category": "Category",
+  "partners.form.website_url": "Website URL",
+  "partners.form.logo_url": "Logo URL",
+  "partners.form.url_placeholder": "https://...",
+  "partners.form.discount_description": "Discount Description",
+  "partners.form.discount_description_placeholder":
+    "e.g., 20% off all products for HERD subscribers",
+  "partners.form.kickback_type": "Kickback Type",
+  "partners.form.kickback_percent": "Kickback %",
+  "partners.form.kickback_amount": "Kickback Amount ($)",
+  "partners.form.active": "Active",
+  "partners.form.update": "Update",
+  "partners.form.create": "Create",
+
+  "partners.form.category.supplements": "Supplements",
+  "partners.form.category.fitness": "Fitness",
+  "partners.form.category.apparel": "Apparel",
+  "partners.form.category.nutrition": "Nutrition",
+  "partners.form.category.recovery": "Recovery",
+  "partners.form.category.technology": "Technology",
+  "partners.form.category.other": "Other",
+
+  "partner.kickback_type.NONE": "None",
+  "partner.kickback_type.PERCENT_OF_SALE": "% of Sale",
+  "partner.kickback_type.FLAT_PER_REFERRAL": "Flat per Referral",
+  "partner.kickback_type.FLAT_PER_MONTH": "Flat per Month",
+
+  "partners.kickback.empty":
+    "No active partners with kickback agreements. Configure kickbacks on partner cards first.",
+  "partners.kickback.inputs_title": "Monthly Referrals by Partner",
+  "partners.kickback.inputs_description":
+    "Estimate monthly referrals from each partner to see projected kickback costs.",
+  "partners.kickback.referrals_unit": "referrals/mo",
+  "partners.kickback.results_title": "Kickback Cost Projection",
+  "partners.kickback.total_referrals": "Total Referrals/Mo",
+  "partners.kickback.monthly_cost": "Monthly Kickback Cost",
+  "partners.kickback.annual_cost": "Annual Kickback Cost",
+  "partners.kickback.avg_per_referral": "Avg Cost/Referral",
+  "partners.kickback.per_partner_breakdown": "Per-Partner Breakdown",
+  "partners.kickback.refs_label": "{count} refs",
+  "partners.kickback.per_month": "{value}/mo",
+
+  "partners.tier_assignment.empty":
+    "No active partners. Create and activate partners first.",
+  "partners.tier_assignment.description":
+    "Set discount percentages for each partner × tier combination.",
+  "partners.tier_assignment.save_all": "Save All",
+  "partners.tier_assignment.column_partner": "Partner",
+
+  "partners.feedback.created": "Created",
+  "partners.feedback.updated": "Updated",
+  "partners.feedback.deleted": "Deleted",
+  "partners.feedback.matrix_saved": "Tier assignments saved",
+
+  "error.partners.save_failed": "Failed to save",
+  "error.partners.delete_failed": "Failed to delete",
+  "error.partners.matrix_save_failed": "Failed to save assignments",
+
+  // ============================================================
+  // Profile (Etapa 1.5.6b — Phase C, IDENTITY)
+  // ============================================================
+  "profile.title": "Profile",
+  "profile.description":
+    "Manage your personal information and account settings.",
+  "profile.section.picture": "Profile Picture",
+  "profile.section.personal": "Personal Information",
+  "profile.section.account": "Account Details",
+  "profile.field.full_name": "Full Name",
+  "profile.field.email": "Email Address",
+  "profile.field.phone": "Phone Number",
+  "profile.field.role": "Role",
+  "profile.field.account_id": "Account ID",
+  "profile.field.status": "Status",
+  "profile.field.created": "Created",
+  "profile.field.last_login": "Last Login",
+  "profile.placeholder.name": "Your name",
+  "profile.placeholder.email": "your@email.com",
+  "profile.placeholder.phone": "+1 (555) 123-4567",
+  "profile.last_login.label": "Last login: {value}",
+  "profile.feedback.updated": "Profile updated",
+  "profile.feedback.avatar_updated": "Avatar updated",
+  "profile.status.ACTIVE": "Active",
+  "profile.status.INVITED": "Invited",
+  "profile.status.INACTIVE": "Inactive",
+
+  "error.profile.name_required": "Name is required",
+  "error.profile.email_required": "Email is required",
+  "error.profile.save_failed": "Failed to save",
+  "error.profile.avatar_upload_failed": "Failed to upload avatar",
 };

@@ -1516,6 +1516,121 @@ export const messages = {
     "Falha ao carregar localizações",
   "error.organization.location_name_required":
     "Nome da localização é obrigatório",
+
+  // ============================================================
+  // Partners (Etapa 1.5.6b — Phase C)
+  // ============================================================
+  "partners.list.title": "Rede de Parceiros",
+  "partners.list.description":
+    "Gerencie marcas parceiras e suas configurações de desconto/comissão por tier.",
+  "partners.list.empty":
+    'Nenhum parceiro ainda. Clique em "Novo Parceiro" para adicionar.',
+  "partners.list.tab_partners": "Parceiros",
+  "partners.list.tab_matrix": "Matriz de Tiers",
+  "partners.list.tab_estimator": "Estimador de Receita",
+  "partners.list.new_partner": "Novo Parceiro",
+  "partners.list.import": "Importar Planilha",
+  "partners.list.export": "Exportar Planilha",
+
+  "partners.card.kickback_label": "Comissão",
+  "partners.card.tier_discounts_label": "Descontos por Tier",
+  "partners.card.tiers_count": "{count} tiers",
+  "partners.card.inactive": "Inativo",
+
+  "partners.form.edit_title": "Editar Parceiro",
+  "partners.form.new_title": "Novo Parceiro",
+  "partners.form.name": "Nome",
+  "partners.form.key": "Chave",
+  "partners.form.key_placeholder": "snake_case_minusculo",
+  "partners.form.category": "Categoria",
+  "partners.form.website_url": "URL do Site",
+  "partners.form.logo_url": "URL do Logo",
+  "partners.form.url_placeholder": "https://...",
+  "partners.form.discount_description": "Descrição do Desconto",
+  "partners.form.discount_description_placeholder":
+    "ex.: 20% de desconto em todos os produtos para assinantes do HERD",
+  "partners.form.kickback_type": "Tipo de Comissão",
+  "partners.form.kickback_percent": "Comissão %",
+  "partners.form.kickback_amount": "Valor da Comissão ($)",
+  "partners.form.active": "Ativo",
+  "partners.form.update": "Atualizar",
+  "partners.form.create": "Criar",
+
+  "partners.form.category.supplements": "Suplementos",
+  "partners.form.category.fitness": "Fitness",
+  "partners.form.category.apparel": "Vestuário",
+  "partners.form.category.nutrition": "Nutrição",
+  "partners.form.category.recovery": "Recuperação",
+  "partners.form.category.technology": "Tecnologia",
+  "partners.form.category.other": "Outro",
+
+  "partner.kickback_type.NONE": "Nenhuma",
+  "partner.kickback_type.PERCENT_OF_SALE": "% sobre Venda",
+  "partner.kickback_type.FLAT_PER_REFERRAL": "Fixo por Indicação",
+  "partner.kickback_type.FLAT_PER_MONTH": "Fixo por Mês",
+
+  "partners.kickback.empty":
+    "Nenhum parceiro ativo com acordo de comissão. Configure comissões nos cards primeiro.",
+  "partners.kickback.inputs_title": "Indicações Mensais por Parceiro",
+  "partners.kickback.inputs_description":
+    "Estime indicações mensais de cada parceiro para ver os custos projetados de comissão.",
+  "partners.kickback.referrals_unit": "indicações/mês",
+  "partners.kickback.results_title": "Projeção de Custo de Comissão",
+  "partners.kickback.total_referrals": "Total de Indicações/Mês",
+  "partners.kickback.monthly_cost": "Custo Mensal de Comissão",
+  "partners.kickback.annual_cost": "Custo Anual de Comissão",
+  "partners.kickback.avg_per_referral": "Custo Médio/Indicação",
+  "partners.kickback.per_partner_breakdown": "Detalhamento por Parceiro",
+  "partners.kickback.refs_label": "{count} indicações",
+  "partners.kickback.per_month": "{value}/mês",
+
+  "partners.tier_assignment.empty":
+    "Nenhum parceiro ativo. Crie e ative parceiros primeiro.",
+  "partners.tier_assignment.description":
+    "Defina percentuais de desconto para cada combinação parceiro × tier.",
+  "partners.tier_assignment.save_all": "Salvar Tudo",
+  "partners.tier_assignment.column_partner": "Parceiro",
+
+  "partners.feedback.created": "Criado",
+  "partners.feedback.updated": "Atualizado",
+  "partners.feedback.deleted": "Excluído",
+  "partners.feedback.matrix_saved": "Atribuições de tier salvas",
+
+  "error.partners.save_failed": "Falha ao salvar",
+  "error.partners.delete_failed": "Falha ao excluir",
+  "error.partners.matrix_save_failed": "Falha ao salvar atribuições",
+
+  // ============================================================
+  // Profile (Etapa 1.5.6b — Phase C, IDENTITY)
+  // ============================================================
+  "profile.title": "Perfil",
+  "profile.description":
+    "Gerencie suas informações pessoais e configurações de conta.",
+  "profile.section.picture": "Foto de perfil",
+  "profile.section.personal": "Informações pessoais",
+  "profile.section.account": "Detalhes da conta",
+  "profile.field.full_name": "Nome completo",
+  "profile.field.email": "E-mail",
+  "profile.field.phone": "Telefone",
+  "profile.field.role": "Cargo",
+  "profile.field.account_id": "ID da conta",
+  "profile.field.status": "Status",
+  "profile.field.created": "Criado em",
+  "profile.field.last_login": "Último login",
+  "profile.placeholder.name": "Seu nome",
+  "profile.placeholder.email": "seu@email.com",
+  "profile.placeholder.phone": "+55 (11) 91234-5678",
+  "profile.last_login.label": "Último login: {value}",
+  "profile.feedback.updated": "Perfil atualizado",
+  "profile.feedback.avatar_updated": "Avatar atualizado",
+  "profile.status.ACTIVE": "Ativo",
+  "profile.status.INVITED": "Convidado",
+  "profile.status.INACTIVE": "Inativo",
+
+  "error.profile.name_required": "Nome é obrigatório",
+  "error.profile.email_required": "E-mail é obrigatório",
+  "error.profile.save_failed": "Falha ao salvar",
+  "error.profile.avatar_upload_failed": "Falha ao enviar avatar",
 } as const;
 
 export type MessageKey = keyof typeof messages;

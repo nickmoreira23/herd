@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import type { PartnerBrand, PartnerTierAssignment, SubscriptionTier } from "@/types";
 import { KICKBACK_TYPES } from "@/types";
+import type { KickbackType } from "@/types";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +23,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useT } from "@/lib/i18n/locale-context";
+import type { MessageKey } from "@/lib/i18n/t";
 
 type PartnerWithAssignments = PartnerBrand & {
   tierAssignments: (PartnerTierAssignment & { tier: SubscriptionTier })[];
@@ -34,21 +37,21 @@ interface PartnerFormModalProps {
   onSave: (data: Record<string, unknown>) => void;
 }
 
-const KICKBACK_LABELS: Record<string, string> = {
-  NONE: "None",
-  PERCENT_OF_SALE: "% of Sale",
-  FLAT_PER_REFERRAL: "Flat per Referral",
-  FLAT_PER_MONTH: "Flat per Month",
-};
+const KICKBACK_TYPE_KEYS = {
+  NONE: "partner.kickback_type.NONE",
+  PERCENT_OF_SALE: "partner.kickback_type.PERCENT_OF_SALE",
+  FLAT_PER_REFERRAL: "partner.kickback_type.FLAT_PER_REFERRAL",
+  FLAT_PER_MONTH: "partner.kickback_type.FLAT_PER_MONTH",
+} as const satisfies Record<KickbackType, MessageKey>;
 
-const PARTNER_CATEGORIES = [
-  "Supplements",
-  "Fitness",
-  "Apparel",
-  "Nutrition",
-  "Recovery",
-  "Technology",
-  "Other",
+const PARTNER_CATEGORIES: { value: string; key: MessageKey }[] = [
+  { value: "Supplements", key: "partners.form.category.supplements" },
+  { value: "Fitness", key: "partners.form.category.fitness" },
+  { value: "Apparel", key: "partners.form.category.apparel" },
+  { value: "Nutrition", key: "partners.form.category.nutrition" },
+  { value: "Recovery", key: "partners.form.category.recovery" },
+  { value: "Technology", key: "partners.form.category.technology" },
+  { value: "Other", key: "partners.form.category.other" },
 ];
 
 export function PartnerFormModal({
@@ -57,6 +60,7 @@ export function PartnerFormModal({
   onOpenChange,
   onSave,
 }: PartnerFormModalProps) {
+  const t = useT();
   const [form, setForm] = useState({
     name: "",
     key: "",
@@ -124,13 +128,15 @@ export function PartnerFormModal({
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            {partner ? "Edit Partner" : "New Partner"}
+            {partner
+              ? t("partners.form.edit_title")
+              : t("partners.form.new_title")}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Name</Label>
+              <Label>{t("partners.form.name")}</Label>
               <Input
                 required
                 value={form.name}
@@ -145,12 +151,12 @@ export function PartnerFormModal({
               />
             </div>
             <div>
-              <Label>Key</Label>
+              <Label>{t("partners.form.key")}</Label>
               <Input
                 required
                 value={form.key}
                 onChange={(e) => setForm({ ...form, key: e.target.value })}
-                placeholder="lowercase_snake_case"
+                placeholder={t("partners.form.key_placeholder")}
                 disabled={!!partner}
                 className={partner ? "opacity-60" : ""}
               />
@@ -159,7 +165,7 @@ export function PartnerFormModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Category</Label>
+              <Label>{t("partners.form.category")}</Label>
               <Select
                 value={form.category}
                 onValueChange={(val) => setForm({ ...form, category: val ?? "" })}
@@ -169,8 +175,8 @@ export function PartnerFormModal({
                 </SelectTrigger>
                 <SelectContent>
                   {PARTNER_CATEGORIES.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
+                    <SelectItem key={c.value} value={c.value}>
+                      {t(c.key)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -180,19 +186,19 @@ export function PartnerFormModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Website URL</Label>
+              <Label>{t("partners.form.website_url")}</Label>
               <Input
                 type="url"
-                placeholder="https://..."
+                placeholder={t("partners.form.url_placeholder")}
                 value={form.websiteUrl}
                 onChange={(e) => setForm({ ...form, websiteUrl: e.target.value })}
               />
             </div>
             <div>
-              <Label>Logo URL</Label>
+              <Label>{t("partners.form.logo_url")}</Label>
               <Input
                 type="url"
-                placeholder="https://..."
+                placeholder={t("partners.form.url_placeholder")}
                 value={form.logoUrl}
                 onChange={(e) => setForm({ ...form, logoUrl: e.target.value })}
               />
@@ -200,9 +206,9 @@ export function PartnerFormModal({
           </div>
 
           <div>
-            <Label>Discount Description</Label>
+            <Label>{t("partners.form.discount_description")}</Label>
             <Textarea
-              placeholder="e.g., 20% off all products for HERD subscribers"
+              placeholder={t("partners.form.discount_description_placeholder")}
               value={form.discountDescription}
               onChange={(e) =>
                 setForm({ ...form, discountDescription: e.target.value })
@@ -213,7 +219,7 @@ export function PartnerFormModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Kickback Type</Label>
+              <Label>{t("partners.form.kickback_type")}</Label>
               <Select
                 value={form.kickbackType}
                 onValueChange={(val) => setForm({ ...form, kickbackType: val ?? "" })}
@@ -222,9 +228,9 @@ export function PartnerFormModal({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {KICKBACK_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {KICKBACK_LABELS[t]}
+                  {KICKBACK_TYPES.map((kt) => (
+                    <SelectItem key={kt} value={kt}>
+                      {t(KICKBACK_TYPE_KEYS[kt])}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -234,8 +240,8 @@ export function PartnerFormModal({
               <div>
                 <Label>
                   {form.kickbackType === "PERCENT_OF_SALE"
-                    ? "Kickback %"
-                    : "Kickback Amount ($)"}
+                    ? t("partners.form.kickback_percent")
+                    : t("partners.form.kickback_amount")}
                 </Label>
                 <Input
                   type="number"
@@ -254,12 +260,16 @@ export function PartnerFormModal({
               checked={form.isActive}
               onCheckedChange={(val) => setForm({ ...form, isActive: val })}
             />
-            <Label>Active</Label>
+            <Label>{t("partners.form.active")}</Label>
           </div>
 
           <DialogFooter>
             <Button type="submit" disabled={saving}>
-              {saving ? "Saving..." : partner ? "Update" : "Create"}
+              {saving
+                ? t("common.states.saving")
+                : partner
+                  ? t("partners.form.update")
+                  : t("partners.form.create")}
             </Button>
           </DialogFooter>
         </form>

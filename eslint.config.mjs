@@ -79,8 +79,8 @@ const eslintConfig = defineConfig([
     files: ["src/**/*.{ts,tsx}"],
     ignores: [
       // Features ainda hardcoded podem usar legacy temporariamente.
-      "src/components/{knowledge,network,agents,tiers,products,packages,brands,brand-kit,perks,marketplace,operations,operation,deals,companies,contacts,meetings,tasks,events,services,partners,campaigns,locations,apps,feeds,community,documents,videos,images,audios,tables,forms,notes,links,routines,experiences,integrations,blocks,tools,chat,feedbacks,settings,dashboard,sales,landing-page}/**/*.{ts,tsx}",
-      "src/app/admin/{knowledge,network,agents,tiers,products,packages,brands,brand-kit,perks,marketplace,operations,operation,deals,companies,contacts,meetings,tasks,events,services,partners,campaigns,locations,apps,feeds,community,documents,videos,images,audios,tables,forms,notes,links,routines,experiences,integrations,blocks,tools,chat,feedbacks,settings,sales}/**/*.{ts,tsx}",
+      "src/components/{knowledge,network,agents,tiers,products,packages,brands,brand-kit,perks,marketplace,operations,operation,deals,companies,contacts,meetings,tasks,events,services,campaigns,locations,apps,feeds,community,documents,videos,images,audios,tables,forms,notes,links,routines,experiences,integrations,blocks,tools,chat,feedbacks,settings,dashboard,sales,landing-page}/**/*.{ts,tsx}",
+      "src/app/admin/{knowledge,network,agents,tiers,products,packages,brands,brand-kit,perks,marketplace,operations,operation,deals,companies,contacts,meetings,tasks,events,services,campaigns,locations,apps,feeds,community,documents,videos,images,audios,tables,forms,notes,links,routines,experiences,integrations,blocks,tools,chat,feedbacks,settings,sales}/**/*.{ts,tsx}",
       // Organization Phase B (network/departments/users/etc.) and brand-kit
       // are still on legacy formatters — re-include their paths.
       "src/components/brand-kit/**/*.{ts,tsx}",
@@ -90,7 +90,6 @@ const eslintConfig = defineConfig([
       "src/app/admin/organization/{departments,users,org-chart,network-map,knowledge}/**/*.{ts,tsx}",
       "src/app/admin/page.tsx",
       "src/app/admin/finances/**/*.{ts,tsx}",
-      "src/app/admin/profile/**/*.{ts,tsx}",
       // src/lib helpers and store and other shared infra still use legacy.
       "src/lib/services/**/*.{ts,tsx}",
       "src/lib/financial-engine.ts",
@@ -141,6 +140,11 @@ const eslintConfig = defineConfig([
       "src/components/organization/business-hours-form.tsx",
       "src/components/organization/regional-settings-form.tsx",
       "src/app/admin/organization/profile/**/*.{ts,tsx}",
+      // Phase 1.5.6b — Phase C (partners + profile IDENTITY)
+      "src/components/partners/**/*.{ts,tsx}",
+      "src/app/admin/partners/**/*.{ts,tsx}",
+      "src/components/profile/**/*.{ts,tsx}",
+      "src/app/admin/profile/**/*.{ts,tsx}",
       // integrations/error.tsx (and [id]/error.tsx) are INTENTIONALLY
       // excluded: per Etapa 1.5.5 decision (Opção 2), shell-generic
       // strings were extracted to shell.error.* but feature-specific
