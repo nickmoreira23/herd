@@ -50,6 +50,7 @@ import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
 import { hrefToSubPanel, getSubPanelIdForPath } from "@/components/layout/sub-panel";
+import { LocaleSelector } from "@/components/i18n/locale-selector";
 import {
   Tooltip,
   TooltipContent,
@@ -485,6 +486,8 @@ export function Sidebar() {
                   </button>
                 </div>
               </div>
+              <div className="border-t border-border my-1" />
+              <LocaleSelector />
               <div className="border-t border-border my-1" />
               <button
                 onClick={() => signOut({ callbackUrl: "/login" })}

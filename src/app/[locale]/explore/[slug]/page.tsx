@@ -1,16 +1,18 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { getViewerContext } from "@/lib/marketplace/visibility-helpers";
 import { buildRenderContext } from "@/lib/marketplace/render-resolver";
 import { MarketplaceSectionRenderer } from "@/components/marketplace/renderer/marketplace-section-renderer";
+import { LocaleLink } from "@/components/i18n/locale-link";
+import { isSupportedLocale } from "@/lib/i18n/locales";
 import type { ComponentNode } from "@/types/landing-page";
 
 interface PageParams {
+  locale: string;
   slug: string;
 }
 
@@ -74,15 +76,17 @@ export default async function ExploreSectionPage({
 }: {
   params: Promise<PageParams>;
 }) {
-  const { slug } = await params;
+  const { locale, slug } = await params;
+  if (!isSupportedLocale(locale)) notFound();
+
   return (
     <div className="max-w-6xl mx-auto px-6">
-      <Link
+      <LocaleLink
         href="/explore"
         className="inline-flex items-center gap-1 mt-6 text-sm text-muted-foreground hover:text-foreground"
       >
         <ChevronLeft className="h-4 w-4" /> Back to Explore
-      </Link>
+      </LocaleLink>
       <Suspense fallback={<SectionSkeleton />}>
         <SectionContent slug={slug} />
       </Suspense>

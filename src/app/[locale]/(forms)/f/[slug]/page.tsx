@@ -3,13 +3,15 @@ import { prisma } from "@/lib/prisma";
 import { PublicFormRenderer } from "@/components/forms/public/public-form-renderer";
 import { PublicFormClosed } from "@/components/forms/public/public-form-closed";
 import { PublicFormAccessGate } from "@/components/forms/public/public-form-access-gate";
+import { isSupportedLocale } from "@/lib/i18n/locales";
 
 export default async function PublicFormPage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ locale: string; slug: string }>;
 }) {
-  const { slug } = await params;
+  const { locale, slug } = await params;
+  if (!isSupportedLocale(locale)) notFound();
 
   const form = await prisma.knowledgeForm.findUnique({
     where: { slug },
