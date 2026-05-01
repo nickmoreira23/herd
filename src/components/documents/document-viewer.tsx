@@ -13,7 +13,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Loader2, Save, RefreshCw, Download } from "lucide-react";
-import { toast } from "sonner";
+import { useT, useLocale } from "@/lib/i18n/locale-context";
+import { notifyError, notifySuccess } from "@/lib/i18n/notify";
+import { formatDate } from "@/lib/i18n/format-date";
+import { mediaStatusMeta } from "@/lib/knowledge/media-status";
 import type { DocumentRow } from "@/lib/knowledge-commons/types";
 
 function formatFileSize(bytes: number): string {
@@ -21,13 +24,6 @@ function formatFileSize(bytes: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
-
-const STATUS_STYLES: Record<string, string> = {
-  PENDING: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
-  PROCESSING: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-  READY: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-  ERROR: "bg-red-500/10 text-red-500 border-red-500/20",
-};
 
 const FILE_TYPE_STYLES: Record<string, string> = {
   PDF: "bg-red-500/10 text-red-500 border-red-500/20",
@@ -50,6 +46,8 @@ export function DocumentViewer({
   onOpenChange,
   onUpdate,
 }: DocumentViewerProps) {
+  const t = useT();
+  const locale = useLocale();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
@@ -58,7 +56,6 @@ export function DocumentViewer({
   const [loadingContent, setLoadingContent] = useState(false);
   const [activeTab, setActiveTab] = useState<"preview" | "text">("preview");
 
-  // Sync form state when doc changes
   useEffect(() => {
     if (doc) {
       setName(doc.name);
@@ -68,7 +65,6 @@ export function DocumentViewer({
     }
   }, [doc]);
 
-  // Fetch text content when viewing text tab
   const fetchTextContent = useCallback(async () => {
     if (!doc) return;
     setLoadingContent(true);
@@ -102,10 +98,10 @@ export function DocumentViewer({
         }),
       });
       if (res.ok) {
-        toast.success("Document updated");
+        notifySuccess("documents.feedback.updated", t);
         onUpdate();
       } else {
-        toast.error("Failed to update");
+        notifyError("error.documents.update_failed", t);
       }
     } finally {
       setSaving(false);
@@ -120,10 +116,10 @@ export function DocumentViewer({
         method: "POST",
       });
       if (res.ok) {
-        toast.success("Processing started");
+        notifySuccess("documents.feedback.processing_started", t);
         onUpdate();
       } else {
-        toast.error("Processing failed");
+        notifyError("error.documents.processing_failed", t);
       }
     } finally {
       setProcessing(false);
@@ -141,6 +137,7 @@ export function DocumentViewer({
   if (!doc) return null;
 
   const hasChanges = name !== doc.name || description !== (doc.description || "");
+  const statusMeta = mediaStatusMeta(doc.status);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -148,10 +145,12 @@ export function DocumentViewer({
         <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <DialogTitle className="sr-only">Document Viewer</DialogTitle>
+              <DialogTitle className="sr-only">{t("documents.viewer.title")}</DialogTitle>
               <div className="space-y-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Name</Label>
+                  <Label className="text-xs text-muted-foreground">
+                    {t("documents.viewer.field_name")}
+                  </Label>
                   <Input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
@@ -159,11 +158,13 @@ export function DocumentViewer({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Description</Label>
+                  <Label className="text-xs text-muted-foreground">
+                    {t("documents.viewer.field_description")}
+                  </Label>
                   <Textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Add a description..."
+                    placeholder={t("documents.viewer.field_description_placeholder")}
                     rows={2}
                     className="text-sm resize-none"
                   />
@@ -172,25 +173,17 @@ export function DocumentViewer({
             </div>
             <div className="flex flex-col items-end gap-2 shrink-0">
               <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleDownload}
-                >
+                <Button size="sm" variant="outline" onClick={handleDownload}>
                   <Download className="h-3 w-3 mr-1" />
-                  Download
+                  {t("documents.viewer.action_download")}
                 </Button>
-                <Button
-                  size="sm"
-                  onClick={handleSave}
-                  disabled={saving || !hasChanges}
-                >
+                <Button size="sm" onClick={handleSave} disabled={saving || !hasChanges}>
                   {saving ? (
                     <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                   ) : (
                     <Save className="h-3 w-3 mr-1" />
                   )}
-                  Save
+                  {t("documents.viewer.action_save")}
                 </Button>
               </div>
             </div>
@@ -201,16 +194,20 @@ export function DocumentViewer({
             <Badge variant="outline" className={`text-xs ${FILE_TYPE_STYLES[doc.fileType] || ""}`}>
               {doc.fileType}
             </Badge>
-            <Badge variant="outline" className={`text-xs ${STATUS_STYLES[doc.status] || ""}`}>
+            <Badge variant="outline" className={`text-xs ${statusMeta.toneClass}`}>
               {doc.status === "PROCESSING" && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
-              {doc.status}
+              {t(statusMeta.labelKey)}
             </Badge>
             <span className="text-xs text-muted-foreground">{formatFileSize(doc.fileSize)}</span>
             <span className="text-xs text-muted-foreground">
-              Uploaded {new Date(doc.uploadedAt).toLocaleDateString()}
+              {t("documents.viewer.uploaded_at", {
+                date: formatDate(new Date(doc.uploadedAt), locale, "short"),
+              })}
             </span>
             {doc.chunkCount > 0 && (
-              <span className="text-xs text-muted-foreground">{doc.chunkCount} chunks</span>
+              <span className="text-xs text-muted-foreground">
+                {t("documents.viewer.chunks_count", { count: doc.chunkCount })}
+              </span>
             )}
             {(doc.status === "ERROR" || doc.status === "READY" || doc.status === "PENDING") && (
               <Button
@@ -225,7 +222,9 @@ export function DocumentViewer({
                 ) : (
                   <RefreshCw className="h-3 w-3 mr-1" />
                 )}
-                {doc.status === "PENDING" ? "Process" : "Re-process"}
+                {doc.status === "PENDING"
+                  ? t("documents.viewer.action_process")
+                  : t("documents.viewer.action_reprocess")}
               </Button>
             )}
           </div>
@@ -248,7 +247,7 @@ export function DocumentViewer({
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                Preview
+                {t("documents.viewer.tab_preview")}
               </button>
               <button
                 onClick={() => setActiveTab("text")}
@@ -258,7 +257,7 @@ export function DocumentViewer({
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                Extracted Text
+                {t("documents.viewer.tab_text")}
               </button>
             </div>
           )}
@@ -268,20 +267,22 @@ export function DocumentViewer({
         <div className="flex-1 overflow-auto min-h-0">
           {doc.status === "PENDING" && (
             <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-              Document has not been processed yet. Click &ldquo;Process&rdquo; to extract text.
+              {t("documents.viewer.state_pending")}
             </div>
           )}
 
           {doc.status === "PROCESSING" && (
             <div className="flex flex-col items-center justify-center h-full gap-2">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">Processing document...</p>
+              <p className="text-sm text-muted-foreground">
+                {t("documents.viewer.state_processing")}
+              </p>
             </div>
           )}
 
           {doc.status === "ERROR" && (
             <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-              Processing failed. Click &ldquo;Re-process&rdquo; to try again.
+              {t("documents.viewer.state_error")}
             </div>
           )}
 
@@ -305,7 +306,7 @@ export function DocumentViewer({
                 </pre>
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-12">
-                  No text content extracted.
+                  {t("documents.viewer.no_text")}
                 </p>
               )}
             </div>

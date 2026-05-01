@@ -13,7 +13,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Loader2, Save, RefreshCw, Download } from "lucide-react";
-import { toast } from "sonner";
+import { useT, useLocale } from "@/lib/i18n/locale-context";
+import { notifyError, notifySuccess } from "@/lib/i18n/notify";
+import { formatDate } from "@/lib/i18n/format-date";
+import { mediaStatusMeta } from "@/lib/knowledge/media-status";
 import type { VideoRow } from "@/lib/knowledge-commons/types";
 
 function formatFileSize(bytes: number): string {
@@ -31,13 +34,6 @@ function formatDuration(seconds: number): string {
   }
   return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
 }
-
-const STATUS_STYLES: Record<string, string> = {
-  PENDING: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
-  PROCESSING: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-  READY: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-  ERROR: "bg-red-500/10 text-red-500 border-red-500/20",
-};
 
 const FILE_TYPE_STYLES: Record<string, string> = {
   MP4: "bg-blue-500/10 text-blue-500 border-blue-500/20",
@@ -59,6 +55,8 @@ export function VideoViewer({
   onOpenChange,
   onUpdate,
 }: VideoViewerProps) {
+  const t = useT();
+  const locale = useLocale();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
@@ -67,7 +65,6 @@ export function VideoViewer({
   const [loadingContent, setLoadingContent] = useState(false);
   const [activeTab, setActiveTab] = useState<"preview" | "transcript">("preview");
 
-  // Sync form state when video changes
   useEffect(() => {
     if (video) {
       setName(video.name);
@@ -77,7 +74,6 @@ export function VideoViewer({
     }
   }, [video]);
 
-  // Fetch transcript content when viewing transcript tab
   const fetchTextContent = useCallback(async () => {
     if (!video) return;
     setLoadingContent(true);
@@ -111,10 +107,10 @@ export function VideoViewer({
         }),
       });
       if (res.ok) {
-        toast.success("Video updated");
+        notifySuccess("videos.feedback.updated", t);
         onUpdate();
       } else {
-        toast.error("Failed to update");
+        notifyError("error.videos.update_failed", t);
       }
     } finally {
       setSaving(false);
@@ -129,10 +125,10 @@ export function VideoViewer({
         method: "POST",
       });
       if (res.ok) {
-        toast.success("Transcription started");
+        notifySuccess("videos.feedback.transcription_started", t);
         onUpdate();
       } else {
-        toast.error("Transcription failed");
+        notifyError("error.videos.transcription_failed", t);
       }
     } finally {
       setProcessing(false);
@@ -150,6 +146,7 @@ export function VideoViewer({
   if (!video) return null;
 
   const hasChanges = name !== video.name || description !== (video.description || "");
+  const statusMeta = mediaStatusMeta(video.status);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -157,10 +154,12 @@ export function VideoViewer({
         <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <DialogTitle className="sr-only">Video Viewer</DialogTitle>
+              <DialogTitle className="sr-only">{t("videos.viewer.title")}</DialogTitle>
               <div className="space-y-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Name</Label>
+                  <Label className="text-xs text-muted-foreground">
+                    {t("videos.viewer.field_name")}
+                  </Label>
                   <Input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
@@ -168,11 +167,13 @@ export function VideoViewer({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Description</Label>
+                  <Label className="text-xs text-muted-foreground">
+                    {t("videos.viewer.field_description")}
+                  </Label>
                   <Textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Add a description..."
+                    placeholder={t("videos.viewer.field_description_placeholder")}
                     rows={2}
                     className="text-sm resize-none"
                   />
@@ -181,48 +182,43 @@ export function VideoViewer({
             </div>
             <div className="flex flex-col items-end gap-2 shrink-0">
               <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleDownload}
-                >
+                <Button size="sm" variant="outline" onClick={handleDownload}>
                   <Download className="h-3 w-3 mr-1" />
-                  Download
+                  {t("videos.viewer.action_download")}
                 </Button>
-                <Button
-                  size="sm"
-                  onClick={handleSave}
-                  disabled={saving || !hasChanges}
-                >
+                <Button size="sm" onClick={handleSave} disabled={saving || !hasChanges}>
                   {saving ? (
                     <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                   ) : (
                     <Save className="h-3 w-3 mr-1" />
                   )}
-                  Save
+                  {t("videos.viewer.action_save")}
                 </Button>
               </div>
             </div>
           </div>
 
-          {/* Metadata row */}
           <div className="flex items-center gap-3 mt-4 flex-wrap">
             <Badge variant="outline" className={`text-xs ${FILE_TYPE_STYLES[video.fileType] || ""}`}>
               {video.fileType}
             </Badge>
-            <Badge variant="outline" className={`text-xs ${STATUS_STYLES[video.status] || ""}`}>
+            <Badge variant="outline" className={`text-xs ${statusMeta.toneClass}`}>
               {video.status === "PROCESSING" && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
-              {video.status}
+              {t(statusMeta.labelKey)}
             </Badge>
             {video.duration != null && (
               <span className="text-xs text-muted-foreground">{formatDuration(video.duration)}</span>
             )}
             <span className="text-xs text-muted-foreground">{formatFileSize(video.fileSize)}</span>
             <span className="text-xs text-muted-foreground">
-              Uploaded {new Date(video.uploadedAt).toLocaleDateString()}
+              {t("videos.viewer.uploaded_at", {
+                date: formatDate(new Date(video.uploadedAt), locale, "short"),
+              })}
             </span>
             {video.chunkCount > 0 && (
-              <span className="text-xs text-muted-foreground">{video.chunkCount} chunks</span>
+              <span className="text-xs text-muted-foreground">
+                {t("videos.viewer.chunks_count", { count: video.chunkCount })}
+              </span>
             )}
             {(video.status === "ERROR" || video.status === "READY" || video.status === "PENDING") && (
               <Button
@@ -237,19 +233,19 @@ export function VideoViewer({
                 ) : (
                   <RefreshCw className="h-3 w-3 mr-1" />
                 )}
-                {video.status === "PENDING" ? "Transcribe" : "Re-transcribe"}
+                {video.status === "PENDING"
+                  ? t("videos.viewer.action_transcribe")
+                  : t("videos.viewer.action_retranscribe")}
               </Button>
             )}
           </div>
 
-          {/* Error message */}
           {video.status === "ERROR" && video.errorMessage && (
             <div className="mt-3 rounded-md bg-red-500/10 border border-red-500/20 px-3 py-2">
               <p className="text-xs text-red-500">{video.errorMessage}</p>
             </div>
           )}
 
-          {/* Tabs — always show both when status is READY */}
           {video.status === "READY" && (
             <div className="flex gap-1 mt-3">
               <button
@@ -260,7 +256,7 @@ export function VideoViewer({
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                Preview
+                {t("videos.viewer.tab_preview")}
               </button>
               <button
                 onClick={() => setActiveTab("transcript")}
@@ -270,30 +266,31 @@ export function VideoViewer({
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                Transcript
+                {t("videos.viewer.tab_transcript")}
               </button>
             </div>
           )}
         </DialogHeader>
 
-        {/* Content area */}
         <div className="flex-1 overflow-auto min-h-0">
           {video.status === "PENDING" && (
             <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-              Video has not been transcribed yet. Click &ldquo;Transcribe&rdquo; to start.
+              {t("videos.viewer.state_pending")}
             </div>
           )}
 
           {video.status === "PROCESSING" && (
             <div className="flex flex-col items-center justify-center h-full gap-2">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">Transcribing video...</p>
+              <p className="text-sm text-muted-foreground">
+                {t("videos.viewer.state_processing")}
+              </p>
             </div>
           )}
 
           {video.status === "ERROR" && (
             <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-              Transcription failed. Click &ldquo;Re-transcribe&rdquo; to try again.
+              {t("videos.viewer.state_error")}
             </div>
           )}
 
@@ -319,7 +316,7 @@ export function VideoViewer({
                 </pre>
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-12">
-                  No transcript available.
+                  {t("videos.viewer.no_transcript")}
                 </p>
               )}
             </div>

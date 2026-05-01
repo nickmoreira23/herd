@@ -3,13 +3,15 @@
 import { useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, FolderPlus, Music } from "lucide-react";
-import { toast } from "sonner";
+import { useT, useLocale } from "@/lib/i18n/locale-context";
+import { notifyError, notifySuccess } from "@/lib/i18n/notify";
 import { BlockListPage } from "@/components/shared/block-list-page";
 import type { FilterDef } from "@/components/shared/block-list-page";
 import { BlockAgentPanel } from "@/components/shared/block-agent-panel";
 import { FolderNav } from "@/components/shared/knowledge-commons/folder-nav";
 import { FolderDialog } from "@/components/shared/knowledge-commons/folder-dialog";
 import { DeleteDialog } from "@/components/shared/knowledge-commons/delete-dialog";
+import { MEDIA_STATUS_OPTIONS } from "@/lib/knowledge/media-status";
 import { getAudioColumns } from "./audio-columns";
 import { AudioUploadModal } from "./audio-upload-modal";
 import { AudioViewer } from "./audio-viewer";
@@ -24,6 +26,8 @@ export function AudiosListClient({
   initialAudios,
   initialFolders,
 }: AudiosListClientProps) {
+  const t = useT();
+  const locale = useLocale();
   const [audios, setAudios] = useState<AudioRow[]>(initialAudios);
   const [folders, setFolders] = useState<FolderRow[]>(initialFolders);
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
@@ -32,17 +36,14 @@ export function AudiosListClient({
   const [showFolderDialog, setShowFolderDialog] = useState(false);
   const [editingFolder, setEditingFolder] = useState<FolderRow | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AudioRow | null>(null);
-  const [deleteFolderTarget, setDeleteFolderTarget] =
-    useState<FolderRow | null>(null);
+  const [deleteFolderTarget, setDeleteFolderTarget] = useState<FolderRow | null>(null);
   const [viewerAudio, setViewerAudio] = useState<AudioRow | null>(null);
 
-  // ── Display data ────────────────────────────────────────────────────
   const displayData = useMemo(() => {
     if (search) return audios;
     return audios.filter((a) => a.folderId === currentFolderId);
   }, [audios, search, currentFolderId]);
 
-  // ── Data refresh ──────────────────────────────────────────────────
   const refreshData = useCallback(async () => {
     const [audiosRes, foldersRes] = await Promise.all([
       fetch("/api/audios"),
@@ -54,7 +55,6 @@ export function AudiosListClient({
     if (foldersJson.data) setFolders(foldersJson.data);
   }, []);
 
-  // ── Action handlers ───────────────────────────────────────────────
   const handleView = useCallback((audio: AudioRow) => {
     setViewerAudio(audio);
   }, []);
@@ -75,10 +75,13 @@ export function AudiosListClient({
       });
       if (res.ok) {
         await refreshData();
-        toast.success(audio.isActive ? "Deactivated" : "Activated");
+        notifySuccess(
+          audio.isActive ? "audios.feedback.deactivated" : "audios.feedback.activated",
+          t,
+        );
       }
     },
-    [refreshData],
+    [refreshData, t],
   );
 
   const handleDeleteAudio = useCallback(
@@ -86,13 +89,13 @@ export function AudiosListClient({
       const res = await fetch(`/api/audios/${audio.id}`, { method: "DELETE" });
       if (res.ok) {
         await refreshData();
-        toast.success("Audio deleted");
+        notifySuccess("audios.feedback.deleted", t);
       } else {
-        toast.error("Failed to delete audio");
+        notifyError("error.audios.delete_failed", t);
       }
       setDeleteTarget(null);
     },
-    [refreshData],
+    [refreshData, t],
   );
 
   const handleDeleteFolder = useCallback(
@@ -105,14 +108,13 @@ export function AudiosListClient({
           setCurrentFolderId(folder.parentId);
         }
         await refreshData();
-        toast.success("Folder deleted");
+        notifySuccess("audios.feedback.folder_deleted", t);
       } else {
-        const err = await res.json().catch(() => null);
-        toast.error(err?.error || "Failed to delete folder");
+        notifyError("error.audios.folder_delete_failed", t);
       }
       setDeleteFolderTarget(null);
     },
-    [refreshData, currentFolderId],
+    [refreshData, currentFolderId, t],
   );
 
   const handleMoveToFolder = useCallback(
@@ -124,69 +126,67 @@ export function AudiosListClient({
       });
       if (res.ok) {
         await refreshData();
-        toast.success(folderId ? "Moved to folder" : "Moved to root");
+        notifySuccess(
+          folderId ? "audios.feedback.moved_to_folder" : "audios.feedback.moved_to_root",
+          t,
+        );
       }
     },
-    [refreshData],
+    [refreshData, t],
   );
 
-  // ── Columns ───────────────────────────────────────────────────────
   const columns = useMemo(
     () =>
-      getAudioColumns({
-        onView: handleView,
-        onDownload: handleDownload,
-        onToggleActive: handleToggleActive,
-        onDelete: (audio) => setDeleteTarget(audio),
-        folders,
-        onMoveToFolder: handleMoveToFolder,
-      }),
-    [handleView, handleDownload, handleToggleActive, folders, handleMoveToFolder],
+      getAudioColumns(
+        {
+          onView: handleView,
+          onDownload: handleDownload,
+          onToggleActive: handleToggleActive,
+          onDelete: (audio) => setDeleteTarget(audio),
+          folders,
+          onMoveToFolder: handleMoveToFolder,
+        },
+        t,
+        locale,
+      ),
+    [handleView, handleDownload, handleToggleActive, folders, handleMoveToFolder, t, locale],
   );
 
-  // ── Filters ───────────────────────────────────────────────────────
   const filters: FilterDef<AudioRow>[] = useMemo(
     () => [
       {
         key: "fileType",
-        label: "All Types",
-        options: [
-          { value: "MP3", label: "MP3" },
-          { value: "WAV", label: "WAV" },
-          { value: "OGG", label: "OGG" },
-          { value: "FLAC", label: "FLAC" },
-          { value: "AAC", label: "AAC" },
-          { value: "M4A", label: "M4A" },
-        ],
+        label: t("audios.list.filter_all_types"),
+        options: ["MP3", "WAV", "OGG", "FLAC", "AAC", "M4A"].map((v) => ({
+          value: v,
+          label: v,
+        })),
         filterFn: (item: AudioRow, val: string) => item.fileType === val,
       },
       {
         key: "status",
-        label: "All Status",
-        options: [
-          { value: "PENDING", label: "Pending" },
-          { value: "PROCESSING", label: "Processing" },
-          { value: "READY", label: "Ready" },
-          { value: "ERROR", label: "Error" },
-        ],
+        label: t("audios.list.filter_all_status"),
+        options: MEDIA_STATUS_OPTIONS.map((s) => ({
+          value: s.value,
+          label: t(s.labelKey),
+        })),
         filterFn: (item: AudioRow, val: string) => item.status === val,
       },
     ],
-    [],
+    [t],
   );
 
-  // ── Render ────────────────────────────────────────────────────────
   return (
     <BlockListPage<AudioRow>
       blockName="audios"
-      title="Audios"
-      description="Upload and manage audio files for your knowledge base."
+      title={t("audios.list.title")}
+      description={t("audios.list.description")}
       data={displayData}
       getId={(a) => a.id}
       columns={columns}
       search={search}
       onSearchChange={setSearch}
-      searchPlaceholder="Search by name, description, or file..."
+      searchPlaceholder={t("audios.list.search_placeholder")}
       searchFn={(item, q) =>
         item.name.toLowerCase().includes(q) ||
         (item.description?.toLowerCase().includes(q) ?? false) ||
@@ -204,11 +204,11 @@ export function AudiosListClient({
             }}
           >
             <FolderPlus className="mr-1 h-3 w-3" />
-            New Folder
+            {t("audios.list.new_folder_button")}
           </Button>
           <Button size="sm" onClick={() => setShowUpload(true)}>
             <Plus className="mr-1 h-3 w-3" />
-            Upload Audio
+            {t("audios.list.upload_button")}
           </Button>
         </>
       }
@@ -222,15 +222,15 @@ export function AudiosListClient({
             setShowFolderDialog(true);
           }}
           onDelete={(folder) => setDeleteFolderTarget(folder)}
-          rootLabel="All Audios"
+          rootLabel={t("audios.list.breadcrumb_root")}
           countKey="audios"
           isSearching={!!search}
         />
       }
       showAgent={false}
       emptyIcon={Music}
-      emptyTitle="No audios yet"
-      emptyDescription="Upload audio files to your knowledge base. They'll be automatically transcribed with speaker diarization for search and AI access."
+      emptyTitle={t("audios.empty.title")}
+      emptyDescription={t("audios.empty.description")}
       modals={
         <>
           <BlockAgentPanel
@@ -254,7 +254,6 @@ export function AudiosListClient({
             folderType="AUDIO"
           />
 
-          {/* Delete audio dialog */}
           <DeleteDialog
             open={!!deleteTarget}
             onOpenChange={(open) => {
@@ -264,7 +263,6 @@ export function AudiosListClient({
             onConfirm={() => deleteTarget && handleDeleteAudio(deleteTarget)}
           />
 
-          {/* Delete folder dialog */}
           <DeleteDialog
             open={!!deleteFolderTarget}
             onOpenChange={(open) => {
