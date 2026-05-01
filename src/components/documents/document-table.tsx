@@ -28,34 +28,20 @@ import {
   Search,
   SlidersHorizontal,
   Folder,
-  FolderOpen,
   ChevronRight,
   MoreHorizontal,
   Pencil,
   Trash2,
-  Upload,
   FolderPlus,
 } from "lucide-react";
-import { toast } from "sonner";
+import { useT, useLocale } from "@/lib/i18n/locale-context";
+import { notifyError, notifySuccess } from "@/lib/i18n/notify";
+import { MEDIA_STATUS_OPTIONS } from "@/lib/knowledge/media-status";
 import type { DocumentRow, FolderRow } from "@/lib/knowledge-commons/types";
 import { PageHeader } from "@/components/layout/page-header";
 
-const FILE_TYPE_OPTIONS = [
-  { value: "All Types", filterKey: "ALL" },
-  { value: "PDF", filterKey: "PDF" },
-  { value: "DOCX", filterKey: "DOCX" },
-  { value: "TXT", filterKey: "TXT" },
-  { value: "MD", filterKey: "MD" },
-  { value: "CSV", filterKey: "CSV" },
-] as const;
-
-const STATUS_OPTIONS = [
-  { value: "All Status", filterKey: "ALL" },
-  { value: "Pending", filterKey: "PENDING" },
-  { value: "Processing", filterKey: "PROCESSING" },
-  { value: "Ready", filterKey: "READY" },
-  { value: "Error", filterKey: "ERROR" },
-] as const;
+const ALL_VALUE = "ALL";
+const FILE_TYPE_VALUES = ["PDF", "DOCX", "TXT", "MD", "CSV"] as const;
 
 interface DocumentTableProps {
   initialDocuments: DocumentRow[];
@@ -66,12 +52,14 @@ export function DocumentTable({
   initialDocuments,
   initialFolders,
 }: DocumentTableProps) {
+  const t = useT();
+  const locale = useLocale();
   const [documents, setDocuments] = useState<DocumentRow[]>(initialDocuments);
   const [folders, setFolders] = useState<FolderRow[]>(initialFolders);
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [fileTypeValue, setFileTypeValue] = useState("All Types");
-  const [statusValue, setStatusValue] = useState("All Status");
+  const [fileTypeFilter, setFileTypeFilter] = useState<string>(ALL_VALUE);
+  const [statusFilter, setStatusFilter] = useState<string>(ALL_VALUE);
   const [showUpload, setShowUpload] = useState(false);
   const [showFolderDialog, setShowFolderDialog] = useState(false);
   const [editingFolder, setEditingFolder] = useState<FolderRow | null>(null);
@@ -79,10 +67,6 @@ export function DocumentTable({
   const [deleteFolderTarget, setDeleteFolderTarget] = useState<FolderRow | null>(null);
   const [viewerDoc, setViewerDoc] = useState<DocumentRow | null>(null);
 
-  const fileTypeFilter = FILE_TYPE_OPTIONS.find((f) => f.value === fileTypeValue)?.filterKey ?? "ALL";
-  const statusFilter = STATUS_OPTIONS.find((s) => s.value === statusValue)?.filterKey ?? "ALL";
-
-  // Build breadcrumb path
   const breadcrumbs = useMemo(() => {
     const path: FolderRow[] = [];
     let id = currentFolderId;
@@ -95,20 +79,17 @@ export function DocumentTable({
     return path;
   }, [currentFolderId, folders]);
 
-  // Folders in current view
   const currentFolders = useMemo(
     () => folders.filter((f) => f.parentId === currentFolderId),
     [folders, currentFolderId]
   );
 
-  // Documents in current folder (or root if no folder selected)
   const currentDocuments = useMemo(() => {
     let filtered = documents.filter((d) => d.folderId === currentFolderId);
-
-    if (fileTypeFilter !== "ALL") {
+    if (fileTypeFilter !== ALL_VALUE) {
       filtered = filtered.filter((d) => d.fileType === fileTypeFilter);
     }
-    if (statusFilter !== "ALL") {
+    if (statusFilter !== ALL_VALUE) {
       filtered = filtered.filter((d) => d.status === statusFilter);
     }
     if (search) {
@@ -123,7 +104,6 @@ export function DocumentTable({
     return filtered;
   }, [documents, currentFolderId, fileTypeFilter, statusFilter, search]);
 
-  // When searching, show all documents matching (across all folders)
   const searchResults = useMemo(() => {
     if (!search) return null;
     const q = search.toLowerCase();
@@ -133,10 +113,10 @@ export function DocumentTable({
         (d.description && d.description.toLowerCase().includes(q)) ||
         d.fileName.toLowerCase().includes(q)
     );
-    if (fileTypeFilter !== "ALL") {
+    if (fileTypeFilter !== ALL_VALUE) {
       filtered = filtered.filter((d) => d.fileType === fileTypeFilter);
     }
-    if (statusFilter !== "ALL") {
+    if (statusFilter !== ALL_VALUE) {
       filtered = filtered.filter((d) => d.status === statusFilter);
     }
     return filtered;
@@ -181,10 +161,13 @@ export function DocumentTable({
       });
       if (res.ok) {
         await refreshData();
-        toast.success(doc.isActive ? "Deactivated" : "Activated");
+        notifySuccess(
+          doc.isActive ? "documents.feedback.deactivated" : "documents.feedback.activated",
+          t,
+        );
       }
     },
-    [refreshData]
+    [refreshData, t]
   );
 
   const handleDeleteDoc = useCallback(
@@ -192,32 +175,30 @@ export function DocumentTable({
       const res = await fetch(`/api/documents/${doc.id}`, { method: "DELETE" });
       if (res.ok) {
         await refreshData();
-        toast.success("Document deleted");
+        notifySuccess("documents.feedback.deleted", t);
       } else {
-        toast.error("Failed to delete document");
+        notifyError("error.documents.delete_failed", t);
       }
       setDeleteTarget(null);
     },
-    [refreshData]
+    [refreshData, t]
   );
 
   const handleDeleteFolder = useCallback(
     async (folder: FolderRow) => {
       const res = await fetch(`/api/knowledge/folders/${folder.id}`, { method: "DELETE" });
       if (res.ok) {
-        // If we were inside the deleted folder, go to root
         if (currentFolderId === folder.id) {
           setCurrentFolderId(folder.parentId);
         }
         await refreshData();
-        toast.success("Folder deleted");
+        notifySuccess("documents.feedback.folder_deleted", t);
       } else {
-        const err = await res.json().catch(() => null);
-        toast.error(err?.error || "Failed to delete folder");
+        notifyError("error.documents.folder_delete_failed", t);
       }
       setDeleteFolderTarget(null);
     },
-    [refreshData, currentFolderId]
+    [refreshData, currentFolderId, t]
   );
 
   const handleMoveToFolder = useCallback(
@@ -229,23 +210,30 @@ export function DocumentTable({
       });
       if (res.ok) {
         await refreshData();
-        toast.success(folderId ? "Moved to folder" : "Moved to root");
+        notifySuccess(
+          folderId ? "documents.feedback.moved_to_folder" : "documents.feedback.moved_to_root",
+          t,
+        );
       }
     },
-    [refreshData]
+    [refreshData, t]
   );
 
   const columns = useMemo(
     () =>
-      getDocumentColumns({
-        onView: handleView,
-        onDownload: handleDownload,
-        onToggleActive: handleToggleActive,
-        onDelete: (doc) => setDeleteTarget(doc),
-        folders: folders,
-        onMoveToFolder: handleMoveToFolder,
-      }),
-    [handleView, handleDownload, handleToggleActive, folders, handleMoveToFolder]
+      getDocumentColumns(
+        {
+          onView: handleView,
+          onDownload: handleDownload,
+          onToggleActive: handleToggleActive,
+          onDelete: (doc) => setDeleteTarget(doc),
+          folders: folders,
+          onMoveToFolder: handleMoveToFolder,
+        },
+        t,
+        locale,
+      ),
+    [handleView, handleDownload, handleToggleActive, folders, handleMoveToFolder, t, locale]
   );
 
   const displayDocs = searchResults ?? currentDocuments;
@@ -254,8 +242,8 @@ export function DocumentTable({
     <>
       <div className="flex flex-col min-h-full pt-2 pl-2">
         <PageHeader
-          title="Documents"
-          description="Guides, policies, SOPs, and reference materials for your team and partners."
+          title={t("documents.list.title")}
+          description={t("documents.list.description")}
           className="pl-0 pt-0"
           action={
             <div className="flex items-center gap-2">
@@ -268,24 +256,23 @@ export function DocumentTable({
                 }}
               >
                 <FolderPlus className="mr-1 h-3 w-3" />
-                New Folder
+                {t("documents.list.new_folder_button")}
               </Button>
               <Button size="sm" onClick={() => setShowUpload(true)}>
                 <Plus className="mr-1 h-3 w-3" />
-                Upload Document
+                {t("documents.list.upload_button")}
               </Button>
             </div>
           }
         />
 
-        {/* Breadcrumbs */}
         {breadcrumbs.length > 0 && (
           <div className="flex items-center gap-1 mb-4 text-sm">
             <button
               onClick={() => setCurrentFolderId(null)}
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
-              All Documents
+              {t("documents.list.breadcrumb_root")}
             </button>
             {breadcrumbs.map((folder) => (
               <span key={folder.id} className="flex items-center gap-1">
@@ -305,7 +292,6 @@ export function DocumentTable({
           </div>
         )}
 
-        {/* Folders grid */}
         {!search && currentFolders.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 mb-6">
             {currentFolders.map((folder) => (
@@ -324,14 +310,13 @@ export function DocumentTable({
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium truncate">{folder.name}</p>
                     <p className="text-[10px] text-muted-foreground">
-                      {folder._count.documents} doc{folder._count.documents !== 1 ? "s" : ""}
+                      {t("documents.list.folder_count_docs", { count: folder._count.documents })}
                       {folder._count.children > 0 &&
-                        ` · ${folder._count.children} folder${folder._count.children !== 1 ? "s" : ""}`}
+                        ` · ${t("documents.list.folder_count_subfolders", { count: folder._count.children })}`}
                     </p>
                   </div>
                 </div>
 
-                {/* Folder actions */}
                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <DropdownMenu>
                     <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="h-6 w-6" />}>
@@ -346,7 +331,7 @@ export function DocumentTable({
                         }}
                       >
                         <Pencil className="h-3.5 w-3.5 mr-2" />
-                        Edit
+                        {t("common.actions.edit")}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={(e) => {
@@ -356,7 +341,7 @@ export function DocumentTable({
                         className="text-destructive focus:text-destructive"
                       >
                         <Trash2 className="h-3.5 w-3.5 mr-2" />
-                        Delete
+                        {t("common.actions.delete")}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -366,59 +351,61 @@ export function DocumentTable({
           </div>
         )}
 
-        {/* Table */}
         <div className="flex-1">
           <DataTable
             columns={columns}
             data={displayDocs}
             toolbar={() => (
               <div className="flex items-center gap-3">
-                {/* File type dropdown */}
                 <Select
-                  value={fileTypeValue}
-                  onValueChange={(val) => setFileTypeValue(val ?? "All Types")}
+                  value={fileTypeFilter}
+                  onValueChange={(val) => setFileTypeFilter(val ?? ALL_VALUE)}
                 >
                   <SelectTrigger className="w-auto min-w-[110px] h-8 text-xs shrink-0">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {FILE_TYPE_OPTIONS.map((f) => (
-                      <SelectItem key={f.value} value={f.value}>
-                        {f.value}
+                    <SelectItem value={ALL_VALUE}>
+                      {t("documents.list.filter_all_types")}
+                    </SelectItem>
+                    {FILE_TYPE_VALUES.map((v) => (
+                      <SelectItem key={v} value={v}>
+                        {v}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
 
-                {/* Status filter */}
                 <Select
-                  value={statusValue}
-                  onValueChange={(val) => setStatusValue(val ?? "All Status")}
+                  value={statusFilter}
+                  onValueChange={(val) => setStatusFilter(val ?? ALL_VALUE)}
                 >
                   <SelectTrigger className="w-auto min-w-[100px] h-8 text-xs shrink-0">
                     <SlidersHorizontal className="mr-1.5 h-3 w-3" />
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {STATUS_OPTIONS.map((s) => (
+                    <SelectItem value={ALL_VALUE}>
+                      {t("documents.list.filter_all_status")}
+                    </SelectItem>
+                    {MEDIA_STATUS_OPTIONS.map((s) => (
                       <SelectItem key={s.value} value={s.value}>
-                        {s.value}
+                        {t(s.labelKey)}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
 
-                {/* Search */}
                 <div className="relative flex-1 min-w-0">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                   <Input
-                    placeholder="Search by name, description, or file..."
+                    placeholder={t("documents.list.search_placeholder")}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="pl-8 pr-20 h-8 text-xs w-full"
                   />
                   <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground tabular-nums">
-                    {displayDocs.length} item{displayDocs.length !== 1 ? "s" : ""}
+                    {t("documents.list.items_count", { count: displayDocs.length })}
                   </span>
                 </div>
               </div>
@@ -442,7 +429,6 @@ export function DocumentTable({
         parentId={currentFolderId}
       />
 
-      {/* Delete document dialog */}
       <DeleteDialog
         open={!!deleteTarget}
         onOpenChange={(open) => {
@@ -452,7 +438,6 @@ export function DocumentTable({
         onConfirm={() => deleteTarget && handleDeleteDoc(deleteTarget)}
       />
 
-      {/* Delete folder dialog */}
       <DeleteDialog
         open={!!deleteFolderTarget}
         onOpenChange={(open) => {

@@ -12,7 +12,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Upload, Loader2, Music } from "lucide-react";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import { notifyError, notifySuccess } from "@/lib/i18n/notify";
 
 interface AudioUploadModalProps {
   open: boolean;
@@ -24,6 +25,7 @@ interface AudioUploadModalProps {
 const ACCEPTED_TYPES = ".mp3,.wav,.ogg,.flac,.aac,.m4a";
 
 export function AudioUploadModal({ open, onOpenChange, onComplete, folderId }: AudioUploadModalProps) {
+  const t = useT();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -48,12 +50,11 @@ export function AudioUploadModal({ open, onOpenChange, onComplete, folderId }: A
   }
 
   async function handleUpload() {
-    if (!file) { toast.error("Select a file"); return; }
-    if (!name.trim()) { toast.error("Name is required"); return; }
+    if (!file) { notifyError("error.audios.select_file", t); return; }
+    if (!name.trim()) { notifyError("error.audios.name_required", t); return; }
 
     setUploading(true);
     try {
-      // Step 1: Upload file
       const formData = new FormData();
       formData.append("file", file);
       const uploadRes = await fetch("/api/audios/upload", {
@@ -61,12 +62,10 @@ export function AudioUploadModal({ open, onOpenChange, onComplete, folderId }: A
         body: formData,
       });
       if (!uploadRes.ok) {
-        const err = await uploadRes.json().catch(() => null);
-        throw new Error(err?.error || "File upload failed");
+        throw new Error("upload");
       }
       const uploadJson = await uploadRes.json();
 
-      // Step 2: Create audio record
       const audioRes = await fetch("/api/audios", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -82,20 +81,23 @@ export function AudioUploadModal({ open, onOpenChange, onComplete, folderId }: A
           folderId: folderId || undefined,
         }),
       });
-      if (!audioRes.ok) throw new Error("Failed to save audio");
+      if (!audioRes.ok) throw new Error("save");
       const audioJson = await audioRes.json();
 
-      // Trigger processing (fire-and-forget)
       fetch(`/api/audios/${audioJson.data.id}/process`, {
         method: "POST",
       }).catch(() => {});
 
-      toast.success("Audio uploaded. Transcription started...");
+      notifySuccess("audios.feedback.uploaded", t);
       reset();
       onOpenChange(false);
       onComplete();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Upload failed");
+      const code =
+        err instanceof Error && err.message === "save"
+          ? "error.audios.save_failed"
+          : "error.audios.upload_failed";
+      notifyError(code, t);
       setUploading(false);
     }
   }
@@ -104,7 +106,7 @@ export function AudioUploadModal({ open, onOpenChange, onComplete, folderId }: A
     <Dialog open={open} onOpenChange={(v) => { if (!uploading) { onOpenChange(v); if (!v) reset(); } }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Upload Audio</DialogTitle>
+          <DialogTitle>{t("audios.upload.title")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           {/* Drop zone */}
@@ -152,36 +154,42 @@ export function AudioUploadModal({ open, onOpenChange, onComplete, folderId }: A
               <div className="flex flex-col items-center gap-1">
                 <Upload className="h-8 w-8 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground">
-                  Drop an audio file here or click to browse
+                  {t("audios.upload.drop_here")}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  MP3, WAV, OGG, FLAC, AAC, or M4A
+                  {t("audios.upload.accepted_formats")}
                 </p>
               </div>
             )}
           </div>
-          <p className="text-xs text-muted-foreground mt-2">Audio will be transcribed with speaker diarization</p>
+          <p className="text-xs text-muted-foreground mt-2">
+            {t("audios.upload.transcription_note")}
+          </p>
 
           {/* Fields */}
           <div className="space-y-1.5">
-            <Label className="text-xs">Name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Audio name" />
+            <Label className="text-xs">{t("audios.upload.field_name")}</Label>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={t("audios.upload.field_name_placeholder")}
+            />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Description (optional)</Label>
+            <Label className="text-xs">{t("audios.upload.field_description")}</Label>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="What is this audio about?"
+              placeholder={t("audios.upload.field_description_placeholder")}
               rows={2}
             />
           </div>
 
           <Button onClick={handleUpload} disabled={uploading || !file || !audioReady} className="w-full">
             {uploading ? (
-              <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />Uploading...</>
+              <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />{t("audios.upload.button_uploading")}</>
             ) : (
-              <><Upload className="h-3.5 w-3.5 mr-1.5" />Upload Audio</>
+              <><Upload className="h-3.5 w-3.5 mr-1.5" />{t("audios.upload.button_idle")}</>
             )}
           </Button>
         </div>

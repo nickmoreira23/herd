@@ -76,8 +76,8 @@ const eslintConfig = defineConfig([
     files: ["src/**/*.{ts,tsx}"],
     ignores: [
       // Features ainda hardcoded podem usar legacy temporariamente.
-      "src/components/{knowledge,network,agents,tiers,products,packages,brands,brand-kit,perks,marketplace,operations,operation,deals,companies,contacts,meetings,tasks,events,services,campaigns,locations,community,documents,videos,images,audios,notes,routines,experiences,integrations,blocks,tools,chat,feedbacks,settings,dashboard,sales,landing-page}/**/*.{ts,tsx}",
-      "src/app/admin/{knowledge,agents,tiers,products,packages,brands,brand-kit,perks,marketplace,operations,operation,deals,companies,contacts,meetings,tasks,events,services,campaigns,locations,community,documents,videos,images,audios,notes,routines,experiences,integrations,blocks,tools,chat,feedbacks,settings,sales}/**/*.{ts,tsx}",
+      "src/components/{knowledge,network,agents,tiers,products,packages,brands,brand-kit,perks,marketplace,operations,operation,deals,companies,contacts,meetings,tasks,events,services,campaigns,locations,community,notes,routines,experiences,integrations,blocks,tools,chat,feedbacks,settings,dashboard,sales,landing-page}/**/*.{ts,tsx}",
+      "src/app/admin/{knowledge,agents,tiers,products,packages,brands,brand-kit,perks,marketplace,operations,operation,deals,companies,contacts,meetings,tasks,events,services,campaigns,locations,community,notes,routines,experiences,integrations,blocks,tools,chat,feedbacks,settings,sales}/**/*.{ts,tsx}",
       // Organization Phase B (departments/users/etc.) and brand-kit
       // are still on legacy formatters — re-include their paths.
       "src/components/brand-kit/**/*.{ts,tsx}",
@@ -192,6 +192,20 @@ const eslintConfig = defineConfig([
       "src/lib/feeds/sync-intervals.ts",
       "src/lib/links/status-options.ts",
       "src/lib/links/scrape-modes.ts",
+      // Phase 1.5.6d-ε — Media batch (documents/images/videos/audios) Admin (full)
+      "src/components/documents/**/*.{ts,tsx}",
+      "src/components/images/**/*.{ts,tsx}",
+      "src/components/videos/**/*.{ts,tsx}",
+      "src/components/audios/**/*.{ts,tsx}",
+      "src/app/admin/blocks/documents/**/*.{ts,tsx}",
+      "src/app/admin/blocks/images/**/*.{ts,tsx}",
+      "src/app/admin/blocks/videos/**/*.{ts,tsx}",
+      "src/app/admin/blocks/audios/**/*.{ts,tsx}",
+      "src/app/admin/organization/knowledge/documents/**/*.{ts,tsx}",
+      "src/app/admin/organization/knowledge/images/**/*.{ts,tsx}",
+      "src/app/admin/organization/knowledge/videos/**/*.{ts,tsx}",
+      "src/app/admin/organization/knowledge/audios/**/*.{ts,tsx}",
+      "src/lib/knowledge/media-status.ts",
       // integrations/error.tsx (and [id]/error.tsx) are INTENTIONALLY
       // excluded: per Etapa 1.5.5 decision (Opção 2), shell-generic
       // strings were extracted to shell.error.* but feature-specific

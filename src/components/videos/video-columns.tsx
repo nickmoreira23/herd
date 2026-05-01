@@ -15,6 +15,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ArrowUpDown, MoreHorizontal, Eye, Download, Loader2, FolderInput, FolderOpen } from "lucide-react";
 import type { VideoRow, FolderRow } from "@/lib/knowledge-commons/types";
+import type { Locale } from "@/lib/i18n/locales";
+import type { MessageKey } from "@/lib/i18n/t";
+import { formatDate } from "@/lib/i18n/format-date";
+import { mediaStatusMeta } from "@/lib/knowledge/media-status";
 
 interface ColumnActions {
   onView: (video: VideoRow) => void;
@@ -24,6 +28,8 @@ interface ColumnActions {
   folders?: FolderRow[];
   onMoveToFolder?: (video: VideoRow, folderId: string | null) => void;
 }
+
+type TFn = (key: MessageKey, params?: Record<string, string | number>) => string;
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -48,14 +54,11 @@ const FILE_TYPE_COLORS: Record<string, string> = {
   AVI: "bg-orange-500/10 text-orange-500 border-orange-500/20",
 };
 
-const STATUS_CONFIG: Record<string, { label: string; className: string; spinning?: boolean }> = {
-  PENDING: { label: "Pending", className: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20" },
-  PROCESSING: { label: "Processing", className: "bg-blue-500/10 text-blue-500 border-blue-500/20", spinning: true },
-  READY: { label: "Ready", className: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" },
-  ERROR: { label: "Error", className: "bg-red-500/10 text-red-500 border-red-500/20" },
-};
-
-export function getVideoColumns(actions: ColumnActions): ColumnDef<VideoRow>[] {
+export function getVideoColumns(
+  actions: ColumnActions,
+  t: TFn,
+  locale: Locale,
+): ColumnDef<VideoRow>[] {
   return [
     {
       accessorKey: "name",
@@ -64,7 +67,7 @@ export function getVideoColumns(actions: ColumnActions): ColumnDef<VideoRow>[] {
           className="inline-flex items-center gap-1 text-xs font-medium hover:text-foreground/80"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Name
+          {t("videos.columns.name")}
           <ArrowUpDown className="h-3 w-3" />
         </button>
       ),
@@ -74,6 +77,7 @@ export function getVideoColumns(actions: ColumnActions): ColumnDef<VideoRow>[] {
           onClick={() => actions.onView(row.original)}
         >
           {row.original.thumbnailUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={row.original.thumbnailUrl}
               alt=""
@@ -93,7 +97,7 @@ export function getVideoColumns(actions: ColumnActions): ColumnDef<VideoRow>[] {
     },
     {
       accessorKey: "fileType",
-      header: () => <span className="text-xs">Type</span>,
+      header: () => <span className="text-xs">{t("videos.columns.type")}</span>,
       cell: ({ row }) => {
         const fileType = row.original.fileType;
         const colors = FILE_TYPE_COLORS[fileType] || "bg-zinc-500/10 text-zinc-400 border-zinc-500/20";
@@ -111,7 +115,7 @@ export function getVideoColumns(actions: ColumnActions): ColumnDef<VideoRow>[] {
           className="inline-flex items-center gap-1 text-xs font-medium hover:text-foreground/80"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Duration
+          {t("videos.columns.duration")}
           <ArrowUpDown className="h-3 w-3" />
         </button>
       ),
@@ -128,7 +132,7 @@ export function getVideoColumns(actions: ColumnActions): ColumnDef<VideoRow>[] {
           className="inline-flex items-center gap-1 text-xs font-medium hover:text-foreground/80"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Size
+          {t("videos.columns.size")}
           <ArrowUpDown className="h-3 w-3" />
         </button>
       ),
@@ -140,14 +144,13 @@ export function getVideoColumns(actions: ColumnActions): ColumnDef<VideoRow>[] {
     },
     {
       accessorKey: "status",
-      header: () => <span className="text-xs">Status</span>,
+      header: () => <span className="text-xs">{t("videos.columns.status")}</span>,
       cell: ({ row }) => {
-        const status = row.original.status;
-        const config = STATUS_CONFIG[status] || STATUS_CONFIG.PENDING;
+        const meta = mediaStatusMeta(row.original.status);
         return (
-          <Badge variant="outline" className={`text-xs font-medium ${config.className}`}>
-            {config.spinning && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
-            {config.label}
+          <Badge variant="outline" className={`text-xs font-medium ${meta.toneClass}`}>
+            {meta.spinning && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+            {t(meta.labelKey)}
           </Badge>
         );
       },
@@ -159,13 +162,13 @@ export function getVideoColumns(actions: ColumnActions): ColumnDef<VideoRow>[] {
           className="inline-flex items-center gap-1 text-xs font-medium hover:text-foreground/80"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Uploaded
+          {t("videos.columns.uploaded")}
           <ArrowUpDown className="h-3 w-3" />
         </button>
       ),
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">
-          {new Date(row.getValue("uploadedAt") as string).toLocaleDateString()}
+          {formatDate(new Date(row.getValue("uploadedAt") as string), locale, "short")}
         </span>
       ),
     },
@@ -186,11 +189,11 @@ export function getVideoColumns(actions: ColumnActions): ColumnDef<VideoRow>[] {
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => actions.onView(video)}>
                 <Eye className="mr-2 h-3.5 w-3.5" />
-                View
+                {t("videos.columns.actions.view")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => actions.onDownload(video)}>
                 <Download className="mr-2 h-3.5 w-3.5" />
-                Download
+                {t("videos.columns.actions.download")}
               </DropdownMenuItem>
 
               {hasMove && (
@@ -199,7 +202,7 @@ export function getVideoColumns(actions: ColumnActions): ColumnDef<VideoRow>[] {
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
                       <FolderInput className="mr-2 h-3.5 w-3.5" />
-                      Move to folder
+                      {t("videos.columns.actions.move_to_folder")}
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent>
                       {video.folderId && (
@@ -207,7 +210,7 @@ export function getVideoColumns(actions: ColumnActions): ColumnDef<VideoRow>[] {
                           onClick={() => actions.onMoveToFolder!(video, null)}
                         >
                           <FolderOpen className="mr-2 h-3.5 w-3.5" />
-                          Root (no folder)
+                          {t("videos.columns.actions.move_to_root")}
                         </DropdownMenuItem>
                       )}
                       {rootFolders
@@ -231,13 +234,15 @@ export function getVideoColumns(actions: ColumnActions): ColumnDef<VideoRow>[] {
 
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => actions.onToggleActive(video)}>
-                {video.isActive ? "Deactivate" : "Activate"}
+                {video.isActive
+                  ? t("videos.columns.actions.deactivate")
+                  : t("videos.columns.actions.activate")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="text-destructive"
                 onClick={() => actions.onDelete(video)}
               >
-                Delete
+                {t("videos.columns.actions.delete")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

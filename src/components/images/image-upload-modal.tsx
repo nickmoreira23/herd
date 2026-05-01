@@ -11,8 +11,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Upload, Loader2, FileUp } from "lucide-react";
-import { toast } from "sonner";
+import { Upload, Loader2 } from "lucide-react";
+import { useT } from "@/lib/i18n/locale-context";
+import { notifyError, notifySuccess } from "@/lib/i18n/notify";
 
 interface ImageUploadModalProps {
   open: boolean;
@@ -24,6 +25,7 @@ interface ImageUploadModalProps {
 const ACCEPTED_TYPES = ".png,.jpg,.jpeg,.webp,.gif,.svg,.tiff,.tif";
 
 export function ImageUploadModal({ open, onOpenChange, onComplete, folderId }: ImageUploadModalProps) {
+  const t = useT();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -50,12 +52,11 @@ export function ImageUploadModal({ open, onOpenChange, onComplete, folderId }: I
   }
 
   async function handleUpload() {
-    if (!file) { toast.error("Select a file"); return; }
-    if (!name.trim()) { toast.error("Name is required"); return; }
+    if (!file) { notifyError("error.images.select_file", t); return; }
+    if (!name.trim()) { notifyError("error.images.name_required", t); return; }
 
     setUploading(true);
     try {
-      // Step 1: Upload file
       const formData = new FormData();
       formData.append("file", file);
       const uploadRes = await fetch("/api/images/upload", {
@@ -63,12 +64,10 @@ export function ImageUploadModal({ open, onOpenChange, onComplete, folderId }: I
         body: formData,
       });
       if (!uploadRes.ok) {
-        const err = await uploadRes.json().catch(() => null);
-        throw new Error(err?.error || "File upload failed");
+        throw new Error("upload");
       }
       const uploadJson = await uploadRes.json();
 
-      // Step 2: Create image record
       const imageRes = await fetch("/api/images", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -85,20 +84,23 @@ export function ImageUploadModal({ open, onOpenChange, onComplete, folderId }: I
           folderId: folderId || undefined,
         }),
       });
-      if (!imageRes.ok) throw new Error("Failed to save image");
+      if (!imageRes.ok) throw new Error("save");
       const imageJson = await imageRes.json();
 
-      // Trigger processing (fire-and-forget)
       fetch(`/api/images/${imageJson.data.id}/process`, {
         method: "POST",
       }).catch(() => {});
 
-      toast.success("Image uploaded. Processing started...");
+      notifySuccess("images.feedback.uploaded", t);
       reset();
       onOpenChange(false);
       onComplete();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Upload failed");
+      const code =
+        err instanceof Error && err.message === "save"
+          ? "error.images.save_failed"
+          : "error.images.upload_failed";
+      notifyError(code, t);
       setUploading(false);
     }
   }
@@ -107,7 +109,7 @@ export function ImageUploadModal({ open, onOpenChange, onComplete, folderId }: I
     <Dialog open={open} onOpenChange={(v) => { if (!uploading) { onOpenChange(v); if (!v) reset(); } }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Upload Image</DialogTitle>
+          <DialogTitle>{t("images.upload.title")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           {/* Drop zone */}
@@ -137,6 +139,7 @@ export function ImageUploadModal({ open, onOpenChange, onComplete, folderId }: I
             />
             {file && previewUrl ? (
               <div className="flex flex-col items-center gap-2 max-w-full overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={previewUrl}
                   alt={file.name}
@@ -153,10 +156,10 @@ export function ImageUploadModal({ open, onOpenChange, onComplete, folderId }: I
               <div className="flex flex-col items-center gap-1">
                 <Upload className="h-8 w-8 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground">
-                  Drop an image here or click to browse
+                  {t("images.upload.drop_here")}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  PNG, JPG, WEBP, GIF, SVG, or TIFF
+                  {t("images.upload.accepted_formats")}
                 </p>
               </div>
             )}
@@ -164,24 +167,28 @@ export function ImageUploadModal({ open, onOpenChange, onComplete, folderId }: I
 
           {/* Fields */}
           <div className="space-y-1.5">
-            <Label className="text-xs">Name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Image name" />
+            <Label className="text-xs">{t("images.upload.field_name")}</Label>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={t("images.upload.field_name_placeholder")}
+            />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Description (optional)</Label>
+            <Label className="text-xs">{t("images.upload.field_description")}</Label>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="What is this image about?"
+              placeholder={t("images.upload.field_description_placeholder")}
               rows={2}
             />
           </div>
 
           <Button onClick={handleUpload} disabled={uploading || !file} className="w-full">
             {uploading ? (
-              <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />Uploading...</>
+              <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />{t("images.upload.button_uploading")}</>
             ) : (
-              <><Upload className="h-3.5 w-3.5 mr-1.5" />Upload Image</>
+              <><Upload className="h-3.5 w-3.5 mr-1.5" />{t("images.upload.button_idle")}</>
             )}
           </Button>
         </div>

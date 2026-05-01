@@ -3,13 +3,15 @@
 import { useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, FolderPlus, Video } from "lucide-react";
-import { toast } from "sonner";
+import { useT, useLocale } from "@/lib/i18n/locale-context";
+import { notifyError, notifySuccess } from "@/lib/i18n/notify";
 import { BlockListPage } from "@/components/shared/block-list-page";
 import type { FilterDef } from "@/components/shared/block-list-page";
 import { BlockAgentPanel } from "@/components/shared/block-agent-panel";
 import { FolderNav } from "@/components/shared/knowledge-commons/folder-nav";
 import { FolderDialog } from "@/components/shared/knowledge-commons/folder-dialog";
 import { DeleteDialog } from "@/components/shared/knowledge-commons/delete-dialog";
+import { MEDIA_STATUS_OPTIONS } from "@/lib/knowledge/media-status";
 import { getVideoColumns } from "./video-columns";
 import { VideoUploadModal } from "./video-upload-modal";
 import { VideoViewer } from "./video-viewer";
@@ -24,6 +26,8 @@ export function VideosListClient({
   initialVideos,
   initialFolders,
 }: VideosListClientProps) {
+  const t = useT();
+  const locale = useLocale();
   const [videos, setVideos] = useState<VideoRow[]>(initialVideos);
   const [folders, setFolders] = useState<FolderRow[]>(initialFolders);
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
@@ -32,17 +36,14 @@ export function VideosListClient({
   const [showFolderDialog, setShowFolderDialog] = useState(false);
   const [editingFolder, setEditingFolder] = useState<FolderRow | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<VideoRow | null>(null);
-  const [deleteFolderTarget, setDeleteFolderTarget] =
-    useState<FolderRow | null>(null);
+  const [deleteFolderTarget, setDeleteFolderTarget] = useState<FolderRow | null>(null);
   const [viewerVideo, setViewerVideo] = useState<VideoRow | null>(null);
 
-  // ── Display data ──────────────────────────────────────────────────
   const displayData = useMemo(() => {
     if (search) return videos;
     return videos.filter((v) => v.folderId === currentFolderId);
   }, [videos, search, currentFolderId]);
 
-  // ── Data refresh ──────────────────────────────────────────────────
   const refreshData = useCallback(async () => {
     const [videosRes, foldersRes] = await Promise.all([
       fetch("/api/videos"),
@@ -54,7 +55,6 @@ export function VideosListClient({
     if (foldersJson.data) setFolders(foldersJson.data);
   }, []);
 
-  // ── Action handlers ───────────────────────────────────────────────
   const handleView = useCallback((video: VideoRow) => {
     setViewerVideo(video);
   }, []);
@@ -75,10 +75,13 @@ export function VideosListClient({
       });
       if (res.ok) {
         await refreshData();
-        toast.success(video.isActive ? "Deactivated" : "Activated");
+        notifySuccess(
+          video.isActive ? "videos.feedback.deactivated" : "videos.feedback.activated",
+          t,
+        );
       }
     },
-    [refreshData],
+    [refreshData, t],
   );
 
   const handleDeleteVideo = useCallback(
@@ -86,13 +89,13 @@ export function VideosListClient({
       const res = await fetch(`/api/videos/${video.id}`, { method: "DELETE" });
       if (res.ok) {
         await refreshData();
-        toast.success("Video deleted");
+        notifySuccess("videos.feedback.deleted", t);
       } else {
-        toast.error("Failed to delete video");
+        notifyError("error.videos.delete_failed", t);
       }
       setDeleteTarget(null);
     },
-    [refreshData],
+    [refreshData, t],
   );
 
   const handleDeleteFolder = useCallback(
@@ -105,14 +108,13 @@ export function VideosListClient({
           setCurrentFolderId(folder.parentId);
         }
         await refreshData();
-        toast.success("Folder deleted");
+        notifySuccess("videos.feedback.folder_deleted", t);
       } else {
-        const err = await res.json().catch(() => null);
-        toast.error(err?.error || "Failed to delete folder");
+        notifyError("error.videos.folder_delete_failed", t);
       }
       setDeleteFolderTarget(null);
     },
-    [refreshData, currentFolderId],
+    [refreshData, currentFolderId, t],
   );
 
   const handleMoveToFolder = useCallback(
@@ -124,67 +126,67 @@ export function VideosListClient({
       });
       if (res.ok) {
         await refreshData();
-        toast.success(folderId ? "Moved to folder" : "Moved to root");
+        notifySuccess(
+          folderId ? "videos.feedback.moved_to_folder" : "videos.feedback.moved_to_root",
+          t,
+        );
       }
     },
-    [refreshData],
+    [refreshData, t],
   );
 
-  // ── Columns ───────────────────────────────────────────────────────
   const columns = useMemo(
     () =>
-      getVideoColumns({
-        onView: handleView,
-        onDownload: handleDownload,
-        onToggleActive: handleToggleActive,
-        onDelete: (video) => setDeleteTarget(video),
-        folders,
-        onMoveToFolder: handleMoveToFolder,
-      }),
-    [handleView, handleDownload, handleToggleActive, folders, handleMoveToFolder],
+      getVideoColumns(
+        {
+          onView: handleView,
+          onDownload: handleDownload,
+          onToggleActive: handleToggleActive,
+          onDelete: (video) => setDeleteTarget(video),
+          folders,
+          onMoveToFolder: handleMoveToFolder,
+        },
+        t,
+        locale,
+      ),
+    [handleView, handleDownload, handleToggleActive, folders, handleMoveToFolder, t, locale],
   );
 
-  // ── Filters ───────────────────────────────────────────────────────
   const filters: FilterDef<VideoRow>[] = useMemo(
     () => [
       {
         key: "fileType",
-        label: "All Types",
-        options: [
-          { value: "MP4", label: "MP4" },
-          { value: "MOV", label: "MOV" },
-          { value: "WEBM", label: "WEBM" },
-          { value: "AVI", label: "AVI" },
-        ],
+        label: t("videos.list.filter_all_types"),
+        options: ["MP4", "MOV", "WEBM", "AVI"].map((v) => ({
+          value: v,
+          label: v,
+        })),
         filterFn: (item: VideoRow, val: string) => item.fileType === val,
       },
       {
         key: "status",
-        label: "All Status",
-        options: [
-          { value: "PENDING", label: "Pending" },
-          { value: "PROCESSING", label: "Processing" },
-          { value: "READY", label: "Ready" },
-          { value: "ERROR", label: "Error" },
-        ],
+        label: t("videos.list.filter_all_status"),
+        options: MEDIA_STATUS_OPTIONS.map((s) => ({
+          value: s.value,
+          label: t(s.labelKey),
+        })),
         filterFn: (item: VideoRow, val: string) => item.status === val,
       },
     ],
-    [],
+    [t],
   );
 
-  // ── Render ────────────────────────────────────────────────────────
   return (
     <BlockListPage<VideoRow>
       blockName="videos"
-      title="Videos"
-      description="Upload and manage videos for your knowledge base."
+      title={t("videos.list.title")}
+      description={t("videos.list.description")}
       data={displayData}
       getId={(v) => v.id}
       columns={columns}
       search={search}
       onSearchChange={setSearch}
-      searchPlaceholder="Search by name, description, or file..."
+      searchPlaceholder={t("videos.list.search_placeholder")}
       searchFn={(item, q) =>
         item.name.toLowerCase().includes(q) ||
         (item.description?.toLowerCase().includes(q) ?? false) ||
@@ -202,11 +204,11 @@ export function VideosListClient({
             }}
           >
             <FolderPlus className="mr-1 h-3 w-3" />
-            New Folder
+            {t("videos.list.new_folder_button")}
           </Button>
           <Button size="sm" onClick={() => setShowUpload(true)}>
             <Plus className="mr-1 h-3 w-3" />
-            Upload Video
+            {t("videos.list.upload_button")}
           </Button>
         </>
       }
@@ -220,14 +222,14 @@ export function VideosListClient({
             setShowFolderDialog(true);
           }}
           onDelete={(folder) => setDeleteFolderTarget(folder)}
-          rootLabel="All Videos"
+          rootLabel={t("videos.list.breadcrumb_root")}
           countKey="videos"
           isSearching={!!search}
         />
       }
       emptyIcon={Video}
-      emptyTitle="No videos yet"
-      emptyDescription="Upload videos to your knowledge base. They'll be automatically transcribed for search and AI access."
+      emptyTitle={t("videos.empty.title")}
+      emptyDescription={t("videos.empty.description")}
       showAgent={false}
       modals={
         <>

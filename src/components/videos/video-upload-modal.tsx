@@ -12,7 +12,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Upload, Loader2, Video } from "lucide-react";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import { notifyError, notifySuccess } from "@/lib/i18n/notify";
 
 interface VideoUploadModalProps {
   open: boolean;
@@ -24,6 +25,7 @@ interface VideoUploadModalProps {
 const ACCEPTED_TYPES = ".mp4,.mov,.webm,.avi";
 
 export function VideoUploadModal({ open, onOpenChange, onComplete, folderId }: VideoUploadModalProps) {
+  const t = useT();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -48,12 +50,11 @@ export function VideoUploadModal({ open, onOpenChange, onComplete, folderId }: V
   }
 
   async function handleUpload() {
-    if (!file) { toast.error("Select a file"); return; }
-    if (!name.trim()) { toast.error("Name is required"); return; }
+    if (!file) { notifyError("error.videos.select_file", t); return; }
+    if (!name.trim()) { notifyError("error.videos.name_required", t); return; }
 
     setUploading(true);
     try {
-      // Step 1: Upload file
       const formData = new FormData();
       formData.append("file", file);
       const uploadRes = await fetch("/api/videos/upload", {
@@ -61,12 +62,10 @@ export function VideoUploadModal({ open, onOpenChange, onComplete, folderId }: V
         body: formData,
       });
       if (!uploadRes.ok) {
-        const err = await uploadRes.json().catch(() => null);
-        throw new Error(err?.error || "File upload failed");
+        throw new Error("upload");
       }
       const uploadJson = await uploadRes.json();
 
-      // Step 2: Create video record
       const videoRes = await fetch("/api/videos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -83,20 +82,23 @@ export function VideoUploadModal({ open, onOpenChange, onComplete, folderId }: V
           folderId: folderId || undefined,
         }),
       });
-      if (!videoRes.ok) throw new Error("Failed to save video");
+      if (!videoRes.ok) throw new Error("save");
       const videoJson = await videoRes.json();
 
-      // Trigger processing (fire-and-forget)
       fetch(`/api/videos/${videoJson.data.id}/process`, {
         method: "POST",
       }).catch(() => {});
 
-      toast.success("Video uploaded. Transcription started...");
+      notifySuccess("videos.feedback.uploaded", t);
       reset();
       onOpenChange(false);
       onComplete();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Upload failed");
+      const code =
+        err instanceof Error && err.message === "save"
+          ? "error.videos.save_failed"
+          : "error.videos.upload_failed";
+      notifyError(code, t);
       setUploading(false);
     }
   }
@@ -105,7 +107,7 @@ export function VideoUploadModal({ open, onOpenChange, onComplete, folderId }: V
     <Dialog open={open} onOpenChange={(v) => { if (!uploading) { onOpenChange(v); if (!v) reset(); } }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Upload Video</DialogTitle>
+          <DialogTitle>{t("videos.upload.title")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           {/* Drop zone */}
@@ -154,36 +156,42 @@ export function VideoUploadModal({ open, onOpenChange, onComplete, folderId }: V
               <div className="flex flex-col items-center gap-1">
                 <Upload className="h-8 w-8 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground">
-                  Drop a file here or click to browse
+                  {t("videos.upload.drop_here")}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  MP4, MOV, WEBM, or AVI
+                  {t("videos.upload.accepted_formats")}
                 </p>
               </div>
             )}
           </div>
-          <p className="text-xs text-muted-foreground mt-2">Videos will be transcribed with speaker diarization</p>
+          <p className="text-xs text-muted-foreground mt-2">
+            {t("videos.upload.transcription_note")}
+          </p>
 
           {/* Fields */}
           <div className="space-y-1.5">
-            <Label className="text-xs">Name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Video name" />
+            <Label className="text-xs">{t("videos.upload.field_name")}</Label>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={t("videos.upload.field_name_placeholder")}
+            />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Description (optional)</Label>
+            <Label className="text-xs">{t("videos.upload.field_description")}</Label>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="What is this video about?"
+              placeholder={t("videos.upload.field_description_placeholder")}
               rows={2}
             />
           </div>
 
           <Button onClick={handleUpload} disabled={uploading || !file || !videoReady} className="w-full">
             {uploading ? (
-              <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />Uploading...</>
+              <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />{t("videos.upload.button_uploading")}</>
             ) : (
-              <><Upload className="h-3.5 w-3.5 mr-1.5" />Upload Video</>
+              <><Upload className="h-3.5 w-3.5 mr-1.5" />{t("videos.upload.button_idle")}</>
             )}
           </Button>
         </div>

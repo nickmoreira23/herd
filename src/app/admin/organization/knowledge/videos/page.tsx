@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { VideoTable } from "@/components/videos/video-table";
-import { KnowledgeVideosEmpty } from "@/components/knowledge/videos/knowledge-videos-empty";
+import { VideosEmpty } from "@/components/videos/videos-empty";
 import { connection } from "next/server";
 
 export default async function KnowledgeVideosPage() {
@@ -32,7 +32,7 @@ export default async function KnowledgeVideosPage() {
   }));
 
   if (videos.length === 0 && folders.length === 0) {
-    return <KnowledgeVideosEmpty />;
+    return <VideosEmpty />;
   }
 
   return (

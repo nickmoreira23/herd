@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { AudioTable } from "@/components/audios/audio-table";
-import { KnowledgeAudiosEmpty } from "@/components/knowledge/audios/knowledge-audios-empty";
+import { AudiosEmpty } from "@/components/audios/audios-empty";
 import { connection } from "next/server";
 
 export default async function KnowledgeAudiosPage() {
@@ -32,7 +32,7 @@ export default async function KnowledgeAudiosPage() {
   }));
 
   if (audios.length === 0 && folders.length === 0) {
-    return <KnowledgeAudiosEmpty />;
+    return <AudiosEmpty />;
   }
 
   return (
