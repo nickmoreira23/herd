@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormBuilderField } from "./form-builder-field";
+import { useT, useLocale } from "@/lib/i18n/locale-context";
+import { pluralize } from "@/lib/i18n/pluralize";
 import {
   Plus,
   Trash2,
@@ -48,6 +50,8 @@ export function FormBuilderSection({
   collapsed,
   onToggleCollapse,
 }: FormBuilderSectionProps) {
+  const t = useT();
+  const locale = useLocale();
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(section.title || "");
 
@@ -155,11 +159,19 @@ export function FormBuilderSection({
               setEditingTitle(true);
             }}
           >
-            {section.title || "Untitled Section"}
+            {section.title || t("forms.builder.section.untitled")}
             {collapsed && (
               <span className="ml-2 text-xs text-muted-foreground font-normal">
-                ({section.fields.length} field
-                {section.fields.length !== 1 ? "s" : ""})
+                {"("}
+                {pluralize(section.fields.length, locale, {
+                  one: t("forms.builder.fields_count_one", {
+                    count: section.fields.length,
+                  }),
+                  other: t("forms.builder.fields_count_other", {
+                    count: section.fields.length,
+                  }),
+                })}
+                {")"}
               </span>
             )}
           </button>
@@ -189,8 +201,7 @@ export function FormBuilderSection({
             >
               {section.fields.length === 0 ? (
                 <div className="text-center py-6 text-xs text-muted-foreground">
-                  No fields yet. Click &ldquo;Add Field&rdquo; or use the
-                  sidebar.
+                  {t("forms.builder.section.empty")}
                 </div>
               ) : (
                 section.fields.map((field) => (
@@ -211,7 +222,7 @@ export function FormBuilderSection({
               onClick={() => onAddFieldToSection(section.id)}
             >
               <Plus className="h-3 w-3 mr-1" />
-              Add Field
+              {t("forms.builder.section.add_field")}
             </Button>
           </div>
         </div>

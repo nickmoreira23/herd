@@ -3,11 +3,12 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { GripVertical, Pencil, Trash2 } from "lucide-react";
-import { FieldTypeIcon, FIELD_TYPE_CONFIG } from "./field-type-icon";
+import { FieldTypeIcon, FORM_FIELD_TYPE_OPTIONS } from "./field-type-icon";
 import type { FormFieldRow } from "../types";
 import type { FormFieldType } from "@/lib/validations/knowledge-form";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useT } from "@/lib/i18n/locale-context";
 
 interface FormBuilderFieldProps {
   field: FormFieldRow;
@@ -20,7 +21,8 @@ export function FormBuilderField({
   onEdit,
   onDelete,
 }: FormBuilderFieldProps) {
-  const typeConfig = FIELD_TYPE_CONFIG[field.type as FormFieldType];
+  const t = useT();
+  const meta = FORM_FIELD_TYPE_OPTIONS[field.type as FormFieldType];
 
   const {
     attributes,
@@ -80,7 +82,7 @@ export function FormBuilderField({
       </div>
 
       <Badge variant="outline" className="text-[10px] shrink-0">
-        {typeConfig?.label ?? field.type}
+        {meta ? t(meta.labelKey) : field.type}
       </Badge>
 
       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
