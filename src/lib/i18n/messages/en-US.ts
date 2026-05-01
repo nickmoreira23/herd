@@ -3827,4 +3827,96 @@ export const messages: Record<MessageKey, string> = {
   "error.audios.delete_failed": "Failed to delete audio",
   "error.audios.transcription_failed": "Transcription failed",
   "error.audios.folder_delete_failed": "Failed to delete folder",
+
+  // ═══════════════════════════════════════════════════════════════════
+  // KNOWLEDGE — meta-feature shell (1.5.6e)
+  // ═══════════════════════════════════════════════════════════════════
+  // ─── Dashboard ─────────────────────────────────────────────────────
+  "knowledge.dashboard.title": "All Sources",
+  "knowledge.dashboard.summary":
+    "{total} total items across {count} sources",
+  "knowledge.dashboard.empty.title": "No sources selected",
+  "knowledge.dashboard.empty.description":
+    "Use “Manage Sources” in the sidebar to add blocks.",
+
+  // ─── Manage Sources dialog ─────────────────────────────────────────
+  "knowledge.manage.title": "Manage Sources",
+  "knowledge.manage.description":
+    "Choose which blocks become knowledge sources. Categories and order mirror the Blocks tool.",
+  "knowledge.manage.available_sources": "Available sources",
+  "knowledge.manage.selected_sources": "Selected sources",
+  "knowledge.manage.all_added": "All blocks added.",
+  "knowledge.manage.none_selected": "No sources selected yet.",
+  "knowledge.manage.fallback_category": "Other",
+  "knowledge.manage.action.add": "Add as source",
+  "knowledge.manage.action.remove": "Remove source",
+  "knowledge.manage.feedback.saved": "Sources updated",
+  "error.knowledge.manage.save_failed": "Failed to save settings",
+
+  // ─── Knowledge Tables empty state ──────────────────────────────────
+  "knowledge.tables.empty.title": "Tables",
+  "knowledge.tables.empty.description":
+    "Structured datasets, lookup tables, and reference data for operations and reporting.",
+  "knowledge.tables.empty.import_airtable": "Import from Airtable",
+  "knowledge.tables.empty.create": "Create Table",
+  "knowledge.tables.empty.heading": "No tables yet",
+  "knowledge.tables.empty.body":
+    "Create structured datasets and lookup tables. Tables help organize reference data for operations, commission calculations, and reporting.",
+  "knowledge.tables.empty.cta": "Create your first table",
+
+  // ─── Knowledge Create Table modal ──────────────────────────────────
+  "knowledge.tables.create.title": "Create Table",
+  "knowledge.tables.create.name_label": "Name",
+  "knowledge.tables.create.name_placeholder":
+    "e.g. Products, Commission Tiers",
+  "knowledge.tables.create.description_label": "Description (optional)",
+  "knowledge.tables.create.description_placeholder":
+    "What data will this table store?",
+  "knowledge.tables.create.creating": "Creating...",
+  "knowledge.tables.create.submit": "Create Table",
+  "knowledge.tables.feedback.created": "Table created",
+  "error.knowledge.tables.name_required": "Name is required",
+  "error.knowledge.tables.create_failed": "Failed to create table",
+
+  // ─── Airtable Import wizard ────────────────────────────────────────
+  "knowledge.airtable.title": "Import from Airtable",
+  "knowledge.airtable.step.base": "1. Base",
+  "knowledge.airtable.step.table": "2. Table",
+  "knowledge.airtable.step.fields": "3. Fields",
+  "knowledge.airtable.step.import": "4. Import",
+  "knowledge.airtable.select_base.prompt":
+    "Select an Airtable base to import from.",
+  "knowledge.airtable.loading_bases": "Loading bases...",
+  "knowledge.airtable.no_bases":
+    "No bases found. Make sure your Airtable token has access to at least one base.",
+  "knowledge.airtable.select_table.prompt": "Select a table to import.",
+  "knowledge.airtable.loading_tables": "Loading tables...",
+  "knowledge.airtable.fields_count": "{count} fields",
+  "knowledge.airtable.field_mapping.prompt":
+    "Review field mappings. Adjust types, rename fields, or skip fields you don’t need.",
+  "knowledge.airtable.field_mapping.airtable_field": "Airtable Field",
+  "knowledge.airtable.field_mapping.herd_type": "HERD Type",
+  "knowledge.airtable.field_mapping.herd_name": "HERD Name",
+  "knowledge.airtable.field_mapping.skip": "Skip",
+  "knowledge.airtable.field_mapping.selected_count":
+    "{active} of {total} fields selected",
+  "knowledge.airtable.field_mapping.import_action": "Import {name}",
+  "knowledge.airtable.importing.title": "Importing {name}...",
+  "knowledge.airtable.importing.records": "{count} records imported",
+  "knowledge.airtable.importing.warning":
+    "This may take a few minutes for large tables. Do not close this dialog.",
+  "knowledge.airtable.failed.title": "Import Failed",
+  "knowledge.airtable.failed.unknown_error": "An unknown error occurred",
+  "knowledge.airtable.failed.partial":
+    "{count} records were imported before the error.",
+  "knowledge.airtable.complete.title": "Import Complete",
+  "knowledge.airtable.complete.body":
+    "Successfully imported {count} records from {name}.",
+  "knowledge.airtable.view_table": "View Table",
+  "error.knowledge.airtable.load_bases_failed": "Failed to load bases",
+  "error.knowledge.airtable.connect_failed": "Failed to connect to Airtable",
+  "error.knowledge.airtable.load_tables_failed": "Failed to load tables",
+  "error.knowledge.airtable.fetch_tables_failed": "Failed to fetch tables",
+  "error.knowledge.airtable.import_failed": "Import failed",
+  "error.knowledge.airtable.start_import_failed": "Failed to start import",
 };

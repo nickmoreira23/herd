@@ -12,7 +12,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Table2, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import { notifyError, notifySuccess } from "@/lib/i18n/notify";
+import type { MessageKey } from "@/lib/i18n/messages/pt-BR";
 
 interface KnowledgeCreateTableModalProps {
   open: boolean;
@@ -25,6 +27,7 @@ export function KnowledgeCreateTableModal({
   onOpenChange,
   onComplete,
 }: KnowledgeCreateTableModalProps) {
+  const t = useT();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -37,7 +40,7 @@ export function KnowledgeCreateTableModal({
 
   async function handleSubmit() {
     if (!name.trim()) {
-      toast.error("Name is required");
+      notifyError("error.knowledge.tables.name_required", t);
       return;
     }
 
@@ -54,11 +57,15 @@ export function KnowledgeCreateTableModal({
 
       if (!res.ok) {
         const err = await res.json().catch(() => null);
-        toast.error(err?.error || "Failed to create table");
+        if (err?.code) {
+          notifyError(err, t);
+        } else {
+          notifyError("error.knowledge.tables.create_failed" as MessageKey, t);
+        }
         return;
       }
 
-      toast.success("Table created");
+      notifySuccess("knowledge.tables.feedback.created", t);
       reset();
       onOpenChange(false);
       onComplete();
@@ -79,23 +86,27 @@ export function KnowledgeCreateTableModal({
     >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Create Table</DialogTitle>
+          <DialogTitle>{t("knowledge.tables.create.title")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label className="text-xs">Name</Label>
+            <Label className="text-xs">
+              {t("knowledge.tables.create.name_label")}
+            </Label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Products, Commission Tiers"
+              placeholder={t("knowledge.tables.create.name_placeholder")}
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Description (optional)</Label>
+            <Label className="text-xs">
+              {t("knowledge.tables.create.description_label")}
+            </Label>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="What data will this table store?"
+              placeholder={t("knowledge.tables.create.description_placeholder")}
               rows={2}
             />
           </div>
@@ -108,12 +119,12 @@ export function KnowledgeCreateTableModal({
             {submitting ? (
               <>
                 <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                Creating...
+                {t("knowledge.tables.create.creating")}
               </>
             ) : (
               <>
                 <Table2 className="h-3.5 w-3.5 mr-1.5" />
-                Create Table
+                {t("knowledge.tables.create.submit")}
               </>
             )}
           </Button>

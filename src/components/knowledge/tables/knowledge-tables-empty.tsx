@@ -7,6 +7,7 @@ import { Table2, Plus, Download } from "lucide-react";
 import { KnowledgeCreateTableModal } from "./knowledge-create-table-modal";
 import { AirtableImportModal } from "./airtable-import-modal";
 import { useRouter } from "next/navigation";
+import { useT } from "@/lib/i18n/locale-context";
 
 interface KnowledgeTablesEmptyProps {
   airtableConnected?: boolean;
@@ -15,6 +16,7 @@ interface KnowledgeTablesEmptyProps {
 export function KnowledgeTablesEmpty({
   airtableConnected = false,
 }: KnowledgeTablesEmptyProps) {
+  const t = useT();
   const [showCreate, setShowCreate] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const router = useRouter();
@@ -23,8 +25,8 @@ export function KnowledgeTablesEmpty({
     <>
       <div className="flex flex-col min-h-full pt-2 pl-2">
         <PageHeader
-          title="Tables"
-          description="Structured datasets, lookup tables, and reference data for operations and reporting."
+          title={t("knowledge.tables.empty.title")}
+          description={t("knowledge.tables.empty.description")}
           className="pl-0 pt-0"
           action={
             <div className="flex items-center gap-2">
@@ -35,12 +37,12 @@ export function KnowledgeTablesEmpty({
                   onClick={() => setShowImport(true)}
                 >
                   <Download className="mr-1 h-3 w-3" />
-                  Import from Airtable
+                  {t("knowledge.tables.empty.import_airtable")}
                 </Button>
               )}
               <Button size="sm" onClick={() => setShowCreate(true)}>
                 <Plus className="mr-1 h-3 w-3" />
-                Create Table
+                {t("knowledge.tables.empty.create")}
               </Button>
             </div>
           }
@@ -51,15 +53,15 @@ export function KnowledgeTablesEmpty({
           <div className="flex items-center justify-center h-16 w-16 rounded-2xl bg-emerald-500/10 mb-5">
             <Table2 className="h-8 w-8 text-emerald-500" />
           </div>
-          <h3 className="text-lg font-semibold mb-2">No tables yet</h3>
+          <h3 className="text-lg font-semibold mb-2">
+            {t("knowledge.tables.empty.heading")}
+          </h3>
           <p className="text-sm text-muted-foreground max-w-md mb-6">
-            Create structured datasets and lookup tables. Tables help organize
-            reference data for operations, commission calculations, and
-            reporting.
+            {t("knowledge.tables.empty.body")}
           </p>
           <Button variant="outline" onClick={() => setShowCreate(true)}>
             <Table2 className="mr-2 h-4 w-4" />
-            Create your first table
+            {t("knowledge.tables.empty.cta")}
           </Button>
         </div>
       </div>

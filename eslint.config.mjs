@@ -79,14 +79,13 @@ const eslintConfig = defineConfig([
     files: ["src/**/*.{ts,tsx}"],
     ignores: [
       // Features ainda hardcoded podem usar legacy temporariamente.
-      "src/components/{knowledge,network,agents,tiers,products,packages,brands,brand-kit,perks,marketplace,operations,operation,deals,companies,contacts,meetings,tasks,events,services,campaigns,locations,community,notes,routines,experiences,integrations,blocks,tools,chat,feedbacks,settings,dashboard,sales,landing-page}/**/*.{ts,tsx}",
-      "src/app/admin/{knowledge,agents,tiers,products,packages,brands,brand-kit,perks,marketplace,operations,operation,deals,companies,contacts,meetings,tasks,events,services,campaigns,locations,community,notes,routines,experiences,integrations,blocks,tools,chat,feedbacks,settings,sales}/**/*.{ts,tsx}",
+      "src/components/{network,agents,tiers,products,packages,brands,brand-kit,perks,marketplace,operations,operation,deals,companies,contacts,meetings,tasks,events,services,campaigns,locations,community,notes,routines,experiences,integrations,blocks,tools,chat,feedbacks,settings,dashboard,sales,landing-page}/**/*.{ts,tsx}",
+      "src/app/admin/{agents,tiers,products,packages,brands,brand-kit,perks,marketplace,operations,operation,deals,companies,contacts,meetings,tasks,events,services,campaigns,locations,community,notes,routines,experiences,integrations,blocks,tools,chat,feedbacks,settings,sales}/**/*.{ts,tsx}",
       // Organization Phase B (departments/users/etc.) and brand-kit
       // are still on legacy formatters — re-include their paths.
       "src/components/brand-kit/**/*.{ts,tsx}",
       "src/components/organization/brand-kit-form.tsx",
       "src/app/admin/organization/brand-kit/**/*.{ts,tsx}",
-      "src/app/admin/organization/knowledge/**/*.{ts,tsx}",
       "src/app/admin/page.tsx",
       "src/app/admin/finances/**/*.{ts,tsx}",
       // src/lib helpers and store and other shared infra still use legacy.
@@ -209,6 +208,10 @@ const eslintConfig = defineConfig([
       "src/app/admin/organization/knowledge/videos/**/*.{ts,tsx}",
       "src/app/admin/organization/knowledge/audios/**/*.{ts,tsx}",
       "src/lib/knowledge/media-status.ts",
+      // Phase 1.5.6e — Knowledge meta-feature shell (dashboard + manage
+      // sources + Knowledge-tables creation/import/empty)
+      "src/components/knowledge/**/*.{ts,tsx}",
+      "src/app/admin/organization/knowledge/**/*.{ts,tsx}",
       // integrations/error.tsx (and [id]/error.tsx) are INTENTIONALLY
       // excluded: per Etapa 1.5.5 decision (Opção 2), shell-generic
       // strings were extracted to shell.error.* but feature-specific

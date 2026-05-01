@@ -3899,6 +3899,98 @@ export const messages = {
   "error.audios.delete_failed": "Falha ao excluir áudio",
   "error.audios.transcription_failed": "Falha na transcrição",
   "error.audios.folder_delete_failed": "Falha ao excluir pasta",
+
+  // ═══════════════════════════════════════════════════════════════════
+  // KNOWLEDGE — meta-feature shell (1.5.6e)
+  // ═══════════════════════════════════════════════════════════════════
+  // ─── Dashboard ─────────────────────────────────────────────────────
+  "knowledge.dashboard.title": "Todas as fontes",
+  "knowledge.dashboard.summary":
+    "{total} itens no total em {count} fontes",
+  "knowledge.dashboard.empty.title": "Nenhuma fonte selecionada",
+  "knowledge.dashboard.empty.description":
+    "Use “Gerenciar fontes” na barra lateral para adicionar blocos.",
+
+  // ─── Manage Sources dialog ─────────────────────────────────────────
+  "knowledge.manage.title": "Gerenciar fontes",
+  "knowledge.manage.description":
+    "Escolha quais blocos serão fontes de conhecimento. Categorias e ordem espelham a ferramenta Blocos.",
+  "knowledge.manage.available_sources": "Fontes disponíveis",
+  "knowledge.manage.selected_sources": "Fontes selecionadas",
+  "knowledge.manage.all_added": "Todos os blocos adicionados.",
+  "knowledge.manage.none_selected": "Nenhuma fonte selecionada ainda.",
+  "knowledge.manage.fallback_category": "Outros",
+  "knowledge.manage.action.add": "Adicionar como fonte",
+  "knowledge.manage.action.remove": "Remover fonte",
+  "knowledge.manage.feedback.saved": "Fontes atualizadas",
+  "error.knowledge.manage.save_failed": "Falha ao salvar configurações",
+
+  // ─── Knowledge Tables empty state ──────────────────────────────────
+  "knowledge.tables.empty.title": "Tabelas",
+  "knowledge.tables.empty.description":
+    "Conjuntos de dados estruturados, tabelas de referência e dados auxiliares para operações e relatórios.",
+  "knowledge.tables.empty.import_airtable": "Importar do Airtable",
+  "knowledge.tables.empty.create": "Criar tabela",
+  "knowledge.tables.empty.heading": "Nenhuma tabela ainda",
+  "knowledge.tables.empty.body":
+    "Crie conjuntos de dados estruturados e tabelas de referência. As tabelas ajudam a organizar dados para operações, cálculos de comissão e relatórios.",
+  "knowledge.tables.empty.cta": "Crie sua primeira tabela",
+
+  // ─── Knowledge Create Table modal ──────────────────────────────────
+  "knowledge.tables.create.title": "Criar tabela",
+  "knowledge.tables.create.name_label": "Nome",
+  "knowledge.tables.create.name_placeholder":
+    "Ex.: Produtos, Faixas de comissão",
+  "knowledge.tables.create.description_label": "Descrição (opcional)",
+  "knowledge.tables.create.description_placeholder":
+    "Quais dados esta tabela armazenará?",
+  "knowledge.tables.create.creating": "Criando...",
+  "knowledge.tables.create.submit": "Criar tabela",
+  "knowledge.tables.feedback.created": "Tabela criada",
+  "error.knowledge.tables.name_required": "Nome é obrigatório",
+  "error.knowledge.tables.create_failed": "Falha ao criar tabela",
+
+  // ─── Airtable Import wizard ────────────────────────────────────────
+  "knowledge.airtable.title": "Importar do Airtable",
+  "knowledge.airtable.step.base": "1. Base",
+  "knowledge.airtable.step.table": "2. Tabela",
+  "knowledge.airtable.step.fields": "3. Campos",
+  "knowledge.airtable.step.import": "4. Importar",
+  "knowledge.airtable.select_base.prompt":
+    "Selecione uma base do Airtable para importar.",
+  "knowledge.airtable.loading_bases": "Carregando bases...",
+  "knowledge.airtable.no_bases":
+    "Nenhuma base encontrada. Verifique se seu token do Airtable tem acesso a pelo menos uma base.",
+  "knowledge.airtable.select_table.prompt": "Selecione uma tabela para importar.",
+  "knowledge.airtable.loading_tables": "Carregando tabelas...",
+  "knowledge.airtable.fields_count": "{count} campos",
+  "knowledge.airtable.field_mapping.prompt":
+    "Revise os mapeamentos de campos. Ajuste tipos, renomeie campos ou pule campos que não precisa.",
+  "knowledge.airtable.field_mapping.airtable_field": "Campo do Airtable",
+  "knowledge.airtable.field_mapping.herd_type": "Tipo HERD",
+  "knowledge.airtable.field_mapping.herd_name": "Nome HERD",
+  "knowledge.airtable.field_mapping.skip": "Pular",
+  "knowledge.airtable.field_mapping.selected_count":
+    "{active} de {total} campos selecionados",
+  "knowledge.airtable.field_mapping.import_action": "Importar {name}",
+  "knowledge.airtable.importing.title": "Importando {name}...",
+  "knowledge.airtable.importing.records": "{count} registros importados",
+  "knowledge.airtable.importing.warning":
+    "Isso pode levar alguns minutos para tabelas grandes. Não feche este diálogo.",
+  "knowledge.airtable.failed.title": "Falha na importação",
+  "knowledge.airtable.failed.unknown_error": "Ocorreu um erro desconhecido",
+  "knowledge.airtable.failed.partial":
+    "{count} registros foram importados antes do erro.",
+  "knowledge.airtable.complete.title": "Importação concluída",
+  "knowledge.airtable.complete.body":
+    "Importados com sucesso {count} registros de {name}.",
+  "knowledge.airtable.view_table": "Ver tabela",
+  "error.knowledge.airtable.load_bases_failed": "Falha ao carregar bases",
+  "error.knowledge.airtable.connect_failed": "Falha ao conectar com o Airtable",
+  "error.knowledge.airtable.load_tables_failed": "Falha ao carregar tabelas",
+  "error.knowledge.airtable.fetch_tables_failed": "Falha ao buscar tabelas",
+  "error.knowledge.airtable.import_failed": "Falha na importação",
+  "error.knowledge.airtable.start_import_failed": "Falha ao iniciar importação",
 } as const;
 
 export type MessageKey = keyof typeof messages;
