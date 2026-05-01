@@ -9,12 +9,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowUpDown, MoreHorizontal, ExternalLink, Link2, Eye } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal, ExternalLink } from "lucide-react";
 import type { FormRow } from "./types";
 
 interface ColumnActions {
   onOpen: (form: FormRow) => void;
-  onCopyLink: (form: FormRow) => void;
   onDelete: (form: FormRow) => void;
 }
 
@@ -151,22 +150,6 @@ export function getFormColumns(
               <ExternalLink className="mr-2 h-3.5 w-3.5" />
               Open Form
             </DropdownMenuItem>
-            {row.original.formStatus === "ACTIVE" && (
-              <>
-                <DropdownMenuItem onClick={() => actions.onCopyLink(row.original)}>
-                  <Link2 className="mr-2 h-3.5 w-3.5" />
-                  Copy Share Link
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() =>
-                    window.open(`/f/${row.original.slug}`, "_blank")
-                  }
-                >
-                  <Eye className="mr-2 h-3.5 w-3.5" />
-                  Preview Form
-                </DropdownMenuItem>
-              </>
-            )}
             <DropdownMenuItem
               className="text-destructive"
               onClick={() => actions.onDelete(row.original)}

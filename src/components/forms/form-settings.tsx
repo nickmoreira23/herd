@@ -142,19 +142,6 @@ export function FormSettings({
         />
       </div>
 
-      {form.formStatus === "ACTIVE" && (
-        <div className="rounded-lg border bg-emerald-500/5 p-3">
-          <p className="text-xs font-medium text-emerald-600 mb-1">
-            Share Link
-          </p>
-          <code className="text-xs text-muted-foreground break-all">
-            {typeof window !== "undefined"
-              ? `${window.location.origin}/f/${form.slug}`
-              : `/f/${form.slug}`}
-          </code>
-        </div>
-      )}
-
       <Button onClick={handleSave} disabled={saving} className="w-full">
         {saving ? (
           <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />

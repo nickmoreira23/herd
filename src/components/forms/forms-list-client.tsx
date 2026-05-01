@@ -42,12 +42,6 @@ export function FormsListClient({
     router.push(`/admin/organization/knowledge/forms/${form.id}`);
   }, [router]);
 
-  const handleCopyLink = useCallback((form: FormRow) => {
-    const url = `${window.location.origin}/f/${form.slug}`;
-    navigator.clipboard.writeText(url);
-    toast.success("Share link copied to clipboard");
-  }, []);
-
   const handleDelete = useCallback(async (form: FormRow) => {
     const res = await fetch(`/api/forms/${form.id}`, { method: "DELETE" });
     if (res.ok) {
@@ -70,10 +64,9 @@ export function FormsListClient({
   const columns = useMemo(
     () => getFormColumns({
       onOpen: handleOpen,
-      onCopyLink: handleCopyLink,
       onDelete: (form) => setDeleteTarget(form),
     }),
-    [handleOpen, handleCopyLink]
+    [handleOpen]
   );
 
   // Stats
