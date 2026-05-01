@@ -15,12 +15,11 @@ import {
   BarChart3,
   GripVertical,
 } from "lucide-react";
-import { toast } from "sonner";
 import { FormBuilderSidebar } from "./form-builder-sidebar";
 import { FormBuilderSection } from "./form-builder-section";
 import { FormBuilderFieldConfig } from "./form-builder-field-config";
 import { FormSettings } from "../form-settings";
-import { FieldTypeIcon, FIELD_TYPE_CONFIG } from "./field-type-icon";
+import { FieldTypeIcon, FORM_FIELD_TYPE_OPTIONS } from "./field-type-icon";
 import type {
   FormDetail,
   FormRow,
@@ -28,6 +27,10 @@ import type {
   FormFieldRow,
 } from "../types";
 import type { FormFieldType } from "@/lib/validations/knowledge-form";
+import { useT, useLocale } from "@/lib/i18n/locale-context";
+import type { MessageKey } from "@/lib/i18n/t";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
+import { pluralize } from "@/lib/i18n/pluralize";
 
 import {
   DndContext,
@@ -52,26 +55,36 @@ interface FormBuilderProps {
   initialForm: FormDetail;
 }
 
-const FORM_STATUS_CONFIG: Record<
-  string,
-  { label: string; className: string }
-> = {
+type FormStatusValue = "DRAFT" | "ACTIVE" | "CLOSED";
+
+interface FormStatusMeta {
+  value: FormStatusValue;
+  labelKey: MessageKey;
+  className: string;
+}
+
+const FORM_STATUS_OPTIONS = {
   DRAFT: {
-    label: "Draft",
+    value: "DRAFT",
+    labelKey: "forms.statuses.DRAFT.label",
     className: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
   },
   ACTIVE: {
-    label: "Active",
+    value: "ACTIVE",
+    labelKey: "forms.statuses.ACTIVE.label",
     className: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
   },
   CLOSED: {
-    label: "Closed",
+    value: "CLOSED",
+    labelKey: "forms.statuses.CLOSED.label",
     className: "bg-zinc-500/10 text-zinc-500 border-zinc-500/20",
   },
-};
+} as const satisfies Record<FormStatusValue, FormStatusMeta>;
 
 export function FormBuilder({ initialForm }: FormBuilderProps) {
   const router = useRouter();
+  const t = useT();
+  const locale = useLocale();
   const [form, setForm] = useState<FormDetail>(initialForm);
   const [sections, setSections] = useState(initialForm.sections);
   const [activeTab, setActiveTab] = useState("builder");
@@ -425,25 +438,24 @@ export function FormBuilder({ initialForm }: FormBuilderProps) {
       method: "POST",
     });
     if (res.ok) {
-      toast.success("Form published! Share link is now active.");
+      notifySuccess("forms.builder.feedback.form_published", t);
       await refreshForm();
     } else {
-      const json = await res.json().catch(() => null);
-      toast.error(json?.error || "Failed to publish form");
+      notifyError("error.forms.builder.publish_failed", t);
     }
-  }, [form.id, refreshForm]);
+  }, [form.id, refreshForm, t]);
 
   const handleClose = useCallback(async () => {
     const res = await fetch(`/api/forms/${form.id}/close`, {
       method: "POST",
     });
     if (res.ok) {
-      toast.success("Form closed");
+      notifySuccess("forms.builder.feedback.form_closed", t);
       await refreshForm();
     } else {
-      toast.error("Failed to close form");
+      notifyError("error.forms.builder.close_failed", t);
     }
-  }, [form.id, refreshForm]);
+  }, [form.id, refreshForm, t]);
 
   const handleFormUpdate = useCallback(
     (updated: FormRow) => {
@@ -452,12 +464,26 @@ export function FormBuilder({ initialForm }: FormBuilderProps) {
     [form]
   );
 
-  const statusConfig =
-    FORM_STATUS_CONFIG[form.formStatus] || FORM_STATUS_CONFIG.DRAFT;
+  const statusMeta =
+    (FORM_STATUS_OPTIONS as Record<string, FormStatusMeta>)[form.formStatus] ||
+    FORM_STATUS_OPTIONS.DRAFT;
   const totalFields = sections.reduce(
     (sum, s) => sum + s.fields.length,
     0
   );
+
+  const fieldsCountLabel = pluralize(totalFields, locale, {
+    one: t("forms.builder.fields_count_one", { count: totalFields }),
+    other: t("forms.builder.fields_count_other", { count: totalFields }),
+  });
+  const responsesCountLabel = pluralize(form.responseCount, locale, {
+    one: t("forms.builder.responses_count_one", {
+      count: form.responseCount,
+    }),
+    other: t("forms.builder.responses_count_other", {
+      count: form.responseCount,
+    }),
+  });
 
   return (
     <div className="flex flex-col h-full">
@@ -471,7 +497,7 @@ export function FormBuilder({ initialForm }: FormBuilderProps) {
           }
         >
           <ArrowLeft className="h-3.5 w-3.5 mr-1" />
-          Back
+          {t("common.actions.back")}
         </Button>
 
         <div className="flex-1 min-w-0">
@@ -479,14 +505,14 @@ export function FormBuilder({ initialForm }: FormBuilderProps) {
           <div className="flex items-center gap-2 mt-0.5">
             <Badge
               variant="outline"
-              className={`text-[10px] ${statusConfig.className}`}
+              className={`text-[10px] ${statusMeta.className}`}
             >
-              {statusConfig.label}
+              {t(statusMeta.labelKey)}
             </Badge>
             <span className="text-[10px] text-muted-foreground">
-              {totalFields} field{totalFields !== 1 ? "s" : ""} &middot;{" "}
-              {form.responseCount} response
-              {form.responseCount !== 1 ? "s" : ""}
+              {fieldsCountLabel}
+              {" · "}
+              {responsesCountLabel}
             </span>
           </div>
         </div>
@@ -495,7 +521,7 @@ export function FormBuilder({ initialForm }: FormBuilderProps) {
           <>
             <Button variant="outline" size="sm" onClick={handleClose}>
               <XCircle className="h-3 w-3 mr-1" />
-              Close Form
+              {t("forms.builder.toolbar.close_form")}
             </Button>
           </>
         )}
@@ -503,7 +529,7 @@ export function FormBuilder({ initialForm }: FormBuilderProps) {
         {form.formStatus === "DRAFT" && (
           <Button size="sm" onClick={handlePublish}>
             <Rocket className="h-3 w-3 mr-1" />
-            Publish
+            {t("forms.builder.toolbar.publish")}
           </Button>
         )}
 
@@ -518,7 +544,7 @@ export function FormBuilder({ initialForm }: FormBuilderProps) {
             }
           >
             <BarChart3 className="h-3 w-3 mr-1" />
-            Responses
+            {t("forms.builder.toolbar.responses")}
           </Button>
         )}
       </div>
@@ -541,11 +567,11 @@ export function FormBuilder({ initialForm }: FormBuilderProps) {
               <TabsList>
                 <TabsTrigger value="builder">
                   <ListTree className="h-3 w-3 mr-1" />
-                  Builder
+                  {t("forms.builder.tabs.builder")}
                 </TabsTrigger>
                 <TabsTrigger value="settings">
                   <Settings className="h-3 w-3 mr-1" />
-                  Settings
+                  {t("forms.builder.tabs.settings")}
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -598,7 +624,7 @@ export function FormBuilder({ initialForm }: FormBuilderProps) {
                 onClick={handleAddSection}
               >
                 <Plus className="h-3.5 w-3.5 mr-1" />
-                Add Section
+                {t("forms.builder.add_section")}
               </Button>
             </TabsContent>
 
@@ -634,7 +660,8 @@ export function FormBuilder({ initialForm }: FormBuilderProps) {
 // ─── Drag Overlay Previews ─────────────────────────────────────────────
 
 function FieldDragPreview({ field }: { field: FormFieldRow }) {
-  const typeConfig = FIELD_TYPE_CONFIG[field.type as FormFieldType];
+  const t = useT();
+  const meta = FORM_FIELD_TYPE_OPTIONS[field.type as FormFieldType];
 
   return (
     <div className="flex items-center gap-2 rounded-lg border bg-card px-3 py-2.5 shadow-xl ring-2 ring-primary/30 border-primary/30 cursor-grabbing">
@@ -654,7 +681,7 @@ function FieldDragPreview({ field }: { field: FormFieldRow }) {
         </div>
       </div>
       <Badge variant="outline" className="text-[10px] shrink-0">
-        {typeConfig?.label ?? field.type}
+        {meta ? t(meta.labelKey) : field.type}
       </Badge>
     </div>
   );
@@ -665,16 +692,23 @@ function SectionDragPreview({
 }: {
   section: FormSectionRow;
 }) {
+  const t = useT();
+  const locale = useLocale();
+  const fieldsLabel = pluralize(section.fields.length, locale, {
+    one: t("forms.builder.fields_count_one", { count: section.fields.length }),
+    other: t("forms.builder.fields_count_other", {
+      count: section.fields.length,
+    }),
+  });
   return (
     <div className="rounded-xl border bg-card/80 shadow-xl ring-2 ring-primary/30 border-primary/30 cursor-grabbing">
       <div className="flex items-center gap-2 px-4 py-3">
         <GripVertical className="h-4 w-4 text-muted-foreground/40" />
         <span className="text-sm font-medium">
-          {section.title || "Untitled Section"}
+          {section.title || t("forms.builder.section.untitled")}
         </span>
         <span className="text-xs text-muted-foreground ml-auto">
-          {section.fields.length} field
-          {section.fields.length !== 1 ? "s" : ""}
+          {fieldsLabel}
         </span>
       </div>
     </div>

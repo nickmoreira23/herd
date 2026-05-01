@@ -2451,4 +2451,96 @@ export const messages: Record<MessageKey, string> = {
   "network.roles.detail.system_role": "System Role",
   "network.roles.detail.tab_settings": "Role Settings",
   "network.roles.detail.tab_permissions": "Permissions",
+
+  // Forms — Field types (15)
+  "forms.field_types.TEXT.label": "Short Text",
+  "forms.field_types.TEXT.description": "Single-line text input",
+  "forms.field_types.TEXTAREA.label": "Long Text",
+  "forms.field_types.TEXTAREA.description": "Multi-line text area",
+  "forms.field_types.NUMBER.label": "Number",
+  "forms.field_types.NUMBER.description": "Numeric input",
+  "forms.field_types.EMAIL.label": "Email",
+  "forms.field_types.EMAIL.description": "Email address input",
+  "forms.field_types.PHONE.label": "Phone",
+  "forms.field_types.PHONE.description": "Phone number input",
+  "forms.field_types.DATE.label": "Date",
+  "forms.field_types.DATE.description": "Date picker",
+  "forms.field_types.TIME.label": "Time",
+  "forms.field_types.TIME.description": "Time picker",
+  "forms.field_types.SELECT.label": "Dropdown",
+  "forms.field_types.SELECT.description": "Single-choice dropdown",
+  "forms.field_types.MULTI_SELECT.label": "Multi-Select",
+  "forms.field_types.MULTI_SELECT.description":
+    "Multiple-choice checkboxes",
+  "forms.field_types.CHECKBOX.label": "Checkbox",
+  "forms.field_types.CHECKBOX.description": "Single checkbox toggle",
+  "forms.field_types.RADIO.label": "Radio",
+  "forms.field_types.RADIO.description": "Single-choice radio buttons",
+  "forms.field_types.FILE_UPLOAD.label": "File Upload",
+  "forms.field_types.FILE_UPLOAD.description": "File attachment",
+  "forms.field_types.RATING.label": "Rating",
+  "forms.field_types.RATING.description": "Numeric rating scale",
+  "forms.field_types.YES_NO.label": "Yes / No",
+  "forms.field_types.YES_NO.description": "Binary yes/no toggle",
+  "forms.field_types.SIGNATURE.label": "Signature",
+  "forms.field_types.SIGNATURE.description": "Signature capture pad",
+
+  // Forms — Statuses (3)
+  "forms.statuses.DRAFT.label": "Draft",
+  "forms.statuses.ACTIVE.label": "Active",
+  "forms.statuses.CLOSED.label": "Closed",
+
+  // Forms — Builder toolbar
+  "forms.builder.toolbar.close_form": "Close Form",
+  "forms.builder.toolbar.publish": "Publish",
+  "forms.builder.toolbar.responses": "Responses",
+
+  // Forms — Builder tabs
+  "forms.builder.tabs.builder": "Builder",
+  "forms.builder.tabs.settings": "Settings",
+
+  // Forms — Builder body
+  "forms.builder.add_section": "Add Section",
+
+  // Forms — Sidebar
+  "forms.builder.sidebar.add_field_heading": "Add Field",
+
+  // Forms — Section
+  "forms.builder.section.untitled": "Untitled Section",
+  "forms.builder.section.empty":
+    "No fields yet. Click “Add Field” or use the sidebar.",
+  "forms.builder.section.add_field": "Add Field",
+
+  // Forms — Field row & drag previews
+  "forms.builder.fields_count_one": "{count} field",
+  "forms.builder.fields_count_other": "{count} fields",
+  "forms.builder.responses_count_one": "{count} response",
+  "forms.builder.responses_count_other": "{count} responses",
+
+  // Forms — Field config dialog
+  "forms.builder.field_config.title_edit": "Edit Field",
+  "forms.builder.field_config.title_add": "Add Field",
+  "forms.builder.field_config.label": "Label",
+  "forms.builder.field_config.label_placeholder":
+    "e.g. What is your name?",
+  "forms.builder.field_config.field_type": "Field Type",
+  "forms.builder.field_config.placeholder_label": "Placeholder (optional)",
+  "forms.builder.field_config.placeholder_placeholder":
+    "Placeholder text shown in the input",
+  "forms.builder.field_config.help_text_label": "Help Text (optional)",
+  "forms.builder.field_config.help_text_placeholder":
+    "Additional instructions for the respondent",
+  "forms.builder.field_config.required": "Required",
+  "forms.builder.field_config.choices": "Choices",
+  "forms.builder.field_config.option_placeholder": "Option {index}",
+  "forms.builder.field_config.add_option": "Add Option",
+  "forms.builder.field_config.save_changes": "Save Changes",
+
+  // Forms — Builder feedback (toasts)
+  "forms.builder.feedback.form_published": "Form published!",
+  "forms.builder.feedback.form_closed": "Form closed",
+
+  // Forms — Builder errors
+  "error.forms.builder.publish_failed": "Failed to publish form",
+  "error.forms.builder.close_failed": "Failed to close form",
 };

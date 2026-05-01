@@ -2504,6 +2504,98 @@ export const messages = {
   "network.roles.detail.system_role": "Cargo do Sistema",
   "network.roles.detail.tab_settings": "Configurações do Cargo",
   "network.roles.detail.tab_permissions": "Permissões",
+
+  // Forms — Field types (15)
+  "forms.field_types.TEXT.label": "Texto curto",
+  "forms.field_types.TEXT.description": "Entrada de texto de uma linha",
+  "forms.field_types.TEXTAREA.label": "Texto longo",
+  "forms.field_types.TEXTAREA.description": "Área de texto multilinha",
+  "forms.field_types.NUMBER.label": "Número",
+  "forms.field_types.NUMBER.description": "Entrada numérica",
+  "forms.field_types.EMAIL.label": "E-mail",
+  "forms.field_types.EMAIL.description": "Entrada de endereço de e-mail",
+  "forms.field_types.PHONE.label": "Telefone",
+  "forms.field_types.PHONE.description": "Entrada de número de telefone",
+  "forms.field_types.DATE.label": "Data",
+  "forms.field_types.DATE.description": "Seletor de data",
+  "forms.field_types.TIME.label": "Hora",
+  "forms.field_types.TIME.description": "Seletor de hora",
+  "forms.field_types.SELECT.label": "Lista suspensa",
+  "forms.field_types.SELECT.description": "Lista suspensa de escolha única",
+  "forms.field_types.MULTI_SELECT.label": "Multi-seleção",
+  "forms.field_types.MULTI_SELECT.description":
+    "Caixas de seleção de múltipla escolha",
+  "forms.field_types.CHECKBOX.label": "Caixa de seleção",
+  "forms.field_types.CHECKBOX.description": "Caixa de seleção única",
+  "forms.field_types.RADIO.label": "Botões de rádio",
+  "forms.field_types.RADIO.description":
+    "Botões de rádio de escolha única",
+  "forms.field_types.FILE_UPLOAD.label": "Upload de arquivo",
+  "forms.field_types.FILE_UPLOAD.description": "Anexo de arquivo",
+  "forms.field_types.RATING.label": "Avaliação",
+  "forms.field_types.RATING.description": "Escala de avaliação numérica",
+  "forms.field_types.YES_NO.label": "Sim / Não",
+  "forms.field_types.YES_NO.description": "Alternância binária sim/não",
+  "forms.field_types.SIGNATURE.label": "Assinatura",
+  "forms.field_types.SIGNATURE.description": "Painel de captura de assinatura",
+
+  // Forms — Statuses (3)
+  "forms.statuses.DRAFT.label": "Rascunho",
+  "forms.statuses.ACTIVE.label": "Ativo",
+  "forms.statuses.CLOSED.label": "Fechado",
+
+  // Forms — Builder toolbar
+  "forms.builder.toolbar.close_form": "Fechar formulário",
+  "forms.builder.toolbar.publish": "Publicar",
+  "forms.builder.toolbar.responses": "Respostas",
+
+  // Forms — Builder tabs
+  "forms.builder.tabs.builder": "Construtor",
+  "forms.builder.tabs.settings": "Configurações",
+
+  // Forms — Builder body
+  "forms.builder.add_section": "Adicionar seção",
+
+  // Forms — Sidebar
+  "forms.builder.sidebar.add_field_heading": "Adicionar campo",
+
+  // Forms — Section
+  "forms.builder.section.untitled": "Seção sem título",
+  "forms.builder.section.empty": "Nenhum campo ainda. Clique em “Adicionar campo” ou use a barra lateral.",
+  "forms.builder.section.add_field": "Adicionar campo",
+
+  // Forms — Field row & drag previews
+  "forms.builder.fields_count_one": "{count} campo",
+  "forms.builder.fields_count_other": "{count} campos",
+  "forms.builder.responses_count_one": "{count} resposta",
+  "forms.builder.responses_count_other": "{count} respostas",
+
+  // Forms — Field config dialog
+  "forms.builder.field_config.title_edit": "Editar campo",
+  "forms.builder.field_config.title_add": "Adicionar campo",
+  "forms.builder.field_config.label": "Rótulo",
+  "forms.builder.field_config.label_placeholder":
+    "ex.: Qual é o seu nome?",
+  "forms.builder.field_config.field_type": "Tipo de campo",
+  "forms.builder.field_config.placeholder_label": "Placeholder (opcional)",
+  "forms.builder.field_config.placeholder_placeholder":
+    "Texto de placeholder exibido na entrada",
+  "forms.builder.field_config.help_text_label": "Texto de ajuda (opcional)",
+  "forms.builder.field_config.help_text_placeholder":
+    "Instruções adicionais para o respondente",
+  "forms.builder.field_config.required": "Obrigatório",
+  "forms.builder.field_config.choices": "Opções",
+  "forms.builder.field_config.option_placeholder": "Opção {index}",
+  "forms.builder.field_config.add_option": "Adicionar opção",
+  "forms.builder.field_config.save_changes": "Salvar alterações",
+
+  // Forms — Builder feedback (toasts)
+  "forms.builder.feedback.form_published": "Formulário publicado!",
+  "forms.builder.feedback.form_closed": "Formulário fechado",
+
+  // Forms — Builder errors
+  "error.forms.builder.publish_failed": "Falha ao publicar formulário",
+  "error.forms.builder.close_failed": "Falha ao fechar formulário",
 } as const;
 
 export type MessageKey = keyof typeof messages;

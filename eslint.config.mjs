@@ -167,6 +167,8 @@ const eslintConfig = defineConfig([
       // Phase 1.5.6b-tris (Fase ε, Turn 4) — Canvas components
       "src/components/organization/org-chart-canvas.tsx",
       "src/components/organization/network-map-canvas.tsx",
+      // Phase 1.5.6d-α (Phase α.1) — Forms Admin builder
+      "src/components/forms/builder/**/*.{ts,tsx}",
       // integrations/error.tsx (and [id]/error.tsx) are INTENTIONALLY
       // excluded: per Etapa 1.5.5 decision (Opção 2), shell-generic
       // strings were extracted to shell.error.* but feature-specific

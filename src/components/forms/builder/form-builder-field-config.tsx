@@ -22,7 +22,8 @@ import {
 } from "@/components/ui/select";
 import { Plus, X, Loader2 } from "lucide-react";
 import { FORM_FIELD_TYPES, type FormFieldType } from "@/lib/validations/knowledge-form";
-import { FIELD_TYPE_CONFIG } from "./field-type-icon";
+import { FORM_FIELD_TYPE_OPTIONS } from "./field-type-icon";
+import { useT } from "@/lib/i18n/locale-context";
 import type { FormFieldRow } from "../types";
 
 interface FormBuilderFieldConfigProps {
@@ -46,6 +47,7 @@ export function FormBuilderFieldConfig({
   onSave,
   defaultType,
 }: FormBuilderFieldConfigProps) {
+  const t = useT();
   const [label, setLabel] = useState("");
   const [type, setType] = useState<FormFieldType>("TEXT");
   const [placeholder, setPlaceholder] = useState("");
@@ -126,21 +128,29 @@ export function FormBuilderFieldConfig({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit Field" : "Add Field"}</DialogTitle>
+          <DialogTitle>
+            {isEdit
+              ? t("forms.builder.field_config.title_edit")
+              : t("forms.builder.field_config.title_add")}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label className="text-xs">Label</Label>
+            <Label className="text-xs">
+              {t("forms.builder.field_config.label")}
+            </Label>
             <Input
               value={label}
               onChange={(e) => setLabel(e.target.value)}
-              placeholder="e.g. What is your name?"
+              placeholder={t("forms.builder.field_config.label_placeholder")}
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs">Field Type</Label>
+            <Label className="text-xs">
+              {t("forms.builder.field_config.field_type")}
+            </Label>
             <Select value={type} onValueChange={(v) => { if (v) setType(v as FormFieldType); }}>
               <SelectTrigger className="w-full">
                 <SelectValue />
@@ -148,7 +158,7 @@ export function FormBuilderFieldConfig({
               <SelectContent>
                 {FORM_FIELD_TYPES.map((ft) => (
                   <SelectItem key={ft} value={ft}>
-                    {FIELD_TYPE_CONFIG[ft].label}
+                    {t(FORM_FIELD_TYPE_OPTIONS[ft].labelKey)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -156,32 +166,44 @@ export function FormBuilderFieldConfig({
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs">Placeholder (optional)</Label>
+            <Label className="text-xs">
+              {t("forms.builder.field_config.placeholder_label")}
+            </Label>
             <Input
               value={placeholder}
               onChange={(e) => setPlaceholder(e.target.value)}
-              placeholder="Placeholder text shown in the input"
+              placeholder={t(
+                "forms.builder.field_config.placeholder_placeholder",
+              )}
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs">Help Text (optional)</Label>
+            <Label className="text-xs">
+              {t("forms.builder.field_config.help_text_label")}
+            </Label>
             <Textarea
               value={helpText}
               onChange={(e) => setHelpText(e.target.value)}
-              placeholder="Additional instructions for the respondent"
+              placeholder={t(
+                "forms.builder.field_config.help_text_placeholder",
+              )}
               rows={2}
             />
           </div>
 
           <div className="flex items-center justify-between">
-            <Label className="text-xs">Required</Label>
+            <Label className="text-xs">
+              {t("forms.builder.field_config.required")}
+            </Label>
             <Switch checked={isRequired} onCheckedChange={setIsRequired} />
           </div>
 
           {showChoices && (
             <div className="space-y-1.5">
-              <Label className="text-xs">Choices</Label>
+              <Label className="text-xs">
+                {t("forms.builder.field_config.choices")}
+              </Label>
               <div className="space-y-2">
                 {choices.map((choice, idx) => (
                   <div key={idx} className="flex items-center gap-2">
@@ -192,7 +214,10 @@ export function FormBuilderFieldConfig({
                         next[idx] = e.target.value;
                         setChoices(next);
                       }}
-                      placeholder={`Option ${idx + 1}`}
+                      placeholder={t(
+                        "forms.builder.field_config.option_placeholder",
+                        { index: idx + 1 },
+                      )}
                       className="flex-1"
                     />
                     {choices.length > 1 && (
@@ -214,7 +239,7 @@ export function FormBuilderFieldConfig({
                   onClick={() => setChoices([...choices, ""])}
                 >
                   <Plus className="h-3 w-3 mr-1" />
-                  Add Option
+                  {t("forms.builder.field_config.add_option")}
                 </Button>
               </div>
             </div>
@@ -223,15 +248,15 @@ export function FormBuilderFieldConfig({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("common.actions.cancel")}
           </Button>
           <Button onClick={handleSave} disabled={saving || !label.trim()}>
             {saving ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : isEdit ? (
-              "Save Changes"
+              t("forms.builder.field_config.save_changes")
             ) : (
-              "Add Field"
+              t("forms.builder.field_config.title_add")
             )}
           </Button>
         </DialogFooter>
