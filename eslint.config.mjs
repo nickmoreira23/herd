@@ -79,8 +79,8 @@ const eslintConfig = defineConfig([
     files: ["src/**/*.{ts,tsx}"],
     ignores: [
       // Features ainda hardcoded podem usar legacy temporariamente.
-      "src/components/{knowledge,network,agents,tiers,products,packages,brands,brand-kit,perks,marketplace,operations,operation,deals,companies,contacts,meetings,tasks,events,services,campaigns,locations,apps,feeds,community,documents,videos,images,audios,tables,forms,notes,links,routines,experiences,integrations,blocks,tools,chat,feedbacks,settings,dashboard,sales,landing-page}/**/*.{ts,tsx}",
-      "src/app/admin/{knowledge,agents,tiers,products,packages,brands,brand-kit,perks,marketplace,operations,operation,deals,companies,contacts,meetings,tasks,events,services,campaigns,locations,apps,feeds,community,documents,videos,images,audios,tables,forms,notes,links,routines,experiences,integrations,blocks,tools,chat,feedbacks,settings,sales}/**/*.{ts,tsx}",
+      "src/components/{knowledge,network,agents,tiers,products,packages,brands,brand-kit,perks,marketplace,operations,operation,deals,companies,contacts,meetings,tasks,events,services,campaigns,locations,apps,feeds,community,documents,videos,images,audios,tables,notes,links,routines,experiences,integrations,blocks,tools,chat,feedbacks,settings,dashboard,sales,landing-page}/**/*.{ts,tsx}",
+      "src/app/admin/{knowledge,agents,tiers,products,packages,brands,brand-kit,perks,marketplace,operations,operation,deals,companies,contacts,meetings,tasks,events,services,campaigns,locations,apps,feeds,community,documents,videos,images,audios,tables,notes,links,routines,experiences,integrations,blocks,tools,chat,feedbacks,settings,sales}/**/*.{ts,tsx}",
       // Organization Phase B (departments/users/etc.) and brand-kit
       // are still on legacy formatters — re-include their paths.
       "src/components/brand-kit/**/*.{ts,tsx}",
@@ -170,8 +170,10 @@ const eslintConfig = defineConfig([
       // Phase 1.5.6b-tris (Fase ε, Turn 4) — Canvas components
       "src/components/organization/org-chart-canvas.tsx",
       "src/components/organization/network-map-canvas.tsx",
-      // Phase 1.5.6d-α (Phase α.1) — Forms Admin builder
-      "src/components/forms/builder/**/*.{ts,tsx}",
+      // Phase 1.5.6d-α (Phase α.1 + α.2) — Forms Admin (full)
+      "src/components/forms/**/*.{ts,tsx}",
+      "src/app/admin/blocks/forms/**/*.{ts,tsx}",
+      "src/app/admin/organization/knowledge/forms/**/*.{ts,tsx}",
       // integrations/error.tsx (and [id]/error.tsx) are INTENTIONALLY
       // excluded: per Etapa 1.5.5 decision (Opção 2), shell-generic
       // strings were extracted to shell.error.* but feature-specific

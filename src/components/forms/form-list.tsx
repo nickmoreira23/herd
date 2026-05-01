@@ -17,17 +17,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Search, SlidersHorizontal, Upload } from "lucide-react";
-import { toast } from "sonner";
 import type { FormRow, FormStats } from "./types";
+import type { MessageKey } from "@/lib/i18n/messages/pt-BR";
 import { PageHeader } from "@/components/layout/page-header";
 import { FormImportModal } from "./import/form-import-modal";
+import { useT, useLocale } from "@/lib/i18n/locale-context";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
 
-const STATUS_OPTIONS = [
-  { value: "All Status", filterKey: "ALL" },
-  { value: "Draft", filterKey: "DRAFT" },
-  { value: "Active", filterKey: "ACTIVE" },
-  { value: "Closed", filterKey: "CLOSED" },
-] as const;
+const STATUS_OPTIONS: ReadonlyArray<{
+  value: string;
+  filterKey: "ALL" | "DRAFT" | "ACTIVE" | "CLOSED";
+  labelKey: MessageKey;
+}> = [
+  { value: "ALL", filterKey: "ALL", labelKey: "forms.list.filter.all_status" },
+  { value: "DRAFT", filterKey: "DRAFT", labelKey: "forms.statuses.DRAFT.label" },
+  { value: "ACTIVE", filterKey: "ACTIVE", labelKey: "forms.statuses.ACTIVE.label" },
+  { value: "CLOSED", filterKey: "CLOSED", labelKey: "forms.statuses.CLOSED.label" },
+];
 
 interface FormListProps {
   initialForms: FormRow[];
@@ -39,10 +45,12 @@ export function FormList({
   initialStats,
 }: FormListProps) {
   const router = useRouter();
+  const t = useT();
+  const locale = useLocale();
   const [forms, setForms] = useState<FormRow[]>(initialForms);
   const [stats, setStats] = useState<FormStats>(initialStats);
   const [search, setSearch] = useState("");
-  const [statusValue, setStatusValue] = useState("All Status");
+  const [statusValue, setStatusValue] = useState<string>("ALL");
   const [showCreate, setShowCreate] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<FormRow | null>(null);
   const [showImport, setShowImport] = useState(false);
@@ -89,13 +97,13 @@ export function FormList({
       });
       if (res.ok) {
         await refreshForms();
-        toast.success("Form deleted");
+        notifySuccess("forms.feedback.form_deleted", t);
       } else {
-        toast.error("Failed to delete form");
+        notifyError("error.forms.delete_failed", t);
       }
       setDeleteTarget(null);
     },
-    [refreshForms]
+    [refreshForms, t]
   );
 
   const handleCreated = useCallback(
@@ -114,26 +122,28 @@ export function FormList({
       getFormColumns({
         onOpen: handleOpen,
         onDelete: (form) => setDeleteTarget(form),
+        t,
+        locale,
       }),
-    [handleOpen]
+    [handleOpen, t, locale]
   );
 
   if (forms.length === 0) {
     return (
       <div className="flex flex-col min-h-full pt-2 pl-2">
         <PageHeader
-          title="Forms"
-          description="Intake forms, surveys, and structured data collection templates."
+          title={t("forms.list.title")}
+          description={t("forms.list.description")}
           className="pl-0 pt-0"
           action={
             <div className="flex items-center gap-2">
               <Button size="sm" variant="outline" onClick={() => setShowImport(true)}>
                 <Upload className="mr-1 h-3 w-3" />
-                Import
+                {t("forms.list.import")}
               </Button>
               <Button size="sm" onClick={() => setShowCreate(true)}>
                 <Plus className="mr-1 h-3 w-3" />
-                Create Form
+                {t("forms.list.create_form")}
               </Button>
             </div>
           }
@@ -157,18 +167,18 @@ export function FormList({
     <>
       <div className="flex flex-col min-h-full pt-2 pl-2">
         <PageHeader
-          title="Forms"
-          description="Intake forms, surveys, and structured data collection templates."
+          title={t("forms.list.title")}
+          description={t("forms.list.description")}
           className="pl-0 pt-0"
           action={
             <div className="flex items-center gap-2">
               <Button size="sm" variant="outline" onClick={() => setShowImport(true)}>
                 <Upload className="mr-1 h-3 w-3" />
-                Import
+                {t("forms.list.import")}
               </Button>
               <Button size="sm" onClick={() => setShowCreate(true)}>
                 <Plus className="mr-1 h-3 w-3" />
-                Create Form
+                {t("forms.list.create_form")}
               </Button>
             </div>
           }
@@ -177,20 +187,26 @@ export function FormList({
         {/* Stats */}
         <div className="flex items-center gap-4 mb-6">
           <div className="rounded-lg border bg-card px-5 py-3 min-w-0">
-            <p className="text-xs text-muted-foreground whitespace-nowrap">Total</p>
+            <p className="text-xs text-muted-foreground whitespace-nowrap">
+              {t("forms.list.stats.total")}
+            </p>
             <p className="text-lg font-bold tabular-nums">{stats.total}</p>
           </div>
           <div className="rounded-lg border bg-card px-5 py-3 min-w-0">
-            <p className="text-xs text-muted-foreground whitespace-nowrap">Active</p>
+            <p className="text-xs text-muted-foreground whitespace-nowrap">
+              {t("forms.list.stats.active")}
+            </p>
             <p className="text-lg font-bold tabular-nums">{stats.active}</p>
           </div>
           <div className="rounded-lg border bg-card px-5 py-3 min-w-0">
-            <p className="text-xs text-muted-foreground whitespace-nowrap">Draft</p>
+            <p className="text-xs text-muted-foreground whitespace-nowrap">
+              {t("forms.list.stats.draft")}
+            </p>
             <p className="text-lg font-bold tabular-nums">{stats.draft}</p>
           </div>
           <div className="rounded-lg border bg-card px-5 py-3 min-w-0">
             <p className="text-xs text-muted-foreground whitespace-nowrap">
-              Total Responses
+              {t("forms.list.stats.total_responses")}
             </p>
             <p className="text-lg font-bold tabular-nums">{stats.totalResponses}</p>
           </div>
@@ -205,7 +221,7 @@ export function FormList({
               <div className="flex items-center gap-3">
                 <Select
                   value={statusValue}
-                  onValueChange={(val) => setStatusValue(val ?? "All Status")}
+                  onValueChange={(val) => setStatusValue(val ?? "ALL")}
                 >
                   <SelectTrigger className="w-auto min-w-[100px] h-8 text-xs shrink-0">
                     <SlidersHorizontal className="mr-1.5 h-3 w-3" />
@@ -214,7 +230,7 @@ export function FormList({
                   <SelectContent>
                     {STATUS_OPTIONS.map((s) => (
                       <SelectItem key={s.value} value={s.value}>
-                        {s.value}
+                        {t(s.labelKey)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -223,13 +239,13 @@ export function FormList({
                 <div className="relative flex-1 min-w-0">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                   <Input
-                    placeholder="Search by name or description..."
+                    placeholder={t("forms.list.search_placeholder")}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="pl-8 pr-20 h-8 text-xs w-full"
                   />
                   <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground tabular-nums">
-                    {filteredForms.length} items
+                    {t("forms.list.items_count", { count: filteredForms.length })}
                   </span>
                 </div>
               </div>

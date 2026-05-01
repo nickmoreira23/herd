@@ -13,8 +13,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ClipboardList, Loader2, FileText, LayoutTemplate } from "lucide-react";
-import { toast } from "sonner";
 import { FormTemplatePicker } from "./templates/form-template-picker";
+import { useT } from "@/lib/i18n/locale-context";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
 
 interface CreateFormModalProps {
   open: boolean;
@@ -27,6 +28,7 @@ export function CreateFormModal({
   onOpenChange,
   onComplete,
 }: CreateFormModalProps) {
+  const t = useT();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -39,7 +41,7 @@ export function CreateFormModal({
 
   async function handleSubmit() {
     if (!name.trim()) {
-      toast.error("Name is required");
+      notifyError("error.forms.name_required", t);
       return;
     }
 
@@ -55,13 +57,12 @@ export function CreateFormModal({
       });
 
       if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        toast.error(err?.error || "Failed to create form");
+        notifyError("error.forms.create_failed", t);
         return;
       }
 
       const json = await res.json();
-      toast.success("Form created");
+      notifySuccess("forms.feedback.form_created", t);
       reset();
       onOpenChange(false);
       onComplete(json.data?.id);
@@ -88,37 +89,37 @@ export function CreateFormModal({
     >
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Create Form</DialogTitle>
+          <DialogTitle>{t("forms.create.title")}</DialogTitle>
         </DialogHeader>
 
         <Tabs defaultValue="blank" className="mt-2">
           <TabsList>
             <TabsTrigger value="blank">
               <FileText className="h-3 w-3 mr-1" />
-              Blank Form
+              {t("forms.create.tab.blank")}
             </TabsTrigger>
             <TabsTrigger value="templates">
               <LayoutTemplate className="h-3 w-3 mr-1" />
-              Templates
+              {t("forms.create.tab.templates")}
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="blank">
             <div className="space-y-4 pt-2">
               <div className="space-y-1.5">
-                <Label className="text-xs">Name</Label>
+                <Label className="text-xs">{t("forms.create.name_label")}</Label>
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Team Onboarding, Customer Feedback"
+                  placeholder={t("forms.create.name_placeholder")}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Description (optional)</Label>
+                <Label className="text-xs">{t("forms.create.description_label")}</Label>
                 <Textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="What is this form for?"
+                  placeholder={t("forms.create.description_placeholder")}
                   rows={2}
                 />
               </div>
@@ -131,12 +132,12 @@ export function CreateFormModal({
                 {submitting ? (
                   <>
                     <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                    Creating...
+                    {t("forms.create.submitting")}
                   </>
                 ) : (
                   <>
                     <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
-                    Create Blank Form
+                    {t("forms.create.submit_blank")}
                   </>
                 )}
               </Button>
@@ -146,8 +147,7 @@ export function CreateFormModal({
           <TabsContent value="templates">
             <div className="pt-2">
               <p className="text-xs text-muted-foreground mb-3">
-                Choose a pre-made template to get started quickly. You can
-                customize it after creation.
+                {t("forms.create.templates_hint")}
               </p>
               <FormTemplatePicker onCreated={handleTemplateCreated} />
             </div>

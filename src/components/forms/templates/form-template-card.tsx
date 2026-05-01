@@ -14,6 +14,10 @@ import {
   ClipboardList,
   type LucideIcon,
 } from "lucide-react";
+import { useT, useLocale } from "@/lib/i18n/locale-context";
+import { pluralize } from "@/lib/i18n/pluralize";
+import type { MessageKey } from "@/lib/i18n/messages/pt-BR";
+import { messages as PT_BR_MESSAGES } from "@/lib/i18n/messages/pt-BR";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   Users,
@@ -27,25 +31,62 @@ const ICON_MAP: Record<string, LucideIcon> = {
 };
 
 interface FormTemplateCardProps {
-  name: string;
-  description: string;
+  templateKey: string;
+  fallbackName: string;
+  fallbackDescription: string;
+  fallbackCategory: string;
   icon: string;
-  category: string;
   fieldCount: number;
   onUse: () => void;
   loading?: boolean;
 }
 
+/** Defensive lookup: returns translated value if key exists in dictionary, else fallback. */
+function lookupOrFallback(
+  t: (key: MessageKey, params?: Record<string, string | number>) => string,
+  candidate: string,
+  fallback: string,
+): string {
+  if (Object.prototype.hasOwnProperty.call(PT_BR_MESSAGES, candidate)) {
+    return t(candidate as MessageKey);
+  }
+  return fallback;
+}
+
 export function FormTemplateCard({
-  name,
-  description,
+  templateKey,
+  fallbackName,
+  fallbackDescription,
+  fallbackCategory,
   icon,
-  category,
   fieldCount,
   onUse,
   loading,
 }: FormTemplateCardProps) {
+  const t = useT();
+  const locale = useLocale();
   const Icon = ICON_MAP[icon] || ClipboardList;
+
+  const name = lookupOrFallback(
+    t,
+    `forms.templates.${templateKey}.name`,
+    fallbackName,
+  );
+  const description = lookupOrFallback(
+    t,
+    `forms.templates.${templateKey}.description`,
+    fallbackDescription,
+  );
+  const category = lookupOrFallback(
+    t,
+    `forms.templates.category.${fallbackCategory}`,
+    fallbackCategory,
+  );
+
+  const fieldCountLabel = pluralize(fieldCount, locale, {
+    one: t("forms.templates.field_count_one", { count: fieldCount }),
+    other: t("forms.templates.field_count_other", { count: fieldCount }),
+  });
 
   return (
     <div className="rounded-lg border bg-card p-4 flex flex-col hover:border-foreground/20 transition-colors">
@@ -60,7 +101,7 @@ export function FormTemplateCard({
               {category}
             </Badge>
             <span className="text-[10px] text-muted-foreground">
-              {fieldCount} fields
+              {fieldCountLabel}
             </span>
           </div>
         </div>
@@ -77,7 +118,7 @@ export function FormTemplateCard({
         disabled={loading}
         className="w-full"
       >
-        Use Template
+        {t("forms.templates.use_template")}
       </Button>
     </div>
   );
