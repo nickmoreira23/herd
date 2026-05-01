@@ -2,9 +2,11 @@ import { prisma } from "@/lib/prisma";
 import { CommissionPageClient } from "@/components/network/promoters/commission-page-client";
 import { toNumber } from "@/lib/utils";
 import { connection } from "next/server";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 export default async function CommissionsPage() {
   await connection();
+  const locale = await getLocale();
   const [structures, tiers, plans, d2dPartners, agreements, ledgerSummary] = await Promise.all([
     // Legacy structures (for simulator backward compat)
     prisma.commissionStructure.findMany({
@@ -128,6 +130,7 @@ export default async function CommissionsPage() {
         agreements={serializedAgreements as never}
         ledgerSummary={ledgerSummary}
         initialStructures={serializedStructures as never}
+        locale={locale}
       />
     </div>
   );

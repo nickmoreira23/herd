@@ -1948,6 +1948,297 @@ export const messages = {
   "error.network.unexpected": "Ocorreu um erro inesperado",
   "error.network.profile.create_failed":
     "Ocorreu um erro inesperado. Tente novamente.",
+
+  // Promoters — Agreement editor
+  "network.promoters.agreement.editor.title.new": "Novo Acordo de Parceiro",
+  "network.promoters.agreement.editor.title.edit": "Editar Acordo",
+  "network.promoters.agreement.editor.description":
+    "Combine um plano de comissão com termos de pagamento e regras de clawback.",
+  "network.promoters.agreement.editor.field.name.label": "Nome do Acordo",
+  "network.promoters.agreement.editor.field.name.placeholder":
+    'ex. "Apex — Lançamento 2026"',
+  "network.promoters.agreement.editor.field.partner.label": "Parceiro D2D",
+  "network.promoters.agreement.editor.field.partner.placeholder":
+    "Selecione o parceiro",
+  "network.promoters.agreement.editor.field.plan.label": "Plano de Comissão",
+  "network.promoters.agreement.editor.field.plan.placeholder":
+    "Selecione o plano",
+  "network.promoters.agreement.editor.field.status.label": "Status",
+  "network.promoters.agreement.editor.status.draft": "Rascunho",
+  "network.promoters.agreement.editor.status.active": "Ativo",
+  "network.promoters.agreement.editor.status.suspended": "Suspenso",
+  "network.promoters.agreement.editor.status.terminated": "Encerrado",
+  "network.promoters.agreement.editor.field.cadence.label":
+    "Cadência de Pagamento",
+  "network.promoters.agreement.editor.cadence.weekly": "Semanal",
+  "network.promoters.agreement.editor.cadence.biweekly": "Quinzenal",
+  "network.promoters.agreement.editor.cadence.monthly": "Mensal",
+  "network.promoters.agreement.editor.field.hold.label":
+    "Período de Retenção (dias)",
+  "network.promoters.agreement.editor.field.effective_from.label":
+    "Vigente A Partir De",
+  "network.promoters.agreement.editor.field.notes.label": "Notas",
+  "network.promoters.agreement.editor.clawback.title": "Regras de Clawback",
+  "network.promoters.agreement.editor.clawback.description":
+    "Se um cliente cancelar dentro da janela, esta % do bônus adiantado é estornada.",
+  "network.promoters.agreement.editor.clawback.add": "Adicionar",
+  "network.promoters.agreement.editor.clawback.days_placeholder": "Dias",
+  "network.promoters.agreement.editor.clawback.days_suffix": "dias =",
+  "network.promoters.agreement.editor.clawback.percent_placeholder": "%",
+  "network.promoters.agreement.editor.clawback.percent_suffix": "% de clawback",
+  "network.promoters.agreement.editor.submit.create": "Criar Acordo",
+  "network.promoters.agreement.editor.submit.save": "Salvar Alterações",
+  "network.promoters.agreement.editor.submit.saving": "Salvando...",
+  "network.promoters.agreement.editor.feedback.created": "Acordo criado",
+  "network.promoters.agreement.editor.feedback.updated": "Acordo atualizado",
+
+  // Promoters — Commission Plan editor
+  "network.promoters.plan.editor.title.new": "Novo Plano de Comissão",
+  "network.promoters.plan.editor.title.edit": "Editar {name} v{version}",
+  "network.promoters.plan.editor.description":
+    "Defina bônus adiantados e taxas residuais por faixa de assinatura e cargo.",
+  "network.promoters.plan.editor.field.name.label": "Nome do Plano",
+  "network.promoters.plan.editor.field.name.placeholder":
+    'ex. "Lançamento 2026"',
+  "network.promoters.plan.editor.field.active.label": "Ativo",
+  "network.promoters.plan.editor.field.base_residual.label":
+    "Residual Base (%)",
+  "network.promoters.plan.editor.field.effective_from.label":
+    "Vigente A Partir De",
+  "network.promoters.plan.editor.field.effective_to.label": "Vigente Até",
+  "network.promoters.plan.editor.field.notes.label": "Notas",
+  "network.promoters.plan.editor.field.notes.placeholder": "Notas internas...",
+  "network.promoters.plan.editor.rates.title": "Taxas por Faixa e Cargo",
+  "network.promoters.plan.editor.rates.description":
+    "Bônus adiantado ($) e residual (%) para cada cargo em cada faixa de assinatura.",
+  "network.promoters.plan.editor.rates.col.tier": "Faixa",
+  "network.promoters.plan.editor.rates.col.bonus": "Bônus $",
+  "network.promoters.plan.editor.rates.col.residual": "Resid %",
+  "network.promoters.plan.editor.role.rep": "Rep",
+  "network.promoters.plan.editor.role.team_lead": "Líder de Equipe",
+  "network.promoters.plan.editor.role.regional_leader": "Líder Regional",
+  "network.promoters.plan.editor.submit.create": "Criar Plano",
+  "network.promoters.plan.editor.submit.save": "Salvar Alterações",
+  "network.promoters.plan.editor.submit.saving": "Salvando...",
+  "network.promoters.plan.editor.feedback.created": "Plano criado",
+  "network.promoters.plan.editor.feedback.updated": "Plano atualizado",
+
+  // Promoters — D2D Partner editor
+  "network.promoters.d2d_partner.editor.title.new": "Novo Parceiro D2D",
+  "network.promoters.d2d_partner.editor.title.edit": "Editar Parceiro D2D",
+  "network.promoters.d2d_partner.editor.description":
+    "Detalhes da empresa externa de vendas D2D.",
+  "network.promoters.d2d_partner.editor.field.name.label": "Nome da Empresa",
+  "network.promoters.d2d_partner.editor.field.name.placeholder":
+    "ex. Apex Door Knockers",
+  "network.promoters.d2d_partner.editor.field.active.label": "Ativo",
+  "network.promoters.d2d_partner.editor.field.contact_name.label":
+    "Nome do Contato",
+  "network.promoters.d2d_partner.editor.field.email.label": "E-mail",
+  "network.promoters.d2d_partner.editor.field.phone.label": "Telefone",
+  "network.promoters.d2d_partner.editor.field.notes.label": "Notas",
+  "network.promoters.d2d_partner.editor.submit.create": "Criar Parceiro",
+  "network.promoters.d2d_partner.editor.submit.save": "Salvar Alterações",
+  "network.promoters.d2d_partner.editor.submit.saving": "Salvando...",
+  "network.promoters.d2d_partner.editor.feedback.created": "Parceiro criado",
+  "network.promoters.d2d_partner.editor.feedback.updated":
+    "Parceiro atualizado",
+
+  // Promoters — Org Tree editor
+  "network.promoters.org_tree.editor.empty":
+    "Nenhum nó organizacional ainda. Adicione um Líder Regional para começar.",
+  "network.promoters.org_tree.editor.placeholder.name": "Nome",
+  "network.promoters.org_tree.editor.placeholder.email": "E-mail (opcional)",
+  "network.promoters.org_tree.editor.action.add": "Adicionar",
+  "network.promoters.org_tree.editor.action.cancel": "Cancelar",
+  "network.promoters.org_tree.editor.action.add_regional_leader":
+    "Adicionar Líder Regional",
+  "network.promoters.org_tree.editor.title.add_report":
+    "Adicionar subordinado",
+  "network.promoters.org_tree.editor.title.remove": "Remover",
+  "network.promoters.org_tree.editor.confirm_delete":
+    'Remover "{name}" e todos os seus subordinados?',
+  "network.promoters.org_tree.editor.role.rep": "Rep",
+  "network.promoters.org_tree.editor.role.team_lead": "Líder de Equipe",
+  "network.promoters.org_tree.editor.role.regional_leader": "Líder Regional",
+  "network.promoters.org_tree.editor.feedback.added": "Adicionado",
+  "network.promoters.org_tree.editor.feedback.removed": "Removido",
+
+  // Promoters — Errors
+  "error.network.promoters.agreement.save_failed":
+    "Falha ao salvar o acordo",
+  "error.network.promoters.plan.save_failed": "Falha ao salvar o plano",
+  "error.network.promoters.d2d_partner.save_failed":
+    "Falha ao salvar o parceiro",
+  "error.network.promoters.org_tree.add_failed": "Falha ao adicionar",
+
+  // Promoters — Tab labels
+  "network.promoters.tabs.plans": "Planos",
+  "network.promoters.tabs.partners": "Parceiros",
+  "network.promoters.tabs.agreements": "Acordos",
+  "network.promoters.tabs.overrides": "Overrides",
+  "network.promoters.tabs.accelerators": "Aceleradores",
+  "network.promoters.tabs.ledger": "Lançamentos",
+  "network.promoters.tabs.simulator": "Simulador",
+
+  // Promoters — Accelerators tab
+  "network.promoters.accelerators.description":
+    "Escalonamento de bônus por volume. Reps que vendem mais em um período recebem multiplicadores maiores nos bônus iniciais.",
+  "network.promoters.accelerators.plan_label": "Plano:",
+  "network.promoters.accelerators.plan_placeholder": "Selecione o plano",
+  "network.promoters.accelerators.section_title": "Faixas de Performance",
+  "network.promoters.accelerators.add_tier": "Adicionar Faixa",
+  "network.promoters.accelerators.empty":
+    "Sem faixas de performance. Todos os reps recebem o bônus base.",
+  "network.promoters.accelerators.save_button": "Salvar Faixas de Performance",
+  "network.promoters.accelerators.field.label": "Rótulo",
+  "network.promoters.accelerators.field.label_placeholder": "Bronze",
+  "network.promoters.accelerators.field.min_sales": "Vendas Mín.",
+  "network.promoters.accelerators.field.max_sales": "Vendas Máx.",
+  "network.promoters.accelerators.field.multiplier": "Multiplicador",
+  "network.promoters.accelerators.field.bonus_flat": "Fixo $",
+
+  // Promoters — Agreements tab
+  "network.promoters.agreements.description":
+    "Acordos de parceiro combinam um plano de comissão com regras de clawback e cronogramas de pagamento. Cada Parceiro D2D recebe um acordo atribuído.",
+  "network.promoters.agreements.new_button": "Novo Acordo",
+  "network.promoters.agreements.empty_title": "Nenhum acordo ainda",
+  "network.promoters.agreements.empty_description":
+    "Crie um acordo para atribuir um plano de comissão a um Parceiro D2D.",
+  "network.promoters.agreements.confirm_delete": 'Excluir "{name}"?',
+  "network.promoters.agreements.clawback_label": "Clawback:",
+  "network.promoters.agreements.status.active": "ATIVO",
+  "network.promoters.agreements.status.draft": "RASCUNHO",
+  "network.promoters.agreements.status.suspended": "SUSPENSO",
+  "network.promoters.agreements.status.terminated": "ENCERRADO",
+  "network.promoters.agreements.cadence.weekly": "Semanal",
+  "network.promoters.agreements.cadence.biweekly": "Quinzenal",
+  "network.promoters.agreements.cadence.monthly": "Mensal",
+  "network.promoters.agreements.cadence.quarterly": "Trimestral",
+  "network.promoters.agreements.metric.payout": "Pagamento",
+  "network.promoters.agreements.metric.hold": "Retenção",
+  "network.promoters.agreements.metric.hold_days": "{days} dias",
+  "network.promoters.agreements.metric.effective": "Vigência",
+  "network.promoters.agreements.metric.ledger": "Lançamentos",
+  "network.promoters.agreements.metric.ledger_entries":
+    "{count} lançamentos",
+
+  // Promoters — Plans tab
+  "network.promoters.plans.description":
+    "Planos de comissão definem bônus iniciais e taxas residuais por tier de assinatura e função. Apenas um plano pode estar ativo por vez.",
+  "network.promoters.plans.new_button": "Novo Plano",
+  "network.promoters.plans.empty_title": "Nenhum plano de comissão ainda",
+  "network.promoters.plans.empty_description":
+    "Crie seu primeiro plano para definir como reps D2D ganham bônus e residuais.",
+  "network.promoters.plans.confirm_delete": 'Excluir "{name} v{version}"?',
+  "network.promoters.plans.active_badge": "Ativo",
+  "network.promoters.plans.residual_suffix": "{value} residual",
+  "network.promoters.plans.action.duplicate": "Duplicar",
+  "network.promoters.plans.action.activate": "Ativar",
+  "network.promoters.plans.action.deactivate": "Desativar",
+  "network.promoters.plans.metric.residual": "Residual",
+  "network.promoters.plans.metric.overrides": "Overrides",
+  "network.promoters.plans.metric.overrides_count": "{count} regras",
+  "network.promoters.plans.metric.agreements": "Acordos",
+  "network.promoters.plans.metric.effective": "Vigência",
+
+  // Promoters — Partners (D2D) tab
+  "network.promoters.partners.description":
+    "Empresas externas de vendas D2D que vendem suas assinaturas. Cada parceiro tem sua própria árvore organizacional com Líderes Regionais, Líderes de Equipe e Reps.",
+  "network.promoters.partners.new_button": "Novo Parceiro",
+  "network.promoters.partners.empty_title": "Nenhum Parceiro D2D ainda",
+  "network.promoters.partners.empty_description":
+    "Adicione sua primeira empresa de vendas D2D para começar a montar árvores organizacionais.",
+  "network.promoters.partners.confirm_delete":
+    'Excluir "{name}" e todos os seus nós organizacionais?',
+  "network.promoters.partners.inactive_badge": "Inativo",
+  "network.promoters.partners.hide_org_tree": "Ocultar Árvore Organizacional",
+  "network.promoters.partners.show_org_tree": "Mostrar Árvore Organizacional",
+  "network.promoters.partners.people_count": "{count} pessoas",
+  "network.promoters.partners.metric.regional": "Regionais",
+  "network.promoters.partners.metric.team_leads": "Líderes de Equipe",
+  "network.promoters.partners.metric.reps": "Reps",
+  "network.promoters.partners.metric.agreements": "Acordos",
+
+  // Promoters — Ledger tab
+  "network.promoters.ledger.description":
+    "Cada evento de comissão é registrado aqui: ganho, retido, liberado, estornado e ajustado.",
+  "network.promoters.ledger.empty": "Nenhum lançamento encontrado.",
+  "network.promoters.ledger.page_of": "Página {page} de {total}",
+  "network.promoters.ledger.entries_count": "{count} lançamentos",
+  "network.promoters.ledger.summary.earned": "Ganho",
+  "network.promoters.ledger.summary.held": "Em retenção",
+  "network.promoters.ledger.summary.released": "Liberado",
+  "network.promoters.ledger.summary.clawed_back": "Estornado",
+  "network.promoters.ledger.entry_type.earned": "Ganho",
+  "network.promoters.ledger.entry_type.held": "Em retenção",
+  "network.promoters.ledger.entry_type.released": "Liberado",
+  "network.promoters.ledger.entry_type.clawed_back": "Estornado",
+  "network.promoters.ledger.entry_type.adjusted": "Ajustado",
+  "network.promoters.ledger.role.rl": "LR",
+  "network.promoters.ledger.role.tl": "LE",
+  "network.promoters.ledger.role.rep": "Rep",
+  "network.promoters.ledger.source.upfront_bonus": "Bônus Inicial",
+  "network.promoters.ledger.source.residual": "Residual",
+  "network.promoters.ledger.source.override": "Override",
+  "network.promoters.ledger.source.accelerator_bonus": "Acelerador",
+  "network.promoters.ledger.source.clawback": "Clawback",
+  "network.promoters.ledger.source.manual_adjustment": "Manual",
+  "network.promoters.ledger.filter.partner": "Parceiro",
+  "network.promoters.ledger.filter.type": "Tipo",
+  "network.promoters.ledger.filter.source": "Origem",
+  "network.promoters.ledger.filter.all_partners": "Todos os parceiros",
+  "network.promoters.ledger.filter.all_types": "Todos os tipos",
+  "network.promoters.ledger.filter.all_sources": "Todas as origens",
+  "network.promoters.ledger.column.date": "Data",
+  "network.promoters.ledger.column.person": "Pessoa",
+  "network.promoters.ledger.column.partner": "Parceiro",
+  "network.promoters.ledger.column.type": "Tipo",
+  "network.promoters.ledger.column.source": "Origem",
+  "network.promoters.ledger.column.amount": "Valor",
+  "network.promoters.ledger.column.description": "Descrição",
+
+  // Promoters — Overrides tab
+  "network.promoters.overrides.description":
+    "Quando um rep vende, seu upline recebe overrides. Defina o valor do override por nível de função para cada plano.",
+  "network.promoters.overrides.plan_label": "Plano:",
+  "network.promoters.overrides.plan_placeholder": "Selecione o plano",
+  "network.promoters.overrides.save_button": "Salvar Overrides",
+  "network.promoters.overrides.role_override_title": "Override de {role}",
+  "network.promoters.overrides.role.team_lead": "Líder de Equipe",
+  "network.promoters.overrides.role.regional_leader": "Líder Regional",
+  "network.promoters.overrides.type.flat": "$ Fixo por venda",
+  "network.promoters.overrides.type.percent_of_bonus": "% do bônus do rep",
+  "network.promoters.overrides.type.percent_of_revenue": "% da receita",
+  "network.promoters.overrides.field.type": "Tipo de Override",
+  "network.promoters.overrides.field.value_flat": "Valor ($)",
+  "network.promoters.overrides.field.value_percent": "Valor (%)",
+  "network.promoters.overrides.field.notes": "Notas",
+  "network.promoters.overrides.field.notes_placeholder": "Opcional",
+
+  // Promoters — Feedback toasts
+  "network.promoters.feedback.accelerators_saved":
+    "Faixas de performance salvas",
+  "network.promoters.feedback.agreement_deleted": "Acordo excluído",
+  "network.promoters.feedback.plan_activated": "Plano ativado",
+  "network.promoters.feedback.plan_deactivated": "Plano desativado",
+  "network.promoters.feedback.plan_deleted": "Plano excluído",
+  "network.promoters.feedback.plan_duplicated":
+    'Criada v{version} de "{name}"',
+  "network.promoters.feedback.partner_deleted": "Parceiro excluído",
+  "network.promoters.feedback.overrides_saved": "Regras de override salvas",
+
+  // Promoters — Errors (extended)
+  "error.network.promoters.accelerators.save_failed":
+    "Falha ao salvar faixas de performance",
+  "error.network.promoters.plan.delete_with_agreements":
+    "Não é possível excluir um plano com acordos ativos",
+  "error.network.promoters.plan.duplicate_failed":
+    "Falha ao duplicar o plano",
+  "error.network.promoters.partners.delete_with_agreements":
+    "Não é possível excluir parceiro com acordos ativos",
+  "error.network.promoters.overrides.save_failed":
+    "Falha ao salvar overrides",
 } as const;
 
 export type MessageKey = keyof typeof messages;

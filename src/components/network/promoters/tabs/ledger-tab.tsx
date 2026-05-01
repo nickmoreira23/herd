@@ -7,7 +7,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BookOpen, DollarSign, Clock, ArrowDownRight, ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
-import { formatCurrency, toNumber } from "@/lib/utils";
+import { toNumber } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale-context";
+import { formatNumberAsMoney } from "@/lib/money/format";
+import { formatDate } from "@/lib/i18n/format-date";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locales";
+import type { MessageKey } from "@/lib/i18n/messages/pt-BR";
 
 interface LedgerEntry {
   id: string;
@@ -33,6 +38,12 @@ interface PartnerOption { id: string; name: string }
 interface LedgerTabProps {
   initialSummary: LedgerSummary;
   partners: PartnerOption[];
+  /**
+   * Display locale for formatting. Optional for legacy RSC callers
+   * (admin/operation/finances/payments, admin/tools/finances/payments)
+   * which haven't been migrated yet (Phase ε). Defaults to DEFAULT_LOCALE.
+   */
+  locale?: Locale;
 }
 
 const TYPE_BADGES: Record<string, { className: string; icon: React.ElementType }> = {
@@ -43,9 +54,31 @@ const TYPE_BADGES: Record<string, { className: string; icon: React.ElementType }
   ADJUSTED: { className: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300", icon: BookOpen },
 };
 
-const ROLE_LABELS: Record<string, string> = { REGIONAL_LEADER: "RL", TEAM_LEAD: "TL", REP: "Rep" };
+const ENTRY_TYPE_KEYS: Record<string, MessageKey> = {
+  EARNED: "network.promoters.ledger.entry_type.earned",
+  HELD: "network.promoters.ledger.entry_type.held",
+  RELEASED: "network.promoters.ledger.entry_type.released",
+  CLAWED_BACK: "network.promoters.ledger.entry_type.clawed_back",
+  ADJUSTED: "network.promoters.ledger.entry_type.adjusted",
+};
 
-export function LedgerTab({ initialSummary, partners }: LedgerTabProps) {
+const ROLE_LABEL_KEYS: Record<string, MessageKey> = {
+  REGIONAL_LEADER: "network.promoters.ledger.role.rl",
+  TEAM_LEAD: "network.promoters.ledger.role.tl",
+  REP: "network.promoters.ledger.role.rep",
+};
+
+const SOURCE_KEYS: Record<string, MessageKey> = {
+  UPFRONT_BONUS: "network.promoters.ledger.source.upfront_bonus",
+  RESIDUAL: "network.promoters.ledger.source.residual",
+  OVERRIDE: "network.promoters.ledger.source.override",
+  ACCELERATOR_BONUS: "network.promoters.ledger.source.accelerator_bonus",
+  CLAWBACK: "network.promoters.ledger.source.clawback",
+  MANUAL_ADJUSTMENT: "network.promoters.ledger.source.manual_adjustment",
+};
+
+export function LedgerTab({ initialSummary, partners, locale = DEFAULT_LOCALE }: LedgerTabProps) {
+  const t = useT();
   const [summary] = useState(initialSummary);
   const [entries, setEntries] = useState<LedgerEntry[]>([]);
   const [page, setPage] = useState(1);
@@ -77,7 +110,7 @@ export function LedgerTab({ initialSummary, partners }: LedgerTabProps) {
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground max-w-lg">
-        Every commission event is recorded here: earned, held, released, clawed back, and adjusted.
+        {t("network.promoters.ledger.description")}
       </p>
 
       {/* Summary Cards */}
@@ -87,9 +120,9 @@ export function LedgerTab({ initialSummary, partners }: LedgerTabProps) {
             <div className="flex items-center gap-2">
               <ArrowUpRight className="h-4 w-4 text-green-600" />
               <div>
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Earned</p>
-                <p className="font-bold text-sm">{formatCurrency(summary.earned.total)}</p>
-                <p className="text-[10px] text-muted-foreground">{summary.earned.count} entries</p>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("network.promoters.ledger.summary.earned")}</p>
+                <p className="font-bold text-sm">{formatNumberAsMoney(summary.earned.total, locale)}</p>
+                <p className="text-[10px] text-muted-foreground">{t("network.promoters.ledger.entries_count", { count: summary.earned.count })}</p>
               </div>
             </div>
           </CardContent>
@@ -99,9 +132,9 @@ export function LedgerTab({ initialSummary, partners }: LedgerTabProps) {
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-yellow-600" />
               <div>
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Held</p>
-                <p className="font-bold text-sm">{formatCurrency(summary.held.total)}</p>
-                <p className="text-[10px] text-muted-foreground">{summary.held.count} entries</p>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("network.promoters.ledger.summary.held")}</p>
+                <p className="font-bold text-sm">{formatNumberAsMoney(summary.held.total, locale)}</p>
+                <p className="text-[10px] text-muted-foreground">{t("network.promoters.ledger.entries_count", { count: summary.held.count })}</p>
               </div>
             </div>
           </CardContent>
@@ -111,9 +144,9 @@ export function LedgerTab({ initialSummary, partners }: LedgerTabProps) {
             <div className="flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-blue-600" />
               <div>
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Released</p>
-                <p className="font-bold text-sm">{formatCurrency(summary.released.total)}</p>
-                <p className="text-[10px] text-muted-foreground">{summary.released.count} entries</p>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("network.promoters.ledger.summary.released")}</p>
+                <p className="font-bold text-sm">{formatNumberAsMoney(summary.released.total, locale)}</p>
+                <p className="text-[10px] text-muted-foreground">{t("network.promoters.ledger.entries_count", { count: summary.released.count })}</p>
               </div>
             </div>
           </CardContent>
@@ -123,9 +156,9 @@ export function LedgerTab({ initialSummary, partners }: LedgerTabProps) {
             <div className="flex items-center gap-2">
               <ArrowDownRight className="h-4 w-4 text-red-600" />
               <div>
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Clawed Back</p>
-                <p className="font-bold text-sm">{formatCurrency(Math.abs(summary.clawedBack.total))}</p>
-                <p className="text-[10px] text-muted-foreground">{summary.clawedBack.count} entries</p>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("network.promoters.ledger.summary.clawed_back")}</p>
+                <p className="font-bold text-sm">{formatNumberAsMoney(Math.abs(summary.clawedBack.total), locale)}</p>
+                <p className="text-[10px] text-muted-foreground">{t("network.promoters.ledger.entries_count", { count: summary.clawedBack.count })}</p>
               </div>
             </div>
           </CardContent>
@@ -135,41 +168,41 @@ export function LedgerTab({ initialSummary, partners }: LedgerTabProps) {
       {/* Filters */}
       <div className="flex gap-3 items-end">
         <div>
-          <Label className="text-xs">Partner</Label>
+          <Label className="text-xs">{t("network.promoters.ledger.filter.partner")}</Label>
           <Select value={filters.partnerId} onValueChange={val => { setFilters({ ...filters, partnerId: !val || val === "all" ? "" : val }); setPage(1); }}>
-            <SelectTrigger className="w-48 mt-1"><SelectValue placeholder="All partners" /></SelectTrigger>
+            <SelectTrigger className="w-48 mt-1"><SelectValue placeholder={t("network.promoters.ledger.filter.all_partners")} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All partners</SelectItem>
+              <SelectItem value="all">{t("network.promoters.ledger.filter.all_partners")}</SelectItem>
               {partners.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
         <div>
-          <Label className="text-xs">Type</Label>
+          <Label className="text-xs">{t("network.promoters.ledger.filter.type")}</Label>
           <Select value={filters.entryType} onValueChange={val => { setFilters({ ...filters, entryType: !val || val === "all" ? "" : val }); setPage(1); }}>
-            <SelectTrigger className="w-40 mt-1"><SelectValue placeholder="All types" /></SelectTrigger>
+            <SelectTrigger className="w-40 mt-1"><SelectValue placeholder={t("network.promoters.ledger.filter.all_types")} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All types</SelectItem>
-              <SelectItem value="EARNED">Earned</SelectItem>
-              <SelectItem value="HELD">Held</SelectItem>
-              <SelectItem value="RELEASED">Released</SelectItem>
-              <SelectItem value="CLAWED_BACK">Clawed Back</SelectItem>
-              <SelectItem value="ADJUSTED">Adjusted</SelectItem>
+              <SelectItem value="all">{t("network.promoters.ledger.filter.all_types")}</SelectItem>
+              <SelectItem value="EARNED">{t("network.promoters.ledger.entry_type.earned")}</SelectItem>
+              <SelectItem value="HELD">{t("network.promoters.ledger.entry_type.held")}</SelectItem>
+              <SelectItem value="RELEASED">{t("network.promoters.ledger.entry_type.released")}</SelectItem>
+              <SelectItem value="CLAWED_BACK">{t("network.promoters.ledger.entry_type.clawed_back")}</SelectItem>
+              <SelectItem value="ADJUSTED">{t("network.promoters.ledger.entry_type.adjusted")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div>
-          <Label className="text-xs">Source</Label>
+          <Label className="text-xs">{t("network.promoters.ledger.filter.source")}</Label>
           <Select value={filters.source} onValueChange={val => { setFilters({ ...filters, source: !val || val === "all" ? "" : val }); setPage(1); }}>
-            <SelectTrigger className="w-48 mt-1"><SelectValue placeholder="All sources" /></SelectTrigger>
+            <SelectTrigger className="w-48 mt-1"><SelectValue placeholder={t("network.promoters.ledger.filter.all_sources")} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All sources</SelectItem>
-              <SelectItem value="UPFRONT_BONUS">Upfront Bonus</SelectItem>
-              <SelectItem value="RESIDUAL">Residual</SelectItem>
-              <SelectItem value="OVERRIDE">Override</SelectItem>
-              <SelectItem value="ACCELERATOR_BONUS">Accelerator</SelectItem>
-              <SelectItem value="CLAWBACK">Clawback</SelectItem>
-              <SelectItem value="MANUAL_ADJUSTMENT">Manual</SelectItem>
+              <SelectItem value="all">{t("network.promoters.ledger.filter.all_sources")}</SelectItem>
+              <SelectItem value="UPFRONT_BONUS">{t("network.promoters.ledger.source.upfront_bonus")}</SelectItem>
+              <SelectItem value="RESIDUAL">{t("network.promoters.ledger.source.residual")}</SelectItem>
+              <SelectItem value="OVERRIDE">{t("network.promoters.ledger.source.override")}</SelectItem>
+              <SelectItem value="ACCELERATOR_BONUS">{t("network.promoters.ledger.source.accelerator_bonus")}</SelectItem>
+              <SelectItem value="CLAWBACK">{t("network.promoters.ledger.source.clawback")}</SelectItem>
+              <SelectItem value="MANUAL_ADJUSTMENT">{t("network.promoters.ledger.source.manual_adjustment")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -180,41 +213,46 @@ export function LedgerTab({ initialSummary, partners }: LedgerTabProps) {
         <table className="w-full text-sm">
           <thead className="bg-muted/50">
             <tr className="text-xs text-muted-foreground">
-              <th className="text-left py-2 px-3 font-medium">Date</th>
-              <th className="text-left py-2 px-3 font-medium">Person</th>
-              <th className="text-left py-2 px-3 font-medium">Partner</th>
-              <th className="text-left py-2 px-3 font-medium">Type</th>
-              <th className="text-left py-2 px-3 font-medium">Source</th>
-              <th className="text-right py-2 px-3 font-medium">Amount</th>
-              <th className="text-left py-2 px-3 font-medium">Description</th>
+              <th className="text-left py-2 px-3 font-medium">{t("network.promoters.ledger.column.date")}</th>
+              <th className="text-left py-2 px-3 font-medium">{t("network.promoters.ledger.column.person")}</th>
+              <th className="text-left py-2 px-3 font-medium">{t("network.promoters.ledger.column.partner")}</th>
+              <th className="text-left py-2 px-3 font-medium">{t("network.promoters.ledger.column.type")}</th>
+              <th className="text-left py-2 px-3 font-medium">{t("network.promoters.ledger.column.source")}</th>
+              <th className="text-right py-2 px-3 font-medium">{t("network.promoters.ledger.column.amount")}</th>
+              <th className="text-left py-2 px-3 font-medium">{t("network.promoters.ledger.column.description")}</th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {loading && (
-              <tr><td colSpan={7} className="py-8 text-center text-muted-foreground text-xs">Loading...</td></tr>
+              <tr><td colSpan={7} className="py-8 text-center text-muted-foreground text-xs">{t("common.states.loading")}</td></tr>
             )}
             {!loading && entries.length === 0 && (
-              <tr><td colSpan={7} className="py-8 text-center text-muted-foreground text-xs">No ledger entries found.</td></tr>
+              <tr><td colSpan={7} className="py-8 text-center text-muted-foreground text-xs">{t("network.promoters.ledger.empty")}</td></tr>
             )}
             {!loading && entries.map(entry => {
               const typeBadge = TYPE_BADGES[entry.entryType] || TYPE_BADGES.ADJUSTED;
               const Icon = typeBadge.icon;
               return (
                 <tr key={entry.id} className="hover:bg-muted/30">
-                  <td className="py-2 px-3 text-xs text-muted-foreground">{new Date(entry.createdAt).toLocaleDateString()}</td>
+                  <td className="py-2 px-3 text-xs text-muted-foreground">{formatDate(new Date(entry.createdAt), locale, "short")}</td>
                   <td className="py-2 px-3">
                     <span className="text-xs font-medium">{entry.orgNode.name}</span>
-                    <Badge variant="outline" className="ml-1.5 text-[9px] px-1 py-0">{ROLE_LABELS[entry.orgNode.roleType]}</Badge>
+                    <Badge variant="outline" className="ml-1.5 text-[9px] px-1 py-0">
+                      {ROLE_LABEL_KEYS[entry.orgNode.roleType] ? t(ROLE_LABEL_KEYS[entry.orgNode.roleType]) : entry.orgNode.roleType}
+                    </Badge>
                   </td>
                   <td className="py-2 px-3 text-xs">{entry.agreement?.partner.name || "—"}</td>
                   <td className="py-2 px-3">
                     <Badge className={`text-[10px] px-1.5 py-0 ${typeBadge.className}`}>
-                      <Icon className="h-2.5 w-2.5 mr-0.5" />{entry.entryType.replace("_", " ")}
+                      <Icon className="h-2.5 w-2.5 mr-0.5" />
+                      {ENTRY_TYPE_KEYS[entry.entryType] ? t(ENTRY_TYPE_KEYS[entry.entryType]) : entry.entryType.replace("_", " ")}
                     </Badge>
                   </td>
-                  <td className="py-2 px-3 text-xs text-muted-foreground">{entry.source.replace(/_/g, " ")}</td>
+                  <td className="py-2 px-3 text-xs text-muted-foreground">
+                    {SOURCE_KEYS[entry.source] ? t(SOURCE_KEYS[entry.source]) : entry.source.replace(/_/g, " ")}
+                  </td>
                   <td className={`py-2 px-3 text-right font-semibold text-xs ${Number(entry.amount) < 0 ? "text-red-600" : "text-green-600"}`}>
-                    {formatCurrency(toNumber(entry.amount))}
+                    {formatNumberAsMoney(toNumber(entry.amount), locale)}
                   </td>
                   <td className="py-2 px-3 text-xs text-muted-foreground line-clamp-1 max-w-[200px]">{entry.description || "—"}</td>
                 </tr>
@@ -227,7 +265,7 @@ export function LedgerTab({ initialSummary, partners }: LedgerTabProps) {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">Page {page} of {totalPages}</p>
+          <p className="text-xs text-muted-foreground">{t("network.promoters.ledger.page_of", { page, total: totalPages })}</p>
           <div className="flex gap-1">
             <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
               <ChevronLeft className="h-3.5 w-3.5" />

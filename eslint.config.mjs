@@ -154,6 +154,8 @@ const eslintConfig = defineConfig([
       "src/components/network/profile-types/**/*.{ts,tsx}",
       "src/components/network/roles/**/*.{ts,tsx}",
       "src/components/network/profiles/**/*.{ts,tsx}",
+      // Phase 1.5.6b-tris (Fase δ) — Promoters
+      "src/components/network/promoters/**/*.{ts,tsx}",
       // integrations/error.tsx (and [id]/error.tsx) are INTENTIONALLY
       // excluded: per Etapa 1.5.5 decision (Opção 2), shell-generic
       // strings were extracted to shell.error.* but feature-specific
@@ -166,7 +168,7 @@ const eslintConfig = defineConfig([
         ignoreProps: true,
         allowedStrings: [
           " ", "·", "—", "/", "-", "…", "D", "C", "%", "$",
-          ":", "(", ")", "ℹ", "→", "+", "*", "×",
+          ":", "(", ")", "ℹ", "→", "+", "*", "×", "v", "d =",
         ],
       }],
     },
