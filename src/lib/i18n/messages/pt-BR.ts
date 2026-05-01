@@ -2768,6 +2768,174 @@ export const messages = {
   "error.forms.import.no_file_selected":
     "Por favor, selecione um arquivo",
   "error.forms.import.failed": "Falha ao importar formulário",
+
+  // ============================================================
+  // Tables Admin (Phase 1.5.6d-β.1)
+  // ============================================================
+
+  // Tables — Field types (camelCase values stored in Prisma as String)
+  "tables.field_types.singleLineText.label": "Texto curto",
+  "tables.field_types.singleLineText.description":
+    "Entrada de texto de uma linha",
+  "tables.field_types.multilineText.label": "Texto longo",
+  "tables.field_types.multilineText.description":
+    "Área de texto multilinha",
+  "tables.field_types.number.label": "Número",
+  "tables.field_types.number.description": "Entrada numérica",
+  "tables.field_types.currency.label": "Moeda",
+  "tables.field_types.currency.description": "Valor monetário com símbolo",
+  "tables.field_types.percent.label": "Porcentagem",
+  "tables.field_types.percent.description": "Valor percentual",
+  "tables.field_types.singleSelect.label": "Seleção única",
+  "tables.field_types.singleSelect.description":
+    "Escolha uma opção em uma lista",
+  "tables.field_types.multiSelect.label": "Multi-seleção",
+  "tables.field_types.multiSelect.description":
+    "Escolha múltiplas opções em uma lista",
+  "tables.field_types.checkbox.label": "Caixa de seleção",
+  "tables.field_types.checkbox.description": "Verdadeiro ou falso",
+  "tables.field_types.date.label": "Data",
+  "tables.field_types.date.description": "Data do calendário",
+  "tables.field_types.url.label": "URL",
+  "tables.field_types.url.description": "Endereço de página web",
+  "tables.field_types.email.label": "E-mail",
+  "tables.field_types.email.description":
+    "Endereço de e-mail",
+  "tables.field_types.linkedRecord.label": "Registro vinculado",
+  "tables.field_types.linkedRecord.description":
+    "Vínculo com registros de outra tabela",
+  "tables.field_types.media.label": "Mídia",
+  "tables.field_types.media.description": "Imagens ou vídeos",
+  "tables.field_types.attachment.label": "Anexo",
+  "tables.field_types.attachment.description": "Arquivos anexados",
+  "tables.field_types.createdTime.label": "Criado em",
+  "tables.field_types.createdTime.description":
+    "Data e hora de criação do registro",
+  "tables.field_types.lastModifiedTime.label": "Modificado em",
+  "tables.field_types.lastModifiedTime.description":
+    "Data e hora da última modificação",
+  "tables.field_types.autoNumber.label": "Número automático",
+  "tables.field_types.autoNumber.description":
+    "Número incrementado automaticamente",
+  "tables.field_types.formula.label": "Fórmula",
+  "tables.field_types.formula.description":
+    "Valor calculado a partir de outros campos",
+  "tables.field_types.rollup.label": "Rollup",
+  "tables.field_types.rollup.description":
+    "Agregação sobre registros vinculados",
+  "tables.field_types.lookup.label": "Lookup",
+  "tables.field_types.lookup.description":
+    "Valor consultado em registros vinculados",
+  "tables.field_types.count.label": "Contagem",
+  "tables.field_types.count.description":
+    "Número de registros vinculados",
+
+  // Tables — Cells
+  "tables.cells.text.aria_label": "Editar texto",
+  "tables.cells.number.aria_label": "Editar número",
+  "tables.cells.date.aria_label": "Editar data",
+  "tables.cells.url.aria_label_url": "Editar URL",
+  "tables.cells.url.aria_label_email": "Editar e-mail",
+  "tables.cells.checkbox.checked": "Marcado",
+  "tables.cells.checkbox.unchecked": "Desmarcado",
+  "tables.cells.select.no_choices_configured":
+    "Nenhuma opção configurada",
+  "tables.cells.linked_record.id_preview": "{id}…",
+  "tables.cells.linked_record.overflow_count": "+{count}",
+  "tables.cells.media.empty_state": "Sem mídia",
+  "tables.cells.media.uploading": "Enviando…",
+  "tables.cells.media.add_more": "Adicionar mais",
+  "tables.cells.media.drop_or_click": "Solte arquivos ou clique",
+  "tables.cells.media.remove": "Remover",
+  "tables.cells.media.previous": "Anterior",
+  "tables.cells.media.next": "Próximo",
+  "tables.cells.media.gallery_position": "{current} / {total}",
+  "tables.cells.media.thumbnail_aria": "Miniatura {index}",
+  "tables.cells.media.overflow_count": "+{count}",
+  "tables.cells.media.files_count": "{count} arquivos",
+  "tables.cells.media.file_input_label": "Selecionar arquivos",
+
+  // Tables — Toolbar
+  "tables.toolbar.search_placeholder": "Buscar registros…",
+  "tables.toolbar.search_aria": "Buscar registros",
+  "tables.toolbar.records_count": "{count} registros",
+  "tables.toolbar.records_count_filtered":
+    "{shown} / {total} registros",
+  "tables.toolbar.add_field": "Campo",
+  "tables.toolbar.add_record": "Registro",
+
+  // Tables — Grid (column headers, rows, footer, empty)
+  "tables.grid.column_header.drag_handle": "Reordenar coluna",
+  "tables.grid.column_header.primary_key_short": "PK",
+  "tables.grid.column_header.primary_key_title": "Chave primária",
+  "tables.grid.column_header.row_number_title": "Número da linha",
+  "tables.grid.row.drag_handle": "Reordenar linha",
+  "tables.grid.row.delete_record": "Excluir registro",
+  "tables.grid.footer.new_record": "Novo registro",
+  "tables.grid.empty.no_search_match":
+    "Nenhum registro corresponde à sua busca",
+
+  // Tables — View (header chrome)
+  "tables.view.back_to_tables": "Voltar para Tabelas",
+  "tables.view.no_description": "Sem descrição",
+  "tables.view.process_button": "Processar",
+  "tables.view.processing_badge": "Processando…",
+  "tables.view.add_field": "Adicionar campo",
+  "tables.view.fields_count": "{count} campos",
+  "tables.view.records_count": "{count} registros",
+  "tables.view.chunks_count": "{count} chunks",
+  "tables.view.status.pending": "Pendente",
+  "tables.view.status.processing": "Processando",
+  "tables.view.status.ready": "Pronto",
+  "tables.view.status.error": "Erro",
+
+  // Tables — Field config modal
+  "tables.field_config.title_add": "Adicionar campo",
+  "tables.field_config.title_edit": "Editar campo",
+  "tables.field_config.name_label": "Nome",
+  "tables.field_config.name_placeholder": "ex.: Preço, Status, E-mail",
+  "tables.field_config.type_label": "Tipo",
+  "tables.field_config.description_label": "Descrição (opcional)",
+  "tables.field_config.description_placeholder":
+    "O que este campo armazena?",
+  "tables.field_config.precision_label": "Precisão decimal",
+  "tables.field_config.precision_integer": "0 (inteiro)",
+  "tables.field_config.currency_symbol_label": "Símbolo monetário",
+  "tables.field_config.choices_label": "Opções",
+  "tables.field_config.add_choice": "Adicionar opção",
+  "tables.field_config.add_choice_placeholder": "Adicionar uma opção…",
+  "tables.field_config.remove_choice": "Remover opção",
+  "tables.field_config.link_to_table_label": "Vincular à tabela",
+  "tables.field_config.no_tables_available":
+    "Nenhuma outra tabela disponível para vincular. Crie outra tabela primeiro.",
+  "tables.field_config.select_table_placeholder":
+    "Selecione uma tabela…",
+  "tables.field_config.required_field": "Campo obrigatório",
+  "tables.field_config.add_button": "Adicionar campo",
+  "tables.field_config.update_button": "Atualizar campo",
+  "tables.field_config.adding": "Adicionando…",
+  "tables.field_config.updating": "Atualizando…",
+
+  // Tables — Feedback toasts
+  "tables.feedback.record_deleted": "Registro excluído",
+  "tables.feedback.field_added": "Campo adicionado",
+  "tables.feedback.field_updated": "Campo atualizado",
+  "tables.feedback.processed_for_knowledge":
+    "Tabela processada para a base de conhecimento",
+
+  // Tables — Errors
+  "error.tables.upload_failed": "Falha no upload",
+  "error.tables.processing_failed": "Falha no processamento",
+  "error.tables.record_add_failed": "Falha ao adicionar registro",
+  "error.tables.cell_save_failed": "Falha ao salvar",
+  "error.tables.column_reorder_failed": "Falha ao reordenar colunas",
+  "error.tables.row_reorder_failed": "Falha ao reordenar linhas",
+  "error.tables.field_name_required": "Nome do campo é obrigatório",
+  "error.tables.linked_table_required":
+    "Por favor, selecione uma tabela para vincular",
+  "error.tables.field_create_failed": "Falha ao adicionar campo",
+  "error.tables.field_update_failed": "Falha ao atualizar campo",
+  "error.tables.unexpected_error": "Ocorreu um erro inesperado",
 } as const;
 
 export type MessageKey = keyof typeof messages;

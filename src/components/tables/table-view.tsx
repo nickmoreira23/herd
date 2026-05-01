@@ -6,7 +6,9 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Plus, Loader2, Zap } from "lucide-react";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
+import type { MessageKey } from "@/lib/i18n/t";
 import { FieldConfigModal } from "./field-config-modal";
 import { TableGrid } from "./table-grid";
 import type {
@@ -22,6 +24,26 @@ const STATUS_STYLES: Record<string, string> = {
   ERROR: "bg-red-500/10 text-red-500 border-red-500/20",
 };
 
+const STATUS_LABEL_KEYS = {
+  PENDING: "tables.view.status.pending",
+  PROCESSING: "tables.view.status.processing",
+  READY: "tables.view.status.ready",
+  ERROR: "tables.view.status.error",
+} as const satisfies Record<
+  "PENDING" | "PROCESSING" | "READY" | "ERROR",
+  MessageKey
+>;
+
+function getStatusLabel(
+  status: string,
+  t: (key: MessageKey, params?: Record<string, string | number>) => string
+): string {
+  if (status in STATUS_LABEL_KEYS) {
+    return t(STATUS_LABEL_KEYS[status as keyof typeof STATUS_LABEL_KEYS]);
+  }
+  return status;
+}
+
 interface TableViewProps {
   table: TableRow;
   initialFields: TableFieldRow[];
@@ -35,6 +57,7 @@ export function TableView({
   initialRecords,
   totalRecords,
 }: TableViewProps) {
+  const t = useT();
   const router = useRouter();
   const [table, setTable] = useState<TableRow>(initialTable);
   const [fields, setFields] =
@@ -67,16 +90,16 @@ export function TableView({
           processedAt: json.data.processedAt,
           errorMessage: json.data.errorMessage,
         }));
-        toast.success("Table processed for knowledge base");
+        notifySuccess("tables.feedback.processed_for_knowledge", t);
       } else {
-        toast.error(json.error || "Processing failed");
+        notifyError("error.tables.processing_failed", t);
       }
     } catch {
-      toast.error("Processing failed");
+      notifyError("error.tables.processing_failed", t);
     } finally {
       setProcessing(false);
     }
-  }, [table.id]);
+  }, [table.id, t]);
 
   const showProcessButton =
     table.status === "PENDING" || table.status === "ERROR";
@@ -94,13 +117,15 @@ export function TableView({
             className="text-xs text-muted-foreground hover:text-foreground -ml-2 mb-2"
           >
             <ArrowLeft className="h-3 w-3 mr-1" />
-            Back to Tables
+            {t("tables.view.back_to_tables")}
           </Button>
         </div>
 
         <PageHeader
           title={table.name}
-          description={table.description || "No description"}
+          description={
+            table.description || t("tables.view.no_description")
+          }
           className="pl-0 pt-0"
           action={
             <div className="flex items-center gap-2">
@@ -116,7 +141,7 @@ export function TableView({
                   ) : (
                     <Zap className="mr-1 h-3 w-3" />
                   )}
-                  Process
+                  {t("tables.view.process_button")}
                 </Button>
               )}
               {processing && (
@@ -125,7 +150,7 @@ export function TableView({
                   className="text-xs bg-blue-500/10 text-blue-500 border-blue-500/20"
                 >
                   <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                  Processing...
+                  {t("tables.view.processing_badge")}
                 </Badge>
               )}
               <Button
@@ -133,7 +158,7 @@ export function TableView({
                 onClick={() => setShowFieldConfig(true)}
               >
                 <Plus className="mr-1 h-3 w-3" />
-                Add Field
+                {t("tables.view.add_field")}
               </Button>
             </div>
           }
@@ -145,20 +170,22 @@ export function TableView({
             variant="outline"
             className="text-xs bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
           >
-            {fields.length} fields
+            {t("tables.view.fields_count", { count: fields.length })}
           </Badge>
           <Badge variant="outline" className="text-xs">
-            {table.recordCount} records
+            {t("tables.view.records_count", { count: table.recordCount })}
           </Badge>
           <Badge
             variant="outline"
             className={`text-xs ${STATUS_STYLES[table.status] || ""}`}
           >
-            {table.status}
+            {getStatusLabel(table.status, t)}
           </Badge>
           {table.status === "READY" && table.chunkCount > 0 && (
             <Badge variant="outline" className="text-xs">
-              {table.chunkCount} chunks
+              {t("tables.view.chunks_count", {
+                count: table.chunkCount,
+              })}
             </Badge>
           )}
           {table.errorMessage && (
