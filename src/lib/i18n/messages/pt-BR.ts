@@ -2991,6 +2991,70 @@ export const messages = {
     "Falha ao importar",
   "error.tables.import.airtable.start_failed":
     "Falha ao iniciar importação",
+
+  // ─── Tables: list/chrome (Phase 1.5.6d-β.3) ────────────────────────
+  "tables.list.title": "Tabelas",
+  "tables.list.description":
+    "Conjuntos de dados estruturados, tabelas de consulta e dados de referência para operações e relatórios.",
+  "tables.list.create_table": "Criar tabela",
+  "tables.list.import_from_airtable": "Importar do Airtable",
+  "tables.list.search_placeholder": "Buscar por nome ou descrição…",
+  "tables.list.items_count": "{count} itens",
+  "tables.list.stats.total": "Total",
+  "tables.list.stats.ready": "Prontas",
+  "tables.list.stats.processing": "Processando",
+  "tables.list.stats.total_records": "Total de registros",
+  "tables.list.filter.all_status": "Todos os status",
+  "tables.list.column.name": "Nome",
+  "tables.list.column.fields": "Campos",
+  "tables.list.column.records": "Registros",
+  "tables.list.column.status": "Status",
+  "tables.list.column.created": "Criada em",
+  "tables.list.row.actions.open": "Abrir tabela",
+  "tables.list.row.actions.activate": "Ativar",
+  "tables.list.row.actions.deactivate": "Desativar",
+  "tables.list.status.pending": "Pendente",
+  "tables.list.status.processing": "Processando",
+  "tables.list.status.ready": "Pronta",
+  "tables.list.status.error": "Erro",
+
+  // ─── Tables: empty state ───────────────────────────────────────────
+  "tables.empty.title": "Nenhuma tabela ainda",
+  "tables.empty.description":
+    "Crie conjuntos de dados estruturados e tabelas de consulta. Tabelas ajudam a organizar dados de referência para operações, cálculos de comissão e relatórios.",
+  "tables.empty.short_description":
+    "Crie uma tabela ou importe do Airtable.",
+  "tables.empty.cta_create": "Crie sua primeira tabela",
+
+  // ─── Tables: create modal ──────────────────────────────────────────
+  "tables.create.title": "Criar tabela",
+  "tables.create.field_name_label": "Nome",
+  "tables.create.field_name_placeholder":
+    "ex.: Produtos, Faixas de Comissão",
+  "tables.create.field_description_label": "Descrição (opcional)",
+  "tables.create.field_description_placeholder":
+    "Que dados esta tabela vai armazenar?",
+  "tables.create.submit": "Criar tabela",
+  "tables.create.submitting": "Criando…",
+
+  // ─── Tables: delete dialogs ────────────────────────────────────────
+  "tables.delete.title": "Excluir tabela",
+  "tables.delete.confirmation":
+    "Tem certeza que deseja excluir \"{name}\"? Todos os campos, registros e dados associados serão removidos permanentemente. Esta ação não pode ser desfeita.",
+  "tables.fields.delete.title": "Excluir campo",
+  "tables.fields.delete.confirmation":
+    "Tem certeza que deseja excluir o campo \"{name}\"? Todos os dados armazenados nesta coluna serão removidos permanentemente de cada registro. Esta ação não pode ser desfeita.",
+
+  // ─── Tables: feedback ──────────────────────────────────────────────
+  "tables.feedback.table_created": "Tabela criada",
+  "tables.feedback.table_deleted": "Tabela excluída",
+  "tables.feedback.activated": "Ativada",
+  "tables.feedback.deactivated": "Desativada",
+
+  // ─── Tables: errors (chrome) ───────────────────────────────────────
+  "error.tables.name_required": "Nome é obrigatório",
+  "error.tables.create_failed": "Falha ao criar tabela",
+  "error.tables.delete_failed": "Falha ao excluir tabela",
 } as const;
 
 export type MessageKey = keyof typeof messages;

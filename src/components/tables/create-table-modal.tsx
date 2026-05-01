@@ -12,7 +12,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Table2, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
 
 interface CreateTableModalProps {
   open: boolean;
@@ -25,6 +26,7 @@ export function CreateTableModal({
   onOpenChange,
   onComplete,
 }: CreateTableModalProps) {
+  const t = useT();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -37,7 +39,7 @@ export function CreateTableModal({
 
   async function handleSubmit() {
     if (!name.trim()) {
-      toast.error("Name is required");
+      notifyError("error.tables.name_required", t);
       return;
     }
 
@@ -53,12 +55,11 @@ export function CreateTableModal({
       });
 
       if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        toast.error(err?.error || "Failed to create table");
+        notifyError("error.tables.create_failed", t);
         return;
       }
 
-      toast.success("Table created");
+      notifySuccess("tables.feedback.table_created", t);
       reset();
       onOpenChange(false);
       onComplete();
@@ -79,23 +80,27 @@ export function CreateTableModal({
     >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Create Table</DialogTitle>
+          <DialogTitle>{t("tables.create.title")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label className="text-xs">Name</Label>
+            <Label className="text-xs">
+              {t("tables.create.field_name_label")}
+            </Label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Products, Commission Tiers"
+              placeholder={t("tables.create.field_name_placeholder")}
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Description (optional)</Label>
+            <Label className="text-xs">
+              {t("tables.create.field_description_label")}
+            </Label>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="What data will this table store?"
+              placeholder={t("tables.create.field_description_placeholder")}
               rows={2}
             />
           </div>
@@ -108,12 +113,12 @@ export function CreateTableModal({
             {submitting ? (
               <>
                 <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                Creating...
+                {t("tables.create.submitting")}
               </>
             ) : (
               <>
                 <Table2 className="h-3.5 w-3.5 mr-1.5" />
-                Create Table
+                {t("tables.create.submit")}
               </>
             )}
           </Button>

@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { TablesListClient } from "@/components/tables/tables-list-client";
 import { connection } from "next/server";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 export default async function TablesPage() {
   await connection();
+  const locale = await getLocale();
   const [tables, airtableIntegration] = await Promise.all([
     prisma.knowledgeTable.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.integration.findUnique({
@@ -36,6 +38,7 @@ export default async function TablesPage() {
       initialTables={serialized}
       initialStats={stats}
       airtableConnected={airtableConnected}
+      locale={locale}
     />
   );
 }

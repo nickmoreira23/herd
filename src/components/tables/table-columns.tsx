@@ -10,6 +10,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ArrowUpDown, MoreHorizontal, ExternalLink, Loader2 } from "lucide-react";
+import { formatDate } from "@/lib/i18n/format-date";
+import type { Locale } from "@/lib/i18n/locales";
+import type { MessageKey } from "@/lib/i18n/messages/pt-BR";
 import type { TableRow } from "./types";
 
 interface ColumnActions {
@@ -18,32 +21,43 @@ interface ColumnActions {
   onDelete: (table: TableRow) => void;
 }
 
+type TranslateFn = (
+  key: MessageKey,
+  params?: Record<string, string | number>,
+) => string;
+
 const STATUS_CONFIG: Record<
   string,
-  { label: string; className: string; spinning?: boolean }
+  { labelKey: MessageKey; className: string; spinning?: boolean }
 > = {
   PENDING: {
-    label: "Pending",
+    labelKey: "tables.list.status.pending",
     className: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
   },
   PROCESSING: {
-    label: "Processing",
+    labelKey: "tables.list.status.processing",
     className: "bg-blue-500/10 text-blue-500 border-blue-500/20",
     spinning: true,
   },
   READY: {
-    label: "Ready",
+    labelKey: "tables.list.status.ready",
     className: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
   },
   ERROR: {
-    label: "Error",
+    labelKey: "tables.list.status.error",
     className: "bg-red-500/10 text-red-500 border-red-500/20",
   },
 };
 
+interface GetTableColumnsParams extends ColumnActions {
+  t: TranslateFn;
+  locale: Locale;
+}
+
 export function getTableColumns(
-  actions: ColumnActions
+  params: GetTableColumnsParams,
 ): ColumnDef<TableRow>[] {
+  const { t, locale, ...actions } = params;
   return [
     {
       accessorKey: "name",
@@ -52,7 +66,7 @@ export function getTableColumns(
           className="inline-flex items-center gap-1 text-xs font-medium hover:text-foreground/80"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Name
+          {t("tables.list.column.name")}
           <ArrowUpDown className="h-3 w-3" />
         </button>
       ),
@@ -72,7 +86,9 @@ export function getTableColumns(
     },
     {
       accessorKey: "fieldCount",
-      header: () => <span className="text-xs">Fields</span>,
+      header: () => (
+        <span className="text-xs">{t("tables.list.column.fields")}</span>
+      ),
       cell: ({ row }) => (
         <Badge
           variant="outline"
@@ -89,7 +105,7 @@ export function getTableColumns(
           className="inline-flex items-center gap-1 text-xs font-medium hover:text-foreground/80"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Records
+          {t("tables.list.column.records")}
           <ArrowUpDown className="h-3 w-3" />
         </button>
       ),
@@ -101,7 +117,9 @@ export function getTableColumns(
     },
     {
       accessorKey: "status",
-      header: () => <span className="text-xs">Status</span>,
+      header: () => (
+        <span className="text-xs">{t("tables.list.column.status")}</span>
+      ),
       cell: ({ row }) => {
         const status = row.original.status;
         const config = STATUS_CONFIG[status] || STATUS_CONFIG.PENDING;
@@ -113,7 +131,7 @@ export function getTableColumns(
             {config.spinning && (
               <Loader2 className="h-3 w-3 mr-1 animate-spin" />
             )}
-            {config.label}
+            {t(config.labelKey)}
           </Badge>
         );
       },
@@ -125,13 +143,13 @@ export function getTableColumns(
           className="inline-flex items-center gap-1 text-xs font-medium hover:text-foreground/80"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Created
+          {t("tables.list.column.created")}
           <ArrowUpDown className="h-3 w-3" />
         </button>
       ),
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">
-          {new Date(row.original.createdAt).toLocaleDateString()}
+          {formatDate(new Date(row.original.createdAt), locale)}
         </span>
       ),
     },
@@ -147,18 +165,20 @@ export function getTableColumns(
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => actions.onOpen(row.original)}>
               <ExternalLink className="mr-2 h-3.5 w-3.5" />
-              Open Table
+              {t("tables.list.row.actions.open")}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => actions.onToggleActive(row.original)}
             >
-              {row.original.isActive ? "Deactivate" : "Activate"}
+              {row.original.isActive
+                ? t("tables.list.row.actions.deactivate")
+                : t("tables.list.row.actions.activate")}
             </DropdownMenuItem>
             <DropdownMenuItem
               className="text-destructive"
               onClick={() => actions.onDelete(row.original)}
             >
-              Delete
+              {t("common.actions.delete")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
