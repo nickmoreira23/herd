@@ -2919,4 +2919,68 @@ export const messages: Record<MessageKey, string> = {
     "Failed to fetch tables",
   "error.tables.import.airtable.import_failed": "Import failed",
   "error.tables.import.airtable.start_failed": "Failed to start import",
+
+  // ─── Tables: list/chrome (Phase 1.5.6d-β.3) ────────────────────────
+  "tables.list.title": "Tables",
+  "tables.list.description":
+    "Structured datasets, lookup tables, and reference data for operations and reporting.",
+  "tables.list.create_table": "Create Table",
+  "tables.list.import_from_airtable": "Import from Airtable",
+  "tables.list.search_placeholder": "Search by name or description...",
+  "tables.list.items_count": "{count} items",
+  "tables.list.stats.total": "Total",
+  "tables.list.stats.ready": "Ready",
+  "tables.list.stats.processing": "Processing",
+  "tables.list.stats.total_records": "Total Records",
+  "tables.list.filter.all_status": "All Status",
+  "tables.list.column.name": "Name",
+  "tables.list.column.fields": "Fields",
+  "tables.list.column.records": "Records",
+  "tables.list.column.status": "Status",
+  "tables.list.column.created": "Created",
+  "tables.list.row.actions.open": "Open Table",
+  "tables.list.row.actions.activate": "Activate",
+  "tables.list.row.actions.deactivate": "Deactivate",
+  "tables.list.status.pending": "Pending",
+  "tables.list.status.processing": "Processing",
+  "tables.list.status.ready": "Ready",
+  "tables.list.status.error": "Error",
+
+  // ─── Tables: empty state ───────────────────────────────────────────
+  "tables.empty.title": "No tables yet",
+  "tables.empty.description":
+    "Create structured datasets and lookup tables. Tables help organize reference data for operations, commission calculations, and reporting.",
+  "tables.empty.short_description":
+    "Create a table or import from Airtable.",
+  "tables.empty.cta_create": "Create your first table",
+
+  // ─── Tables: create modal ──────────────────────────────────────────
+  "tables.create.title": "Create Table",
+  "tables.create.field_name_label": "Name",
+  "tables.create.field_name_placeholder":
+    "e.g. Products, Commission Tiers",
+  "tables.create.field_description_label": "Description (optional)",
+  "tables.create.field_description_placeholder":
+    "What data will this table store?",
+  "tables.create.submit": "Create Table",
+  "tables.create.submitting": "Creating...",
+
+  // ─── Tables: delete dialogs ────────────────────────────────────────
+  "tables.delete.title": "Delete table",
+  "tables.delete.confirmation":
+    "Are you sure you want to delete \"{name}\"? All fields, records, and associated data will be permanently removed. This action cannot be undone.",
+  "tables.fields.delete.title": "Delete field",
+  "tables.fields.delete.confirmation":
+    "Are you sure you want to delete the \"{name}\" field? All data stored in this column will be permanently removed from every record. This action cannot be undone.",
+
+  // ─── Tables: feedback ──────────────────────────────────────────────
+  "tables.feedback.table_created": "Table created",
+  "tables.feedback.table_deleted": "Table deleted",
+  "tables.feedback.activated": "Activated",
+  "tables.feedback.deactivated": "Deactivated",
+
+  // ─── Tables: errors (chrome) ───────────────────────────────────────
+  "error.tables.name_required": "Name is required",
+  "error.tables.create_failed": "Failed to create table",
+  "error.tables.delete_failed": "Failed to delete table",
 };

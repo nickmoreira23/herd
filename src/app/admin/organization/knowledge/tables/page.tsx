@@ -2,9 +2,11 @@ import { prisma } from "@/lib/prisma";
 import { TableList } from "@/components/tables/table-list";
 import { KnowledgeTablesEmpty } from "@/components/knowledge/tables/knowledge-tables-empty";
 import { connection } from "next/server";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 export default async function KnowledgeTablesPage() {
   await connection();
+  const locale = await getLocale();
   const [tables, airtableIntegration] = await Promise.all([
     prisma.knowledgeTable.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.integration.findUnique({
@@ -41,6 +43,7 @@ export default async function KnowledgeTablesPage() {
       initialTables={serialized}
       initialStats={stats}
       airtableConnected={airtableConnected}
+      locale={locale}
     />
   );
 }
