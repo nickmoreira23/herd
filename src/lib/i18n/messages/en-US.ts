@@ -1492,6 +1492,194 @@ export const messages: Record<MessageKey, string> = {
   "error.organization.location_name_required": "Location name is required",
 
   // ============================================================
+  // Organization — Users (Etapa 1.5.6b-tris Phase ε)
+  // ============================================================
+  "organization.users.column.name": "Name",
+  "organization.users.column.network": "Network",
+  "organization.users.column.profile_type": "Profile Type",
+  "organization.users.column.roles": "Roles",
+  "organization.users.column.status": "Status",
+  "organization.users.column.last_login": "Last Login",
+  "organization.users.column.created": "Created",
+  "organization.users.column.never": "Never",
+  "organization.users.column.select_all": "Select all",
+  "organization.users.column.select_row": "Select row",
+  "organization.users.action.suspend": "Suspend",
+  "organization.users.action.activate": "Activate",
+  "organization.users.status.active": "Active",
+  "organization.users.status.pending": "Pending",
+  "organization.users.status.suspended": "Suspended",
+  "organization.users.status.terminated": "Terminated",
+  "organization.users.network.internal": "Internal",
+  "organization.users.network.external": "External",
+
+  // user-table.tsx — header
+  "organization.users.header.title": "Members",
+  "organization.users.header.description":
+    "Manage all members across your network — internal team and external channels.",
+  "organization.users.count_label": "member",
+
+  // user-table.tsx — toolbar / filters
+  "organization.users.toolbar.search_placeholder": "Search by name or email…",
+  "organization.users.toolbar.count": "{count} members",
+  "organization.users.filter.network_all": "All Networks",
+  "organization.users.filter.status_all": "All Statuses",
+  "organization.users.filter.profile_type_all": "All Types",
+  "organization.users.filter.role_all": "All Roles",
+
+  // user-table.tsx — actions
+  "organization.users.action.add_member": "Add Member",
+  "organization.users.action.create_member": "Create Member",
+  "organization.users.action.save_changes": "Save Changes",
+  "organization.users.action.saving": "Saving…",
+  "organization.users.action.reset_password": "Reset Password",
+  "organization.users.action.cancel_password_reset": "Cancel password reset",
+  "organization.users.action.done": "Done",
+
+  // user-table.tsx — modal (create/edit)
+  "organization.users.modal.add_title": "Add Member",
+  "organization.users.modal.edit_title": "Edit Member",
+  "organization.users.modal.add_description":
+    "Add a new member to the network. A temporary password will be generated so they can log in.",
+  "organization.users.modal.edit_description":
+    "Update this member's details, profile type, and roles.",
+  "organization.users.modal.delete_confirm":
+    'Delete "{name}"? This cannot be undone.',
+  "organization.users.modal.first_name_label": "First Name",
+  "organization.users.modal.first_name_placeholder": "First name",
+  "organization.users.modal.last_name_label": "Last Name",
+  "organization.users.modal.last_name_placeholder": "Last name",
+  "organization.users.modal.email_label": "Email",
+  "organization.users.modal.email_placeholder": "user@company.com",
+  "organization.users.modal.phone_label": "Phone",
+  "organization.users.modal.phone_placeholder": "+1 (555) 000-0000",
+  "organization.users.modal.password_label": "Password",
+  "organization.users.modal.password_hint":
+    "(optional — a temp password is generated if left blank)",
+  "organization.users.modal.password_placeholder": "Leave blank for auto-generated",
+  "organization.users.modal.password_show": "Show password",
+  "organization.users.modal.password_hide": "Hide password",
+  "organization.users.modal.new_password_label": "New Password",
+  "organization.users.modal.new_password_placeholder": "Enter new password",
+  "organization.users.modal.profile_type_label": "Profile Type",
+  "organization.users.modal.profile_type_placeholder": "Select a profile type…",
+  "organization.users.modal.roles_label": "Roles",
+
+  // user-table.tsx — invite (temporary password dialog)
+  "organization.users.invite.title": "User Created",
+  "organization.users.invite.description":
+    "Share these login credentials with {name}. This password will not be shown again.",
+  "organization.users.invite.email_label": "Email",
+  "organization.users.invite.temp_password_label": "Temporary Password",
+  "organization.users.invite.copy_password": "Copy password",
+
+  // user-table.tsx — feedback
+  "organization.users.feedback.member_created": "Member created",
+  "organization.users.feedback.member_updated": "Member updated",
+  "organization.users.feedback.member_deleted": "Member deleted",
+  "organization.users.feedback.member_activated": "Member activated",
+  "organization.users.feedback.member_suspended": "Member suspended",
+  "organization.users.feedback.password_reset": "Password has been reset",
+  "organization.users.feedback.password_copied": "Password copied to clipboard",
+
+  // user-table.tsx — errors
+  "error.organization.users.required_fields":
+    "First name, email, and profile type are required",
+  "error.organization.users.save_failed": "Failed to save",
+
+  // ============================================================
+  // Organization — Departments (Etapa 1.5.6b-tris Phase ε)
+  // ============================================================
+  "organization.departments.tree.title": "Departments",
+  "organization.departments.tree.description":
+    "Manage your organizational structure — divisions, departments, and teams.",
+  "organization.departments.tree.add_button": "Add Department",
+  "organization.departments.tree.header_department": "Department",
+  "organization.departments.tree.header_head": "Head",
+  "organization.departments.tree.header_members": "Members",
+  "organization.departments.tree.empty":
+    "No departments yet. Create your first department to get started.",
+  "organization.departments.tree.delete_confirm":
+    'Delete "{name}"? Sub-departments will become top-level.',
+  "organization.departments.tree.edit_title": "Edit",
+  "organization.departments.tree.delete_title": "Delete",
+
+  "organization.departments.detail.back": "Back to Departments",
+  "organization.departments.detail.head_label": "Department Head",
+  "organization.departments.detail.sub_departments": "Sub-departments",
+  "organization.departments.detail.no_sub_departments": "No sub-departments.",
+  "organization.departments.detail.members": "Members",
+  "organization.departments.detail.no_members": "No members yet.",
+  "organization.departments.detail.add": "Add",
+  "organization.departments.detail.select_person_placeholder":
+    "Select a person...",
+  "organization.departments.detail.led_by": "Led by {name}",
+  "organization.departments.detail.part_of": "Part of {name}",
+  "organization.departments.detail.remove_title": "Remove",
+
+  "organization.departments.form.edit_title": "Edit Department",
+  "organization.departments.form.create_title": "Create Department",
+  "organization.departments.form.edit_description":
+    "Update this department's details.",
+  "organization.departments.form.create_description":
+    "Add a new department to your organization.",
+  "organization.departments.form.name_label": "Name *",
+  "organization.departments.form.name_placeholder": "e.g., Engineering",
+  "organization.departments.form.description_label": "Description",
+  "organization.departments.form.description_placeholder":
+    "What does this department do?",
+  "organization.departments.form.parent_label": "Parent Department",
+  "organization.departments.form.parent_none_placeholder": "None (top-level)",
+  "organization.departments.form.parent_none_option": "None (top-level)",
+  "organization.departments.form.head_label": "Department Head",
+  "organization.departments.form.head_none_placeholder": "No head assigned",
+  "organization.departments.form.head_none_option": "No head assigned",
+  "organization.departments.form.color_label": "Color",
+  "organization.departments.form.color.indigo": "Indigo",
+  "organization.departments.form.color.green": "Green",
+  "organization.departments.form.color.pink": "Pink",
+  "organization.departments.form.color.amber": "Amber",
+  "organization.departments.form.color.purple": "Purple",
+  "organization.departments.form.color.cyan": "Cyan",
+  "organization.departments.form.color.red": "Red",
+  "organization.departments.form.color.orange": "Orange",
+  "organization.departments.form.save_changes": "Save Changes",
+  "organization.departments.form.create_department": "Create Department",
+  "organization.departments.form.saving": "Saving...",
+
+  "organization.feedback.department_created": "Department created",
+  "organization.feedback.department_updated": "Department updated",
+  "organization.feedback.department_deleted": "Department deleted",
+  "organization.feedback.member_added": "Member added",
+  "organization.feedback.member_removed": "Member removed",
+
+  "error.organization.department_delete_failed": "Failed to delete department",
+  "error.organization.member_add_failed": "Failed to add member",
+  "error.organization.name_required": "Name is required",
+
+  // ============================================================
+  // Org Chart Canvas (Etapa 1.5.6b-tris — Phase ε)
+  // ============================================================
+  "organization.org_chart.title": "Org Chart",
+  "organization.org_chart.description":
+    "Interactive view of your internal organizational structure and reporting lines.",
+  "organization.org_chart.loading": "Loading org chart…",
+  "organization.org_chart.filter.all_departments": "All Departments",
+  "organization.org_chart.badge.people_count": "{count} people",
+
+  // ============================================================
+  // Network Map Canvas (Etapa 1.5.6b-tris — Phase ε)
+  // ============================================================
+  "organization.network_map.title": "Network Map",
+  "organization.network_map.description":
+    "Interactive view of your external network — sponsors, downlines, and partner relationships.",
+  "organization.network_map.loading": "Loading network map…",
+  "organization.network_map.empty.title": "No external network profiles yet",
+  "organization.network_map.empty.description":
+    "External partners will appear here once added to the network.",
+  "organization.network_map.badge.partners_count": "{count} partners",
+
+  // ============================================================
   // Partners (Etapa 1.5.6b — Phase C)
   // ============================================================
   "partners.list.title": "Partner Network",
@@ -2192,4 +2380,75 @@ export const messages: Record<MessageKey, string> = {
   "error.network.promoters.partners.delete_with_agreements":
     "Cannot delete partner with active agreements",
   "error.network.promoters.overrides.save_failed": "Failed to save overrides",
+
+  // Network — Promoters page header
+  "network.promoters.page.title": "Promoters",
+  "network.promoters.page.description":
+    "Manage door-to-door promoter commissions — plans, org trees, agreements, and payout tracking.",
+
+  // Network — Permissions page
+  "network.permissions.page.title": "Permissions",
+  "network.permissions.page.description":
+    "System permissions. Assign them to roles in the Roles section.",
+  "network.permissions.page.actions_count": "{count} actions",
+
+  // Network — Profile Types list
+  "network.profile_types.list.title": "Profile Types",
+  "network.profile_types.list.description":
+    "Configure the types of profiles in your network and their wizard fields.",
+  "network.profile_types.list.new_button": "New Profile Type",
+
+  // Network — Profile Type new
+  "network.profile_types.new.title": "New Profile Type",
+  "network.profile_types.new.description":
+    "Define a new profile category with custom wizard fields.",
+
+  // Network — Profile Type detail
+  "network.profile_types.detail.title": "Edit: {name}",
+  "network.profile_types.detail.description":
+    "Modify profile type settings and wizard fields.",
+
+  // Network — Profiles list
+  "network.profiles.list.title": "Profiles",
+  "network.profiles.list.description_one": "{count} profile in the network",
+  "network.profiles.list.description_other": "{count} profiles in the network",
+  "network.profiles.list.add_button": "Add Profile",
+
+  // Network — Profile new
+  "network.profiles.new.title": "Add Profile",
+  "network.profiles.new.description":
+    "Create a new internal or external network member.",
+
+  // Network — Profile detail
+  "network.profiles.detail.edit_button": "Edit Profile",
+  "network.profiles.detail.email_label": "Email",
+  "network.profiles.detail.phone_label": "Phone",
+  "network.profiles.detail.supervisor_label": "Supervisor",
+  "network.profiles.detail.additional_information": "Additional Information",
+  "network.profiles.detail.roles_title": "Roles",
+  "network.profiles.detail.no_roles": "No roles assigned",
+  "network.profiles.detail.rank_title": "Rank",
+  "network.profiles.detail.no_rank": "No rank assigned",
+  "network.profiles.detail.compensation_title": "Compensation",
+  "network.profiles.detail.no_plan": "No plan assigned",
+  "network.profiles.detail.teams_title": "Teams",
+
+  // Network — Roles list
+  "network.roles.list.title": "Roles & Permissions",
+  "network.roles.list.description":
+    "Define roles, set permissions, and control access across your network.",
+  "network.roles.list.new_button": "New Role",
+
+  // Network — Role new
+  "network.roles.new.title": "New Role",
+  "network.roles.new.description":
+    "Create a new role with custom permissions.",
+
+  // Network — Role detail
+  "network.roles.detail.back_to_roles": "Back to Roles",
+  "network.roles.detail.network_type_internal": "Internal",
+  "network.roles.detail.network_type_external": "External",
+  "network.roles.detail.system_role": "System Role",
+  "network.roles.detail.tab_settings": "Role Settings",
+  "network.roles.detail.tab_permissions": "Permissions",
 };

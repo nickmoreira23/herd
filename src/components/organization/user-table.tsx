@@ -22,7 +22,9 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Plus, Search, SlidersHorizontal, Copy, Check, KeyRound, Eye, EyeOff } from "lucide-react";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
+import type { MessageKey } from "@/lib/i18n/t";
 
 // Type for the user data returned from the API with includes
 export interface UserRow {
@@ -81,18 +83,18 @@ interface UserTableProps {
 }
 
 const STATUS_OPTIONS = [
-  { value: "All Statuses", filterKey: "ALL" },
-  { value: "Active", filterKey: "ACTIVE" },
-  { value: "Pending", filterKey: "PENDING" },
-  { value: "Suspended", filterKey: "SUSPENDED" },
-  { value: "Terminated", filterKey: "TERMINATED" },
-] as const;
+  { value: "ALL", labelKey: "organization.users.filter.status_all" },
+  { value: "ACTIVE", labelKey: "organization.users.status.active" },
+  { value: "PENDING", labelKey: "organization.users.status.pending" },
+  { value: "SUSPENDED", labelKey: "organization.users.status.suspended" },
+  { value: "TERMINATED", labelKey: "organization.users.status.terminated" },
+] as const satisfies ReadonlyArray<{ value: string; labelKey: MessageKey }>;
 
 const NETWORK_OPTIONS = [
-  { value: "All Networks", filterKey: "ALL" },
-  { value: "Internal", filterKey: "INTERNAL" },
-  { value: "External", filterKey: "EXTERNAL" },
-] as const;
+  { value: "ALL", labelKey: "organization.users.filter.network_all" },
+  { value: "INTERNAL", labelKey: "organization.users.network.internal" },
+  { value: "EXTERNAL", labelKey: "organization.users.network.external" },
+] as const satisfies ReadonlyArray<{ value: string; labelKey: MessageKey }>;
 
 const EMPTY_FORM = {
   firstName: "",
@@ -105,12 +107,13 @@ const EMPTY_FORM = {
 };
 
 export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps) {
+  const t = useT();
   const [users, setUsers] = useState<UserRow[]>(initialUsers);
   const [search, setSearch] = useState("");
-  const [networkValue, setNetworkValue] = useState("All Networks");
-  const [statusValue, setStatusValue] = useState("All Statuses");
-  const [profileTypeValue, setProfileTypeValue] = useState("All Types");
-  const [roleValue, setRoleValue] = useState("All Roles");
+  const [networkFilter, setNetworkFilter] = useState<string>("ALL");
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [profileTypeValue, setProfileTypeValue] = useState("ALL");
+  const [roleValue, setRoleValue] = useState("ALL");
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserRow | null>(null);
@@ -129,9 +132,6 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
   // Password reset state for edit mode
   const [showResetPassword, setShowResetPassword] = useState(false);
 
-  const networkFilter = NETWORK_OPTIONS.find((n) => n.value === networkValue)?.filterKey ?? "ALL";
-  const statusFilter = STATUS_OPTIONS.find((s) => s.value === statusValue)?.filterKey ?? "ALL";
-
   const filteredUsers = useMemo(() => {
     let filtered = users;
     if (networkFilter !== "ALL") {
@@ -140,10 +140,10 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
     if (statusFilter !== "ALL") {
       filtered = filtered.filter((u) => u.status === statusFilter);
     }
-    if (profileTypeValue !== "All Types") {
+    if (profileTypeValue !== "ALL") {
       filtered = filtered.filter((u) => u.profileType.id === profileTypeValue);
     }
-    if (roleValue !== "All Roles") {
+    if (roleValue !== "ALL") {
       filtered = filtered.filter((u) =>
         u.profileRoles.some((pr) => pr.role.id === roleValue)
       );
@@ -191,7 +191,7 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
 
   const handleSave = useCallback(async () => {
     if (!form.firstName || !form.email || !form.profileTypeId) {
-      toast.error("First name, email, and profile type are required");
+      notifyError("error.organization.users.required_fields", t);
       return;
     }
     setSaving(true);
@@ -223,8 +223,7 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
       });
 
       if (!res.ok) {
-        const json = await res.json();
-        toast.error(json.error || "Failed to save");
+        notifyError("error.organization.users.save_failed", t);
         return;
       }
 
@@ -238,9 +237,14 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
           password: json.data.temporaryPassword,
         });
       } else if (editingUser && showResetPassword && form.password.trim()) {
-        toast.success("Password has been reset");
+        notifySuccess("organization.users.feedback.password_reset", t);
       } else {
-        toast.success(editingUser ? "Member updated" : "Member created");
+        notifySuccess(
+          editingUser
+            ? "organization.users.feedback.member_updated"
+            : "organization.users.feedback.member_created",
+          t
+        );
       }
 
       setModalOpen(false);
@@ -248,7 +252,7 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
     } finally {
       setSaving(false);
     }
-  }, [form, editingUser, showResetPassword, refreshUsers]);
+  }, [form, editingUser, showResetPassword, refreshUsers, t]);
 
   const handleToggleStatus = useCallback(
     async (user: UserRow) => {
@@ -260,22 +264,30 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
       });
       if (res.ok) {
         await refreshUsers();
-        toast.success(newStatus === "ACTIVE" ? "Member activated" : "Member suspended");
+        notifySuccess(
+          newStatus === "ACTIVE"
+            ? "organization.users.feedback.member_activated"
+            : "organization.users.feedback.member_suspended",
+          t
+        );
       }
     },
-    [refreshUsers]
+    [refreshUsers, t]
   );
 
   const handleDelete = useCallback(
     async (user: UserRow) => {
-      if (!confirm(`Delete "${user.firstName} ${user.lastName}"? This cannot be undone.`)) return;
+      const confirmMsg = t("organization.users.modal.delete_confirm", {
+        name: `${user.firstName} ${user.lastName}`,
+      });
+      if (!confirm(confirmMsg)) return;
       const res = await fetch(`/api/users/${user.id}`, { method: "DELETE" });
       if (res.ok) {
         await refreshUsers();
-        toast.success("Member deleted");
+        notifySuccess("organization.users.feedback.member_deleted", t);
       }
     },
-    [refreshUsers]
+    [refreshUsers, t]
   );
 
   const columns = useMemo(
@@ -300,23 +312,23 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
     if (!tempPasswordInfo) return;
     navigator.clipboard.writeText(tempPasswordInfo.password);
     setCopied(true);
-    toast.success("Password copied to clipboard");
+    notifySuccess("organization.users.feedback.password_copied", t);
     setTimeout(() => setCopied(false), 2000);
-  }, [tempPasswordInfo]);
+  }, [tempPasswordInfo, t]);
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Members</h1>
+          <h1 className="text-2xl font-bold">{t("organization.users.header.title")}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage all members across your network — internal team and external channels.
+            {t("organization.users.header.description")}
           </p>
         </div>
         <Button size="sm" onClick={openCreate}>
           <Plus className="mr-1 h-3 w-3" />
-          Add Member
+          {t("organization.users.action.add_member")}
         </Button>
       </div>
 
@@ -325,12 +337,12 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
         enableRowSelection
         columns={columns}
         data={filteredUsers}
-        countLabel="member"
+        countLabel={t("organization.users.count_label")}
         toolbar={() => (
           <div className="flex items-center gap-3">
             <Select
-              value={networkValue}
-              onValueChange={(val) => setNetworkValue(val ?? "All Networks")}
+              value={networkFilter}
+              onValueChange={(val) => setNetworkFilter(val ?? "ALL")}
             >
               <SelectTrigger className="w-auto min-w-[120px] text-sm shrink-0">
                 <SelectValue />
@@ -338,10 +350,10 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
               <SelectContent>
                 {NETWORK_OPTIONS.map((n) => (
                   <SelectItem key={n.value} value={n.value}>
-                    {n.value}
-                    {n.filterKey !== "ALL" && (
+                    {t(n.labelKey)}
+                    {n.value !== "ALL" && (
                       <span className="ml-1.5 text-muted-foreground">
-                        ({users.filter((u) => u.networkType === n.filterKey).length})
+                        ({users.filter((u) => u.networkType === n.value).length})
                       </span>
                     )}
                   </SelectItem>
@@ -351,13 +363,15 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
 
             <Select
               value={profileTypeValue}
-              onValueChange={(val) => setProfileTypeValue(val ?? "All Types")}
+              onValueChange={(val) => setProfileTypeValue(val ?? "ALL")}
             >
               <SelectTrigger className="w-auto min-w-[120px] text-sm shrink-0">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="All Types">All Types</SelectItem>
+                <SelectItem value="ALL">
+                  {t("organization.users.filter.profile_type_all")}
+                </SelectItem>
                 {profileTypes.map((pt) => (
                   <SelectItem key={pt.id} value={pt.id}>
                     {pt.displayName}
@@ -368,13 +382,15 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
 
             <Select
               value={roleValue}
-              onValueChange={(val) => setRoleValue(val ?? "All Roles")}
+              onValueChange={(val) => setRoleValue(val ?? "ALL")}
             >
               <SelectTrigger className="w-auto min-w-[120px] text-sm shrink-0">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="All Roles">All Roles</SelectItem>
+                <SelectItem value="ALL">
+                  {t("organization.users.filter.role_all")}
+                </SelectItem>
                 {roles.map((r) => (
                   <SelectItem key={r.id} value={r.id}>
                     {r.displayName}
@@ -384,8 +400,8 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
             </Select>
 
             <Select
-              value={statusValue}
-              onValueChange={(val) => setStatusValue(val ?? "All Statuses")}
+              value={statusFilter}
+              onValueChange={(val) => setStatusFilter(val ?? "ALL")}
             >
               <SelectTrigger className="w-auto min-w-[110px] text-sm shrink-0">
                 <SlidersHorizontal className="mr-1.5 h-3 w-3" />
@@ -394,7 +410,7 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
               <SelectContent>
                 {STATUS_OPTIONS.map((s) => (
                   <SelectItem key={s.value} value={s.value}>
-                    {s.value}
+                    {t(s.labelKey)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -403,13 +419,13 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
             <div className="relative flex-1 min-w-0">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
-                placeholder="Search by name or email..."
+                placeholder={t("organization.users.toolbar.search_placeholder")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-8 pr-20 text-sm w-full"
               />
               <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground tabular-nums">
-                {filteredUsers.length} members
+                {t("organization.users.toolbar.count", { count: filteredUsers.length })}
               </span>
             </div>
           </div>
@@ -420,51 +436,55 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editingUser ? "Edit Member" : "Add Member"}</DialogTitle>
+            <DialogTitle>
+              {editingUser
+                ? t("organization.users.modal.edit_title")
+                : t("organization.users.modal.add_title")}
+            </DialogTitle>
             <DialogDescription>
               {editingUser
-                ? "Update this member's details, profile type, and roles."
-                : "Add a new member to the network. A temporary password will be generated so they can log in."}
+                ? t("organization.users.modal.edit_description")
+                : t("organization.users.modal.add_description")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>First Name</Label>
+                <Label>{t("organization.users.modal.first_name_label")}</Label>
                 <Input
                   value={form.firstName}
                   onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
-                  placeholder="First name"
+                  placeholder={t("organization.users.modal.first_name_placeholder")}
                   className="mt-1"
                 />
               </div>
               <div>
-                <Label>Last Name</Label>
+                <Label>{t("organization.users.modal.last_name_label")}</Label>
                 <Input
                   value={form.lastName}
                   onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))}
-                  placeholder="Last name"
+                  placeholder={t("organization.users.modal.last_name_placeholder")}
                   className="mt-1"
                 />
               </div>
             </div>
             <div>
-              <Label>Email</Label>
+              <Label>{t("organization.users.modal.email_label")}</Label>
               <Input
                 type="email"
                 value={form.email}
                 onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                placeholder="user@company.com"
+                placeholder={t("organization.users.modal.email_placeholder")}
                 className="mt-1"
               />
             </div>
             <div>
-              <Label>Phone</Label>
+              <Label>{t("organization.users.modal.phone_label")}</Label>
               <Input
                 value={form.phone}
                 onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-                placeholder="+1 (555) 000-0000"
+                placeholder={t("organization.users.modal.phone_placeholder")}
                 className="mt-1"
               />
             </div>
@@ -473,21 +493,28 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
             {!editingUser && (
               <div>
                 <Label>
-                  Password{" "}
-                  <span className="text-muted-foreground font-normal">(optional — a temp password is generated if left blank)</span>
+                  {t("organization.users.modal.password_label")}{" "}
+                  <span className="text-muted-foreground font-normal">
+                    {t("organization.users.modal.password_hint")}
+                  </span>
                 </Label>
                 <div className="relative mt-1">
                   <Input
                     type={showPassword ? "text" : "password"}
                     value={form.password}
                     onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-                    placeholder="Leave blank for auto-generated"
+                    placeholder={t("organization.users.modal.password_placeholder")}
                     className="pr-10"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
                     className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label={t(
+                      showPassword
+                        ? "organization.users.modal.password_hide"
+                        : "organization.users.modal.password_show"
+                    )}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -506,23 +533,28 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
                     onClick={() => setShowResetPassword(true)}
                   >
                     <KeyRound className="mr-1.5 h-3.5 w-3.5" />
-                    Reset Password
+                    {t("organization.users.action.reset_password")}
                   </Button>
                 ) : (
                   <div>
-                    <Label>New Password</Label>
+                    <Label>{t("organization.users.modal.new_password_label")}</Label>
                     <div className="relative mt-1">
                       <Input
                         type={showPassword ? "text" : "password"}
                         value={form.password}
                         onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-                        placeholder="Enter new password"
+                        placeholder={t("organization.users.modal.new_password_placeholder")}
                         className="pr-10"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword((v) => !v)}
                         className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        aria-label={t(
+                          showPassword
+                            ? "organization.users.modal.password_hide"
+                            : "organization.users.modal.password_show"
+                        )}
                       >
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
@@ -535,7 +567,7 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
                       }}
                       className="text-xs text-muted-foreground hover:text-foreground mt-1"
                     >
-                      Cancel password reset
+                      {t("organization.users.action.cancel_password_reset")}
                     </button>
                   </div>
                 )}
@@ -543,7 +575,7 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
             )}
 
             <div>
-              <Label>Profile Type</Label>
+              <Label>{t("organization.users.modal.profile_type_label")}</Label>
               <Select
                 value={form.profileTypeId}
                 onValueChange={(val) => {
@@ -551,16 +583,20 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
                 }}
               >
                 <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Select a profile type..." />
+                  <SelectValue
+                    placeholder={t("organization.users.modal.profile_type_placeholder")}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="" disabled>
-                    Select a profile type...
+                    {t("organization.users.modal.profile_type_placeholder")}
                   </SelectItem>
                   {/* Internal types */}
                   {profileTypes.filter((pt) => pt.networkType === "INTERNAL").length > 0 && (
                     <>
-                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Internal</div>
+                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                        {t("organization.users.network.internal")}
+                      </div>
                       {profileTypes
                         .filter((pt) => pt.networkType === "INTERNAL")
                         .map((pt) => (
@@ -573,7 +609,9 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
                   {/* External types */}
                   {profileTypes.filter((pt) => pt.networkType === "EXTERNAL").length > 0 && (
                     <>
-                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">External</div>
+                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                        {t("organization.users.network.external")}
+                      </div>
                       {profileTypes
                         .filter((pt) => pt.networkType === "EXTERNAL")
                         .map((pt) => (
@@ -588,7 +626,7 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
             </div>
             {form.profileTypeId && (
               <div>
-                <Label>Roles</Label>
+                <Label>{t("organization.users.modal.roles_label")}</Label>
                 <div className="mt-1 grid grid-cols-2 gap-2 max-h-32 overflow-y-auto rounded-md border p-2">
                   {availableRoles.map((role) => (
                     <label
@@ -618,10 +656,10 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
           <DialogFooter>
             <Button onClick={handleSave} disabled={saving}>
               {saving
-                ? "Saving..."
+                ? t("organization.users.action.saving")
                 : editingUser
-                  ? "Save Changes"
-                  : "Create Member"}
+                  ? t("organization.users.action.save_changes")
+                  : t("organization.users.action.create_member")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -639,20 +677,25 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>User Created</DialogTitle>
+            <DialogTitle>{t("organization.users.invite.title")}</DialogTitle>
             <DialogDescription>
-              Share these login credentials with <strong>{tempPasswordInfo?.name}</strong>.
-              This password will not be shown again.
+              {t("organization.users.invite.description", {
+                name: tempPasswordInfo?.name ?? "",
+              })}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3">
             <div>
-              <Label className="text-xs text-muted-foreground">Email</Label>
+              <Label className="text-xs text-muted-foreground">
+                {t("organization.users.invite.email_label")}
+              </Label>
               <p className="text-sm font-medium">{tempPasswordInfo?.email}</p>
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground">Temporary Password</Label>
+              <Label className="text-xs text-muted-foreground">
+                {t("organization.users.invite.temp_password_label")}
+              </Label>
               <div className="flex items-center gap-2 mt-1">
                 <code className="flex-1 rounded-md bg-muted px-3 py-2 text-sm font-mono select-all">
                   {tempPasswordInfo?.password}
@@ -662,6 +705,7 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
                   variant="outline"
                   onClick={handleCopyPassword}
                   className="shrink-0"
+                  aria-label={t("organization.users.invite.copy_password")}
                 >
                   {copied ? (
                     <Check className="h-4 w-4 text-green-500" />
@@ -680,7 +724,7 @@ export function UserTable({ initialUsers, profileTypes, roles }: UserTableProps)
                 setCopied(false);
               }}
             >
-              Done
+              {t("organization.users.action.done")}
             </Button>
           </DialogFooter>
         </DialogContent>

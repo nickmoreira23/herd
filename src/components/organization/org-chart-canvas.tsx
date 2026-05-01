@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { UserCircle, Building2 } from "lucide-react";
+import { useT } from "@/lib/i18n/locale-context";
 
 interface Profile {
   id: string;
@@ -120,6 +121,7 @@ function OrgChartNode({ data }: NodeProps) {
 const nodeTypes = { orgChart: OrgChartNode };
 
 export function OrgChartCanvas() {
+  const t = useT();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
@@ -196,7 +198,7 @@ export function OrgChartCanvas() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[600px] text-sm text-muted-foreground">
-        Loading org chart...
+        {t("organization.org_chart.loading")}
       </div>
     );
   }
@@ -205,9 +207,9 @@ export function OrgChartCanvas() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Org Chart</h1>
+          <h1 className="text-2xl font-bold">{t("organization.org_chart.title")}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Interactive view of your internal organizational structure and reporting lines.
+            {t("organization.org_chart.description")}
           </p>
         </div>
       </div>
@@ -241,7 +243,9 @@ export function OrgChartCanvas() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">All Departments</SelectItem>
+                <SelectItem value="ALL">
+                  {t("organization.org_chart.filter.all_departments")}
+                </SelectItem>
                 {departments.map((d) => (
                   <SelectItem key={d.id} value={d.id}>
                     {d.name}
@@ -250,7 +254,9 @@ export function OrgChartCanvas() {
               </SelectContent>
             </Select>
             <Badge variant="outline" className="px-1 py-1 text-xs bg-card">
-              {filteredProfiles.length} people
+              {t("organization.org_chart.badge.people_count", {
+                count: filteredProfiles.length,
+              })}
             </Badge>
           </Panel>
         </ReactFlow>

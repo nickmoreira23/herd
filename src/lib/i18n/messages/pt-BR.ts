@@ -1518,6 +1518,200 @@ export const messages = {
     "Nome da localização é obrigatório",
 
   // ============================================================
+  // Organization — Users (Etapa 1.5.6b-tris Phase ε)
+  // ============================================================
+  "organization.users.column.name": "Nome",
+  "organization.users.column.network": "Rede",
+  "organization.users.column.profile_type": "Tipo de Perfil",
+  "organization.users.column.roles": "Cargos",
+  "organization.users.column.status": "Status",
+  "organization.users.column.last_login": "Último acesso",
+  "organization.users.column.created": "Criado em",
+  "organization.users.column.never": "Nunca",
+  "organization.users.column.select_all": "Selecionar todos",
+  "organization.users.column.select_row": "Selecionar linha",
+  "organization.users.action.suspend": "Suspender",
+  "organization.users.action.activate": "Ativar",
+  "organization.users.status.active": "Ativo",
+  "organization.users.status.pending": "Pendente",
+  "organization.users.status.suspended": "Suspenso",
+  "organization.users.status.terminated": "Encerrado",
+  "organization.users.network.internal": "Interno",
+  "organization.users.network.external": "Externo",
+
+  // user-table.tsx — header
+  "organization.users.header.title": "Membros",
+  "organization.users.header.description":
+    "Gerencie todos os membros da sua rede — equipe interna e canais externos.",
+  "organization.users.count_label": "membro",
+
+  // user-table.tsx — toolbar / filters
+  "organization.users.toolbar.search_placeholder": "Buscar por nome ou e-mail…",
+  "organization.users.toolbar.count": "{count} membros",
+  "organization.users.filter.network_all": "Todas as Redes",
+  "organization.users.filter.status_all": "Todos os Status",
+  "organization.users.filter.profile_type_all": "Todos os Tipos",
+  "organization.users.filter.role_all": "Todos os Cargos",
+
+  // user-table.tsx — actions
+  "organization.users.action.add_member": "Adicionar Membro",
+  "organization.users.action.create_member": "Criar Membro",
+  "organization.users.action.save_changes": "Salvar Alterações",
+  "organization.users.action.saving": "Salvando…",
+  "organization.users.action.reset_password": "Redefinir Senha",
+  "organization.users.action.cancel_password_reset": "Cancelar redefinição de senha",
+  "organization.users.action.done": "Pronto",
+
+  // user-table.tsx — modal (create/edit)
+  "organization.users.modal.add_title": "Adicionar Membro",
+  "organization.users.modal.edit_title": "Editar Membro",
+  "organization.users.modal.add_description":
+    "Adicione um novo membro à rede. Uma senha temporária será gerada para que ele possa fazer login.",
+  "organization.users.modal.edit_description":
+    "Atualize os detalhes deste membro, tipo de perfil e cargos.",
+  "organization.users.modal.delete_confirm":
+    'Excluir "{name}"? Esta ação não pode ser desfeita.',
+  "organization.users.modal.first_name_label": "Nome",
+  "organization.users.modal.first_name_placeholder": "Nome",
+  "organization.users.modal.last_name_label": "Sobrenome",
+  "organization.users.modal.last_name_placeholder": "Sobrenome",
+  "organization.users.modal.email_label": "E-mail",
+  "organization.users.modal.email_placeholder": "usuario@empresa.com",
+  "organization.users.modal.phone_label": "Telefone",
+  "organization.users.modal.phone_placeholder": "+55 (11) 0000-0000",
+  "organization.users.modal.password_label": "Senha",
+  "organization.users.modal.password_hint":
+    "(opcional — uma senha temporária é gerada se deixado em branco)",
+  "organization.users.modal.password_placeholder": "Deixe em branco para gerar automaticamente",
+  "organization.users.modal.password_show": "Mostrar senha",
+  "organization.users.modal.password_hide": "Ocultar senha",
+  "organization.users.modal.new_password_label": "Nova Senha",
+  "organization.users.modal.new_password_placeholder": "Digite a nova senha",
+  "organization.users.modal.profile_type_label": "Tipo de Perfil",
+  "organization.users.modal.profile_type_placeholder": "Selecione um tipo de perfil…",
+  "organization.users.modal.roles_label": "Cargos",
+
+  // user-table.tsx — invite (temporary password dialog)
+  "organization.users.invite.title": "Usuário Criado",
+  "organization.users.invite.description":
+    "Compartilhe estas credenciais de login com {name}. Esta senha não será exibida novamente.",
+  "organization.users.invite.email_label": "E-mail",
+  "organization.users.invite.temp_password_label": "Senha Temporária",
+  "organization.users.invite.copy_password": "Copiar senha",
+
+  // user-table.tsx — feedback
+  "organization.users.feedback.member_created": "Membro criado",
+  "organization.users.feedback.member_updated": "Membro atualizado",
+  "organization.users.feedback.member_deleted": "Membro excluído",
+  "organization.users.feedback.member_activated": "Membro ativado",
+  "organization.users.feedback.member_suspended": "Membro suspenso",
+  "organization.users.feedback.password_reset": "Senha redefinida",
+  "organization.users.feedback.password_copied": "Senha copiada para a área de transferência",
+
+  // user-table.tsx — errors
+  "error.organization.users.required_fields":
+    "Nome, e-mail e tipo de perfil são obrigatórios",
+  "error.organization.users.save_failed": "Falha ao salvar",
+
+  // ============================================================
+  // Organization — Departments (Etapa 1.5.6b-tris Phase ε)
+  // ============================================================
+  "organization.departments.tree.title": "Departamentos",
+  "organization.departments.tree.description":
+    "Gerencie sua estrutura organizacional — divisões, departamentos e equipes.",
+  "organization.departments.tree.add_button": "Adicionar Departamento",
+  "organization.departments.tree.header_department": "Departamento",
+  "organization.departments.tree.header_head": "Responsável",
+  "organization.departments.tree.header_members": "Membros",
+  "organization.departments.tree.empty":
+    "Nenhum departamento ainda. Crie seu primeiro departamento para começar.",
+  "organization.departments.tree.delete_confirm":
+    'Excluir "{name}"? Os subdepartamentos se tornarão de nível superior.',
+  "organization.departments.tree.edit_title": "Editar",
+  "organization.departments.tree.delete_title": "Excluir",
+
+  "organization.departments.detail.back": "Voltar para Departamentos",
+  "organization.departments.detail.head_label": "Responsável pelo Departamento",
+  "organization.departments.detail.sub_departments": "Subdepartamentos",
+  "organization.departments.detail.no_sub_departments": "Nenhum subdepartamento.",
+  "organization.departments.detail.members": "Membros",
+  "organization.departments.detail.no_members": "Nenhum membro ainda.",
+  "organization.departments.detail.add": "Adicionar",
+  "organization.departments.detail.select_person_placeholder":
+    "Selecione uma pessoa…",
+  "organization.departments.detail.led_by": "Liderado por {name}",
+  "organization.departments.detail.part_of": "Parte de {name}",
+  "organization.departments.detail.remove_title": "Remover",
+
+  "organization.departments.form.edit_title": "Editar Departamento",
+  "organization.departments.form.create_title": "Criar Departamento",
+  "organization.departments.form.edit_description":
+    "Atualize os detalhes deste departamento.",
+  "organization.departments.form.create_description":
+    "Adicione um novo departamento à sua organização.",
+  "organization.departments.form.name_label": "Nome *",
+  "organization.departments.form.name_placeholder": "ex. Engenharia",
+  "organization.departments.form.description_label": "Descrição",
+  "organization.departments.form.description_placeholder":
+    "O que este departamento faz?",
+  "organization.departments.form.parent_label": "Departamento Pai",
+  "organization.departments.form.parent_none_placeholder":
+    "Nenhum (nível superior)",
+  "organization.departments.form.parent_none_option":
+    "Nenhum (nível superior)",
+  "organization.departments.form.head_label": "Responsável pelo Departamento",
+  "organization.departments.form.head_none_placeholder":
+    "Nenhum responsável atribuído",
+  "organization.departments.form.head_none_option":
+    "Nenhum responsável atribuído",
+  "organization.departments.form.color_label": "Cor",
+  "organization.departments.form.color.indigo": "Índigo",
+  "organization.departments.form.color.green": "Verde",
+  "organization.departments.form.color.pink": "Rosa",
+  "organization.departments.form.color.amber": "Âmbar",
+  "organization.departments.form.color.purple": "Roxo",
+  "organization.departments.form.color.cyan": "Ciano",
+  "organization.departments.form.color.red": "Vermelho",
+  "organization.departments.form.color.orange": "Laranja",
+  "organization.departments.form.save_changes": "Salvar Alterações",
+  "organization.departments.form.create_department": "Criar Departamento",
+  "organization.departments.form.saving": "Salvando…",
+
+  "organization.feedback.department_created": "Departamento criado",
+  "organization.feedback.department_updated": "Departamento atualizado",
+  "organization.feedback.department_deleted": "Departamento excluído",
+  "organization.feedback.member_added": "Membro adicionado",
+  "organization.feedback.member_removed": "Membro removido",
+
+  "error.organization.department_delete_failed":
+    "Falha ao excluir departamento",
+  "error.organization.member_add_failed": "Falha ao adicionar membro",
+  "error.organization.name_required": "Nome é obrigatório",
+
+  // ============================================================
+  // Org Chart Canvas (Etapa 1.5.6b-tris — Phase ε)
+  // ============================================================
+  "organization.org_chart.title": "Organograma",
+  "organization.org_chart.description":
+    "Visão interativa da sua estrutura organizacional interna e linhas de reporte.",
+  "organization.org_chart.loading": "Carregando organograma…",
+  "organization.org_chart.filter.all_departments": "Todos os Departamentos",
+  "organization.org_chart.badge.people_count": "{count} pessoas",
+
+  // ============================================================
+  // Network Map Canvas (Etapa 1.5.6b-tris — Phase ε)
+  // ============================================================
+  "organization.network_map.title": "Mapa da Rede",
+  "organization.network_map.description":
+    "Visão interativa da sua rede externa — patrocinadores, downlines e relações de parceria.",
+  "organization.network_map.loading": "Carregando mapa da rede…",
+  "organization.network_map.empty.title":
+    "Nenhum perfil de rede externa ainda",
+  "organization.network_map.empty.description":
+    "Parceiros externos aparecerão aqui assim que forem adicionados à rede.",
+  "organization.network_map.badge.partners_count": "{count} parceiros",
+
+  // ============================================================
   // Partners (Etapa 1.5.6b — Phase C)
   // ============================================================
   "partners.list.title": "Rede de Parceiros",
@@ -2239,6 +2433,77 @@ export const messages = {
     "Não é possível excluir parceiro com acordos ativos",
   "error.network.promoters.overrides.save_failed":
     "Falha ao salvar overrides",
+
+  // Network — Promoters page header
+  "network.promoters.page.title": "Promotores",
+  "network.promoters.page.description":
+    "Gerencie comissões de promotores porta-a-porta — planos, árvores organizacionais, acordos e rastreamento de pagamentos.",
+
+  // Network — Permissions page
+  "network.permissions.page.title": "Permissões",
+  "network.permissions.page.description":
+    "Permissões do sistema. Atribua-as a cargos na seção de Cargos.",
+  "network.permissions.page.actions_count": "{count} ações",
+
+  // Network — Profile Types list
+  "network.profile_types.list.title": "Tipos de Perfil",
+  "network.profile_types.list.description":
+    "Configure os tipos de perfis na sua rede e seus campos do assistente.",
+  "network.profile_types.list.new_button": "Novo Tipo de Perfil",
+
+  // Network — Profile Type new
+  "network.profile_types.new.title": "Novo Tipo de Perfil",
+  "network.profile_types.new.description":
+    "Defina uma nova categoria de perfil com campos personalizados do assistente.",
+
+  // Network — Profile Type detail
+  "network.profile_types.detail.title": "Editar: {name}",
+  "network.profile_types.detail.description":
+    "Modifique as configurações do tipo de perfil e os campos do assistente.",
+
+  // Network — Profiles list
+  "network.profiles.list.title": "Perfis",
+  "network.profiles.list.description_one": "{count} perfil na rede",
+  "network.profiles.list.description_other": "{count} perfis na rede",
+  "network.profiles.list.add_button": "Adicionar Perfil",
+
+  // Network — Profile new
+  "network.profiles.new.title": "Adicionar Perfil",
+  "network.profiles.new.description":
+    "Crie um novo membro interno ou externo da rede.",
+
+  // Network — Profile detail
+  "network.profiles.detail.edit_button": "Editar Perfil",
+  "network.profiles.detail.email_label": "Email",
+  "network.profiles.detail.phone_label": "Telefone",
+  "network.profiles.detail.supervisor_label": "Supervisor",
+  "network.profiles.detail.additional_information": "Informações Adicionais",
+  "network.profiles.detail.roles_title": "Cargos",
+  "network.profiles.detail.no_roles": "Nenhum cargo atribuído",
+  "network.profiles.detail.rank_title": "Rank",
+  "network.profiles.detail.no_rank": "Nenhum rank atribuído",
+  "network.profiles.detail.compensation_title": "Remuneração",
+  "network.profiles.detail.no_plan": "Nenhum plano atribuído",
+  "network.profiles.detail.teams_title": "Equipes",
+
+  // Network — Roles list
+  "network.roles.list.title": "Cargos e Permissões",
+  "network.roles.list.description":
+    "Defina cargos, configure permissões e controle o acesso na sua rede.",
+  "network.roles.list.new_button": "Novo Cargo",
+
+  // Network — Role new
+  "network.roles.new.title": "Novo Cargo",
+  "network.roles.new.description":
+    "Crie um novo cargo com permissões personalizadas.",
+
+  // Network — Role detail
+  "network.roles.detail.back_to_roles": "Voltar para Cargos",
+  "network.roles.detail.network_type_internal": "Interno",
+  "network.roles.detail.network_type_external": "Externo",
+  "network.roles.detail.system_role": "Cargo do Sistema",
+  "network.roles.detail.tab_settings": "Configurações do Cargo",
+  "network.roles.detail.tab_permissions": "Permissões",
 } as const;
 
 export type MessageKey = keyof typeof messages;

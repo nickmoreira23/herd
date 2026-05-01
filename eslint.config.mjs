@@ -77,14 +77,13 @@ const eslintConfig = defineConfig([
     ignores: [
       // Features ainda hardcoded podem usar legacy temporariamente.
       "src/components/{knowledge,network,agents,tiers,products,packages,brands,brand-kit,perks,marketplace,operations,operation,deals,companies,contacts,meetings,tasks,events,services,campaigns,locations,apps,feeds,community,documents,videos,images,audios,tables,forms,notes,links,routines,experiences,integrations,blocks,tools,chat,feedbacks,settings,dashboard,sales,landing-page}/**/*.{ts,tsx}",
-      "src/app/admin/{knowledge,network,agents,tiers,products,packages,brands,brand-kit,perks,marketplace,operations,operation,deals,companies,contacts,meetings,tasks,events,services,campaigns,locations,apps,feeds,community,documents,videos,images,audios,tables,forms,notes,links,routines,experiences,integrations,blocks,tools,chat,feedbacks,settings,sales}/**/*.{ts,tsx}",
-      // Organization Phase B (network/departments/users/etc.) and brand-kit
+      "src/app/admin/{knowledge,agents,tiers,products,packages,brands,brand-kit,perks,marketplace,operations,operation,deals,companies,contacts,meetings,tasks,events,services,campaigns,locations,apps,feeds,community,documents,videos,images,audios,tables,forms,notes,links,routines,experiences,integrations,blocks,tools,chat,feedbacks,settings,sales}/**/*.{ts,tsx}",
+      // Organization Phase B (departments/users/etc.) and brand-kit
       // are still on legacy formatters — re-include their paths.
       "src/components/brand-kit/**/*.{ts,tsx}",
       "src/components/organization/brand-kit-form.tsx",
-      "src/components/organization/{user-columns,user-table,department-tree,department-detail,department-form,org-chart-canvas,network-map-canvas}.tsx",
       "src/app/admin/organization/brand-kit/**/*.{ts,tsx}",
-      "src/app/admin/organization/{departments,users,org-chart,network-map,knowledge}/**/*.{ts,tsx}",
+      "src/app/admin/organization/knowledge/**/*.{ts,tsx}",
       "src/app/admin/page.tsx",
       "src/app/admin/finances/**/*.{ts,tsx}",
       // src/lib helpers and store and other shared infra still use legacy.
@@ -153,6 +152,21 @@ const eslintConfig = defineConfig([
       "src/components/network/profiles/**/*.{ts,tsx}",
       // Phase 1.5.6b-tris (Fase δ) — Promoters
       "src/components/network/promoters/**/*.{ts,tsx}",
+      // Phase 1.5.6b-tris (Fase ε) — Network admin RSCs + org passthroughs
+      "src/app/admin/network/**/*.{ts,tsx}",
+      "src/app/admin/organization/users/page.tsx",
+      "src/app/admin/organization/departments/**/*.{ts,tsx}",
+      "src/app/admin/organization/org-chart/page.tsx",
+      "src/app/admin/organization/network-map/page.tsx",
+      // Phase 1.5.6b-tris (Fase ε) — Organization users + departments
+      "src/components/organization/user-columns.tsx",
+      "src/components/organization/user-table.tsx",
+      "src/components/organization/department-tree.tsx",
+      "src/components/organization/department-detail.tsx",
+      "src/components/organization/department-form.tsx",
+      // Phase 1.5.6b-tris (Fase ε, Turn 4) — Canvas components
+      "src/components/organization/org-chart-canvas.tsx",
+      "src/components/organization/network-map-canvas.tsx",
       // integrations/error.tsx (and [id]/error.tsx) are INTENTIONALLY
       // excluded: per Etapa 1.5.5 decision (Opção 2), shell-generic
       // strings were extracted to shell.error.* but feature-specific

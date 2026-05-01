@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Edit } from "lucide-react"
 import { connection } from "next/server";
+import { getLocale } from "@/lib/i18n/get-locale";
+import { t } from "@/lib/i18n/t";
 
 export default async function ProfileDetailPage({
   params,
@@ -12,6 +14,7 @@ export default async function ProfileDetailPage({
   params: Promise<{ id: string }>
 }) {
   await connection();
+  const locale = await getLocale();
   const { id } = await params
 
   const profile = await prisma.networkProfile.findUnique({
@@ -39,6 +42,8 @@ export default async function ProfileDetailPage({
 
   const currentRank = profile.profileRanks[0]?.rankTier
   const currentComp = profile.compensations[0]?.compPlan
+  const fullName = `${profile.firstName} ${profile.lastName}`
+  const parentFullName = profile.parent ? `${profile.parent.firstName} ${profile.parent.lastName}` : ""
 
   const statusVariantMap: Record<string, "default" | "outline" | "secondary" | "destructive"> = {
     active: "default",
@@ -51,12 +56,12 @@ export default async function ProfileDetailPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">{`${profile.firstName} ${profile.lastName}`}</h1>
+          <h1 className="text-2xl font-bold">{fullName}</h1>
           <p className="text-sm text-muted-foreground mt-1">{profile.email}</p>
         </div>
         <Button variant="outline" size="sm">
           <Edit className="w-4 h-4 mr-2" />
-          Edit Profile
+          {t("network.profiles.detail.edit_button", locale)}
         </Button>
       </div>
 
@@ -82,9 +87,7 @@ export default async function ProfileDetailPage({
                 </div>
               )}
               <div>
-                <h2 className="text-lg font-semibold">
-                  {profile.firstName} {profile.lastName}
-                </h2>
+                <h2 className="text-lg font-semibold">{fullName}</h2>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge variant={profile.networkType === "INTERNAL" ? "secondary" : "default"}>
                     {profile.networkType}
@@ -101,23 +104,23 @@ export default async function ProfileDetailPage({
 
             <div className="grid grid-cols-2 gap-y-3 text-sm">
               <div>
-                <p className="text-muted-foreground text-xs mb-0.5">Email</p>
+                <p className="text-muted-foreground text-xs mb-0.5">{t("network.profiles.detail.email_label", locale)}</p>
                 <p>{profile.email}</p>
               </div>
               {profile.phone && (
                 <div>
-                  <p className="text-muted-foreground text-xs mb-0.5">Phone</p>
+                  <p className="text-muted-foreground text-xs mb-0.5">{t("network.profiles.detail.phone_label", locale)}</p>
                   <p>{profile.phone}</p>
                 </div>
               )}
               {profile.parent && (
                 <div>
-                  <p className="text-muted-foreground text-xs mb-0.5">Supervisor</p>
+                  <p className="text-muted-foreground text-xs mb-0.5">{t("network.profiles.detail.supervisor_label", locale)}</p>
                   <Link
                     href={`/admin/network/profiles/${profile.parent.id}`}
                     className="hover:underline"
                   >
-                    {profile.parent.firstName} {profile.parent.lastName}
+                    {parentFullName}
                   </Link>
                 </div>
               )}
@@ -127,7 +130,7 @@ export default async function ProfileDetailPage({
           {/* Attributes */}
           {profile.attributes.length > 0 && (
             <div className="rounded-xl border border-border p-5">
-              <h3 className="font-semibold mb-3">Additional Information</h3>
+              <h3 className="font-semibold mb-3">{t("network.profiles.detail.additional_information", locale)}</h3>
               <div className="grid grid-cols-2 gap-y-3 text-sm">
                 {profile.attributes.map((attr) => (
                   <div key={attr.id}>
@@ -150,9 +153,9 @@ export default async function ProfileDetailPage({
         <div className="space-y-4">
           {/* Roles */}
           <div className="rounded-xl border border-border p-4">
-            <h3 className="font-semibold text-sm mb-3">Roles</h3>
+            <h3 className="font-semibold text-sm mb-3">{t("network.profiles.detail.roles_title", locale)}</h3>
             {profile.profileRoles.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No roles assigned</p>
+              <p className="text-xs text-muted-foreground">{t("network.profiles.detail.no_roles", locale)}</p>
             ) : (
               <div className="flex flex-wrap gap-1.5">
                 {profile.profileRoles.map((pr) => (
@@ -171,7 +174,7 @@ export default async function ProfileDetailPage({
           {/* Rank (external) */}
           {profile.networkType === "EXTERNAL" && (
             <div className="rounded-xl border border-border p-4">
-              <h3 className="font-semibold text-sm mb-3">Rank</h3>
+              <h3 className="font-semibold text-sm mb-3">{t("network.profiles.detail.rank_title", locale)}</h3>
               {currentRank ? (
                 <div className="flex items-center gap-2">
                   <div
@@ -186,7 +189,7 @@ export default async function ProfileDetailPage({
                   </span>
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground">No rank assigned</p>
+                <p className="text-xs text-muted-foreground">{t("network.profiles.detail.no_rank", locale)}</p>
               )}
             </div>
           )}
@@ -194,11 +197,11 @@ export default async function ProfileDetailPage({
           {/* Compensation (external) */}
           {profile.networkType === "EXTERNAL" && (
             <div className="rounded-xl border border-border p-4">
-              <h3 className="font-semibold text-sm mb-3">Compensation</h3>
+              <h3 className="font-semibold text-sm mb-3">{t("network.profiles.detail.compensation_title", locale)}</h3>
               {currentComp ? (
                 <p className="text-sm">{currentComp.name}</p>
               ) : (
-                <p className="text-xs text-muted-foreground">No plan assigned</p>
+                <p className="text-xs text-muted-foreground">{t("network.profiles.detail.no_plan", locale)}</p>
               )}
             </div>
           )}
@@ -206,7 +209,7 @@ export default async function ProfileDetailPage({
           {/* Teams */}
           {profile.teamMemberships.length > 0 && (
             <div className="rounded-xl border border-border p-4">
-              <h3 className="font-semibold text-sm mb-3">Teams</h3>
+              <h3 className="font-semibold text-sm mb-3">{t("network.profiles.detail.teams_title", locale)}</h3>
               <div className="space-y-1">
                 {profile.teamMemberships.map((tm) => (
                   <p key={tm.teamId} className="text-sm">

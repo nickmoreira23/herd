@@ -8,6 +8,8 @@ import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { ArrowLeft, Shield } from "lucide-react"
 import { connection } from "next/server";
+import { getLocale } from "@/lib/i18n/get-locale";
+import { t } from "@/lib/i18n/t";
 
 export default async function EditRolePage({
   params,
@@ -15,6 +17,7 @@ export default async function EditRolePage({
   params: Promise<{ id: string }>
 }) {
   await connection();
+  const locale = await getLocale();
   const { id } = await params
 
   const [role, allRoles, permissions] = await Promise.all([
@@ -47,7 +50,7 @@ export default async function EditRolePage({
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
-        Back to Roles
+        {t("network.roles.detail.back_to_roles", locale)}
       </Link>
 
       {/* Page header */}
@@ -60,12 +63,14 @@ export default async function EditRolePage({
           </Badge>
           {role.networkType && (
             <Badge variant="outline" className="px-1 py-1 text-xs">
-              {role.networkType === "INTERNAL" ? "Internal" : "External"}
+              {role.networkType === "INTERNAL"
+                ? t("network.roles.detail.network_type_internal", locale)
+                : t("network.roles.detail.network_type_external", locale)}
             </Badge>
           )}
           {role.isSystem && (
             <Badge variant="outline" className="px-1 py-1 text-xs border-amber-500/50 bg-amber-500/10 text-amber-500">
-              System Role
+              {t("network.roles.detail.system_role", locale)}
             </Badge>
           )}
         </div>
@@ -79,8 +84,8 @@ export default async function EditRolePage({
       {/* Tabs */}
       <Tabs defaultValue="settings">
         <TabsList variant="line">
-          <TabsTrigger value="settings">Role Settings</TabsTrigger>
-          <TabsTrigger value="permissions">Permissions</TabsTrigger>
+          <TabsTrigger value="settings">{t("network.roles.detail.tab_settings", locale)}</TabsTrigger>
+          <TabsTrigger value="permissions">{t("network.roles.detail.tab_permissions", locale)}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="settings" className="pt-6">

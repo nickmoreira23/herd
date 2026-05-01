@@ -2,7 +2,7 @@
 
 > Estabelecido na Etapa 1.5.4 (Ledger Internationalization).
 > Pattern canônico para internacionalizar features do HERD.
-> Versão: 1.5 — última atualização: 2026-04-30 (Etapa 1.5.6b-bis).
+> Versão: 1.6 — última atualização: 2026-04-30 (Etapa 1.5.6b-tris).
 
 Este documento é a referência única de **como** internacionalizar uma feature.
 Ele captura as decisões e templates cravados na Etapa 1.5.4 e serve de base
@@ -373,6 +373,67 @@ quando migrar e a hierarquia inteira passa a falar a língua do usuário.
    não são strings de UI).
 8. **Validar visualmente** ambas as línguas (smoke mental ou dev server).
 
+## Pattern: Canvas i18n (SVG-based components)
+
+Componentes que renderizam SVG inline têm strings em três categorias:
+
+### Categoria SVG-native
+Texto em `<text>` element. Tratamento idêntico a JSX normal:
+```tsx
+<text x={x} y={y}>{t("network.canvas.empty_state")}</text>
+```
+
+### Categoria HTML-overlay
+Tooltips/legends posicionados por CSS sobre SVG. Tratamento idêntico a JSX
+normal — usar `useT()` no Client Component que renderiza o overlay.
+
+### Categoria Data-driven
+Strings geradas por código, possivelmente combinando chrome + dados. Para
+chrome com interpolação:
+```tsx
+// Antes:
+const label = `${nome}: ${count} membros`;
+
+// Depois:
+const label = t("network.canvas.member_count", { nome, count });
+// Dictionary: "network.canvas.member_count": "{nome}: {count} membros"
+```
+
+Se a string vem de dado authored (não chrome), preservar cru.
+
+Caso primeiro: 1.5.6b-tris (org-chart-canvas, network-map-canvas).
+
+## Pattern: Sub-tarefa para arquivo grande
+
+Arquivos com >500 linhas e múltiplas seções lógicas (header, toolbar,
+filters, rows, footer, modals) merecem migração por agrupamento:
+
+1. Inventariar todas as strings primeiro.
+2. Identificar agrupamentos lógicos.
+3. Migrar um agrupamento por vez.
+4. Validar `npx tsc --noEmit && npm run lint` após cada agrupamento.
+5. Se aparecer complexidade não esperada, pausar e reportar.
+
+Caso primeiro: 1.5.6b-tris (user-table.tsx, 690 linhas).
+
+## Pattern: Dedup investigation antes de migrar
+
+Quando sub-feature parece ter cópias de componentes de outra feature:
+
+1. `diff -u arquivo1 arquivo2` line-by-line.
+2. Classificar em uma de três categorias:
+   - **Categoria 1**: cópias idênticas (>90% mesmo código). PAUSAR e
+     reportar — refactor adjacente possivelmente vale a pena.
+   - **Categoria 2**: variantes (50-90% sobreposição). Migrar separado,
+     anotar para discussão futura.
+   - **Categoria 3**: implementações distintas. Migrar separado, sem nota.
+3. Pausar é só para Categoria 1 — para 2 e 3, migrar normalmente
+   após classificar.
+
+Caso primeiro: 1.5.6b-tris δ.1 (commission-{editor,simulator} forks
+in network/promoters/, classified as Category 1, consolidated —
+~836 lines of duplicate code eliminated).
+
 ## Anti-patterns (evitar)
 
 - ❌ `const label = t(\`prefix.${type}\`)` sem `as any` ou map satisfies.
@@ -420,6 +481,8 @@ quando migrar e a hierarquia inteira passa a falar a língua do usuário.
   dados (multipliers, options, ids) de apresentação (labels). Forneça
   helper `getXLabel(item, t)` que recebe a função de tradução. Pattern
   emergiu com TIME_PERIOD_CONFIG em Financials.
+- ❌ Misturar chrome strings com data-driven labels num mesmo objeto de
+  configuração. Quando isso acontece, separar antes de migrar.
 
 ## ESLint config recomendada
 
@@ -512,6 +575,19 @@ Future audits should multiply estimates by 3-4x for any feature with
 multi-step wizards, permission matrices, profile-types with custom
 fields, or scenario builders.
 
+## Regras operacionais
+
+### Commit por fase em etapas multi-fase
+
+Em etapas com múltiplas fases (α/β/γ ou δ/ε), commit ao final de cada
+fase. Ordem das mudanças dentro de cada fase deve garantir que a fase
+termine self-contained com gates verdes (chaves no dicionário antes do
+uso, ESLint config junto com a mudança que precisa).
+
+Se vai precisar consolidar entre fases (ex: shared component que mais
+de uma fase modifica), **pausa e reporta** — não improvisa solução
+silenciosa. Decisão de consolidar deve ser explícita.
+
 ## Quando atualizar este documento
 
 Sempre que uma etapa de internacionalização introduzir um pattern novo
@@ -526,6 +602,19 @@ ou refinar um existente, atualize este arquivo:
 Este é um documento vivo. A última atualização vai estar no header.
 
 ## Changelog
+
+### v1.6 — 2026-04-30 (Etapa 1.5.6b-tris)
+
+- Pattern: Canvas i18n (3 categorias: SVG-native, HTML-overlay,
+  Data-driven). Caso primeiro: org-chart-canvas, network-map-canvas.
+- Pattern: Sub-tarefa para arquivo grande (>500 linhas, migração por
+  agrupamento). Caso primeiro: user-table.tsx (690 linhas).
+- Pattern: Dedup investigation antes de migrar (3 categorias com PAUSE
+  em Categoria 1). Caso primeiro: δ.1 (commission-{editor,simulator}
+  forks consolidados).
+- Anti-pattern: chrome strings misturadas com data-driven labels em
+  config compartilhado.
+- Regra operacional: commit por fase em etapas multi-fase.
 
 ### v1.5 — 2026-04-30 (Etapa 1.5.6b-bis)
 

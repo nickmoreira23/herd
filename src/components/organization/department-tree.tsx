@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, ChevronRight, ChevronDown, Users, Building2, Trash2, Pencil } from "lucide-react";
 import { DepartmentForm } from "./department-form";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
 import Link from "next/link";
 
 interface Department {
@@ -35,6 +36,7 @@ interface DepartmentTreeProps {
 }
 
 export function DepartmentTree({ initialDepartments, profiles }: DepartmentTreeProps) {
+  const t = useT();
   const [departments, setDepartments] = useState(initialDepartments);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingDept, setEditingDept] = useState<Department | null>(null);
@@ -81,13 +83,18 @@ export function DepartmentTree({ initialDepartments, profiles }: DepartmentTreeP
   };
 
   const handleDelete = async (dept: Department) => {
-    if (!confirm(`Delete "${dept.name}"? Sub-departments will become top-level.`)) return;
+    if (
+      !confirm(
+        t("organization.departments.tree.delete_confirm", { name: dept.name }),
+      )
+    )
+      return;
     const res = await fetch(`/api/departments/${dept.id}`, { method: "DELETE" });
     if (res.ok) {
-      toast.success("Department deleted");
+      notifySuccess("organization.feedback.department_deleted", t);
       await refresh();
     } else {
-      toast.error("Failed to delete");
+      notifyError("error.organization.department_delete_failed", t);
     }
   };
 
@@ -161,14 +168,14 @@ export function DepartmentTree({ initialDepartments, profiles }: DepartmentTreeP
             <button
               onClick={() => openEdit(node)}
               className="p-1 rounded hover:bg-muted"
-              title="Edit"
+              title={t("organization.departments.tree.edit_title")}
             >
               <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
             <button
               onClick={() => handleDelete(node)}
               className="p-1 rounded hover:bg-muted"
-              title="Delete"
+              title={t("organization.departments.tree.delete_title")}
             >
               <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
@@ -189,14 +196,16 @@ export function DepartmentTree({ initialDepartments, profiles }: DepartmentTreeP
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Departments</h1>
+          <h1 className="text-2xl font-bold">
+            {t("organization.departments.tree.title")}
+          </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage your organizational structure — divisions, departments, and teams.
+            {t("organization.departments.tree.description")}
           </p>
         </div>
         <Button size="sm" onClick={openCreate}>
           <Plus className="mr-1 h-3 w-3" />
-          Add Department
+          {t("organization.departments.tree.add_button")}
         </Button>
       </div>
 
@@ -204,9 +213,15 @@ export function DepartmentTree({ initialDepartments, profiles }: DepartmentTreeP
       <div className="rounded-xl ring-1 ring-foreground/10 overflow-hidden">
         <div className="flex items-center gap-2 px-4 py-2.5 bg-muted/30 text-xs text-muted-foreground font-medium">
           <Building2 className="h-3.5 w-3.5" />
-          <span className="flex-1">Department</span>
-          <span className="w-32 text-right">Head</span>
-          <span className="w-16 text-right">Members</span>
+          <span className="flex-1">
+            {t("organization.departments.tree.header_department")}
+          </span>
+          <span className="w-32 text-right">
+            {t("organization.departments.tree.header_head")}
+          </span>
+          <span className="w-16 text-right">
+            {t("organization.departments.tree.header_members")}
+          </span>
           <span className="w-16" />
         </div>
         <div className="divide-y divide-border">
@@ -214,7 +229,7 @@ export function DepartmentTree({ initialDepartments, profiles }: DepartmentTreeP
             tree.map((node) => renderNode(node as Parameters<typeof renderNode>[0], 0))
           ) : (
             <div className="p-8 text-center text-sm text-muted-foreground">
-              No departments yet. Create your first department to get started.
+              {t("organization.departments.tree.empty")}
             </div>
           )}
         </div>
