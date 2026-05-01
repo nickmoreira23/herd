@@ -7,10 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowLeft,
-  Eye,
   Rocket,
   XCircle,
-  Link2,
   Plus,
   Settings,
   ListTree,
@@ -447,12 +445,6 @@ export function FormBuilder({ initialForm }: FormBuilderProps) {
     }
   }, [form.id, refreshForm]);
 
-  const handleCopyLink = useCallback(() => {
-    const url = `${window.location.origin}/f/${form.slug}`;
-    navigator.clipboard.writeText(url);
-    toast.success("Share link copied to clipboard");
-  }, [form.slug]);
-
   const handleFormUpdate = useCallback(
     (updated: FormRow) => {
       setForm({ ...form, ...updated });
@@ -501,18 +493,6 @@ export function FormBuilder({ initialForm }: FormBuilderProps) {
 
         {form.formStatus === "ACTIVE" && (
           <>
-            <Button variant="outline" size="sm" onClick={handleCopyLink}>
-              <Link2 className="h-3 w-3 mr-1" />
-              Copy Link
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.open(`/f/${form.slug}`, "_blank")}
-            >
-              <Eye className="h-3 w-3 mr-1" />
-              Preview
-            </Button>
             <Button variant="outline" size="sm" onClick={handleClose}>
               <XCircle className="h-3 w-3 mr-1" />
               Close Form

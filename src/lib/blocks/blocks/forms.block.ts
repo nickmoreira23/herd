@@ -4,7 +4,7 @@ export const formsBlock: BlockManifest = {
   name: "forms",
   displayName: "Forms",
   description:
-    "Form builder with sections, 15 field types (TEXT, TEXTAREA, SELECT, MULTI_SELECT, RADIO, CHECKBOX, NUMBER, DATE, EMAIL, PHONE, URL, FILE_UPLOAD, RATING, SCALE, SIGNATURE), response collection, and template system. Forms have a DRAFT → ACTIVE → CLOSED lifecycle and a public render URL at /f/[slug]. Supports access control (public, password-protected), max responses, and time windows.",
+    "Form builder with sections, 15 field types (TEXT, TEXTAREA, SELECT, MULTI_SELECT, RADIO, CHECKBOX, NUMBER, DATE, EMAIL, PHONE, URL, FILE_UPLOAD, RATING, SCALE, SIGNATURE), response collection, and template system. Forms have a DRAFT → ACTIVE → CLOSED lifecycle. Public form rendering deferred to Surface feature (post-Fase 1.5).",
   domain: "knowledge",
   types: ["form"],
   capabilities: ["read", "create", "update", "delete", "process"],

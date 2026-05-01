@@ -112,11 +112,9 @@ export const config = {
     "/login",
     // Public surfaces (with or without locale prefix).
     "/p/:path*",
-    "/f/:path*",
     "/explore/:path*",
     "/shared/:path*",
     "/:locale/p/:path*",
-    "/:locale/f/:path*",
     "/:locale/explore/:path*",
     "/:locale/shared/:path*",
   ],

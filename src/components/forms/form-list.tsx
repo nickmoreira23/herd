@@ -82,12 +82,6 @@ export function FormList({
     [router]
   );
 
-  const handleCopyLink = useCallback((form: FormRow) => {
-    const url = `${window.location.origin}/f/${form.slug}`;
-    navigator.clipboard.writeText(url);
-    toast.success("Share link copied to clipboard");
-  }, []);
-
   const handleDelete = useCallback(
     async (form: FormRow) => {
       const res = await fetch(`/api/forms/${form.id}`, {
@@ -119,10 +113,9 @@ export function FormList({
     () =>
       getFormColumns({
         onOpen: handleOpen,
-        onCopyLink: handleCopyLink,
         onDelete: (form) => setDeleteTarget(form),
       }),
-    [handleOpen, handleCopyLink]
+    [handleOpen]
   );
 
   if (forms.length === 0) {
