@@ -12,69 +12,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, ExternalLink, ShieldCheck, Eye, EyeOff } from "lucide-react";
-
-// ─── Per-App Auth Configuration ─────────────────────────────────
-
-interface AppAuthInfo {
-  name: string;
-  logoUrl: string;
-  tokenLabel: string;
-  tokenPlaceholder: string;
-  instructions: string[];
-  tokenPortalUrl: string;
-  tokenPortalLabel: string;
-  scopes: string[];
-}
-
-const APP_AUTH_INFO: Record<string, AppAuthInfo> = {
-  oura: {
-    name: "Oura Ring",
-    logoUrl: "/images/apps/oura.svg",
-    tokenLabel: "Personal Access Token",
-    tokenPlaceholder: "Paste your Oura personal access token",
-    instructions: [
-      "Sign in to your Oura account at cloud.ouraring.com",
-      "Go to Personal Access Tokens in your account settings",
-      "Create a new token and copy it",
-      "Paste the token below to connect your Oura Ring data",
-    ],
-    tokenPortalUrl: "https://cloud.ouraring.com/personal-access-tokens",
-    tokenPortalLabel: "Oura Token Portal",
-    scopes: ["Sleep", "Activity", "Readiness", "Heart Rate"],
-  },
-  whoop: {
-    name: "WHOOP",
-    logoUrl: "/images/apps/whoop.svg",
-    tokenLabel: "API Access Token",
-    tokenPlaceholder: "Paste your WHOOP API access token",
-    instructions: [
-      "Sign in to the WHOOP Developer Portal at developer.whoop.com",
-      "Create or select your application",
-      "Generate an access token with the required scopes",
-      "Paste the token below to connect your WHOOP data",
-    ],
-    tokenPortalUrl: "https://developer.whoop.com",
-    tokenPortalLabel: "WHOOP Developer Portal",
-    scopes: ["Recovery", "Sleep", "Workout", "Body", "Heart Rate"],
-  },
-  "apple-health": {
-    name: "Apple Health",
-    logoUrl: "/images/apps/apple-health.svg",
-    tokenLabel: "Terra API Key",
-    tokenPlaceholder: "Paste your Terra API key",
-    instructions: [
-      "Sign up at tryterra.co and create a new project",
-      "Copy your API key from the Terra dashboard",
-      "Paste it below — we use Terra as a bridge to sync Apple Health data",
-      "After connecting, you'll authorize data sharing on your iPhone",
-    ],
-    tokenPortalUrl: "https://tryterra.co",
-    tokenPortalLabel: "Terra Dashboard",
-    scopes: ["Sleep", "Activity", "Heart Rate", "Workout", "Body", "Nutrition"],
-  },
-};
-
-// ─── Component ──────────────────────────────────────────────────
+import { useT } from "@/lib/i18n/locale-context";
+import {
+  getProviderMeta,
+  getProviderTokenAuth,
+  dataCategoryLabelKey,
+} from "@/lib/apps/provider-catalog";
+import { notifyError } from "@/lib/i18n/notify";
 
 interface AppAuthModalProps {
   open: boolean;
@@ -91,12 +35,14 @@ export function AppAuthModal({
   appId,
   onSuccess,
 }: AppAuthModalProps) {
+  const t = useT();
   const [token, setToken] = useState("");
   const [showToken, setShowToken] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const authInfo = appSlug ? APP_AUTH_INFO[appSlug] : null;
+  const meta = appSlug ? getProviderMeta(appSlug) : null;
+  const tokenAuth = appSlug ? getProviderTokenAuth(appSlug) : null;
 
   const handleConnect = async () => {
     if (!appId || !token.trim()) return;
@@ -119,10 +65,10 @@ export function AppAuthModal({
         onOpenChange(false);
         onSuccess();
       } else {
-        setError(json.error || "Failed to connect. Please check your token and try again.");
+        setError(json.error || t("error.apps.connect_failed"));
       }
     } catch {
-      setError("Network error. Please check your connection and try again.");
+      setError(t("error.apps.network"));
     } finally {
       setConnecting(false);
     }
@@ -137,7 +83,17 @@ export function AppAuthModal({
     onOpenChange(isOpen);
   };
 
-  if (!authInfo) return null;
+  if (!meta || !tokenAuth) {
+    // Surface a toast in dev so the missing provider is obvious.
+    if (appSlug) {
+      notifyError("error.apps.app_not_found", t, { slug: appSlug });
+    }
+    return null;
+  }
+
+  const name = t(meta.labelKey);
+  const portalUrl = t(tokenAuth.portalUrlKey);
+  const portalLabel = t(tokenAuth.portalLabelKey);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -145,28 +101,30 @@ export function AppAuthModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             <img
-              src={authInfo.logoUrl}
-              alt={authInfo.name}
+              src={meta.logoUrl}
+              alt={name}
               className="h-8 w-8 rounded-lg object-contain"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = "none";
               }}
             />
-            Connect {authInfo.name}
+            {t("apps.token_auth.modal.connect_app_title", { name })}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-5">
           {/* Instructions */}
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground font-medium">How to connect:</p>
+            <p className="text-sm text-muted-foreground font-medium">
+              {t("apps.token_auth.modal.instructions_title")}
+            </p>
             <ol className="space-y-1.5">
-              {authInfo.instructions.map((step, i) => (
-                <li key={i} className="flex gap-2 text-sm text-muted-foreground">
+              {tokenAuth.stepKeys.map((stepKey, i) => (
+                <li key={stepKey} className="flex gap-2 text-sm text-muted-foreground">
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[10px] font-bold shrink-0 mt-0.5">
                     {i + 1}
                   </span>
-                  <span>{step}</span>
+                  <span>{t(stepKey)}</span>
                 </li>
               ))}
             </ol>
@@ -174,26 +132,28 @@ export function AppAuthModal({
 
           {/* Portal link */}
           <a
-            href={authInfo.tokenPortalUrl}
+            href={portalUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-sm text-violet-500 hover:text-violet-600 hover:underline"
           >
             <ExternalLink className="h-3.5 w-3.5" />
-            Open {authInfo.tokenPortalLabel}
+            {t("apps.token_auth.modal.open_portal", { label: portalLabel })}
           </a>
 
           {/* Data scopes */}
           <div>
-            <p className="text-xs text-muted-foreground mb-1.5">Data that will be synced:</p>
+            <p className="text-xs text-muted-foreground mb-1.5">
+              {t("apps.token_auth.modal.scopes_title")}
+            </p>
             <div className="flex flex-wrap gap-1">
-              {authInfo.scopes.map((scope) => (
+              {tokenAuth.scopeCodes.map((scope) => (
                 <Badge
                   key={scope}
                   variant="outline"
                   className="text-[10px] bg-violet-500/5 text-violet-500 border-violet-500/20"
                 >
-                  {scope}
+                  {t(dataCategoryLabelKey(scope))}
                 </Badge>
               ))}
             </div>
@@ -202,7 +162,7 @@ export function AppAuthModal({
           {/* Token input */}
           <div className="space-y-1.5">
             <Label htmlFor="access-token" className="text-sm">
-              {authInfo.tokenLabel}
+              {t(tokenAuth.tokenLabelKey)}
             </Label>
             <div className="relative">
               <Input
@@ -213,7 +173,7 @@ export function AppAuthModal({
                   setToken(e.target.value);
                   if (error) setError(null);
                 }}
-                placeholder={authInfo.tokenPlaceholder}
+                placeholder={t(tokenAuth.tokenPlaceholderKey)}
                 className="pr-10"
                 autoComplete="off"
               />
@@ -238,23 +198,23 @@ export function AppAuthModal({
           <div className="flex items-start gap-2 rounded-md bg-muted/50 px-3 py-2">
             <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
             <p className="text-xs text-muted-foreground">
-              Your token is encrypted and stored securely. It is only used to sync data from your device.
+              {t("apps.token_auth.modal.security_note")}
             </p>
           </div>
 
           {/* Actions */}
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => handleClose(false)} disabled={connecting}>
-              Cancel
+              {t("apps.token_auth.actions.cancel")}
             </Button>
             <Button onClick={handleConnect} disabled={connecting || !token.trim()}>
               {connecting ? (
                 <>
                   <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                  Connecting...
+                  {t("apps.token_auth.actions.connecting")}
                 </>
               ) : (
-                "Connect"
+                t("apps.token_auth.actions.connect")
               )}
             </Button>
           </div>

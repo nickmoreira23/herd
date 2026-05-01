@@ -4,7 +4,8 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Plus, Plug } from "lucide-react";
-import { toast } from "sonner";
+import { useT, useLocale } from "@/lib/i18n/locale-context";
+import { notifyError, notifyInfo, notifySuccess } from "@/lib/i18n/notify";
 import { BlockListPage } from "@/components/shared/block-list-page";
 import type { FilterDef, StatCard } from "@/components/shared/block-list-page";
 import { getAppColumns } from "./app-columns";
@@ -23,10 +24,12 @@ export function AppsListClient({
   initialApps,
   initialStats,
 }: AppsListClientProps) {
+  const t = useT();
+  const locale = useLocale();
   const [apps, setApps] = useState<AppRow[]>(initialApps);
   const [stats, setStats] = useState<AppStats>(initialStats);
   const [showConnect, setShowConnect] = useState(false);
-  const [connectingSlug, setConnectingSlug] = useState<string | null>(null);
+  const [connectingSlug] = useState<string | null>(null);
   const [authTarget, setAuthTarget] = useState<{
     slug: string;
     id: string;
@@ -50,91 +53,85 @@ export function AppsListClient({
     const connected = searchParams.get("connected");
     const error = searchParams.get("error");
     if (connected) {
-      toast.success(`${connected} connected successfully!`);
+      notifySuccess("apps.feedback.connected_query", t, { name: connected });
       refreshApps();
       window.history.replaceState({}, "", window.location.pathname);
     } else if (error) {
-      toast.error(`Connection failed: ${error}`);
+      notifyError("error.apps.connection_failed", t, { message: error });
       window.history.replaceState({}, "", window.location.pathname);
     }
-  }, [searchParams, refreshApps]);
+  }, [searchParams, refreshApps, t]);
 
   // ── Action handlers ───────────────────────────────────────────────
   const handleSync = useCallback(
     async (app: AppRow) => {
-      toast.info(`Syncing ${app.name}...`);
-      const res = await fetch(`/api/apps/${app.id}/sync`, {
-        method: "POST",
-      });
+      notifyInfo("apps.feedback.sync_started", t, { name: app.name });
+      const res = await fetch(`/api/apps/${app.id}/sync`, { method: "POST" });
       if (res.ok) {
         await refreshApps();
-        toast.success(`${app.name} synced`);
+        notifySuccess("apps.feedback.synced", t, { name: app.name });
       } else {
         await refreshApps();
-        toast.error(`Failed to sync ${app.name}`);
+        notifyError("error.apps.sync_named_failed", t, { name: app.name });
       }
     },
-    [refreshApps],
+    [refreshApps, t],
   );
 
   const handleDelete = useCallback(
     async (app: AppRow) => {
-      const res = await fetch(`/api/apps/${app.id}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(`/api/apps/${app.id}`, { method: "DELETE" });
       if (res.ok) {
         await refreshApps();
-        toast.success("App deleted");
+        notifySuccess("apps.feedback.app_deleted", t);
       } else {
-        toast.error("Failed to delete app");
+        notifyError("error.apps.delete_failed", t);
       }
       setDeleteTarget(null);
     },
-    [refreshApps],
+    [refreshApps, t],
   );
 
   const handleConnect = useCallback(
     (slug: string) => {
       const app = apps.find((a) => a.slug === slug);
       if (!app) {
-        toast.error(
-          `App "${slug}" not found in database. Run prisma seed first.`,
-        );
+        notifyError("error.apps.app_not_found", t, { slug });
         return;
       }
-
-      // Close the catalog modal and open the auth modal for this app
       setShowConnect(false);
       setAuthTarget({ slug: app.slug, id: app.id });
     },
-    [apps],
+    [apps, t],
   );
 
   const handleDisconnect = useCallback(
     async (app: AppRow) => {
-      const res = await fetch(`/api/apps/${app.id}/connect`, {
-        method: "DELETE",
-      });
+      const res = await fetch(`/api/apps/${app.id}/connect`, { method: "DELETE" });
       if (res.ok) {
         await refreshApps();
-        toast.success(`${app.name} disconnected`);
+        notifySuccess("apps.feedback.disconnected_named", t, { name: app.name });
       } else {
-        toast.error("Failed to disconnect");
+        notifyError("error.apps.disconnect_failed", t);
       }
     },
-    [refreshApps],
+    [refreshApps, t],
   );
 
   // ── Columns ───────────────────────────────────────────────────────
   const columns = useMemo(
     () =>
-      getAppColumns({
-        onSync: handleSync,
-        onSettings: (app) => setSettingsTarget(app),
-        onDisconnect: handleDisconnect,
-        onDelete: (app) => setDeleteTarget(app),
-      }),
-    [handleSync, handleDisconnect],
+      getAppColumns(
+        {
+          onSync: handleSync,
+          onSettings: (app) => setSettingsTarget(app),
+          onDisconnect: handleDisconnect,
+          onDelete: (app) => setDeleteTarget(app),
+        },
+        t,
+        locale,
+      ),
+    [handleSync, handleDisconnect, t, locale],
   );
 
   // ── Derived state ─────────────────────────────────────────────────
@@ -148,40 +145,46 @@ export function AppsListClient({
     () => [
       {
         key: "status",
-        label: "All Status",
+        label: t("apps.list.filters.all_status"),
         options: [
-          { value: "PENDING", label: "Not Connected" },
-          { value: "PROCESSING", label: "Syncing" },
-          { value: "READY", label: "Connected" },
-          { value: "ERROR", label: "Error" },
+          { value: "PENDING", label: t("apps.statuses.PENDING.label") },
+          { value: "PROCESSING", label: t("apps.statuses.PROCESSING.label") },
+          { value: "READY", label: t("apps.statuses.READY.label") },
+          { value: "ERROR", label: t("apps.statuses.ERROR.label") },
         ],
         filterFn: (item: AppRow, val: string) => item.status === val,
       },
     ],
-    [],
+    [t],
   );
 
   // ── Stats ─────────────────────────────────────────────────────────
   const statCards: StatCard[] = useMemo(
     () => [
-      { label: "Total", value: String(stats.total) },
-      { label: "Connected", value: String(stats.connected) },
-      { label: "Syncing", value: String(stats.syncing) },
-      { label: "Data Points", value: String(stats.totalDataPoints) },
+      { label: t("apps.list.stats.total"), value: String(stats.total) },
+      {
+        label: t("apps.list.stats.connected"),
+        value: String(stats.connected),
+      },
+      { label: t("apps.list.stats.syncing"), value: String(stats.syncing) },
+      {
+        label: t("apps.list.stats.data_points"),
+        value: String(stats.totalDataPoints),
+      },
     ],
-    [stats],
+    [stats, t],
   );
 
   // ── Render ────────────────────────────────────────────────────────
   return (
     <BlockListPage<AppRow>
       blockName="apps"
-      title="Apps"
-      description="Connect fitness apps to sync health data into your knowledge base."
+      title={t("apps.list.title")}
+      description={t("apps.list.description")}
       data={apps}
       getId={(a) => a.id}
       columns={columns}
-      searchPlaceholder="Search by name or description..."
+      searchPlaceholder={t("apps.list.search_placeholder")}
       searchFn={(item, q) =>
         item.name.toLowerCase().includes(q) ||
         item.slug.toLowerCase().includes(q) ||
@@ -192,16 +195,16 @@ export function AppsListClient({
       headerActions={
         <Button size="sm" onClick={() => setShowConnect(true)}>
           <Plus className="mr-1 h-3 w-3" />
-          Connect App
+          {t("apps.list.connect_app")}
         </Button>
       }
       emptyIcon={Plug}
-      emptyTitle="No apps yet"
-      emptyDescription="Connect fitness and health apps to automatically sync your data into the knowledge base."
+      emptyTitle={t("apps.empty.list_title")}
+      emptyDescription={t("apps.empty.list_description")}
       emptyAction={
         <Button variant="outline" onClick={() => setShowConnect(true)}>
           <Plug className="mr-2 h-4 w-4" />
-          Connect your first app
+          {t("apps.empty.cta")}
         </Button>
       }
       showAgent={false}
@@ -223,7 +226,7 @@ export function AppsListClient({
             appId={authTarget?.id ?? null}
             onSuccess={async () => {
               await refreshApps();
-              toast.success("App connected successfully!");
+              notifySuccess("apps.feedback.app_connected_success", t);
             }}
           />
           <AppDeleteDialog

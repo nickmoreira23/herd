@@ -178,6 +178,12 @@ const eslintConfig = defineConfig([
       "src/components/tables/**/*.{ts,tsx}",
       "src/app/admin/blocks/tables/**/*.{ts,tsx}",
       "src/app/admin/organization/knowledge/tables/**/*.{ts,tsx}",
+      // Phase 1.5.6d-γ — Apps Admin (full)
+      "src/components/apps/**/*.{ts,tsx}",
+      "src/components/knowledge/apps/**/*.{ts,tsx}",
+      "src/app/admin/blocks/apps/**/*.{ts,tsx}",
+      "src/app/admin/organization/knowledge/apps/**/*.{ts,tsx}",
+      "src/lib/apps/provider-catalog.ts",
       // integrations/error.tsx (and [id]/error.tsx) are INTENTIONALLY
       // excluded: per Etapa 1.5.5 decision (Opção 2), shell-generic
       // strings were extracted to shell.error.* but feature-specific

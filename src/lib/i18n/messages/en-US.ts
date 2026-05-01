@@ -2983,4 +2983,289 @@ export const messages: Record<MessageKey, string> = {
   "error.tables.name_required": "Name is required",
   "error.tables.create_failed": "Failed to create table",
   "error.tables.delete_failed": "Failed to delete table",
+
+  // ─── Apps: providers (Template D) ──────────────────────────────────
+  "apps.providers.oura.label": "Oura Ring",
+  "apps.providers.oura.description":
+    "Sleep, activity, and readiness tracking from your Oura Ring.",
+  "apps.providers.oura.token_auth.portal.url":
+    "https://cloud.ouraring.com/personal-access-tokens",
+  "apps.providers.oura.token_auth.portal.label":
+    "Oura Token Portal",
+  "apps.providers.oura.token_auth.token.label":
+    "Personal Access Token",
+  "apps.providers.oura.token_auth.token.placeholder":
+    "Paste your Oura personal access token",
+  "apps.providers.oura.token_auth.steps.0":
+    "Sign in to your Oura account at cloud.ouraring.com",
+  "apps.providers.oura.token_auth.steps.1":
+    "Go to Personal Access Tokens in your account settings",
+  "apps.providers.oura.token_auth.steps.2":
+    "Create a new token and copy it",
+  "apps.providers.oura.token_auth.steps.3":
+    "Paste the token below to connect your Oura Ring data",
+
+  "apps.providers.whoop.label": "WHOOP",
+  "apps.providers.whoop.description":
+    "Recovery, strain, sleep, and workout data from your WHOOP strap.",
+  "apps.providers.whoop.token_auth.portal.url":
+    "https://developer.whoop.com",
+  "apps.providers.whoop.token_auth.portal.label":
+    "WHOOP Developer Portal",
+  "apps.providers.whoop.token_auth.token.label":
+    "API Access Token",
+  "apps.providers.whoop.token_auth.token.placeholder":
+    "Paste your WHOOP API access token",
+  "apps.providers.whoop.token_auth.steps.0":
+    "Sign in to the WHOOP Developer Portal at developer.whoop.com",
+  "apps.providers.whoop.token_auth.steps.1":
+    "Create or select your application",
+  "apps.providers.whoop.token_auth.steps.2":
+    "Generate an access token with the required scopes",
+  "apps.providers.whoop.token_auth.steps.3":
+    "Paste the token below to connect your WHOOP data",
+
+  "apps.providers.apple_health.label": "Apple Health",
+  "apps.providers.apple_health.description":
+    "Aggregated health data from Apple Health via Terra API bridge.",
+  "apps.providers.apple_health.token_auth.portal.url":
+    "https://tryterra.co",
+  "apps.providers.apple_health.token_auth.portal.label":
+    "Terra Dashboard",
+  "apps.providers.apple_health.token_auth.token.label":
+    "Terra API Key",
+  "apps.providers.apple_health.token_auth.token.placeholder":
+    "Paste your Terra API key",
+  "apps.providers.apple_health.token_auth.steps.0":
+    "Sign up at tryterra.co and create a new project",
+  "apps.providers.apple_health.token_auth.steps.1":
+    "Copy your API key from the Terra dashboard",
+  "apps.providers.apple_health.token_auth.steps.2":
+    "Paste it below — we use Terra as a bridge to sync Apple Health data",
+  "apps.providers.apple_health.token_auth.steps.3":
+    "After connecting, you'll authorize data sharing on your iPhone",
+
+  // ─── Apps: token auth flow (Template K) ────────────────────────────
+  "apps.token_auth.modal.connect_title": "Connect App",
+  "apps.token_auth.modal.connect_subtitle":
+    "Choose a fitness app to connect. Your health data will be synced and made available to your AI agents.",
+  "apps.token_auth.modal.connect_app_title": "Connect {name}",
+  "apps.token_auth.modal.instructions_title": "How to connect:",
+  "apps.token_auth.modal.open_portal": "Open {label}",
+  "apps.token_auth.modal.scopes_title": "Data that will be synced:",
+  "apps.token_auth.modal.security_note":
+    "Your token is encrypted and stored securely. It is only used to sync data from your device.",
+
+  "apps.token_auth.actions.connect": "Connect",
+  "apps.token_auth.actions.connecting": "Connecting...",
+  "apps.token_auth.actions.connected": "Connected",
+  "apps.token_auth.actions.cancel": "Cancel",
+  "apps.token_auth.actions.retry": "Retry",
+
+  // ─── Apps: statuses (Template D, reuses KnowledgeDocumentStatus) ───
+  "apps.statuses.PENDING.label": "Not Connected",
+  "apps.statuses.PROCESSING.label": "Syncing",
+  "apps.statuses.READY.label": "Connected",
+  "apps.statuses.ERROR.label": "Error",
+
+  // ─── Apps: data point statuses (re-uses KnowledgeDocumentStatus) ──
+  "apps.data_point_statuses.PENDING.label": "Pending",
+  "apps.data_point_statuses.PROCESSING.label": "Processing",
+  "apps.data_point_statuses.READY.label": "Ready",
+  "apps.data_point_statuses.ERROR.label": "Error",
+
+  // ─── Apps: data categories (Template D) ────────────────────────────
+  "apps.data_categories.SLEEP.label": "Sleep",
+  "apps.data_categories.SLEEP.description":
+    "Sleep duration, stages (deep, REM, light), efficiency, bedtime/wake time, and restfulness metrics.",
+  "apps.data_categories.ACTIVITY.label": "Activity",
+  "apps.data_categories.ACTIVITY.description":
+    "Daily steps, calories burned, active minutes, movement distance, and intensity breakdown.",
+  "apps.data_categories.RECOVERY.label": "Recovery",
+  "apps.data_categories.RECOVERY.description":
+    "Recovery score, HRV (heart rate variability), resting heart rate, SpO2, and skin temperature.",
+  "apps.data_categories.HEART_RATE.label": "Heart Rate",
+  "apps.data_categories.HEART_RATE.description":
+    "Continuous heart rate readings, resting/average/max HR, and heart rate zones.",
+  "apps.data_categories.WORKOUT.label": "Workout",
+  "apps.data_categories.WORKOUT.description":
+    "Exercise sessions with type, duration, strain/intensity, calories, and HR during activity.",
+  "apps.data_categories.READINESS.label": "Readiness",
+  "apps.data_categories.READINESS.description":
+    "Daily readiness score based on sleep quality, recovery, activity balance, and body temperature.",
+  "apps.data_categories.BODY.label": "Body",
+  "apps.data_categories.BODY.description":
+    "Body measurements including weight, height, BMI, body fat percentage, and max heart rate.",
+  "apps.data_categories.APP_NUTRITION.label": "Nutrition",
+  "apps.data_categories.APP_NUTRITION.description":
+    "Calorie intake, macronutrients (protein, carbs, fat), fiber, sugar, and hydration.",
+  "apps.data_categories.APP_OTHER.label": "Other",
+  "apps.data_categories.APP_OTHER.description":
+    "Additional health metrics and data from connected devices.",
+
+  // ─── Apps: sync frequency options (Template D) ─────────────────────
+  "apps.sync_frequency.15.label": "Every 15 minutes",
+  "apps.sync_frequency.30.label": "Every 30 minutes",
+  "apps.sync_frequency.60.label": "Every hour",
+  "apps.sync_frequency.360.label": "Every 6 hours",
+  "apps.sync_frequency.720.label": "Every 12 hours",
+  "apps.sync_frequency.1440.label": "Daily",
+  "apps.sync_frequency.10080.label": "Weekly",
+
+  // ─── Apps: list page (chrome) ──────────────────────────────────────
+  "apps.list.title": "Apps",
+  "apps.list.description":
+    "Connect fitness apps to sync health data into your knowledge base.",
+  "apps.list.connect_app": "Connect App",
+  "apps.list.search_placeholder": "Search by name or description...",
+  "apps.list.items_count": "{count} items",
+  "apps.list.stats.total": "Total",
+  "apps.list.stats.connected": "Connected",
+  "apps.list.stats.syncing": "Syncing",
+  "apps.list.stats.data_points": "Data Points",
+  "apps.list.filters.all_status": "All Status",
+  "apps.list.columns.app": "App",
+  "apps.list.columns.category": "Category",
+  "apps.list.columns.status": "Status",
+  "apps.list.columns.data_points": "Data Points",
+  "apps.list.columns.last_sync": "Last Sync",
+  "apps.list.actions.sync_now": "Sync Now",
+  "apps.list.actions.settings": "Settings",
+  "apps.list.actions.disconnect": "Disconnect",
+  "apps.list.actions.delete": "Delete",
+  "apps.list.last_sync_never": "Never",
+  "apps.list.dash": "—",
+
+  // ─── Apps: category labels (App.category enum) ─────────────────────
+  "apps.categories.FITNESS.label": "Fitness",
+  "apps.categories.HEALTH.label": "Health",
+  "apps.categories.NUTRITION.label": "Nutrition",
+  "apps.categories.OTHER.label": "Other",
+
+  // ─── Apps: empty state ─────────────────────────────────────────────
+  "apps.empty.title": "No apps connected",
+  "apps.empty.description":
+    "Connect fitness apps like Oura Ring, WHOOP, and Apple Health to automatically sync health data. Your AI agents can then use this data to provide personalized insights.",
+  "apps.empty.cta": "Connect your first app",
+  "apps.empty.list_title": "No apps yet",
+  "apps.empty.list_description":
+    "Connect fitness and health apps to automatically sync your data into the knowledge base.",
+
+  // ─── Apps: detail page ─────────────────────────────────────────────
+  "apps.detail.back": "Back to Apps",
+  "apps.detail.actions.test": "Test",
+  "apps.detail.actions.sync_now": "Sync Now",
+  "apps.detail.actions.disconnect": "Disconnect",
+  "apps.detail.actions.connect": "Connect",
+  "apps.detail.tabs.overview": "Overview",
+  "apps.detail.tabs.data": "Data",
+  "apps.detail.tabs.logs": "Logs",
+  "apps.detail.tabs.settings": "Settings",
+
+  "apps.detail.about.title": "About",
+  "apps.detail.about.category": "Category",
+  "apps.detail.about.auth_type": "Auth Type",
+  "apps.detail.about.created": "Created",
+  "apps.detail.about.website": "Website",
+  "apps.detail.about.visit": "Visit",
+
+  "apps.detail.connection.title": "Connection",
+  "apps.detail.connection.status": "Status",
+  "apps.detail.connection.connected_since": "Connected Since",
+  "apps.detail.connection.last_sync": "Last Sync",
+  "apps.detail.connection.never": "Never",
+  "apps.detail.connection.dash": "—",
+
+  "apps.detail.stats.title": "Data Points",
+  "apps.detail.stats.total": "Total",
+  "apps.detail.stats.ready": "Ready",
+  "apps.detail.stats.pending": "Pending",
+  "apps.detail.stats.sync_logs": "Sync Logs",
+
+  "apps.detail.categories.title": "Supported Data Categories",
+
+  "apps.detail.data.filter_all": "All Categories",
+  "apps.detail.data.empty": "No data points synced yet.",
+  "apps.detail.data.sync_now": "Sync Now",
+  "apps.detail.data.expand": "Expand",
+  "apps.detail.data.collapse": "Collapse",
+  "apps.detail.data.processing_failed": "Processing failed.",
+  "apps.detail.data.not_processed": "Not yet processed.",
+
+  "apps.detail.logs.empty": "No sync logs yet.",
+  "apps.detail.logs.records": "{count} records",
+  "apps.detail.logs.no_details": "—",
+
+  "apps.detail.settings.title": "Sync Configuration",
+  "apps.detail.settings.frequency_label": "Sync Frequency",
+  "apps.detail.settings.frequency_help":
+    "How often to automatically sync data from {name}.",
+  "apps.detail.settings.categories_label": "Enabled Data Categories",
+  "apps.detail.settings.categories_help":
+    "Select which types of data to sync from this app.",
+  "apps.detail.settings.save": "Save Settings",
+  "apps.detail.settings.saving": "Saving...",
+
+  // ─── Apps: data dialog ─────────────────────────────────────────────
+  "apps.data_dialog.title": "{name} — Data Points",
+  "apps.data_dialog.total": "{count} total",
+  "apps.data_dialog.ready": "{count} ready",
+  "apps.data_dialog.empty": "No data points synced yet.",
+  "apps.data_dialog.expand": "Expand",
+  "apps.data_dialog.collapse": "Collapse",
+  "apps.data_dialog.processing_failed": "Processing failed.",
+  "apps.data_dialog.not_processed": "Not yet processed.",
+  "apps.data_dialog.filter_all": "All Categories",
+
+  // ─── Apps: settings dialog ─────────────────────────────────────────
+  "apps.settings_dialog.title": "{name} Settings",
+  "apps.settings_dialog.frequency_label": "Sync Frequency",
+  "apps.settings_dialog.frequency_help":
+    "How often to automatically sync data from {name}.",
+  "apps.settings_dialog.categories_label": "Data Categories",
+  "apps.settings_dialog.categories_help":
+    "Select which types of data to sync from this app.",
+  "apps.settings_dialog.save": "Save Settings",
+  "apps.settings_dialog.saving": "Saving...",
+  "apps.settings_dialog.cancel": "Cancel",
+
+  // ─── Apps: delete dialog ───────────────────────────────────────────
+  "apps.delete_dialog.title": "Delete app",
+  "apps.delete_dialog.confirm_no_data":
+    "Are you sure you want to delete \"{name}\"? This action cannot be undone.",
+  "apps.delete_dialog.confirm_one":
+    "Are you sure you want to delete \"{name}\"? This will permanently remove {count} synced data point and all associated content. This action cannot be undone.",
+  "apps.delete_dialog.confirm_other":
+    "Are you sure you want to delete \"{name}\"? This will permanently remove {count} synced data points and all associated content. This action cannot be undone.",
+  "apps.delete_dialog.cancel": "Cancel",
+  "apps.delete_dialog.delete": "Delete",
+
+  // ─── Apps: feedback (toasts) ───────────────────────────────────────
+  "apps.feedback.disconnected": "Disconnected",
+  "apps.feedback.connected": "{name} connected!",
+  "apps.feedback.connected_query":
+    "{name} connected successfully!",
+  "apps.feedback.app_connected_success":
+    "App connected successfully!",
+  "apps.feedback.test_passed": "Connection test passed",
+  "apps.feedback.sync_started": "Syncing {name}...",
+  "apps.feedback.sync_completed": "Sync completed",
+  "apps.feedback.synced": "{name} synced",
+  "apps.feedback.disconnected_named": "{name} disconnected",
+  "apps.feedback.settings_saved": "Settings saved",
+  "apps.feedback.app_deleted": "App deleted",
+
+  // ─── Apps: errors ──────────────────────────────────────────────────
+  "error.apps.connect_failed":
+    "Failed to connect. Please check your token and try again.",
+  "error.apps.network": "Network error. Please check your connection and try again.",
+  "error.apps.disconnect_failed": "Failed to disconnect",
+  "error.apps.test_failed": "Connection test failed",
+  "error.apps.sync_failed": "Sync failed",
+  "error.apps.save_settings_failed": "Failed to save settings",
+  "error.apps.delete_failed": "Failed to delete app",
+  "error.apps.app_not_found":
+    "App \"{slug}\" not found in database. Run prisma seed first.",
+  "error.apps.connection_failed": "Connection failed: {message}",
+  "error.apps.sync_named_failed": "Failed to sync {name}",
 };
