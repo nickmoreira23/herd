@@ -1,5 +1,25 @@
 "use client";
 
+/**
+ * Knowledge route surface for DOCUMENT listing.
+ *
+ * Coexists with src/components/documents/documents-list-client.tsx (Blocks
+ * route surface). Both share fetch + columns + handlers + stats logic
+ * but use different chrome wrappers:
+ * - This file: DataTable + inline chrome (PageHeader, search, filters) + Folders/Breadcrumbs.
+ * - documents-list-client.tsx: BlockListPage shell (unified chrome).
+ * - Note: also imported by src/app/admin/operation/documents/page.tsx
+ *   (third consumer outside the Knowledge/Blocks dual-route pattern).
+ *
+ * Architectural decision (1.5.6e): kept separate. Extracting a shared
+ * useBlockListing() hook is feasible but deferred — Surface (top-level
+ * feature post-Phase 1.5) may redefine how blocks are exposed across
+ * routes, potentially making this pattern obsolete. Revisit after
+ * Surface is built.
+ *
+ * See: docs/discovery/KNOWLEDGE_ROUTE_LAYER_AUDIT.md
+ */
+
 import { useState, useMemo, useCallback } from "react";
 import { DataTable } from "@/components/shared/data-table";
 import { getDocumentColumns } from "./document-columns";

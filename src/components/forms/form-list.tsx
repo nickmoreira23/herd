@@ -1,5 +1,23 @@
 "use client";
 
+/**
+ * Knowledge route surface for FORM listing.
+ *
+ * Coexists with src/components/forms/forms-list-client.tsx (Blocks
+ * route surface). Both share fetch + columns + handlers + stats logic
+ * but use different chrome wrappers:
+ * - This file: DataTable + inline chrome (PageHeader, search, filters).
+ * - forms-list-client.tsx: BlockListPage shell (unified chrome).
+ *
+ * Architectural decision (1.5.6e): kept separate. Extracting a shared
+ * useBlockListing() hook is feasible but deferred — Surface (top-level
+ * feature post-Phase 1.5) may redefine how blocks are exposed across
+ * routes, potentially making this pattern obsolete. Revisit after
+ * Surface is built.
+ *
+ * See: docs/discovery/KNOWLEDGE_ROUTE_LAYER_AUDIT.md
+ */
+
 import { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/shared/data-table";
