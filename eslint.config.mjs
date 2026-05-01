@@ -142,6 +142,15 @@ const eslintConfig = defineConfig([
       "src/app/admin/partners/**/*.{ts,tsx}",
       "src/components/profile/**/*.{ts,tsx}",
       "src/app/admin/profile/**/*.{ts,tsx}",
+      // Phase 1.5.6b-bis — Network Foundation (sub-panel + manage + profile-types
+      // + roles + permission matrix + profiles wizard + profile table). Promoters
+      // (src/components/network/promoters/**) and admin/network pages migrate
+      // separately in 1.5.6b-tris.
+      "src/components/network/network-sub-panel.tsx",
+      "src/components/network/manage-network-dialog.tsx",
+      "src/components/network/profile-types/**/*.{ts,tsx}",
+      "src/components/network/roles/**/*.{ts,tsx}",
+      "src/components/network/profiles/**/*.{ts,tsx}",
       // integrations/error.tsx (and [id]/error.tsx) are INTENTIONALLY
       // excluded: per Etapa 1.5.5 decision (Opção 2), shell-generic
       // strings were extracted to shell.error.* but feature-specific
@@ -154,7 +163,7 @@ const eslintConfig = defineConfig([
         ignoreProps: true,
         allowedStrings: [
           " ", "·", "—", "/", "-", "…", "D", "C", "%", "$",
-          ":", "(", ")", "ℹ", "→", "+",
+          ":", "(", ")", "ℹ", "→", "+", "*", "×",
         ],
       }],
     },

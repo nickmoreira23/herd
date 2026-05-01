@@ -8,7 +8,20 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { WizardFieldsEditor } from "./wizard-fields-editor"
 import type { WizardField, CreateProfileTypeInput } from "@/lib/validators/network-profile-type"
+import { useT } from "@/lib/i18n/locale-context"
+import type { MessageKey } from "@/lib/i18n/messages/pt-BR"
+
 type NetworkType = "INTERNAL" | "EXTERNAL"
+
+const NETWORK_TYPE_KEYS = {
+  INTERNAL: "network.type.INTERNAL",
+  EXTERNAL: "network.type.EXTERNAL",
+} as const satisfies Record<NetworkType, MessageKey>
+
+const NETWORK_TYPE_HINT_KEYS = {
+  INTERNAL: "network.profile_types.detail.network_type.internal_hint",
+  EXTERNAL: "network.profile_types.detail.network_type.external_hint",
+} as const satisfies Record<NetworkType, MessageKey>
 
 interface ProfileTypeFormProps {
   defaultValues?: Partial<CreateProfileTypeInput>
@@ -22,6 +35,7 @@ export function ProfileTypeForm({
   mode,
 }: ProfileTypeFormProps) {
   const router = useRouter()
+  const t = useT()
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
 
@@ -78,7 +92,7 @@ export function ProfileTypeForm({
       router.push("/admin/network/profile-types")
       router.refresh()
     } catch {
-      setError("An unexpected error occurred")
+      setError(t("error.network.unexpected"))
     } finally {
       setIsSubmitting(false)
     }
@@ -94,7 +108,9 @@ export function ProfileTypeForm({
 
       {/* Network Type */}
       <div className="space-y-2">
-        <label className="text-sm font-medium">Network Type *</label>
+        <label className="text-sm font-medium">
+          {t("network.profile_types.detail.network_type_label")}
+        </label>
         <div className="flex gap-3">
           {(["INTERNAL", "EXTERNAL"] as NetworkType[]).map((nt) => (
             <button
@@ -108,12 +124,10 @@ export function ProfileTypeForm({
               }`}
             >
               <Badge variant={nt === "INTERNAL" ? "secondary" : "default"} className="mb-1">
-                {nt}
+                {t(NETWORK_TYPE_KEYS[nt])}
               </Badge>
               <p className="text-xs text-muted-foreground mt-1">
-                {nt === "INTERNAL"
-                  ? "Employees, managers, sales reps"
-                  : "Promoters, influencers, trainers"}
+                {t(NETWORK_TYPE_HINT_KEYS[nt])}
               </p>
             </button>
           ))}
@@ -122,40 +136,46 @@ export function ProfileTypeForm({
 
       {/* Display Name */}
       <div className="space-y-2">
-        <label className="text-sm font-medium">Display Name *</label>
+        <label className="text-sm font-medium">
+          {t("network.profile_types.detail.display_name_label")}
+        </label>
         <Input
           value={form.displayName ?? ""}
           onChange={(e) => handleNameChange(e.target.value)}
-          placeholder="e.g., Regional Manager"
+          placeholder={t("network.profile_types.detail.display_name_placeholder")}
           required
         />
       </div>
 
       {/* Slug */}
       <div className="space-y-2">
-        <label className="text-sm font-medium">Slug *</label>
+        <label className="text-sm font-medium">
+          {t("network.profile_types.detail.slug_label")}
+        </label>
         <Input
           value={form.slug ?? ""}
           onChange={(e) =>
             handleChange("slug", e.target.value.replace(/[^a-z0-9_-]/g, ""))
           }
-          placeholder="e.g., regional_manager"
+          placeholder={t("network.profile_types.detail.slug_placeholder")}
           required
           readOnly={mode === "edit"}
           className={mode === "edit" ? "opacity-60 cursor-not-allowed" : ""}
         />
         <p className="text-xs text-muted-foreground">
-          Unique identifier. Cannot be changed after creation.
+          {t("network.profile_types.detail.slug_hint")}
         </p>
       </div>
 
       {/* Description */}
       <div className="space-y-2">
-        <label className="text-sm font-medium">Description</label>
+        <label className="text-sm font-medium">
+          {t("network.profile_types.detail.description_label")}
+        </label>
         <Textarea
           value={form.description ?? ""}
           onChange={(e) => handleChange("description", e.target.value)}
-          placeholder="Brief description of this profile type"
+          placeholder={t("network.profile_types.detail.description_placeholder")}
           rows={2}
         />
       </div>
@@ -163,7 +183,9 @@ export function ProfileTypeForm({
       {/* Color & Icon */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium">Badge Color</label>
+          <label className="text-sm font-medium">
+            {t("network.profile_types.detail.color_label")}
+          </label>
           <div className="flex items-center gap-2">
             <input
               type="color"
@@ -180,7 +202,9 @@ export function ProfileTypeForm({
           </div>
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium">Sort Order</label>
+          <label className="text-sm font-medium">
+            {t("network.profile_types.detail.sort_order_label")}
+          </label>
           <Input
             type="number"
             value={form.sortOrder ?? 0}
@@ -200,16 +224,18 @@ export function ProfileTypeForm({
           className="rounded"
         />
         <label htmlFor="isActive" className="text-sm font-medium cursor-pointer">
-          Active (visible in wizard and profile creation)
+          {t("network.profile_types.detail.active_label")}
         </label>
       </div>
 
       {/* Wizard Fields */}
       <div className="space-y-2">
         <div>
-          <label className="text-sm font-medium">Custom Wizard Fields</label>
+          <label className="text-sm font-medium">
+            {t("network.profile_types.detail.wizard_fields_label")}
+          </label>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Fields that appear in Step 6 of the profile creation wizard for this type.
+            {t("network.profile_types.detail.wizard_fields_hint")}
           </p>
         </div>
         <WizardFieldsEditor
@@ -223,18 +249,18 @@ export function ProfileTypeForm({
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting
             ? mode === "create"
-              ? "Creating..."
-              : "Saving..."
+              ? t("network.profile_types.detail.creating")
+              : t("network.profile_types.detail.saving")
             : mode === "create"
-            ? "Create Profile Type"
-            : "Save Changes"}
+            ? t("network.profile_types.detail.create_button")
+            : t("network.profile_types.detail.save_button")}
         </Button>
         <Button
           type="button"
           variant="ghost"
           onClick={() => router.push("/admin/network/profile-types")}
         >
-          Cancel
+          {t("network.profile_types.detail.cancel")}
         </Button>
       </div>
     </form>

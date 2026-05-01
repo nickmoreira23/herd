@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import { useWizardStore } from "@/stores/wizard-store"
 import type { WizardField } from "@/lib/validators/network-profile-type"
+import { useT } from "@/lib/i18n/locale-context"
 
 interface StepAttributesProps {
   onNext: () => void
@@ -13,6 +14,7 @@ interface StepAttributesProps {
 }
 
 export function StepAttributes({ onNext, onBack }: StepAttributesProps) {
+  const t = useT()
   const { formData, updateFormData, profileTypeConfig } = useWizardStore()
 
   const fields = (profileTypeConfig?.wizardFields ?? []) as WizardField[]
@@ -37,9 +39,9 @@ export function StepAttributes({ onNext, onBack }: StepAttributesProps) {
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-xl font-semibold">Additional Information</h2>
+          <h2 className="text-xl font-semibold">{t("network.wizard.step6.title")}</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            No additional fields for this profile type.
+            {t("network.wizard.step6.no_fields")}
           </p>
         </div>
         <div className="flex items-center gap-3 pt-2">
@@ -48,14 +50,14 @@ export function StepAttributes({ onNext, onBack }: StepAttributesProps) {
             onClick={onBack}
             className="px-4 py-2 rounded-lg text-sm font-medium border border-border hover:bg-muted transition-colors"
           >
-            Back
+            {t("network.wizard.common.back")}
           </button>
           <button
             type="button"
             onClick={onNext}
             className="px-6 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            Continue
+            {t("network.wizard.common.next")}
           </button>
         </div>
       </div>
@@ -65,10 +67,13 @@ export function StepAttributes({ onNext, onBack }: StepAttributesProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold">Additional Information</h2>
+        <h2 className="text-xl font-semibold">{t("network.wizard.step6.title")}</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Provide details specific to{" "}
-          {profileTypeConfig?.displayName ?? "this profile type"}.
+          {t("network.wizard.step6.description", {
+            type:
+              profileTypeConfig?.displayName ??
+              t("network.wizard.step6.description_fallback"),
+          })}
         </p>
       </div>
 
@@ -89,7 +94,7 @@ export function StepAttributes({ onNext, onBack }: StepAttributesProps) {
           onClick={onBack}
           className="px-4 py-2 rounded-lg text-sm font-medium border border-border hover:bg-muted transition-colors"
         >
-          Back
+          {t("network.wizard.common.back")}
         </button>
         <button
           type="button"
@@ -102,7 +107,7 @@ export function StepAttributes({ onNext, onBack }: StepAttributesProps) {
               : "bg-muted text-muted-foreground cursor-not-allowed"
           )}
         >
-          Continue
+          {t("network.wizard.common.next")}
         </button>
       </div>
     </div>
@@ -118,6 +123,7 @@ function DynamicField({
   value: unknown
   onChange: (val: unknown) => void
 }) {
+  const t = useT()
   const labelEl = (
     <label className="text-sm font-medium">
       {field.label}
@@ -149,7 +155,7 @@ function DynamicField({
             required={field.required}
             className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
           >
-            <option value="">Select an option</option>
+            <option value="">{t("network.wizard.step6.select_option")}</option>
             {(field.options ?? []).map((opt) => (
               <option key={opt} value={opt}>
                 {opt}

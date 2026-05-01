@@ -2,9 +2,9 @@
 
 import * as React from "react"
 import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/utils"
 import { useWizardStore } from "@/stores/wizard-store"
 import { Search, X } from "lucide-react"
+import { useT } from "@/lib/i18n/locale-context"
 
 interface ProfileOption {
   id: string
@@ -26,6 +26,7 @@ interface StepHierarchyProps {
 }
 
 export function StepHierarchy({ onNext, onBack }: StepHierarchyProps) {
+  const t = useT()
   const { formData, updateFormData } = useWizardStore()
 
   const [parentSearch, setParentSearch] = React.useState("")
@@ -91,9 +92,9 @@ export function StepHierarchy({ onNext, onBack }: StepHierarchyProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold">Hierarchy Placement</h2>
+        <h2 className="text-xl font-semibold">{t("network.wizard.step3.title")}</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Set the supervisor and team assignments for this profile.
+          {t("network.wizard.step3.description")}
         </p>
       </div>
 
@@ -101,8 +102,10 @@ export function StepHierarchy({ onNext, onBack }: StepHierarchyProps) {
         {/* Parent / supervisor */}
         <div className="space-y-2">
           <label className="text-sm font-medium">
-            Supervisor / Upline{" "}
-            <span className="font-normal text-muted-foreground">(optional)</span>
+            {t("network.wizard.step3.parent_label")}{" "}
+            <span className="font-normal text-muted-foreground">
+              {t("network.wizard.step3.parent_optional")}
+            </span>
           </label>
 
           {selectedParent ? (
@@ -131,7 +134,7 @@ export function StepHierarchy({ onNext, onBack }: StepHierarchyProps) {
               <Input
                 value={parentSearch}
                 onChange={(e) => setParentSearch(e.target.value)}
-                placeholder="Search by name or email..."
+                placeholder={t("network.wizard.step3.parent_search_placeholder")}
                 className="pl-9"
               />
               {parentResults.length > 0 && (
@@ -154,7 +157,9 @@ export function StepHierarchy({ onNext, onBack }: StepHierarchyProps) {
                 </div>
               )}
               {parentLoading && (
-                <p className="text-xs text-muted-foreground mt-1 pl-1">Searching...</p>
+                <p className="text-xs text-muted-foreground mt-1 pl-1">
+                  {t("network.wizard.step3.searching")}
+                </p>
               )}
             </div>
           )}
@@ -163,11 +168,15 @@ export function StepHierarchy({ onNext, onBack }: StepHierarchyProps) {
         {/* Team assignment */}
         <div className="space-y-2">
           <label className="text-sm font-medium">
-            Team Assignments{" "}
-            <span className="font-normal text-muted-foreground">(optional)</span>
+            {t("network.wizard.step3.teams_label")}{" "}
+            <span className="font-normal text-muted-foreground">
+              {t("network.wizard.step3.parent_optional")}
+            </span>
           </label>
           {teams.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No teams created yet.</p>
+            <p className="text-sm text-muted-foreground">
+              {t("network.wizard.step3.no_teams")}
+            </p>
           ) : (
             <div className="space-y-1.5">
               {teams.map((team) => (
@@ -184,7 +193,9 @@ export function StepHierarchy({ onNext, onBack }: StepHierarchyProps) {
                   <div>
                     <p className="text-sm font-medium">{team.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {team._count.members} members
+                      {t("network.wizard.step3.team_members_count", {
+                        count: team._count.members,
+                      })}
                     </p>
                   </div>
                 </label>
@@ -200,14 +211,14 @@ export function StepHierarchy({ onNext, onBack }: StepHierarchyProps) {
           onClick={onBack}
           className="px-4 py-2 rounded-lg text-sm font-medium border border-border hover:bg-muted transition-colors"
         >
-          Back
+          {t("network.wizard.common.back")}
         </button>
         <button
           type="button"
           onClick={onNext}
           className="px-6 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-all"
         >
-          Continue
+          {t("network.wizard.common.next")}
         </button>
       </div>
     </div>

@@ -6,12 +6,25 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { useWizardStore, type ProfileTypeConfig } from "@/stores/wizard-store"
+import { useT } from "@/lib/i18n/locale-context"
+import type { MessageKey } from "@/lib/i18n/messages/pt-BR"
 
 interface StepNetworkTypeProps {
   onNext: () => void
 }
 
+const NETWORK_TYPE_KEYS = {
+  INTERNAL: "network.type.INTERNAL",
+  EXTERNAL: "network.type.EXTERNAL",
+} as const satisfies Record<"INTERNAL" | "EXTERNAL", MessageKey>
+
+const NETWORK_FOR_KEYS = {
+  INTERNAL: "network.wizard.step1.for_network_internal",
+  EXTERNAL: "network.wizard.step1.for_network_external",
+} as const satisfies Record<"INTERNAL" | "EXTERNAL", MessageKey>
+
 export function StepNetworkType({ onNext }: StepNetworkTypeProps) {
+  const t = useT()
   const { formData, updateFormData, setProfileTypeConfig } = useWizardStore()
   const [profileTypes, setProfileTypes] = React.useState<ProfileTypeConfig[]>([])
   const [loadingTypes, setLoadingTypes] = React.useState(false)
@@ -46,9 +59,9 @@ export function StepNetworkType({ onNext }: StepNetworkTypeProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold">Network Type</h2>
+        <h2 className="text-xl font-semibold">{t("network.wizard.step1.title")}</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Select which network this profile belongs to.
+          {t("network.wizard.step1.description")}
         </p>
       </div>
 
@@ -57,17 +70,17 @@ export function StepNetworkType({ onNext }: StepNetworkTypeProps) {
         {[
           {
             value: "INTERNAL" as const,
-            label: "Internal",
-            description: "Employees, managers, and sales staff",
+            labelKey: "network.wizard.step1.internal_label" as const,
+            descriptionKey: "network.wizard.step1.internal_description" as const,
             icon: Building2,
           },
           {
             value: "EXTERNAL" as const,
-            label: "External",
-            description: "Promoters, influencers, trainers, and partners",
+            labelKey: "network.wizard.step1.external_label" as const,
+            descriptionKey: "network.wizard.step1.external_description" as const,
             icon: Globe,
           },
-        ].map(({ value, label, description, icon: Icon }) => (
+        ].map(({ value, descriptionKey, icon: Icon }) => (
           <button
             key={value}
             type="button"
@@ -91,9 +104,9 @@ export function StepNetworkType({ onNext }: StepNetworkTypeProps) {
             </div>
             <div>
               <Badge variant={value === "INTERNAL" ? "secondary" : "default"} className="mb-1">
-                {value}
+                {t(NETWORK_TYPE_KEYS[value])}
               </Badge>
-              <p className="text-sm text-muted-foreground">{description}</p>
+              <p className="text-sm text-muted-foreground">{t(descriptionKey)}</p>
             </div>
           </button>
         ))}
@@ -103,8 +116,10 @@ export function StepNetworkType({ onNext }: StepNetworkTypeProps) {
       {selectedNetwork && (
         <div>
           <h3 className="text-sm font-medium mb-3">
-            Select Profile Type{" "}
-            <span className="text-muted-foreground font-normal">for {selectedNetwork.toLowerCase()} network</span>
+            {t("network.wizard.step1.select_profile_type")}{" "}
+            <span className="text-muted-foreground font-normal">
+              {t(NETWORK_FOR_KEYS[selectedNetwork])}
+            </span>
           </h3>
 
           {loadingTypes ? (
@@ -148,7 +163,7 @@ export function StepNetworkType({ onNext }: StepNetworkTypeProps) {
               : "bg-muted text-muted-foreground cursor-not-allowed"
           )}
         >
-          Continue
+          {t("network.wizard.common.next")}
         </button>
       </div>
     </div>

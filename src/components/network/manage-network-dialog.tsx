@@ -22,9 +22,11 @@ import {
   Building2,
   type LucideIcon,
 } from "lucide-react";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { DEFAULT_CATEGORY_COLOR } from "@/lib/blocks/block-categories";
+import { useT } from "@/lib/i18n/locale-context";
+import { notifyError } from "@/lib/i18n/notify";
+import type { MessageKey } from "@/lib/i18n/messages/pt-BR";
 
 // ─── Types ─────────────────────────────────────────────────────
 
@@ -55,9 +57,14 @@ interface ManageNetworkDialogProps {
   onChange: () => void;
 }
 
-const PAGES: { key: Page; label: string; icon: LucideIcon }[] = [
-  { key: "profiles", label: "Profiles", icon: Layers },
-  { key: "roles", label: "Roles", icon: Shield },
+const PAGE_LABEL_KEYS = {
+  profiles: "network.manage.tab.profiles",
+  roles: "network.manage.tab.roles",
+} as const satisfies Record<Page, MessageKey>;
+
+const PAGES: { key: Page; icon: LucideIcon }[] = [
+  { key: "profiles", icon: Layers },
+  { key: "roles", icon: Shield },
 ];
 
 // ─── Component ─────────────────────────────────────────────────
@@ -67,6 +74,7 @@ export function ManageNetworkDialog({
   onOpenChange,
   onChange,
 }: ManageNetworkDialogProps) {
+  const t = useT();
   const [activePage, setActivePage] = useState<Page>("profiles");
   const [profileTypes, setProfileTypes] = useState<ProfileTypeRow[]>([]);
   const [roles, setRoles] = useState<RoleRow[]>([]);
@@ -89,13 +97,13 @@ export function ManageNetworkDialog({
   }, [open]);
 
   async function handleDeleteProfileType(id: string, name: string) {
-    if (!confirm(`Delete profile type "${name}"? This cannot be undone.`)) return;
+    if (!confirm(t("network.manage.profile_types.confirm_delete", { name }))) return;
     const res = await fetch(`/api/network/profile-types/${id}`, {
       method: "DELETE",
     });
     const json = await res.json();
     if (json.error) {
-      toast.error(json.error);
+      notifyError("error.network.unexpected", t);
       return;
     }
     setProfileTypes((prev) => prev.filter((p) => p.id !== id));
@@ -104,11 +112,11 @@ export function ManageNetworkDialog({
   }
 
   async function handleDeleteRole(id: string, name: string) {
-    if (!confirm(`Delete role "${name}"? This cannot be undone.`)) return;
+    if (!confirm(t("network.manage.roles.confirm_delete", { name }))) return;
     const res = await fetch(`/api/network/roles/${id}`, { method: "DELETE" });
     const json = await res.json();
     if (json.error) {
-      toast.error(json.error);
+      notifyError("error.network.unexpected", t);
       return;
     }
     setRoles((prev) => prev.filter((r) => r.id !== id));
@@ -125,16 +133,16 @@ export function ManageNetworkDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl p-0 gap-0">
         <DialogHeader className="px-6 pt-5 pb-4 border-b">
-          <DialogTitle>Manage</DialogTitle>
+          <DialogTitle>{t("network.manage.title")}</DialogTitle>
           <DialogDescription>
-            Profile Types and Roles.
+            {t("network.manage.description")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex min-h-[420px] max-h-[65vh]">
           {/* Left sidebar */}
           <nav className="w-[160px] shrink-0 border-r bg-muted/30 p-3 space-y-0.5">
-            {PAGES.map(({ key, label, icon: Icon }) => (
+            {PAGES.map(({ key, icon: Icon }) => (
               <button
                 key={key}
                 type="button"
@@ -147,7 +155,7 @@ export function ManageNetworkDialog({
                 )}
               >
                 <Icon className="h-4 w-4 shrink-0" />
-                {label}
+                {t(PAGE_LABEL_KEYS[key])}
               </button>
             ))}
           </nav>
@@ -174,7 +182,7 @@ export function ManageNetworkDialog({
 
         <DialogFooter className="rounded-b-xl">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Close
+            {t("network.manage.close")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -195,33 +203,36 @@ function ProfileTypesContent({
   external: ProfileTypeRow[];
   onDelete: (id: string, name: string) => void;
 }) {
+  const t = useT();
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">
-          Profile types define the kind of member (internal role or external channel).
+          {t("network.manage.profile_types.description")}
         </p>
         <Link
           href="/admin/network/profile-types/new"
           className="inline-flex items-center gap-1.5 rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
         >
           <Plus className="size-3.5" />
-          New
+          {t("network.manage.new")}
         </Link>
       </div>
 
       {loading ? (
-        <p className="text-xs text-muted-foreground italic">Loading…</p>
+        <p className="text-xs text-muted-foreground italic">
+          {t("network.manage.loading")}
+        </p>
       ) : (
         <>
           <ProfileTypeGroup
-            title="Internal Network"
+            titleKey="network.manage.profile_types.internal"
             icon={Building2}
             rows={internal}
             onDelete={onDelete}
           />
           <ProfileTypeGroup
-            title="External Network"
+            titleKey="network.manage.profile_types.external"
             icon={Globe}
             rows={external}
             onDelete={onDelete}
@@ -233,25 +244,26 @@ function ProfileTypesContent({
 }
 
 function ProfileTypeGroup({
-  title,
+  titleKey,
   icon: Icon,
   rows,
   onDelete,
 }: {
-  title: string;
+  titleKey: MessageKey;
   icon: LucideIcon;
   rows: ProfileTypeRow[];
   onDelete: (id: string, name: string) => void;
 }) {
+  const t = useT();
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         <Icon className="size-3.5" />
-        {title}
+        {t(titleKey)}
       </div>
       {rows.length === 0 ? (
         <p className="text-xs text-muted-foreground italic px-1">
-          None yet.
+          {t("network.manage.none_yet")}
         </p>
       ) : (
         <div className="space-y-1">
@@ -273,7 +285,7 @@ function ProfileTypeGroup({
               <Link
                 href={`/admin/network/profile-types/${p.id}`}
                 className="inline-flex items-center justify-center size-6 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
-                aria-label="Edit"
+                aria-label={t("network.manage.profile_types.edit")}
               >
                 <Pencil className="size-3.5" />
               </Link>
@@ -282,8 +294,12 @@ function ProfileTypeGroup({
                 size="icon-xs"
                 onClick={() => onDelete(p.id, p.displayName)}
                 disabled={!p.canDelete}
-                title={p.canDelete ? "Delete" : "Cannot delete (in use)"}
-                aria-label="Delete"
+                title={
+                  p.canDelete
+                    ? t("network.manage.profile_types.delete")
+                    : t("network.manage.profile_types.cannot_delete")
+                }
+                aria-label={t("network.manage.profile_types.delete")}
               >
                 <Trash2 />
               </Button>
@@ -306,6 +322,7 @@ function RolesContent({
   roles: RoleRow[];
   onDelete: (id: string, name: string) => void;
 }) {
+  const t = useT();
   const general = roles.filter((r) => !r.networkType);
   const internal = roles.filter((r) => r.networkType === "INTERNAL");
   const external = roles.filter((r) => r.networkType === "EXTERNAL");
@@ -314,34 +331,36 @@ function RolesContent({
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">
-          Roles control what members can do across the network.
+          {t("network.manage.roles.description")}
         </p>
         <Link
           href="/admin/network/roles/new"
           className="inline-flex items-center gap-1.5 rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
         >
           <Plus className="size-3.5" />
-          New
+          {t("network.manage.new")}
         </Link>
       </div>
       {loading ? (
-        <p className="text-xs text-muted-foreground italic">Loading…</p>
+        <p className="text-xs text-muted-foreground italic">
+          {t("network.manage.loading")}
+        </p>
       ) : (
         <>
           <RoleGroup
-            title="General"
+            titleKey="network.manage.roles.general"
             icon={Shield}
             rows={general}
             onDelete={onDelete}
           />
           <RoleGroup
-            title="Internal Network"
+            titleKey="network.manage.roles.internal"
             icon={Building2}
             rows={internal}
             onDelete={onDelete}
           />
           <RoleGroup
-            title="External Network"
+            titleKey="network.manage.roles.external"
             icon={Globe}
             rows={external}
             onDelete={onDelete}
@@ -353,24 +372,27 @@ function RolesContent({
 }
 
 function RoleGroup({
-  title,
+  titleKey,
   icon: Icon,
   rows,
   onDelete,
 }: {
-  title: string;
+  titleKey: MessageKey;
   icon: LucideIcon;
   rows: RoleRow[];
   onDelete: (id: string, name: string) => void;
 }) {
+  const t = useT();
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         <Icon className="size-3.5" />
-        {title}
+        {t(titleKey)}
       </div>
       {rows.length === 0 ? (
-        <p className="text-xs text-muted-foreground italic px-1">None yet.</p>
+        <p className="text-xs text-muted-foreground italic px-1">
+          {t("network.manage.none_yet")}
+        </p>
       ) : (
         <div className="space-y-1">
           {rows.map((r) => (
@@ -386,7 +408,7 @@ function RoleGroup({
               <Link
                 href={`/admin/network/roles/${r.id}`}
                 className="inline-flex items-center justify-center size-6 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
-                aria-label="Edit"
+                aria-label={t("network.manage.roles.edit")}
               >
                 <Pencil className="size-3.5" />
               </Link>
@@ -395,8 +417,12 @@ function RoleGroup({
                 size="icon-xs"
                 onClick={() => onDelete(r.id, r.displayName)}
                 disabled={r.isSystem}
-                title={r.isSystem ? "System role" : "Delete"}
-                aria-label="Delete"
+                title={
+                  r.isSystem
+                    ? t("network.manage.roles.system_role")
+                    : t("network.manage.roles.delete")
+                }
+                aria-label={t("network.manage.roles.delete")}
               >
                 <Trash2 />
               </Button>

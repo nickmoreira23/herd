@@ -1631,6 +1631,323 @@ export const messages = {
   "error.profile.email_required": "E-mail é obrigatório",
   "error.profile.save_failed": "Falha ao salvar",
   "error.profile.avatar_upload_failed": "Falha ao enviar avatar",
+
+  // ============================================================
+  // Network — Phase 1.5.6b-bis
+  // ============================================================
+
+  // Subpanel chrome
+  "network.subpanel.title": "Rede",
+  "network.subpanel.all_members": "Todos os membros",
+  "network.subpanel.org_chart": "Organograma",
+  "network.subpanel.network_map": "Mapa da rede",
+  "network.subpanel.internal": "Rede interna",
+  "network.subpanel.external": "Rede externa",
+  "network.subpanel.no_departments": "Nenhum departamento.",
+  "network.subpanel.no_channels": "Nenhum canal.",
+  "network.subpanel.manage": "Gerenciar rede",
+
+  // Manage dialog
+  "network.manage.title": "Gerenciar",
+  "network.manage.description": "Tipos de perfil e cargos.",
+  "network.manage.tab.profiles": "Tipos de perfil",
+  "network.manage.tab.roles": "Cargos",
+  "network.manage.close": "Fechar",
+  "network.manage.new": "Novo",
+  "network.manage.loading": "Carregando…",
+  "network.manage.none_yet": "Nenhum ainda.",
+  "network.manage.profile_types.description":
+    "Tipos de perfil definem o tipo de membro (cargo interno ou canal externo).",
+  "network.manage.profile_types.internal": "Rede interna",
+  "network.manage.profile_types.external": "Rede externa",
+  "network.manage.profile_types.confirm_delete":
+    'Excluir o tipo de perfil "{name}"? Esta ação não pode ser desfeita.',
+  "network.manage.profile_types.cannot_delete":
+    "Não é possível excluir (em uso)",
+  "network.manage.profile_types.delete": "Excluir",
+  "network.manage.profile_types.edit": "Editar",
+  "network.manage.roles.description":
+    "Cargos controlam o que os membros podem fazer na rede.",
+  "network.manage.roles.general": "Geral",
+  "network.manage.roles.internal": "Rede interna",
+  "network.manage.roles.external": "Rede externa",
+  "network.manage.roles.confirm_delete":
+    'Excluir o cargo "{name}"? Esta ação não pode ser desfeita.',
+  "network.manage.roles.system_role": "Cargo do sistema",
+  "network.manage.roles.delete": "Excluir",
+  "network.manage.roles.edit": "Editar",
+
+  // Network type enum
+  "network.type.INTERNAL": "Interna",
+  "network.type.EXTERNAL": "Externa",
+  "network.type.both": "Ambas as redes",
+  "network.type.internal_only": "Apenas interna",
+  "network.type.external_only": "Apenas externa",
+
+  // Profile status enum
+  "network.profile.status.ACTIVE": "Ativo",
+  "network.profile.status.PENDING": "Pendente",
+  "network.profile.status.SUSPENDED": "Suspenso",
+  "network.profile.status.TERMINATED": "Encerrado",
+
+  // Profile types — list/table
+  "network.profile_types.list.search_placeholder": "Buscar tipos de perfil...",
+  "network.profile_types.list.column.name": "Nome",
+  "network.profile_types.list.column.type": "Tipo",
+  "network.profile_types.list.column.custom_fields": "Campos personalizados",
+  "network.profile_types.list.column.profiles": "Perfis",
+  "network.profile_types.list.column.status": "Status",
+  "network.profile_types.list.fields_count": "{count} campos",
+  "network.profile_types.list.status.active": "Ativo",
+  "network.profile_types.list.status.inactive": "Inativo",
+  "network.profile_types.list.action.edit": "Editar",
+  "network.profile_types.list.action.deactivate": "Desativar",
+  "network.profile_types.list.action.activate": "Ativar",
+  "network.profile_types.list.confirm_deactivate":
+    "Desativar este tipo de perfil?",
+
+  // Profile types — detail/form
+  "network.profile_types.detail.network_type_label": "Tipo de rede *",
+  "network.profile_types.detail.network_type.internal_hint":
+    "Funcionários, gerentes, vendedores",
+  "network.profile_types.detail.network_type.external_hint":
+    "Promotores, influenciadores, instrutores",
+  "network.profile_types.detail.display_name_label": "Nome de exibição *",
+  "network.profile_types.detail.display_name_placeholder":
+    "ex.: Gerente regional",
+  "network.profile_types.detail.slug_label": "Slug *",
+  "network.profile_types.detail.slug_placeholder": "ex.: regional_manager",
+  "network.profile_types.detail.slug_hint":
+    "Identificador único. Não pode ser alterado após a criação.",
+  "network.profile_types.detail.description_label": "Descrição",
+  "network.profile_types.detail.description_placeholder":
+    "Breve descrição deste tipo de perfil",
+  "network.profile_types.detail.color_label": "Cor do badge",
+  "network.profile_types.detail.sort_order_label": "Ordem de exibição",
+  "network.profile_types.detail.active_label":
+    "Ativo (visível no assistente e na criação de perfil)",
+  "network.profile_types.detail.wizard_fields_label":
+    "Campos personalizados do assistente",
+  "network.profile_types.detail.wizard_fields_hint":
+    "Campos que aparecem no Passo 6 do assistente de criação de perfil para este tipo.",
+  "network.profile_types.detail.creating": "Criando...",
+  "network.profile_types.detail.saving": "Salvando...",
+  "network.profile_types.detail.create_button": "Criar tipo de perfil",
+  "network.profile_types.detail.save_button": "Salvar alterações",
+  "network.profile_types.detail.cancel": "Cancelar",
+
+  // Profile types — wizard fields editor
+  "network.profile_types.field_editor.empty":
+    "Nenhum campo personalizado ainda. Adicione campos para coletar dados específicos do perfil.",
+  "network.profile_types.field_editor.unnamed": "Campo sem nome",
+  "network.profile_types.field_editor.required_badge": "obrigatório",
+  "network.profile_types.field_editor.label_label": "Rótulo *",
+  "network.profile_types.field_editor.label_placeholder": "Rótulo de exibição",
+  "network.profile_types.field_editor.key_label": "Chave *",
+  "network.profile_types.field_editor.key_placeholder": "snake_case_key",
+  "network.profile_types.field_editor.type_label": "Tipo",
+  "network.profile_types.field_editor.step_label": "Passo do assistente",
+  "network.profile_types.field_editor.step_2": "Passo 2 — Identidade",
+  "network.profile_types.field_editor.step_3": "Passo 3 — Hierarquia",
+  "network.profile_types.field_editor.step_6": "Passo 6 — Atributos estendidos",
+  "network.profile_types.field_editor.placeholder_label": "Placeholder",
+  "network.profile_types.field_editor.placeholder_hint":
+    "Texto opcional de placeholder",
+  "network.profile_types.field_editor.required_field": "Campo obrigatório",
+  "network.profile_types.field_editor.options_label": "Opções",
+  "network.profile_types.field_editor.option_placeholder":
+    "Digite uma opção e pressione Enter",
+  "network.profile_types.field_editor.add_field": "Adicionar campo",
+
+  // Profile type field types enum
+  "network.profile_types.field_type.text": "texto",
+  "network.profile_types.field_type.email": "email",
+  "network.profile_types.field_type.phone": "telefone",
+  "network.profile_types.field_type.number": "número",
+  "network.profile_types.field_type.textarea": "texto longo",
+  "network.profile_types.field_type.select": "seleção",
+  "network.profile_types.field_type.multi_select": "seleção múltipla",
+  "network.profile_types.field_type.toggle": "alternar",
+  "network.profile_types.field_type.date": "data",
+  "network.profile_types.field_type.url": "url",
+
+  // Roles — list/table
+  "network.roles.list.search_placeholder": "Buscar cargos...",
+  "network.roles.list.column.role": "Cargo",
+  "network.roles.list.column.slug": "Slug",
+  "network.roles.list.column.network": "Rede",
+  "network.roles.list.column.inherits_from": "Herda de",
+  "network.roles.list.column.members": "Membros",
+  "network.roles.list.confirm_delete":
+    'Excluir o cargo "{name}"? Esta ação não pode ser desfeita.',
+  "network.roles.list.action.edit": "Editar",
+  "network.roles.list.action.delete": "Excluir",
+
+  // Roles — detail/form
+  "network.roles.detail.system_role_title": "Cargo do sistema",
+  "network.roles.detail.system_role_hint":
+    "Alguns campos em cargos do sistema não podem ser modificados.",
+  "network.roles.detail.display_name_label": "Nome de exibição *",
+  "network.roles.detail.display_name_placeholder": "ex.: Gerente regional",
+  "network.roles.detail.slug_label": "Slug *",
+  "network.roles.detail.slug_placeholder": "ex.: regional_manager",
+  "network.roles.detail.description_label": "Descrição",
+  "network.roles.detail.description_placeholder":
+    "Pelo que este cargo é responsável?",
+  "network.roles.detail.network_type_label": "Tipo de rede",
+  "network.roles.detail.network_type_placeholder": "Ambas as redes",
+  "network.roles.detail.parent_role_label": "Herda de (cargo pai)",
+  "network.roles.detail.parent_role_placeholder":
+    "Sem cargo pai (cargo de nível superior)",
+  "network.roles.detail.parent_role_none": "Sem cargo pai (cargo de nível superior)",
+  "network.roles.detail.parent_role_hint":
+    "Este cargo herdará todas as permissões do cargo pai.",
+  "network.roles.detail.creating": "Criando...",
+  "network.roles.detail.saving": "Salvando...",
+  "network.roles.detail.create_button": "Criar cargo",
+  "network.roles.detail.save_button": "Salvar alterações",
+  "network.roles.detail.cancel": "Cancelar",
+
+  // Permissions — matrix
+  "network.permissions.matrix.system_title": "Cargo do sistema",
+  "network.permissions.matrix.system_hint":
+    "Permissões de cargos do sistema não podem ser modificadas.",
+  "network.permissions.matrix.saving": "Salvando...",
+  "network.permissions.matrix.count_of_total": "{assigned} / {total}",
+
+  // Profiles — list/table
+  "network.profiles.list.search_placeholder": "Buscar perfis...",
+  "network.profiles.list.column.name": "Nome",
+  "network.profiles.list.column.network": "Rede",
+  "network.profiles.list.column.profile_type": "Tipo de perfil",
+  "network.profiles.list.column.status": "Status",
+  "network.profiles.list.column.rank": "Rank",
+
+  // Wizard — common chrome
+  "network.wizard.title": "Assistente",
+  "network.wizard.common.step_indicator": "Passo {current} de {total}",
+  "network.wizard.common.back": "Voltar",
+  "network.wizard.common.next": "Continuar",
+  "network.wizard.common.finish": "Concluir",
+  "network.wizard.common.cancel": "Cancelar",
+  "network.wizard.common.required_field": "Campo obrigatório",
+
+  // Wizard — short labels in progress bar
+  "network.wizard.label.network": "Rede",
+  "network.wizard.label.identity": "Identidade",
+  "network.wizard.label.hierarchy": "Hierarquia",
+  "network.wizard.label.roles": "Cargos",
+  "network.wizard.label.comp_plan": "Remuneração",
+  "network.wizard.label.details": "Detalhes",
+  "network.wizard.label.review": "Revisão",
+  "network.wizard.label.step_n": "Passo {n}",
+
+  // Wizard — Step 1 (Network Type)
+  "network.wizard.step1.title": "Tipo de rede",
+  "network.wizard.step1.description":
+    "Selecione a qual rede este perfil pertence.",
+  "network.wizard.step1.internal_label": "Interna",
+  "network.wizard.step1.internal_description":
+    "Funcionários, gerentes e equipe de vendas",
+  "network.wizard.step1.external_label": "Externa",
+  "network.wizard.step1.external_description":
+    "Promotores, influenciadores, instrutores e parceiros",
+  "network.wizard.step1.select_profile_type": "Selecione o tipo de perfil",
+  "network.wizard.step1.for_network_internal": "para a rede interna",
+  "network.wizard.step1.for_network_external": "para a rede externa",
+
+  // Wizard — Step 2 (Identity)
+  "network.wizard.step2.title": "Identidade",
+  "network.wizard.step2.description":
+    "Informações básicas para este perfil.",
+  "network.wizard.step2.first_name_label": "Nome *",
+  "network.wizard.step2.first_name_placeholder": "Joana",
+  "network.wizard.step2.last_name_label": "Sobrenome *",
+  "network.wizard.step2.last_name_placeholder": "Silva",
+  "network.wizard.step2.email_label": "Endereço de e-mail *",
+  "network.wizard.step2.email_placeholder": "joana@exemplo.com",
+  "network.wizard.step2.email_taken":
+    "Este e-mail já está cadastrado na rede.",
+  "network.wizard.step2.phone_label": "Telefone",
+  "network.wizard.step2.phone_placeholder": "+55 (11) 91234-5678",
+  "network.wizard.step2.avatar_label": "Foto de perfil",
+  "network.wizard.step2.avatar_change": "Alterar foto",
+  "network.wizard.step2.avatar_upload": "Enviar foto",
+  "network.wizard.step2.avatar_remove": "Remover",
+  "network.wizard.step2.avatar_hint":
+    "PNG, JPG até 2MB. Armazenado localmente por enquanto.",
+
+  // Wizard — Step 3 (Hierarchy)
+  "network.wizard.step3.title": "Posicionamento na hierarquia",
+  "network.wizard.step3.description":
+    "Defina o supervisor e as atribuições de equipe para este perfil.",
+  "network.wizard.step3.parent_label": "Supervisor / Upline",
+  "network.wizard.step3.parent_optional": "(opcional)",
+  "network.wizard.step3.parent_search_placeholder":
+    "Buscar por nome ou e-mail...",
+  "network.wizard.step3.searching": "Buscando...",
+  "network.wizard.step3.teams_label": "Atribuições de equipe",
+  "network.wizard.step3.no_teams": "Nenhuma equipe criada ainda.",
+  "network.wizard.step3.team_members_count": "{count} membros",
+
+  // Wizard — Step 4 (Roles)
+  "network.wizard.step4.title": "Atribuição de cargos",
+  "network.wizard.step4.description":
+    "Atribua cargos para controlar o que este perfil pode acessar.",
+  "network.wizard.step4.perms_count": "{count} permissões",
+  "network.wizard.step4.no_roles_warning":
+    "Nenhum cargo selecionado. Este perfil não terá permissões de acesso.",
+
+  // Wizard — Step 5 (Compensation)
+  "network.wizard.step5.title": "Plano de remuneração",
+  "network.wizard.step5.description":
+    "Selecione o plano de remuneração para este membro da rede externa.",
+  "network.wizard.step5.no_plans":
+    "Nenhum plano de remuneração configurado ainda. Você pode atribuir um depois.",
+  "network.wizard.step5.commission_suffix": "comissão",
+
+  // Wizard — Step 6 (Attributes)
+  "network.wizard.step6.title": "Informações adicionais",
+  "network.wizard.step6.no_fields":
+    "Nenhum campo adicional para este tipo de perfil.",
+  "network.wizard.step6.description":
+    "Forneça detalhes específicos para {type}.",
+  "network.wizard.step6.description_fallback": "este tipo de perfil",
+  "network.wizard.step6.select_option": "Selecione uma opção",
+
+  // Wizard — Step 7 (Review)
+  "network.wizard.step7.title": "Revisar e confirmar",
+  "network.wizard.step7.description":
+    "Verifique tudo antes de criar o perfil.",
+  "network.wizard.step7.edit": "Editar",
+  "network.wizard.step7.section.network_type": "Rede e tipo",
+  "network.wizard.step7.section.identity": "Identidade",
+  "network.wizard.step7.section.hierarchy": "Hierarquia",
+  "network.wizard.step7.section.roles": "Cargos",
+  "network.wizard.step7.section.compensation": "Remuneração",
+  "network.wizard.step7.section.attributes": "Informações adicionais",
+  "network.wizard.step7.row.network": "Rede",
+  "network.wizard.step7.row.profile_type": "Tipo de perfil",
+  "network.wizard.step7.row.name": "Nome",
+  "network.wizard.step7.row.email": "E-mail",
+  "network.wizard.step7.row.phone": "Telefone",
+  "network.wizard.step7.parent_id": "ID do supervisor:",
+  "network.wizard.step7.no_parent": "Nenhum supervisor atribuído",
+  "network.wizard.step7.teams_assigned":
+    "{count} equipe(s) atribuída(s)",
+  "network.wizard.step7.roles_assigned":
+    "{count} cargo(s) atribuído(s)",
+  "network.wizard.step7.no_roles": "Nenhum cargo atribuído",
+  "network.wizard.step7.comp_plan_selected": "Plano de remuneração selecionado",
+  "network.wizard.step7.no_comp_plan":
+    "Nenhum plano de remuneração selecionado",
+  "network.wizard.step7.creating": "Criando perfil...",
+  "network.wizard.step7.create_button": "Criar perfil",
+
+  // Network feedback / errors
+  "error.network.unexpected": "Ocorreu um erro inesperado",
+  "error.network.profile.create_failed":
+    "Ocorreu um erro inesperado. Tente novamente.",
 } as const;
 
 export type MessageKey = keyof typeof messages;

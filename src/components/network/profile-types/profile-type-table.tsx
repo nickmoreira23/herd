@@ -9,6 +9,8 @@ import { DataTable } from "@/components/ui/data-table"
 import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { useT } from "@/lib/i18n/locale-context"
+import type { MessageKey } from "@/lib/i18n/messages/pt-BR"
 
 interface ProfileTypeRow {
   id: string
@@ -22,14 +24,20 @@ interface ProfileTypeRow {
   color?: string | null
 }
 
+const NETWORK_TYPE_KEYS = {
+  INTERNAL: "network.type.INTERNAL",
+  EXTERNAL: "network.type.EXTERNAL",
+} as const satisfies Record<"INTERNAL" | "EXTERNAL", MessageKey>
+
 const columnHelper = createColumnHelper<ProfileTypeRow>()
 
 export function ProfileTypeTable({ data }: { data: ProfileTypeRow[] }) {
   const router = useRouter()
+  const t = useT()
   const [actionLoading, setActionLoading] = React.useState<string | null>(null)
 
   async function handleDeactivate(id: string) {
-    if (!confirm("Deactivate this profile type?")) return
+    if (!confirm(t("network.profile_types.list.confirm_deactivate"))) return
     setActionLoading(id)
     try {
       await fetch(`/api/network/profile-types/${id}`, {
@@ -59,7 +67,7 @@ export function ProfileTypeTable({ data }: { data: ProfileTypeRow[] }) {
 
   const columns: ColumnDef<ProfileTypeRow, any>[] = [
     columnHelper.accessor("displayName", {
-      header: "Name",
+      header: () => t("network.profile_types.list.column.name"),
       cell: (info) => (
         <div className="flex items-center gap-2">
           {info.row.original.color && (
@@ -78,23 +86,28 @@ export function ProfileTypeTable({ data }: { data: ProfileTypeRow[] }) {
       ),
     }),
     columnHelper.accessor("networkType", {
-      header: "Type",
-      cell: (info) => (
-        <Badge variant={info.getValue() === "INTERNAL" ? "secondary" : "default"}>
-          {info.getValue()}
-        </Badge>
-      ),
+      header: () => t("network.profile_types.list.column.type"),
+      cell: (info) => {
+        const nt = info.getValue() as "INTERNAL" | "EXTERNAL"
+        return (
+          <Badge variant={nt === "INTERNAL" ? "secondary" : "default"}>
+            {t(NETWORK_TYPE_KEYS[nt])}
+          </Badge>
+        )
+      },
     }),
     columnHelper.accessor("wizardFields", {
-      header: "Custom Fields",
+      header: () => t("network.profile_types.list.column.custom_fields"),
       cell: (info) => (
         <span className="text-sm text-muted-foreground">
-          {(info.getValue() as unknown[]).length} fields
+          {t("network.profile_types.list.fields_count", {
+            count: (info.getValue() as unknown[]).length,
+          })}
         </span>
       ),
     }),
     columnHelper.accessor("_count", {
-      header: "Profiles",
+      header: () => t("network.profile_types.list.column.profiles"),
       cell: (info) => (
         <span className="text-sm text-muted-foreground">
           {info.getValue().profiles}
@@ -102,10 +115,12 @@ export function ProfileTypeTable({ data }: { data: ProfileTypeRow[] }) {
       ),
     }),
     columnHelper.accessor("isActive", {
-      header: "Status",
+      header: () => t("network.profile_types.list.column.status"),
       cell: (info) => (
         <Badge variant={info.getValue() ? "outline" : "destructive"}>
-          {info.getValue() ? "Active" : "Inactive"}
+          {info.getValue()
+            ? t("network.profile_types.list.status.active")
+            : t("network.profile_types.list.status.inactive")}
         </Badge>
       ),
     }),
@@ -120,7 +135,9 @@ export function ProfileTypeTable({ data }: { data: ProfileTypeRow[] }) {
               className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
             >
               <Edit className="w-3.5 h-3.5" />
-              <span className="sr-only">Edit</span>
+              <span className="sr-only">
+                {t("network.profile_types.list.action.edit")}
+              </span>
             </Link>
             <Button
               variant="ghost"
@@ -129,10 +146,18 @@ export function ProfileTypeTable({ data }: { data: ProfileTypeRow[] }) {
                 row.isActive ? handleDeactivate(row.id) : handleActivate(row.id)
               }
               disabled={actionLoading === row.id}
-              title={row.isActive ? "Deactivate" : "Activate"}
+              title={
+                row.isActive
+                  ? t("network.profile_types.list.action.deactivate")
+                  : t("network.profile_types.list.action.activate")
+              }
             >
               <PowerOff className="w-3.5 h-3.5" />
-              <span className="sr-only">{row.isActive ? "Deactivate" : "Activate"}</span>
+              <span className="sr-only">
+                {row.isActive
+                  ? t("network.profile_types.list.action.deactivate")
+                  : t("network.profile_types.list.action.activate")}
+              </span>
             </Button>
           </div>
         )
@@ -145,7 +170,7 @@ export function ProfileTypeTable({ data }: { data: ProfileTypeRow[] }) {
       data={data}
       columns={columns}
       searchable
-      searchPlaceholder="Search profile types..."
+      searchPlaceholder={t("network.profile_types.list.search_placeholder")}
     />
   )
 }
