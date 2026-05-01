@@ -2869,4 +2869,54 @@ export const messages: Record<MessageKey, string> = {
   "error.tables.field_create_failed": "Failed to add field",
   "error.tables.field_update_failed": "Failed to update field",
   "error.tables.unexpected_error": "An unexpected error occurred",
+
+  // Tables — Import (Airtable)
+  "tables.import.airtable.header.title": "Import from Airtable",
+  "tables.import.airtable.header.step_1_base": "1. Base",
+  "tables.import.airtable.header.step_2_table": "2. Table",
+  "tables.import.airtable.header.step_3_fields": "3. Fields",
+  "tables.import.airtable.header.step_4_import": "4. Import",
+  "tables.import.airtable.steps.bases.intro":
+    "Select an Airtable base to import from.",
+  "tables.import.airtable.steps.bases.loading": "Loading bases…",
+  "tables.import.airtable.steps.bases.empty":
+    "No bases found. Make sure your Airtable token has access to at least one base.",
+  "tables.import.airtable.steps.tables.intro": "Select a table to import.",
+  "tables.import.airtable.steps.tables.loading": "Loading tables…",
+  "tables.import.airtable.steps.tables.fields_count": "{count} fields",
+  "tables.import.airtable.steps.tables.fields_count_with_description":
+    "{count} fields — {description}",
+  "tables.import.airtable.steps.mapping.intro":
+    "Review field mappings. Adjust types, rename fields, or skip fields you don't need.",
+  "tables.import.airtable.steps.mapping.col_airtable_field":
+    "Airtable Field",
+  "tables.import.airtable.steps.mapping.col_herd_type": "HERD Type",
+  "tables.import.airtable.steps.mapping.col_herd_name": "HERD Name",
+  "tables.import.airtable.steps.mapping.col_skip": "Skip",
+  "tables.import.airtable.steps.mapping.fields_selected":
+    "{active} of {total} fields selected",
+  "tables.import.airtable.steps.mapping.import_button": "Import {table}",
+  "tables.import.airtable.steps.progress.importing": "Importing {table}…",
+  "tables.import.airtable.steps.progress.records_imported":
+    "{count} records imported",
+  "tables.import.airtable.steps.progress.do_not_close":
+    "This may take a few minutes for large tables. Do not close this dialog.",
+  "tables.import.airtable.steps.progress.error_title": "Import Failed",
+  "tables.import.airtable.steps.progress.error_unknown":
+    "An unknown error occurred",
+  "tables.import.airtable.steps.progress.partial_imported":
+    "{count} records were imported before the error.",
+  "tables.import.airtable.steps.progress.success_title": "Import Complete",
+  "tables.import.airtable.steps.progress.success_summary":
+    "Successfully imported {count} records from {table}.",
+  "tables.import.airtable.navigation.view_table": "View Table",
+  "error.tables.import.airtable.load_bases_failed": "Failed to load bases",
+  "error.tables.import.airtable.connect_failed":
+    "Failed to connect to Airtable",
+  "error.tables.import.airtable.load_tables_failed":
+    "Failed to load tables",
+  "error.tables.import.airtable.fetch_tables_failed":
+    "Failed to fetch tables",
+  "error.tables.import.airtable.import_failed": "Import failed",
+  "error.tables.import.airtable.start_failed": "Failed to start import",
 };
