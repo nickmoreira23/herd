@@ -1,8 +1,10 @@
 "use client";
 
 import type { SubscriptionTier } from "@/types";
-import { CommissionSimulator } from "./commission-simulator";
+import { CommissionSimulator } from "@/components/commissions/commission-simulator";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useT } from "@/lib/i18n/locale-context";
+import type { Locale } from "@/lib/i18n/locales";
 import { DollarSign, Building2, FileText, ArrowUpRight, Zap, BookOpen, BarChart3 } from "lucide-react";
 import { CommissionPlansTab } from "./tabs/commission-plans-tab";
 import { D2DPartnersTab } from "./tabs/d2d-partners-tab";
@@ -27,6 +29,7 @@ interface CommissionPageClientProps {
   ledgerSummary: any;
   // Legacy — for simulator backward compat
   initialStructures: StructureWithRates[];
+  locale: Locale;
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
@@ -37,7 +40,9 @@ export function CommissionPageClient({
   agreements,
   ledgerSummary,
   initialStructures,
+  locale,
 }: CommissionPageClientProps) {
+  const t = useT();
   const activeStructure = initialStructures.find((s) => s.isActive) || null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const partnerOptions = d2dPartners.map((p: any) => ({ id: p.id, name: p.name }));
@@ -49,36 +54,36 @@ export function CommissionPageClient({
       <TabsList className="flex-wrap">
         <TabsTrigger value="plans" className="gap-1.5">
           <DollarSign className="h-3.5 w-3.5" />
-          Plans
+          {t("network.promoters.tabs.plans")}
         </TabsTrigger>
         <TabsTrigger value="partners" className="gap-1.5">
           <Building2 className="h-3.5 w-3.5" />
-          Partners
+          {t("network.promoters.tabs.partners")}
         </TabsTrigger>
         <TabsTrigger value="agreements" className="gap-1.5">
           <FileText className="h-3.5 w-3.5" />
-          Agreements
+          {t("network.promoters.tabs.agreements")}
         </TabsTrigger>
         <TabsTrigger value="overrides" className="gap-1.5">
           <ArrowUpRight className="h-3.5 w-3.5" />
-          Overrides
+          {t("network.promoters.tabs.overrides")}
         </TabsTrigger>
         <TabsTrigger value="accelerators" className="gap-1.5">
           <Zap className="h-3.5 w-3.5" />
-          Accelerators
+          {t("network.promoters.tabs.accelerators")}
         </TabsTrigger>
         <TabsTrigger value="ledger" className="gap-1.5">
           <BookOpen className="h-3.5 w-3.5" />
-          Ledger
+          {t("network.promoters.tabs.ledger")}
         </TabsTrigger>
         <TabsTrigger value="simulator" className="gap-1.5">
           <BarChart3 className="h-3.5 w-3.5" />
-          Simulator
+          {t("network.promoters.tabs.simulator")}
         </TabsTrigger>
       </TabsList>
 
       <TabsContent value="plans">
-        <CommissionPlansTab initialPlans={plans} tiers={tiers} />
+        <CommissionPlansTab initialPlans={plans} tiers={tiers} locale={locale} />
       </TabsContent>
 
       <TabsContent value="partners">
@@ -86,7 +91,7 @@ export function CommissionPageClient({
       </TabsContent>
 
       <TabsContent value="agreements">
-        <AgreementsTab initialAgreements={agreements} partners={partnerOptions} plans={planOptions} />
+        <AgreementsTab initialAgreements={agreements} partners={partnerOptions} plans={planOptions} locale={locale} />
       </TabsContent>
 
       <TabsContent value="overrides">
@@ -98,13 +103,14 @@ export function CommissionPageClient({
       </TabsContent>
 
       <TabsContent value="ledger">
-        <LedgerTab initialSummary={ledgerSummary} partners={partnerOptions} />
+        <LedgerTab initialSummary={ledgerSummary} partners={partnerOptions} locale={locale} />
       </TabsContent>
 
       <TabsContent value="simulator">
         <CommissionSimulator
           structure={activeStructure}
           tiers={tiers}
+          locale={locale}
         />
       </TabsContent>
     </Tabs>
