@@ -17,42 +17,39 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Search, SlidersHorizontal } from "lucide-react";
+import { useT, useLocale } from "@/lib/i18n/locale-context";
+import { notifyError, notifyInfo, notifySuccess } from "@/lib/i18n/notify";
+import { pluralize } from "@/lib/i18n/pluralize";
 import { toast } from "sonner";
+import { FEED_STATUSES, feedStatusLabelKey } from "@/lib/feeds/status-options";
 import type { RSSFeedRow, RSSFeedStats } from "./types";
 import { PageHeader } from "@/components/layout/page-header";
-
-const STATUS_OPTIONS = [
-  { value: "All Status", filterKey: "ALL" },
-  { value: "Pending", filterKey: "PENDING" },
-  { value: "Processing", filterKey: "PROCESSING" },
-  { value: "Ready", filterKey: "READY" },
-  { value: "Error", filterKey: "ERROR" },
-] as const;
 
 interface FeedTableProps {
   initialFeeds: RSSFeedRow[];
   initialStats: RSSFeedStats;
 }
 
+const ALL_STATUS_VALUE = "ALL";
+
 export function FeedTable({
   initialFeeds,
   initialStats,
 }: FeedTableProps) {
+  const t = useT();
+  const locale = useLocale();
   const [feeds, setFeeds] = useState<RSSFeedRow[]>(initialFeeds);
   const [stats, setStats] = useState<RSSFeedStats>(initialStats);
   const [search, setSearch] = useState("");
-  const [statusValue, setStatusValue] = useState("All Status");
+  const [statusFilter, setStatusFilter] = useState<string>(ALL_STATUS_VALUE);
   const [showAdd, setShowAdd] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<RSSFeedRow | null>(null);
   const [entriesTarget, setEntriesTarget] = useState<RSSFeedRow | null>(null);
   const [settingsTarget, setSettingsTarget] = useState<RSSFeedRow | null>(null);
 
-  const statusFilter =
-    STATUS_OPTIONS.find((s) => s.value === statusValue)?.filterKey ?? "ALL";
-
   const filteredFeeds = useMemo(() => {
     let filtered = feeds;
-    if (statusFilter !== "ALL") {
+    if (statusFilter !== ALL_STATUS_VALUE) {
       filtered = filtered.filter((f) => f.status === statusFilter);
     }
     if (search) {
@@ -78,22 +75,25 @@ export function FeedTable({
 
   const handleSync = useCallback(
     async (feed: RSSFeedRow) => {
-      toast.info("Syncing feed...");
+      notifyInfo("feeds.feedback.syncing", t);
       const res = await fetch(`/api/feeds/${feed.id}/sync`, {
         method: "POST",
       });
       if (res.ok) {
         const json = await res.json();
+        const count = Number(json.data?.entriesScraped ?? 0);
         await refreshFeeds();
-        toast.success(
-          `Sync complete — ${json.data.entriesScraped} new articles`
-        );
+        const message = pluralize(count, locale, {
+          one: t("feeds.feedback.sync_complete_one"),
+          other: t("feeds.feedback.sync_complete_other", { count }),
+        });
+        toast.success(message);
       } else {
         await refreshFeeds();
-        toast.error("Sync failed");
+        notifyError("error.feeds.sync_failed", t);
       }
     },
-    [refreshFeeds]
+    [refreshFeeds, t, locale],
   );
 
   const handleToggleActive = useCallback(
@@ -105,10 +105,13 @@ export function FeedTable({
       });
       if (res.ok) {
         await refreshFeeds();
-        toast.success(feed.isActive ? "Feed deactivated" : "Feed activated");
+        notifySuccess(
+          feed.isActive ? "feeds.feedback.deactivated" : "feeds.feedback.activated",
+          t,
+        );
       }
     },
-    [refreshFeeds]
+    [refreshFeeds, t],
   );
 
   const handleDelete = useCallback(
@@ -118,38 +121,42 @@ export function FeedTable({
       });
       if (res.ok) {
         await refreshFeeds();
-        toast.success("Feed deleted");
+        notifySuccess("feeds.feedback.deleted", t);
       } else {
-        toast.error("Failed to delete feed");
+        notifyError("error.feeds.delete_failed", t);
       }
       setDeleteTarget(null);
     },
-    [refreshFeeds]
+    [refreshFeeds, t],
   );
 
   const columns = useMemo(
     () =>
-      getFeedColumns({
-        onViewEntries: (feed) => setEntriesTarget(feed),
-        onSync: handleSync,
-        onSettings: (feed) => setSettingsTarget(feed),
-        onToggleActive: handleToggleActive,
-        onDelete: (feed) => setDeleteTarget(feed),
-      }),
-    [handleSync, handleToggleActive]
+      getFeedColumns(
+        {
+          onViewEntries: (feed) => setEntriesTarget(feed),
+          onSync: handleSync,
+          onSettings: (feed) => setSettingsTarget(feed),
+          onToggleActive: handleToggleActive,
+          onDelete: (feed) => setDeleteTarget(feed),
+        },
+        t,
+        locale,
+      ),
+    [handleSync, handleToggleActive, t, locale],
   );
 
   return (
     <>
       <div className="flex flex-col min-h-full pt-2 pl-2">
         <PageHeader
-          title="Feeds"
-          description="Subscribe to RSS feeds to automatically import articles into your knowledge base."
+          title={t("feeds.list.title")}
+          description={t("feeds.list.description")}
           className="pl-0 pt-0"
           action={
             <Button size="sm" onClick={() => setShowAdd(true)}>
               <Plus className="mr-1 h-3 w-3" />
-              Add Feed
+              {t("feeds.list.add_feed_button")}
             </Button>
           }
         />
@@ -158,19 +165,19 @@ export function FeedTable({
         <div className="flex items-center gap-4 mb-6">
           <div className="rounded-lg border bg-card px-5 py-3 min-w-0">
             <p className="text-xs text-muted-foreground whitespace-nowrap">
-              Total
+              {t("feeds.list.stats.total")}
             </p>
             <p className="text-lg font-bold tabular-nums">{stats.total}</p>
           </div>
           <div className="rounded-lg border bg-card px-5 py-3 min-w-0">
             <p className="text-xs text-muted-foreground whitespace-nowrap">
-              Active
+              {t("feeds.list.stats.active")}
             </p>
             <p className="text-lg font-bold tabular-nums">{stats.active}</p>
           </div>
           <div className="rounded-lg border bg-card px-5 py-3 min-w-0">
             <p className="text-xs text-muted-foreground whitespace-nowrap">
-              Articles
+              {t("feeds.list.stats.articles")}
             </p>
             <p className="text-lg font-bold tabular-nums">
               {stats.totalEntries}
@@ -178,7 +185,7 @@ export function FeedTable({
           </div>
           <div className="rounded-lg border bg-card px-5 py-3 min-w-0">
             <p className="text-xs text-muted-foreground whitespace-nowrap">
-              Error
+              {t("feeds.list.stats.error")}
             </p>
             <p className="text-lg font-bold tabular-nums">{stats.error}</p>
           </div>
@@ -192,9 +199,9 @@ export function FeedTable({
             toolbar={() => (
               <div className="flex items-center gap-3">
                 <Select
-                  value={statusValue}
+                  value={statusFilter}
                   onValueChange={(val) =>
-                    setStatusValue(val ?? "All Status")
+                    setStatusFilter(val ?? ALL_STATUS_VALUE)
                   }
                 >
                   <SelectTrigger className="w-auto min-w-[100px] h-8 text-xs shrink-0">
@@ -202,9 +209,12 @@ export function FeedTable({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {STATUS_OPTIONS.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>
-                        {s.value}
+                    <SelectItem value={ALL_STATUS_VALUE}>
+                      {t("feeds.list.filter_all_status")}
+                    </SelectItem>
+                    {FEED_STATUSES.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {t(feedStatusLabelKey(status))}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -213,13 +223,15 @@ export function FeedTable({
                 <div className="relative flex-1 min-w-0">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                   <Input
-                    placeholder="Search by name or URL..."
+                    placeholder={t("feeds.list.search_placeholder")}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="pl-8 pr-20 h-8 text-xs w-full"
                   />
                   <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground tabular-nums">
-                    {filteredFeeds.length} items
+                    {t("feeds.list.items_count", {
+                      count: filteredFeeds.length,
+                    })}
                   </span>
                 </div>
               </div>

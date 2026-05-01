@@ -3268,4 +3268,252 @@ export const messages: Record<MessageKey, string> = {
     "App \"{slug}\" not found in database. Run prisma seed first.",
   "error.apps.connection_failed": "Connection failed: {message}",
   "error.apps.sync_named_failed": "Failed to sync {name}",
+
+  // ─── Feeds: statuses ───────────────────────────────────────────────
+  "feeds.statuses.PENDING.label": "Pending",
+  "feeds.statuses.PROCESSING.label": "Syncing",
+  "feeds.statuses.READY.label": "Ready",
+  "feeds.statuses.ERROR.label": "Error",
+
+  // ─── Feeds: sync intervals ─────────────────────────────────────────
+  "feeds.sync_intervals.HOURLY.label": "Hourly",
+  "feeds.sync_intervals.HOURLY.description": "Check for new articles every hour",
+  "feeds.sync_intervals.DAILY.label": "Daily",
+  "feeds.sync_intervals.DAILY.description": "Check for new articles once a day",
+  "feeds.sync_intervals.WEEKLY.label": "Weekly",
+  "feeds.sync_intervals.WEEKLY.description": "Check for new articles once a week",
+
+  // ─── Feeds: list page ──────────────────────────────────────────────
+  "feeds.list.title": "Feeds",
+  "feeds.list.description":
+    "Subscribe to RSS feeds to automatically import articles into your knowledge base.",
+  "feeds.list.add_feed_button": "Add Feed",
+  "feeds.list.search_placeholder": "Search by name or URL…",
+  "feeds.list.filter_all_status": "All Status",
+  "feeds.list.columns.name": "Name",
+  "feeds.list.columns.frequency": "Frequency",
+  "feeds.list.columns.articles": "Articles",
+  "feeds.list.columns.status": "Status",
+  "feeds.list.columns.last_checked": "Last Checked",
+  "feeds.list.last_checked_never": "Never",
+  "feeds.list.row_actions.view_articles": "View Articles",
+  "feeds.list.row_actions.sync_now": "Sync Now",
+  "feeds.list.row_actions.settings": "Settings",
+  "feeds.list.row_actions.activate": "Activate",
+  "feeds.list.row_actions.deactivate": "Deactivate",
+  "feeds.list.row_actions.delete": "Delete",
+  "feeds.list.stats.total": "Total",
+  "feeds.list.stats.active": "Active",
+  "feeds.list.stats.articles": "Articles",
+  "feeds.list.stats.error": "Error",
+  "feeds.list.items_count": "{count} items",
+
+  // ─── Feeds: empty state ────────────────────────────────────────────
+  "feeds.empty.title": "No feeds yet",
+  "feeds.empty.description":
+    "Add RSS feed URLs to automatically monitor blogs and news sources. New articles matching your criteria will be imported into your knowledge base on a schedule.",
+  "feeds.empty.add_first": "Add your first feed",
+
+  // ─── Feeds: add modal ──────────────────────────────────────────────
+  "feeds.add_modal.title": "Add RSS Feed",
+  "feeds.add_modal.feed_url.label": "Feed URL",
+  "feeds.add_modal.feed_url.placeholder": "https://blog.example.com/rss.xml",
+  "feeds.add_modal.feed_url.help":
+    "RSS or Atom feed URL. Blog URLs with feed auto-discovery also work.",
+  "feeds.add_modal.frequency.label": "Check Frequency",
+  "feeds.add_modal.instructions.label": "Agent Instructions",
+  "feeds.add_modal.instructions.placeholder":
+    "Describe what you're looking for in natural language. For example: \"I'm interested in fitness apps, startups that have raised money, new product launches, and anything related to health tech AI.\"",
+  "feeds.add_modal.instructions.help":
+    "An AI agent will read each article's title, summary, and categories to decide if it matches your intent. Be descriptive — the more context you give, the better the results.",
+  "feeds.add_modal.advanced.toggle": "Advanced Filters & Options",
+  "feeds.add_modal.advanced.keyword_count": "{count} keywords",
+  "feeds.add_modal.include_keywords.label": "Include Keywords (optional)",
+  "feeds.add_modal.include_keywords.placeholder":
+    "Type keyword and press Enter",
+  "feeds.add_modal.include_keywords.help":
+    "Pre-filter by keyword before AI evaluation. Articles must match at least one keyword to be considered.",
+  "feeds.add_modal.exclude_keywords.label": "Exclude Keywords (optional)",
+  "feeds.add_modal.exclude_keywords.placeholder":
+    "Type keyword and press Enter",
+  "feeds.add_modal.max_articles.label": "Max Articles Per Sync",
+  "feeds.add_modal.name.label": "Name (optional)",
+  "feeds.add_modal.name.placeholder": "Auto-detected from feed",
+  "feeds.add_modal.description.label": "Description (optional)",
+  "feeds.add_modal.description.placeholder": "What is this feed about?",
+  "feeds.add_modal.submit.adding": "Adding…",
+  "feeds.add_modal.submit.add": "Add Feed",
+
+  // ─── Feeds: settings dialog ────────────────────────────────────────
+  "feeds.settings_dialog.title": "Feed Settings",
+  "feeds.settings_dialog.name.label": "Name",
+  "feeds.settings_dialog.frequency.label": "Check Frequency",
+  "feeds.settings_dialog.instructions.label": "Agent Instructions",
+  "feeds.settings_dialog.instructions.placeholder":
+    "Describe what kinds of articles you want in natural language…",
+  "feeds.settings_dialog.instructions.help":
+    "An AI agent evaluates each article against these instructions during sync.",
+  "feeds.settings_dialog.include_keywords.label": "Include Keywords",
+  "feeds.settings_dialog.exclude_keywords.label": "Exclude Keywords",
+  "feeds.settings_dialog.max_articles.label": "Max Articles Per Sync",
+  "feeds.settings_dialog.cancel": "Cancel",
+  "feeds.settings_dialog.save": "Save Changes",
+  "feeds.settings_dialog.saving": "Saving…",
+
+  // ─── Feeds: entries dialog ─────────────────────────────────────────
+  "feeds.entries_dialog.articles_count": "{count} articles",
+  "feeds.entries_dialog.checked_at": "Checked {date}",
+  "feeds.entries_dialog.search_placeholder": "Filter articles…",
+  "feeds.entries_dialog.no_articles": "No articles found",
+  "feeds.entries_dialog.empty_selection":
+    "Select an article from the list to view its content",
+  "feeds.entries_dialog.entry.error_scrape": "This article failed to scrape.",
+  "feeds.entries_dialog.entry.pending": "This article hasn't been scraped yet.",
+  "feeds.entries_dialog.entry.no_content": "No content available for this article.",
+  "feeds.entries_dialog.actions.open_site": "Open Site",
+  "feeds.entries_dialog.actions.sync_now": "Sync Now",
+
+  // ─── Feeds: delete dialog ──────────────────────────────────────────
+  "feeds.delete_dialog.title": "Delete feed",
+  "feeds.delete_dialog.confirm":
+    "Are you sure you want to delete \"{name}\"? All imported articles and sync history will be permanently removed. This action cannot be undone.",
+  "feeds.delete_dialog.cancel": "Cancel",
+  "feeds.delete_dialog.delete": "Delete",
+
+  // ─── Feeds: feedback ───────────────────────────────────────────────
+  "feeds.feedback.added": "Feed added — syncing articles",
+  "feeds.feedback.deleted": "Feed deleted",
+  "feeds.feedback.activated": "Feed activated",
+  "feeds.feedback.deactivated": "Feed deactivated",
+  "feeds.feedback.settings_saved": "Settings saved",
+  "feeds.feedback.syncing": "Syncing feed…",
+  "feeds.feedback.sync_complete_one": "Sync complete — 1 new article",
+  "feeds.feedback.sync_complete_other": "Sync complete — {count} new articles",
+
+  // ─── Feeds: errors ─────────────────────────────────────────────────
+  "error.feeds.url_required": "Feed URL is required",
+  "error.feeds.invalid_url": "Please enter a valid URL",
+  "error.feeds.add_failed": "Failed to add feed",
+  "error.feeds.save_failed": "Failed to save",
+  "error.feeds.sync_failed": "Sync failed",
+  "error.feeds.delete_failed": "Failed to delete feed",
+
+  // ─── Links: statuses ───────────────────────────────────────────────
+  "links.statuses.PENDING.label": "Pending",
+  "links.statuses.PROCESSING.label": "Scraping",
+  "links.statuses.PROCESSING.crawling.label": "Crawling",
+  "links.statuses.READY.label": "Ready",
+  "links.statuses.ERROR.label": "Error",
+
+  // ─── Links: scrape modes ───────────────────────────────────────────
+  "links.scrape_modes.SINGLE.label": "Single Page",
+  "links.scrape_modes.SINGLE.description": "Scrape a single URL",
+  "links.scrape_modes.FULL_SITE.label": "Full Site",
+  "links.scrape_modes.FULL_SITE.description": "Crawl all pages under this domain",
+
+  // ─── Links: list page ──────────────────────────────────────────────
+  "links.list.title": "Links",
+  "links.list.description":
+    "Add URLs to scrape and import web content into your knowledge base.",
+  "links.list.add_link_button": "Add Link",
+  "links.list.search_placeholder": "Search by name, URL, or domain…",
+  "links.list.filter_all_status": "All Status",
+  "links.list.columns.name": "Name",
+  "links.list.columns.domain": "Domain",
+  "links.list.columns.content": "Content",
+  "links.list.columns.status": "Status",
+  "links.list.columns.last_scraped": "Last Scraped",
+  "links.list.row_actions.view_content": "View Content",
+  "links.list.row_actions.open_url": "Open URL",
+  "links.list.row_actions.rescrape": "Re-scrape",
+  "links.list.row_actions.recrawl": "Re-crawl",
+  "links.list.row_actions.activate": "Activate",
+  "links.list.row_actions.deactivate": "Deactivate",
+  "links.list.row_actions.delete": "Delete",
+  "links.list.content.chars_short": "{count} chars",
+  "links.list.content.chars_thousands": "{count}K chars",
+  "links.list.content.chars_millions": "{count}M chars",
+  "links.list.content.pages_count": "{scraped} pages",
+  "links.list.content.pages_progress": "{scraped}/{total} pages",
+  "links.list.status.crawling_progress": "Crawling {scraped}/{total}",
+  "links.list.stats.total": "Total",
+  "links.list.stats.ready": "Ready",
+  "links.list.stats.processing": "Processing",
+  "links.list.stats.error": "Error",
+  "links.list.items_count": "{count} items",
+
+  // ─── Links: empty state ────────────────────────────────────────────
+  "links.empty.title": "No links yet",
+  "links.empty.description":
+    "Add URLs to automatically scrape and import web page content into your knowledge base. Keep your knowledge up to date with external sources.",
+  "links.empty.add_first": "Add your first link",
+
+  // ─── Links: add modal ──────────────────────────────────────────────
+  "links.add_modal.title": "Add Link",
+  "links.add_modal.url.label": "URL",
+  "links.add_modal.url.placeholder": "https://example.com/docs",
+  "links.add_modal.scrape_mode.label": "Scrape Mode",
+  "links.add_modal.max_pages.label": "Max Pages",
+  "links.add_modal.max_pages.help": "Crawl up to {count} pages under this URL",
+  "links.add_modal.name.label": "Name (optional)",
+  "links.add_modal.name.placeholder": "Auto-detected from page title",
+  "links.add_modal.description.label": "Description (optional)",
+  "links.add_modal.description.placeholder": "What is this page about?",
+  "links.add_modal.submit.adding": "Adding…",
+  "links.add_modal.submit.add_link": "Add Link",
+  "links.add_modal.submit.add_and_crawl": "Add & Crawl Site",
+
+  // ─── Links: crawl progress ─────────────────────────────────────────
+  "links.crawl_progress.starting": "Starting crawl…",
+  "links.crawl_progress.crawling":
+    "Crawling… {scraped} of {total} pages scraped",
+  "links.crawl_progress.percent_complete": "{percent}% complete",
+  "links.crawl_progress.errors_one": "1 error",
+  "links.crawl_progress.errors_other": "{count} errors",
+  "links.crawl_progress.last_scraped": "Last scraped: {label}",
+
+  // ─── Links: content dialog ─────────────────────────────────────────
+  "links.content_dialog.scraped_at": "Scraped {date}",
+  "links.content_dialog.crawled_at": "Crawled {date}",
+  "links.content_dialog.pages_count": "{count} pages",
+  "links.content_dialog.scraping_in_progress": "Scraping in progress…",
+  "links.content_dialog.scraping_not_started": "Scraping has not started yet.",
+  "links.content_dialog.error_default": "An error occurred during scraping.",
+  "links.content_dialog.no_content_extracted":
+    "No content was extracted from this page.",
+  "links.content_dialog.search_placeholder": "Filter pages…",
+  "links.content_dialog.no_pages": "No pages found",
+  "links.content_dialog.empty_selection":
+    "Select a page from the list to view its content",
+  "links.content_dialog.page.error_scrape": "This page failed to scrape.",
+  "links.content_dialog.page.no_content": "No content available for this page.",
+  "links.content_dialog.actions.open_url": "Open URL",
+  "links.content_dialog.actions.rescrape": "Re-scrape",
+  "links.content_dialog.actions.recrawl": "Re-crawl",
+
+  // ─── Links: delete dialog ──────────────────────────────────────────
+  "links.delete_dialog.title": "Delete link",
+  "links.delete_dialog.confirm":
+    "Are you sure you want to delete \"{name}\"? The scraped content and all associated data will be permanently removed. This action cannot be undone.",
+  "links.delete_dialog.cancel": "Cancel",
+  "links.delete_dialog.delete": "Delete",
+
+  // ─── Links: feedback ───────────────────────────────────────────────
+  "links.feedback.added_scraping": "Link added — scraping in progress",
+  "links.feedback.added_crawling": "Site added — crawling in progress",
+  "links.feedback.deleted": "Link deleted",
+  "links.feedback.activated": "Activated",
+  "links.feedback.deactivated": "Deactivated",
+  "links.feedback.rescraping": "Re-scraping…",
+  "links.feedback.recrawling": "Re-crawling…",
+  "links.feedback.rescrape_complete": "Re-scrape complete",
+  "links.feedback.recrawl_started": "Re-crawl started",
+
+  // ─── Links: errors ─────────────────────────────────────────────────
+  "error.links.url_required": "URL is required",
+  "error.links.invalid_url": "Please enter a valid URL",
+  "error.links.add_failed": "Failed to add link",
+  "error.links.delete_failed": "Failed to delete link",
+  "error.links.rescrape_failed": "Re-scrape failed",
+  "error.links.recrawl_failed": "Re-crawl failed",
 };

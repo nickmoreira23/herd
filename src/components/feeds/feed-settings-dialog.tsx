@@ -15,7 +15,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Loader2, Clock, CalendarDays, CalendarRange, X, Sparkles } from "lucide-react";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import { notifyError, notifySuccess } from "@/lib/i18n/notify";
+import {
+  FEED_SYNC_INTERVALS,
+  feedSyncIntervalLabelKey,
+  type FeedSyncInterval,
+} from "@/lib/feeds/sync-intervals";
 import type { RSSFeedRow } from "./types";
 
 interface FeedSettingsDialogProps {
@@ -25,13 +31,11 @@ interface FeedSettingsDialogProps {
   onSave: () => void;
 }
 
-type Frequency = "HOURLY" | "DAILY" | "WEEKLY";
-
-const FREQUENCY_OPTIONS: { value: Frequency; label: string; icon: typeof Clock }[] = [
-  { value: "HOURLY", label: "Hourly", icon: Clock },
-  { value: "DAILY", label: "Daily", icon: CalendarDays },
-  { value: "WEEKLY", label: "Weekly", icon: CalendarRange },
-];
+const FREQUENCY_ICONS: Record<FeedSyncInterval, typeof Clock> = {
+  HOURLY: Clock,
+  DAILY: CalendarDays,
+  WEEKLY: CalendarRange,
+};
 
 export function FeedSettingsDialog({
   feed,
@@ -39,8 +43,9 @@ export function FeedSettingsDialog({
   onOpenChange,
   onSave,
 }: FeedSettingsDialogProps) {
+  const t = useT();
   const [name, setName] = useState("");
-  const [frequency, setFrequency] = useState<Frequency>("DAILY");
+  const [frequency, setFrequency] = useState<FeedSyncInterval>("DAILY");
   const [instructions, setInstructions] = useState("");
   const [includeKeywords, setIncludeKeywords] = useState<string[]>([]);
   const [excludeKeywords, setExcludeKeywords] = useState<string[]>([]);
@@ -52,7 +57,7 @@ export function FeedSettingsDialog({
   useEffect(() => {
     if (feed && open) {
       setName(feed.name);
-      setFrequency(feed.frequency as Frequency);
+      setFrequency(feed.frequency as FeedSyncInterval);
       setInstructions(feed.instructions || "");
       setIncludeKeywords([...feed.includeKeywords]);
       setExcludeKeywords([...feed.excludeKeywords]);
@@ -99,12 +104,11 @@ export function FeedSettingsDialog({
       });
 
       if (res.ok) {
-        toast.success("Settings saved");
+        notifySuccess("feeds.feedback.settings_saved", t);
         onOpenChange(false);
         onSave();
       } else {
-        const err = await res.json().catch(() => null);
-        toast.error(err?.error || "Failed to save");
+        notifyError("error.feeds.save_failed", t);
       }
     } finally {
       setSaving(false);
@@ -115,12 +119,12 @@ export function FeedSettingsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Feed Settings</DialogTitle>
+          <DialogTitle>{t("feeds.settings_dialog.title")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           {/* Name */}
           <div className="space-y-1.5">
-            <Label className="text-xs">Name</Label>
+            <Label className="text-xs">{t("feeds.settings_dialog.name.label")}</Label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -129,23 +133,25 @@ export function FeedSettingsDialog({
 
           {/* Frequency */}
           <div className="space-y-1.5">
-            <Label className="text-xs">Check Frequency</Label>
+            <Label className="text-xs">
+              {t("feeds.settings_dialog.frequency.label")}
+            </Label>
             <div className="flex rounded-lg border p-0.5 bg-muted/50">
-              {FREQUENCY_OPTIONS.map((opt) => {
-                const Icon = opt.icon;
+              {FEED_SYNC_INTERVALS.map((value) => {
+                const Icon = FREQUENCY_ICONS[value];
                 return (
                   <button
-                    key={opt.value}
+                    key={value}
                     type="button"
                     className={`flex-1 flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                      frequency === opt.value
+                      frequency === value
                         ? "bg-background text-foreground shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
                     }`}
-                    onClick={() => setFrequency(opt.value)}
+                    onClick={() => setFrequency(value)}
                   >
                     <Icon className="h-3 w-3" />
-                    {opt.label}
+                    {t(feedSyncIntervalLabelKey(value))}
                   </button>
                 );
               })}
@@ -156,23 +162,27 @@ export function FeedSettingsDialog({
           <div className="space-y-1.5">
             <div className="flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5 text-violet-500" />
-              <Label className="text-xs font-medium">Agent Instructions</Label>
+              <Label className="text-xs font-medium">
+                {t("feeds.settings_dialog.instructions.label")}
+              </Label>
             </div>
             <Textarea
               value={instructions}
               onChange={(e) => setInstructions(e.target.value)}
-              placeholder="Describe what kinds of articles you want in natural language..."
+              placeholder={t("feeds.settings_dialog.instructions.placeholder")}
               rows={3}
               className="text-sm"
             />
             <p className="text-[10px] text-muted-foreground">
-              An AI agent evaluates each article against these instructions during sync.
+              {t("feeds.settings_dialog.instructions.help")}
             </p>
           </div>
 
           {/* Include keywords */}
           <div className="space-y-1.5">
-            <Label className="text-xs">Include Keywords</Label>
+            <Label className="text-xs">
+              {t("feeds.settings_dialog.include_keywords.label")}
+            </Label>
             <Input
               value={includeInput}
               onChange={(e) => setIncludeInput(e.target.value)}
@@ -185,7 +195,7 @@ export function FeedSettingsDialog({
                   setIncludeKeywords
                 )
               }
-              placeholder="Type keyword and press Enter"
+              placeholder={t("feeds.add_modal.include_keywords.placeholder")}
             />
             {includeKeywords.length > 0 && (
               <div className="flex flex-wrap gap-1 pt-1">
@@ -212,7 +222,9 @@ export function FeedSettingsDialog({
 
           {/* Exclude keywords */}
           <div className="space-y-1.5">
-            <Label className="text-xs">Exclude Keywords</Label>
+            <Label className="text-xs">
+              {t("feeds.settings_dialog.exclude_keywords.label")}
+            </Label>
             <Input
               value={excludeInput}
               onChange={(e) => setExcludeInput(e.target.value)}
@@ -225,7 +237,7 @@ export function FeedSettingsDialog({
                   setExcludeKeywords
                 )
               }
-              placeholder="Type keyword and press Enter"
+              placeholder={t("feeds.add_modal.exclude_keywords.placeholder")}
             />
             {excludeKeywords.length > 0 && (
               <div className="flex flex-wrap gap-1 pt-1">
@@ -253,7 +265,9 @@ export function FeedSettingsDialog({
           {/* Max entries */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <Label className="text-xs">Max Articles Per Sync</Label>
+              <Label className="text-xs">
+                {t("feeds.settings_dialog.max_articles.label")}
+              </Label>
               <span className="text-xs text-muted-foreground tabular-nums">
                 {maxEntriesPerSync}
               </span>
@@ -272,16 +286,16 @@ export function FeedSettingsDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("feeds.settings_dialog.cancel")}
           </Button>
           <Button onClick={handleSave} disabled={saving || !name.trim()}>
             {saving ? (
               <>
                 <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                Saving...
+                {t("feeds.settings_dialog.saving")}
               </>
             ) : (
-              "Save Changes"
+              t("feeds.settings_dialog.save")
             )}
           </Button>
         </DialogFooter>

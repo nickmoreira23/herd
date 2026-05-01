@@ -3340,6 +3340,254 @@ export const messages = {
     "App \"{slug}\" não encontrado no banco de dados. Execute prisma seed primeiro.",
   "error.apps.connection_failed": "Falha na conexão: {message}",
   "error.apps.sync_named_failed": "Falha ao sincronizar {name}",
+
+  // ─── Feeds: statuses ───────────────────────────────────────────────
+  "feeds.statuses.PENDING.label": "Pendente",
+  "feeds.statuses.PROCESSING.label": "Sincronizando",
+  "feeds.statuses.READY.label": "Pronto",
+  "feeds.statuses.ERROR.label": "Erro",
+
+  // ─── Feeds: sync intervals ─────────────────────────────────────────
+  "feeds.sync_intervals.HOURLY.label": "A cada hora",
+  "feeds.sync_intervals.HOURLY.description": "Verificar novos artigos a cada hora",
+  "feeds.sync_intervals.DAILY.label": "Diariamente",
+  "feeds.sync_intervals.DAILY.description": "Verificar novos artigos uma vez por dia",
+  "feeds.sync_intervals.WEEKLY.label": "Semanalmente",
+  "feeds.sync_intervals.WEEKLY.description": "Verificar novos artigos uma vez por semana",
+
+  // ─── Feeds: list page ──────────────────────────────────────────────
+  "feeds.list.title": "Feeds",
+  "feeds.list.description":
+    "Assine feeds RSS para importar artigos automaticamente para sua base de conhecimento.",
+  "feeds.list.add_feed_button": "Adicionar feed",
+  "feeds.list.search_placeholder": "Buscar por nome ou URL…",
+  "feeds.list.filter_all_status": "Todos os status",
+  "feeds.list.columns.name": "Nome",
+  "feeds.list.columns.frequency": "Frequência",
+  "feeds.list.columns.articles": "Artigos",
+  "feeds.list.columns.status": "Status",
+  "feeds.list.columns.last_checked": "Última verificação",
+  "feeds.list.last_checked_never": "Nunca",
+  "feeds.list.row_actions.view_articles": "Ver artigos",
+  "feeds.list.row_actions.sync_now": "Sincronizar agora",
+  "feeds.list.row_actions.settings": "Configurações",
+  "feeds.list.row_actions.activate": "Ativar",
+  "feeds.list.row_actions.deactivate": "Desativar",
+  "feeds.list.row_actions.delete": "Excluir",
+  "feeds.list.stats.total": "Total",
+  "feeds.list.stats.active": "Ativos",
+  "feeds.list.stats.articles": "Artigos",
+  "feeds.list.stats.error": "Erro",
+  "feeds.list.items_count": "{count} itens",
+
+  // ─── Feeds: empty state ────────────────────────────────────────────
+  "feeds.empty.title": "Nenhum feed ainda",
+  "feeds.empty.description":
+    "Adicione URLs de feeds RSS para monitorar blogs e fontes de notícias automaticamente. Novos artigos que combinarem com seus critérios serão importados para sua base de conhecimento de forma agendada.",
+  "feeds.empty.add_first": "Adicione seu primeiro feed",
+
+  // ─── Feeds: add modal ──────────────────────────────────────────────
+  "feeds.add_modal.title": "Adicionar feed RSS",
+  "feeds.add_modal.feed_url.label": "URL do feed",
+  "feeds.add_modal.feed_url.placeholder": "https://blog.exemplo.com/rss.xml",
+  "feeds.add_modal.feed_url.help":
+    "URL de feed RSS ou Atom. URLs de blog com auto-descoberta de feed também funcionam.",
+  "feeds.add_modal.frequency.label": "Frequência de verificação",
+  "feeds.add_modal.instructions.label": "Instruções para o agente",
+  "feeds.add_modal.instructions.placeholder":
+    "Descreva o que você está procurando em linguagem natural. Por exemplo: \"Tenho interesse em apps de fitness, startups que captaram dinheiro, lançamentos de produtos e qualquer coisa relacionada a IA aplicada à saúde.\"",
+  "feeds.add_modal.instructions.help":
+    "Um agente de IA lerá o título, resumo e categorias de cada artigo para decidir se combina com sua intenção. Seja descritivo — quanto mais contexto você dá, melhores os resultados.",
+  "feeds.add_modal.advanced.toggle": "Filtros avançados e opções",
+  "feeds.add_modal.advanced.keyword_count": "{count} palavras-chave",
+  "feeds.add_modal.include_keywords.label": "Palavras-chave para incluir (opcional)",
+  "feeds.add_modal.include_keywords.placeholder":
+    "Digite a palavra-chave e pressione Enter",
+  "feeds.add_modal.include_keywords.help":
+    "Pré-filtre por palavra-chave antes da avaliação por IA. Os artigos precisam combinar com pelo menos uma palavra-chave para serem considerados.",
+  "feeds.add_modal.exclude_keywords.label": "Palavras-chave para excluir (opcional)",
+  "feeds.add_modal.exclude_keywords.placeholder":
+    "Digite a palavra-chave e pressione Enter",
+  "feeds.add_modal.max_articles.label": "Máximo de artigos por sincronização",
+  "feeds.add_modal.name.label": "Nome (opcional)",
+  "feeds.add_modal.name.placeholder": "Detectado automaticamente do feed",
+  "feeds.add_modal.description.label": "Descrição (opcional)",
+  "feeds.add_modal.description.placeholder": "Sobre o que é este feed?",
+  "feeds.add_modal.submit.adding": "Adicionando…",
+  "feeds.add_modal.submit.add": "Adicionar feed",
+
+  // ─── Feeds: settings dialog ────────────────────────────────────────
+  "feeds.settings_dialog.title": "Configurações do feed",
+  "feeds.settings_dialog.name.label": "Nome",
+  "feeds.settings_dialog.frequency.label": "Frequência de verificação",
+  "feeds.settings_dialog.instructions.label": "Instruções para o agente",
+  "feeds.settings_dialog.instructions.placeholder":
+    "Descreva em linguagem natural quais tipos de artigos você deseja…",
+  "feeds.settings_dialog.instructions.help":
+    "Um agente de IA avalia cada artigo de acordo com estas instruções durante a sincronização.",
+  "feeds.settings_dialog.include_keywords.label": "Palavras-chave para incluir",
+  "feeds.settings_dialog.exclude_keywords.label": "Palavras-chave para excluir",
+  "feeds.settings_dialog.max_articles.label": "Máximo de artigos por sincronização",
+  "feeds.settings_dialog.cancel": "Cancelar",
+  "feeds.settings_dialog.save": "Salvar alterações",
+  "feeds.settings_dialog.saving": "Salvando…",
+
+  // ─── Feeds: entries dialog ─────────────────────────────────────────
+  "feeds.entries_dialog.articles_count": "{count} artigos",
+  "feeds.entries_dialog.checked_at": "Verificado {date}",
+  "feeds.entries_dialog.search_placeholder": "Filtrar artigos…",
+  "feeds.entries_dialog.no_articles": "Nenhum artigo encontrado",
+  "feeds.entries_dialog.empty_selection":
+    "Selecione um artigo da lista para ver seu conteúdo",
+  "feeds.entries_dialog.entry.error_scrape": "Falha ao extrair conteúdo deste artigo.",
+  "feeds.entries_dialog.entry.pending": "Este artigo ainda não foi extraído.",
+  "feeds.entries_dialog.entry.no_content": "Sem conteúdo disponível para este artigo.",
+  "feeds.entries_dialog.actions.open_site": "Abrir site",
+  "feeds.entries_dialog.actions.sync_now": "Sincronizar agora",
+
+  // ─── Feeds: delete dialog ──────────────────────────────────────────
+  "feeds.delete_dialog.title": "Excluir feed",
+  "feeds.delete_dialog.confirm":
+    "Tem certeza de que deseja excluir \"{name}\"? Todos os artigos importados e o histórico de sincronização serão removidos permanentemente. Esta ação não pode ser desfeita.",
+  "feeds.delete_dialog.cancel": "Cancelar",
+  "feeds.delete_dialog.delete": "Excluir",
+
+  // ─── Feeds: feedback ───────────────────────────────────────────────
+  "feeds.feedback.added": "Feed adicionado — sincronizando artigos",
+  "feeds.feedback.deleted": "Feed excluído",
+  "feeds.feedback.activated": "Feed ativado",
+  "feeds.feedback.deactivated": "Feed desativado",
+  "feeds.feedback.settings_saved": "Configurações salvas",
+  "feeds.feedback.syncing": "Sincronizando feed…",
+  "feeds.feedback.sync_complete_one": "Sincronização concluída — 1 novo artigo",
+  "feeds.feedback.sync_complete_other": "Sincronização concluída — {count} novos artigos",
+
+  // ─── Feeds: errors ─────────────────────────────────────────────────
+  "error.feeds.url_required": "URL do feed é obrigatória",
+  "error.feeds.invalid_url": "Por favor, informe uma URL válida",
+  "error.feeds.add_failed": "Falha ao adicionar feed",
+  "error.feeds.save_failed": "Falha ao salvar",
+  "error.feeds.sync_failed": "Falha na sincronização",
+  "error.feeds.delete_failed": "Falha ao excluir feed",
+
+  // ─── Links: statuses ───────────────────────────────────────────────
+  "links.statuses.PENDING.label": "Pendente",
+  "links.statuses.PROCESSING.label": "Extraindo",
+  "links.statuses.PROCESSING.crawling.label": "Rastreando",
+  "links.statuses.READY.label": "Pronto",
+  "links.statuses.ERROR.label": "Erro",
+
+  // ─── Links: scrape modes ───────────────────────────────────────────
+  "links.scrape_modes.SINGLE.label": "Página única",
+  "links.scrape_modes.SINGLE.description": "Extrair conteúdo de uma única URL",
+  "links.scrape_modes.FULL_SITE.label": "Site inteiro",
+  "links.scrape_modes.FULL_SITE.description": "Rastrear todas as páginas sob este domínio",
+
+  // ─── Links: list page ──────────────────────────────────────────────
+  "links.list.title": "Links",
+  "links.list.description":
+    "Adicione URLs para extrair e importar conteúdo da web para sua base de conhecimento.",
+  "links.list.add_link_button": "Adicionar link",
+  "links.list.search_placeholder": "Buscar por nome, URL ou domínio…",
+  "links.list.filter_all_status": "Todos os status",
+  "links.list.columns.name": "Nome",
+  "links.list.columns.domain": "Domínio",
+  "links.list.columns.content": "Conteúdo",
+  "links.list.columns.status": "Status",
+  "links.list.columns.last_scraped": "Última extração",
+  "links.list.row_actions.view_content": "Ver conteúdo",
+  "links.list.row_actions.open_url": "Abrir URL",
+  "links.list.row_actions.rescrape": "Re-extrair",
+  "links.list.row_actions.recrawl": "Re-rastrear",
+  "links.list.row_actions.activate": "Ativar",
+  "links.list.row_actions.deactivate": "Desativar",
+  "links.list.row_actions.delete": "Excluir",
+  "links.list.content.chars_short": "{count} caracteres",
+  "links.list.content.chars_thousands": "{count}K caracteres",
+  "links.list.content.chars_millions": "{count}M caracteres",
+  "links.list.content.pages_count": "{scraped} páginas",
+  "links.list.content.pages_progress": "{scraped}/{total} páginas",
+  "links.list.status.crawling_progress": "Rastreando {scraped}/{total}",
+  "links.list.stats.total": "Total",
+  "links.list.stats.ready": "Prontos",
+  "links.list.stats.processing": "Processando",
+  "links.list.stats.error": "Erro",
+  "links.list.items_count": "{count} itens",
+
+  // ─── Links: empty state ────────────────────────────────────────────
+  "links.empty.title": "Nenhum link ainda",
+  "links.empty.description":
+    "Adicione URLs para extrair e importar conteúdo de páginas web automaticamente para sua base de conhecimento. Mantenha seu conhecimento atualizado com fontes externas.",
+  "links.empty.add_first": "Adicione seu primeiro link",
+
+  // ─── Links: add modal ──────────────────────────────────────────────
+  "links.add_modal.title": "Adicionar link",
+  "links.add_modal.url.label": "URL",
+  "links.add_modal.url.placeholder": "https://exemplo.com/docs",
+  "links.add_modal.scrape_mode.label": "Modo de extração",
+  "links.add_modal.max_pages.label": "Máximo de páginas",
+  "links.add_modal.max_pages.help": "Rastrear até {count} páginas sob esta URL",
+  "links.add_modal.name.label": "Nome (opcional)",
+  "links.add_modal.name.placeholder": "Detectado automaticamente do título da página",
+  "links.add_modal.description.label": "Descrição (opcional)",
+  "links.add_modal.description.placeholder": "Sobre o que é esta página?",
+  "links.add_modal.submit.adding": "Adicionando…",
+  "links.add_modal.submit.add_link": "Adicionar link",
+  "links.add_modal.submit.add_and_crawl": "Adicionar e rastrear site",
+
+  // ─── Links: crawl progress ─────────────────────────────────────────
+  "links.crawl_progress.starting": "Iniciando rastreamento…",
+  "links.crawl_progress.crawling":
+    "Rastreando… {scraped} de {total} páginas extraídas",
+  "links.crawl_progress.percent_complete": "{percent}% concluído",
+  "links.crawl_progress.errors_one": "1 erro",
+  "links.crawl_progress.errors_other": "{count} erros",
+  "links.crawl_progress.last_scraped": "Última extraída: {label}",
+
+  // ─── Links: content dialog ─────────────────────────────────────────
+  "links.content_dialog.scraped_at": "Extraído em {date}",
+  "links.content_dialog.crawled_at": "Rastreado em {date}",
+  "links.content_dialog.pages_count": "{count} páginas",
+  "links.content_dialog.scraping_in_progress": "Extração em andamento…",
+  "links.content_dialog.scraping_not_started": "A extração ainda não começou.",
+  "links.content_dialog.error_default": "Ocorreu um erro durante a extração.",
+  "links.content_dialog.no_content_extracted":
+    "Nenhum conteúdo foi extraído desta página.",
+  "links.content_dialog.search_placeholder": "Filtrar páginas…",
+  "links.content_dialog.no_pages": "Nenhuma página encontrada",
+  "links.content_dialog.empty_selection":
+    "Selecione uma página da lista para ver seu conteúdo",
+  "links.content_dialog.page.error_scrape": "Falha ao extrair esta página.",
+  "links.content_dialog.page.no_content": "Sem conteúdo disponível para esta página.",
+  "links.content_dialog.actions.open_url": "Abrir URL",
+  "links.content_dialog.actions.rescrape": "Re-extrair",
+  "links.content_dialog.actions.recrawl": "Re-rastrear",
+
+  // ─── Links: delete dialog ──────────────────────────────────────────
+  "links.delete_dialog.title": "Excluir link",
+  "links.delete_dialog.confirm":
+    "Tem certeza de que deseja excluir \"{name}\"? O conteúdo extraído e todos os dados associados serão removidos permanentemente. Esta ação não pode ser desfeita.",
+  "links.delete_dialog.cancel": "Cancelar",
+  "links.delete_dialog.delete": "Excluir",
+
+  // ─── Links: feedback ───────────────────────────────────────────────
+  "links.feedback.added_scraping": "Link adicionado — extração em andamento",
+  "links.feedback.added_crawling": "Site adicionado — rastreamento em andamento",
+  "links.feedback.deleted": "Link excluído",
+  "links.feedback.activated": "Ativado",
+  "links.feedback.deactivated": "Desativado",
+  "links.feedback.rescraping": "Re-extraindo…",
+  "links.feedback.recrawling": "Re-rastreando…",
+  "links.feedback.rescrape_complete": "Re-extração concluída",
+  "links.feedback.recrawl_started": "Re-rastreamento iniciado",
+
+  // ─── Links: errors ─────────────────────────────────────────────────
+  "error.links.url_required": "URL é obrigatória",
+  "error.links.invalid_url": "Por favor, informe uma URL válida",
+  "error.links.add_failed": "Falha ao adicionar link",
+  "error.links.delete_failed": "Falha ao excluir link",
+  "error.links.rescrape_failed": "Falha na re-extração",
+  "error.links.recrawl_failed": "Falha no re-rastreamento",
 } as const;
 
 export type MessageKey = keyof typeof messages;

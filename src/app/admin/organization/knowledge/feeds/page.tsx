@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { FeedTable } from "@/components/feeds/feed-table";
-import { KnowledgeFeedsEmpty } from "@/components/knowledge/feeds/knowledge-feeds-empty";
+import { FeedsEmpty } from "@/components/feeds/feeds-empty";
 import { connection } from "next/server";
 
 export default async function KnowledgeFeedsPage() {
@@ -31,7 +31,7 @@ export default async function KnowledgeFeedsPage() {
   };
 
   if (feeds.length === 0) {
-    return <KnowledgeFeedsEmpty />;
+    return <FeedsEmpty />;
   }
 
   return (

@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { LinkTable } from "@/components/links/link-table";
-import { KnowledgeLinksEmpty } from "@/components/knowledge/links/knowledge-links-empty";
+import { LinksEmpty } from "@/components/links/links-empty";
 import { connection } from "next/server";
 
 export default async function KnowledgeLinksPage() {
@@ -26,7 +26,7 @@ export default async function KnowledgeLinksPage() {
   };
 
   if (links.length === 0) {
-    return <KnowledgeLinksEmpty />;
+    return <LinksEmpty />;
   }
 
   return (
