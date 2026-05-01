@@ -9,33 +9,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Plug, Loader2 } from "lucide-react";
-
-const APP_CATALOG = [
-  {
-    slug: "oura",
-    name: "Oura Ring",
-    description: "Sleep, activity, and readiness tracking from your Oura Ring.",
-    logoUrl: "/images/apps/oura.svg",
-    categories: ["Sleep", "Activity", "Readiness", "Heart Rate"],
-    authType: "OAuth2",
-  },
-  {
-    slug: "whoop",
-    name: "WHOOP",
-    description: "Recovery, strain, sleep, and workout data from your WHOOP strap.",
-    logoUrl: "/images/apps/whoop.svg",
-    categories: ["Sleep", "Recovery", "Workout", "Body", "Heart Rate"],
-    authType: "OAuth2",
-  },
-  {
-    slug: "apple-health",
-    name: "Apple Health",
-    description: "Aggregated health data from Apple Health via Terra API bridge.",
-    logoUrl: "/images/apps/apple-health.svg",
-    categories: ["Sleep", "Activity", "Heart Rate", "Workout", "Body", "Nutrition"],
-    authType: "OAuth2",
-  },
-] as const;
+import { useT } from "@/lib/i18n/locale-context";
+import {
+  APP_PROVIDER_OPTIONS,
+  dataCategoryLabelKey,
+} from "@/lib/apps/provider-catalog";
 
 interface AppConnectModalProps {
   open: boolean;
@@ -52,20 +30,22 @@ export function AppConnectModal({
   connectingSlug,
   onConnect,
 }: AppConnectModalProps) {
+  const t = useT();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Connect App</DialogTitle>
+          <DialogTitle>{t("apps.token_auth.modal.connect_title")}</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground mb-4">
-          Choose a fitness app to connect. Your health data will be synced and
-          made available to your AI agents.
+          {t("apps.token_auth.modal.connect_subtitle")}
         </p>
         <div className="grid gap-3">
-          {APP_CATALOG.map((app) => {
+          {APP_PROVIDER_OPTIONS.map((app) => {
             const isConnected = connectedSlugs.includes(app.slug);
             const isConnecting = connectingSlug === app.slug;
+            const name = t(app.labelKey);
             return (
               <div
                 key={app.slug}
@@ -73,7 +53,7 @@ export function AppConnectModal({
               >
                 <img
                   src={app.logoUrl}
-                  alt={app.name}
+                  alt={name}
                   className="h-10 w-10 rounded-lg object-contain shrink-0"
                   onError={(e) => {
                     (e.target as HTMLImageElement).style.display = "none";
@@ -81,7 +61,7 @@ export function AppConnectModal({
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <h4 className="text-sm font-semibold">{app.name}</h4>
+                    <h4 className="text-sm font-semibold">{name}</h4>
                     <Badge
                       variant="outline"
                       className="text-[10px] bg-muted/50"
@@ -90,16 +70,16 @@ export function AppConnectModal({
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mb-2">
-                    {app.description}
+                    {t(app.descriptionKey)}
                   </p>
                   <div className="flex flex-wrap gap-1">
-                    {app.categories.map((cat) => (
+                    {app.categoryCodes.map((cat) => (
                       <Badge
                         key={cat}
                         variant="outline"
                         className="text-[10px] bg-violet-500/5 text-violet-500 border-violet-500/20"
                       >
-                        {cat}
+                        {t(dataCategoryLabelKey(cat))}
                       </Badge>
                     ))}
                   </div>
@@ -114,14 +94,14 @@ export function AppConnectModal({
                   {isConnecting ? (
                     <>
                       <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                      Connecting...
+                      {t("apps.token_auth.actions.connecting")}
                     </>
                   ) : isConnected ? (
-                    "Connected"
+                    t("apps.token_auth.actions.connected")
                   ) : (
                     <>
                       <Plug className="h-3 w-3 mr-1" />
-                      Connect
+                      {t("apps.token_auth.actions.connect")}
                     </>
                   )}
                 </Button>

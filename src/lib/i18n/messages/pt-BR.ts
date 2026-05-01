@@ -3055,6 +3055,291 @@ export const messages = {
   "error.tables.name_required": "Nome é obrigatório",
   "error.tables.create_failed": "Falha ao criar tabela",
   "error.tables.delete_failed": "Falha ao excluir tabela",
+
+  // ─── Apps: providers (Template D) ──────────────────────────────────
+  "apps.providers.oura.label": "Oura Ring",
+  "apps.providers.oura.description":
+    "Acompanhamento de sono, atividade e prontidão pelo seu Oura Ring.",
+  "apps.providers.oura.token_auth.portal.url":
+    "https://cloud.ouraring.com/personal-access-tokens",
+  "apps.providers.oura.token_auth.portal.label":
+    "Portal de Tokens da Oura",
+  "apps.providers.oura.token_auth.token.label":
+    "Token de Acesso Pessoal",
+  "apps.providers.oura.token_auth.token.placeholder":
+    "Cole seu token de acesso pessoal Oura",
+  "apps.providers.oura.token_auth.steps.0":
+    "Entre na sua conta Oura em cloud.ouraring.com",
+  "apps.providers.oura.token_auth.steps.1":
+    "Vá em Personal Access Tokens nas configurações da conta",
+  "apps.providers.oura.token_auth.steps.2":
+    "Crie um novo token e copie-o",
+  "apps.providers.oura.token_auth.steps.3":
+    "Cole o token abaixo para conectar os dados do seu Oura Ring",
+
+  "apps.providers.whoop.label": "WHOOP",
+  "apps.providers.whoop.description":
+    "Recuperação, esforço, sono e dados de treino da sua pulseira WHOOP.",
+  "apps.providers.whoop.token_auth.portal.url":
+    "https://developer.whoop.com",
+  "apps.providers.whoop.token_auth.portal.label":
+    "Portal Developer da WHOOP",
+  "apps.providers.whoop.token_auth.token.label":
+    "Token de Acesso da API",
+  "apps.providers.whoop.token_auth.token.placeholder":
+    "Cole seu token de acesso da API WHOOP",
+  "apps.providers.whoop.token_auth.steps.0":
+    "Entre no Portal Developer da WHOOP em developer.whoop.com",
+  "apps.providers.whoop.token_auth.steps.1":
+    "Crie ou selecione seu aplicativo",
+  "apps.providers.whoop.token_auth.steps.2":
+    "Gere um token de acesso com os escopos necessários",
+  "apps.providers.whoop.token_auth.steps.3":
+    "Cole o token abaixo para conectar os dados do seu WHOOP",
+
+  "apps.providers.apple_health.label": "Apple Health",
+  "apps.providers.apple_health.description":
+    "Dados de saúde agregados do Apple Health via ponte Terra API.",
+  "apps.providers.apple_health.token_auth.portal.url":
+    "https://tryterra.co",
+  "apps.providers.apple_health.token_auth.portal.label":
+    "Painel da Terra",
+  "apps.providers.apple_health.token_auth.token.label":
+    "Chave de API Terra",
+  "apps.providers.apple_health.token_auth.token.placeholder":
+    "Cole sua chave de API Terra",
+  "apps.providers.apple_health.token_auth.steps.0":
+    "Cadastre-se em tryterra.co e crie um novo projeto",
+  "apps.providers.apple_health.token_auth.steps.1":
+    "Copie sua chave de API do painel da Terra",
+  "apps.providers.apple_health.token_auth.steps.2":
+    "Cole-a abaixo — usamos a Terra como ponte para sincronizar dados do Apple Health",
+  "apps.providers.apple_health.token_auth.steps.3":
+    "Após conectar, você autorizará o compartilhamento de dados no seu iPhone",
+
+  // ─── Apps: token auth flow (Template K) ────────────────────────────
+  "apps.token_auth.modal.connect_title": "Conectar app",
+  "apps.token_auth.modal.connect_subtitle":
+    "Escolha um app de saúde para conectar. Seus dados serão sincronizados e disponibilizados aos agentes de IA.",
+  "apps.token_auth.modal.connect_app_title": "Conectar {name}",
+  "apps.token_auth.modal.instructions_title": "Como conectar:",
+  "apps.token_auth.modal.open_portal": "Abrir {label}",
+  "apps.token_auth.modal.scopes_title": "Dados que serão sincronizados:",
+  "apps.token_auth.modal.security_note":
+    "Seu token é criptografado e armazenado com segurança. É usado apenas para sincronizar dados do seu dispositivo.",
+
+  "apps.token_auth.actions.connect": "Conectar",
+  "apps.token_auth.actions.connecting": "Conectando…",
+  "apps.token_auth.actions.connected": "Conectado",
+  "apps.token_auth.actions.cancel": "Cancelar",
+  "apps.token_auth.actions.retry": "Tentar novamente",
+
+  // ─── Apps: statuses (Template D, reuses KnowledgeDocumentStatus) ───
+  "apps.statuses.PENDING.label": "Não conectado",
+  "apps.statuses.PROCESSING.label": "Sincronizando",
+  "apps.statuses.READY.label": "Conectado",
+  "apps.statuses.ERROR.label": "Erro",
+
+  // ─── Apps: data point statuses (re-uses KnowledgeDocumentStatus) ──
+  "apps.data_point_statuses.PENDING.label": "Pendente",
+  "apps.data_point_statuses.PROCESSING.label": "Processando",
+  "apps.data_point_statuses.READY.label": "Pronto",
+  "apps.data_point_statuses.ERROR.label": "Erro",
+
+  // ─── Apps: data categories (Template D) ────────────────────────────
+  "apps.data_categories.SLEEP.label": "Sono",
+  "apps.data_categories.SLEEP.description":
+    "Duração do sono, fases (profundo, REM, leve), eficiência, hora de dormir/acordar e métricas de descanso.",
+  "apps.data_categories.ACTIVITY.label": "Atividade",
+  "apps.data_categories.ACTIVITY.description":
+    "Passos diários, calorias gastas, minutos ativos, distância percorrida e detalhamento de intensidade.",
+  "apps.data_categories.RECOVERY.label": "Recuperação",
+  "apps.data_categories.RECOVERY.description":
+    "Pontuação de recuperação, HRV (variabilidade), frequência cardíaca em repouso, SpO2 e temperatura da pele.",
+  "apps.data_categories.HEART_RATE.label": "Frequência cardíaca",
+  "apps.data_categories.HEART_RATE.description":
+    "Leituras contínuas de frequência cardíaca, FC repouso/média/máxima e zonas de FC.",
+  "apps.data_categories.WORKOUT.label": "Treino",
+  "apps.data_categories.WORKOUT.description":
+    "Sessões de exercício com tipo, duração, esforço/intensidade, calorias e FC durante a atividade.",
+  "apps.data_categories.READINESS.label": "Prontidão",
+  "apps.data_categories.READINESS.description":
+    "Pontuação diária de prontidão baseada em qualidade do sono, recuperação, equilíbrio de atividade e temperatura corporal.",
+  "apps.data_categories.BODY.label": "Corpo",
+  "apps.data_categories.BODY.description":
+    "Medidas corporais incluindo peso, altura, IMC, percentual de gordura e FC máxima.",
+  "apps.data_categories.APP_NUTRITION.label": "Nutrição",
+  "apps.data_categories.APP_NUTRITION.description":
+    "Ingestão calórica, macronutrientes (proteína, carboidrato, gordura), fibra, açúcar e hidratação.",
+  "apps.data_categories.APP_OTHER.label": "Outros",
+  "apps.data_categories.APP_OTHER.description":
+    "Métricas adicionais e dados de outros dispositivos conectados.",
+
+  // ─── Apps: sync frequency options (Template D) ─────────────────────
+  "apps.sync_frequency.15.label": "A cada 15 minutos",
+  "apps.sync_frequency.30.label": "A cada 30 minutos",
+  "apps.sync_frequency.60.label": "A cada hora",
+  "apps.sync_frequency.360.label": "A cada 6 horas",
+  "apps.sync_frequency.720.label": "A cada 12 horas",
+  "apps.sync_frequency.1440.label": "Diariamente",
+  "apps.sync_frequency.10080.label": "Semanalmente",
+
+  // ─── Apps: list page (chrome) ──────────────────────────────────────
+  "apps.list.title": "Apps",
+  "apps.list.description":
+    "Conecte apps de saúde para sincronizar dados com sua base de conhecimento.",
+  "apps.list.connect_app": "Conectar app",
+  "apps.list.search_placeholder": "Buscar por nome ou descrição…",
+  "apps.list.items_count": "{count} itens",
+  "apps.list.stats.total": "Total",
+  "apps.list.stats.connected": "Conectados",
+  "apps.list.stats.syncing": "Sincronizando",
+  "apps.list.stats.data_points": "Pontos de dados",
+  "apps.list.filters.all_status": "Todos os status",
+  "apps.list.columns.app": "App",
+  "apps.list.columns.category": "Categoria",
+  "apps.list.columns.status": "Status",
+  "apps.list.columns.data_points": "Pontos de dados",
+  "apps.list.columns.last_sync": "Última sincronização",
+  "apps.list.actions.sync_now": "Sincronizar agora",
+  "apps.list.actions.settings": "Configurações",
+  "apps.list.actions.disconnect": "Desconectar",
+  "apps.list.actions.delete": "Excluir",
+  "apps.list.last_sync_never": "Nunca",
+  "apps.list.dash": "—",
+
+  // ─── Apps: category labels (App.category enum) ─────────────────────
+  "apps.categories.FITNESS.label": "Fitness",
+  "apps.categories.HEALTH.label": "Saúde",
+  "apps.categories.NUTRITION.label": "Nutrição",
+  "apps.categories.OTHER.label": "Outros",
+
+  // ─── Apps: empty state ─────────────────────────────────────────────
+  "apps.empty.title": "Nenhum app conectado",
+  "apps.empty.description":
+    "Conecte apps como Oura Ring, WHOOP e Apple Health para sincronizar dados de saúde automaticamente. Seus agentes de IA podem então usar esses dados para insights personalizados.",
+  "apps.empty.cta": "Conecte seu primeiro app",
+  "apps.empty.list_title": "Nenhum app ainda",
+  "apps.empty.list_description":
+    "Conecte apps de saúde para sincronizar automaticamente seus dados na base de conhecimento.",
+
+  // ─── Apps: detail page ─────────────────────────────────────────────
+  "apps.detail.back": "Voltar para Apps",
+  "apps.detail.actions.test": "Testar",
+  "apps.detail.actions.sync_now": "Sincronizar agora",
+  "apps.detail.actions.disconnect": "Desconectar",
+  "apps.detail.actions.connect": "Conectar",
+  "apps.detail.tabs.overview": "Visão geral",
+  "apps.detail.tabs.data": "Dados",
+  "apps.detail.tabs.logs": "Logs",
+  "apps.detail.tabs.settings": "Configurações",
+
+  "apps.detail.about.title": "Sobre",
+  "apps.detail.about.category": "Categoria",
+  "apps.detail.about.auth_type": "Tipo de autenticação",
+  "apps.detail.about.created": "Criado em",
+  "apps.detail.about.website": "Site",
+  "apps.detail.about.visit": "Visitar",
+
+  "apps.detail.connection.title": "Conexão",
+  "apps.detail.connection.status": "Status",
+  "apps.detail.connection.connected_since": "Conectado desde",
+  "apps.detail.connection.last_sync": "Última sincronização",
+  "apps.detail.connection.never": "Nunca",
+  "apps.detail.connection.dash": "—",
+
+  "apps.detail.stats.title": "Pontos de dados",
+  "apps.detail.stats.total": "Total",
+  "apps.detail.stats.ready": "Prontos",
+  "apps.detail.stats.pending": "Pendentes",
+  "apps.detail.stats.sync_logs": "Logs de sync",
+
+  "apps.detail.categories.title": "Categorias de dados suportadas",
+
+  "apps.detail.data.filter_all": "Todas as categorias",
+  "apps.detail.data.empty": "Nenhum ponto de dados sincronizado ainda.",
+  "apps.detail.data.sync_now": "Sincronizar agora",
+  "apps.detail.data.expand": "Expandir",
+  "apps.detail.data.collapse": "Recolher",
+  "apps.detail.data.processing_failed": "Falha no processamento.",
+  "apps.detail.data.not_processed": "Ainda não processado.",
+
+  "apps.detail.logs.empty": "Nenhum log de sincronização ainda.",
+  "apps.detail.logs.records": "{count} registros",
+  "apps.detail.logs.no_details": "—",
+
+  "apps.detail.settings.title": "Configuração de sincronização",
+  "apps.detail.settings.frequency_label": "Frequência de sincronização",
+  "apps.detail.settings.frequency_help":
+    "Com que frequência sincronizar dados de {name} automaticamente.",
+  "apps.detail.settings.categories_label": "Categorias de dados habilitadas",
+  "apps.detail.settings.categories_help":
+    "Selecione quais tipos de dados sincronizar deste app.",
+  "apps.detail.settings.save": "Salvar configurações",
+  "apps.detail.settings.saving": "Salvando…",
+
+  // ─── Apps: data dialog ─────────────────────────────────────────────
+  "apps.data_dialog.title": "{name} — Pontos de dados",
+  "apps.data_dialog.total": "{count} no total",
+  "apps.data_dialog.ready": "{count} prontos",
+  "apps.data_dialog.empty": "Nenhum ponto de dados sincronizado ainda.",
+  "apps.data_dialog.expand": "Expandir",
+  "apps.data_dialog.collapse": "Recolher",
+  "apps.data_dialog.processing_failed": "Falha no processamento.",
+  "apps.data_dialog.not_processed": "Ainda não processado.",
+  "apps.data_dialog.filter_all": "Todas as categorias",
+
+  // ─── Apps: settings dialog ─────────────────────────────────────────
+  "apps.settings_dialog.title": "Configurações de {name}",
+  "apps.settings_dialog.frequency_label": "Frequência de sincronização",
+  "apps.settings_dialog.frequency_help":
+    "Com que frequência sincronizar dados de {name} automaticamente.",
+  "apps.settings_dialog.categories_label": "Categorias de dados",
+  "apps.settings_dialog.categories_help":
+    "Selecione quais tipos de dados sincronizar deste app.",
+  "apps.settings_dialog.save": "Salvar configurações",
+  "apps.settings_dialog.saving": "Salvando…",
+  "apps.settings_dialog.cancel": "Cancelar",
+
+  // ─── Apps: delete dialog ───────────────────────────────────────────
+  "apps.delete_dialog.title": "Excluir app",
+  "apps.delete_dialog.confirm_no_data":
+    "Tem certeza que deseja excluir \"{name}\"? Esta ação não pode ser desfeita.",
+  "apps.delete_dialog.confirm_one":
+    "Tem certeza que deseja excluir \"{name}\"? Isso removerá permanentemente {count} ponto de dados sincronizado e todo conteúdo associado. Esta ação não pode ser desfeita.",
+  "apps.delete_dialog.confirm_other":
+    "Tem certeza que deseja excluir \"{name}\"? Isso removerá permanentemente {count} pontos de dados sincronizados e todo conteúdo associado. Esta ação não pode ser desfeita.",
+  "apps.delete_dialog.cancel": "Cancelar",
+  "apps.delete_dialog.delete": "Excluir",
+
+  // ─── Apps: feedback (toasts) ───────────────────────────────────────
+  "apps.feedback.disconnected": "Desconectado",
+  "apps.feedback.connected": "{name} conectado!",
+  "apps.feedback.connected_query":
+    "{name} conectado com sucesso!",
+  "apps.feedback.app_connected_success":
+    "App conectado com sucesso!",
+  "apps.feedback.test_passed": "Teste de conexão aprovado",
+  "apps.feedback.sync_started": "Sincronizando {name}…",
+  "apps.feedback.sync_completed": "Sincronização concluída",
+  "apps.feedback.synced": "{name} sincronizado",
+  "apps.feedback.disconnected_named": "{name} desconectado",
+  "apps.feedback.settings_saved": "Configurações salvas",
+  "apps.feedback.app_deleted": "App excluído",
+
+  // ─── Apps: errors ──────────────────────────────────────────────────
+  "error.apps.connect_failed":
+    "Falha ao conectar. Verifique seu token e tente novamente.",
+  "error.apps.network": "Erro de rede. Verifique sua conexão e tente novamente.",
+  "error.apps.disconnect_failed": "Falha ao desconectar",
+  "error.apps.test_failed": "Teste de conexão falhou",
+  "error.apps.sync_failed": "Sincronização falhou",
+  "error.apps.save_settings_failed": "Falha ao salvar configurações",
+  "error.apps.delete_failed": "Falha ao excluir app",
+  "error.apps.app_not_found":
+    "App \"{slug}\" não encontrado no banco de dados. Execute prisma seed primeiro.",
+  "error.apps.connection_failed": "Falha na conexão: {message}",
+  "error.apps.sync_named_failed": "Falha ao sincronizar {name}",
 } as const;
 
 export type MessageKey = keyof typeof messages;

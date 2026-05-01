@@ -8,6 +8,9 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useT, useLocale } from "@/lib/i18n/locale-context";
+import { pluralize } from "@/lib/i18n/pluralize";
+import { t as translate } from "@/lib/i18n/t";
 
 interface AppDeleteDialogProps {
   open: boolean;
@@ -24,29 +27,36 @@ export function AppDeleteDialog({
   dataPointCount,
   onConfirm,
 }: AppDeleteDialogProps) {
+  const t = useT();
+  const locale = useLocale();
+
+  const message =
+    dataPointCount > 0
+      ? pluralize(dataPointCount, locale, {
+          one: translate("apps.delete_dialog.confirm_one", locale, {
+            name: appName,
+            count: dataPointCount,
+          }),
+          other: translate("apps.delete_dialog.confirm_other", locale, {
+            name: appName,
+            count: dataPointCount,
+          }),
+        })
+      : t("apps.delete_dialog.confirm_no_data", { name: appName });
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Delete app</DialogTitle>
+          <DialogTitle>{t("apps.delete_dialog.title")}</DialogTitle>
         </DialogHeader>
-        <p className="text-sm text-muted-foreground">
-          Are you sure you want to delete &ldquo;{appName}&rdquo;?
-          {dataPointCount > 0 && (
-            <>
-              {" "}
-              This will permanently remove {dataPointCount} synced data point
-              {dataPointCount !== 1 ? "s" : ""} and all associated content.
-            </>
-          )}{" "}
-          This action cannot be undone.
-        </p>
+        <p className="text-sm text-muted-foreground">{message}</p>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("apps.delete_dialog.cancel")}
           </Button>
           <Button variant="destructive" onClick={onConfirm}>
-            Delete
+            {t("apps.delete_dialog.delete")}
           </Button>
         </DialogFooter>
       </DialogContent>

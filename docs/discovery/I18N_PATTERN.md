@@ -2,7 +2,7 @@
 
 > Estabelecido na Etapa 1.5.4 (Ledger Internationalization).
 > Pattern canônico para internacionalizar features do HERD.
-> Versão: 1.6 — última atualização: 2026-04-30 (Etapa 1.5.6b-tris).
+> Versão: 1.7 — última atualização: 2026-05-01 (Etapa 1.5.6d-γ).
 
 Este documento é a referência única de **como** internacionalizar uma feature.
 Ele captura as decisões e templates cravados na Etapa 1.5.4 e serve de base
@@ -287,6 +287,84 @@ src/components/<feature>/wizard/
   Use `STEP_TITLE_KEYS[n] satisfies Record<StepNumber, MessageKey>` map.
 
 Caso primeiro: 1.5.6b-bis (Network — wizard de profiles, 7 steps).
+
+### Template K: Token Auth Flow (token-paste)
+
+Auth flow via **token-paste** (Personal Access Token / API Key / bridge token),
+não OAuth com redirect. Caso primeiro: apps block (oura, whoop, apple-health).
+
+**Estados** (5):
+- `disconnected` — conta nunca conectada (sem credencial).
+- `paste` — usuário digitando/colando token no input.
+- `connecting` — request POST em vôo.
+- `connected` — credencial válida + sync inicial concluído.
+- `error` — falha (rede ou token inválido).
+
+**Erros** (3):
+- `invalid_token` — backend recusa o token.
+- `network` — fetch falhou.
+- `unknown` — qualquer outro 5xx/4xx.
+
+**Ações** (2): `retry`, `cancel` (mais o `connect` da fase de paste).
+
+**Namespace prescrito**:
+
+```
+apps.providers.{slug}.label
+apps.providers.{slug}.description
+apps.providers.{slug}.token_auth.portal.url
+apps.providers.{slug}.token_auth.portal.label
+apps.providers.{slug}.token_auth.token.label
+apps.providers.{slug}.token_auth.token.placeholder
+apps.providers.{slug}.token_auth.steps.{0..N}
+
+apps.token_auth.modal.{connect_title,connect_subtitle,connect_app_title,
+                        instructions_title,open_portal,scopes_title,
+                        security_note}
+apps.token_auth.actions.{connect,connecting,connected,cancel,retry}
+```
+
+**Slug → key segment**: dots e dashes em paths de chave são frágeis.
+Use **underscore** quando o slug tem dash: `apple-health` → key path
+`apps.providers.apple_health.*`. Mantenha o slug original em runtime
+(database, URL, identidade do provider) — converta só no momento de
+construir a MessageKey, via map satisfies ou helper:
+
+```typescript
+// src/lib/apps/provider-catalog.ts
+export const APP_PROVIDER_TOKEN_AUTH: Record<AppProviderSlug, AppProviderTokenAuthMeta> = {
+  oura: { ... },
+  whoop: { ... },
+  "apple-health": { ... },  // mas labelKey: "apps.providers.apple_health.label"
+};
+```
+
+**Catálogo split (Template D + paralelo técnico)**:
+
+Provider catalog deve separar:
+
+1. **Localizable**: `APP_PROVIDER_OPTIONS` (Template D — labelKey,
+   descriptionKey, logoUrl, authType, categoryCodes).
+2. **Token auth técnico**: `APP_PROVIDER_TOKEN_AUTH` (portalUrlKey,
+   portalLabelKey, tokenLabelKey, tokenPlaceholderKey, stepKeys[],
+   scopeCodes[]).
+3. **OAuth técnico** (existente, reservado): `APP_OAUTH_CONFIGS` em
+   `src/lib/apps/app-config.ts` — clientId, scopes, redirectUri, etc.
+   Não localizado, não vinculado a UI.
+
+Razão do split: portal URLs e códigos de categoria são dados
+ortogonais à UI — categorias podem ter ícones/cores próprias e portal
+URLs raramente mudam por locale (mas precisam ser MessageKey por
+consistência e para lidar com casos onde o portal tem variantes
+regionais no futuro).
+
+**Template L (placeholder)**: True OAuth flow com redirect/callback
+ainda não foi cravado. Quando o primeiro caso real surgir (provavelmente
+integrations block), mapear estados (`disconnected`, `redirecting`,
+`callback_pending`, `connected`, `error`) e erros
+(`oauth_denied`, `oauth_invalid_state`, `network`, `unknown`).
+
+Caso primeiro: 1.5.6d-γ (apps — oura, whoop, apple-health via PAT/API key).
 
 ## Pattern: Extração de sub-panel especializado
 
@@ -602,6 +680,20 @@ ou refinar um existente, atualize este arquivo:
 Este é um documento vivo. A última atualização vai estar no header.
 
 ## Changelog
+
+### v1.7 — 2026-05-01 (Etapa 1.5.6d-γ)
+
+- Template K (Token Auth Flow) cravado. Pattern para auth via token-paste
+  (PAT, API key). Estados: disconnected/paste/connecting/connected/error.
+  Erros: invalid_token/network/unknown. Ações: retry/cancel.
+- APP_PROVIDER_OPTIONS Template D com APP_PROVIDER_TOKEN_AUTH em estrutura
+  paralela (technical: scopes, portal URLs, step counts).
+- APP_STATUS_OPTIONS Template D reusando KnowledgeDocumentStatus enum
+  (PENDING/PROCESSING/READY/ERROR).
+- Template L (true OAuth flow com redirect/callback) reservado como
+  placeholder para futuro (integrations block).
+- Convenção: dashes em slugs viram underscores em MessageKey paths
+  (`apple-health` → `apps.providers.apple_health.*`).
 
 ### v1.6 — 2026-04-30 (Etapa 1.5.6b-tris)
 

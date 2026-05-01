@@ -18,34 +18,30 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Search, SlidersHorizontal } from "lucide-react";
-import { toast } from "sonner";
+import { useT, useLocale } from "@/lib/i18n/locale-context";
+import { notifyError, notifyInfo, notifySuccess } from "@/lib/i18n/notify";
 import type { AppRow, AppStats } from "./types";
 import { PageHeader } from "@/components/layout/page-header";
 
-const STATUS_OPTIONS = [
-  { value: "All Status", filterKey: "ALL" },
-  { value: "Not Connected", filterKey: "PENDING" },
-  { value: "Syncing", filterKey: "PROCESSING" },
-  { value: "Connected", filterKey: "READY" },
-  { value: "Error", filterKey: "ERROR" },
-] as const;
+type StatusFilterKey = "ALL" | "PENDING" | "PROCESSING" | "READY" | "ERROR";
 
 interface AppTableProps {
   initialApps: AppRow[];
   initialStats: AppStats;
 }
 
-export function AppTable({
-  initialApps,
-  initialStats,
-}: AppTableProps) {
-  const router = useRouter();
+export function AppTable({ initialApps, initialStats }: AppTableProps) {
+  const t = useT();
+  const locale = useLocale();
+  // useRouter retained for future navigation needs; left unused but kept to
+  // signal that this is still a client navigation surface.
+  useRouter();
   const [apps, setApps] = useState<AppRow[]>(initialApps);
   const [stats, setStats] = useState<AppStats>(initialStats);
   const [search, setSearch] = useState("");
-  const [statusValue, setStatusValue] = useState("All Status");
+  const [statusFilter, setStatusFilter] = useState<StatusFilterKey>("ALL");
   const [showConnect, setShowConnect] = useState(false);
-  const [connectingSlug, setConnectingSlug] = useState<string | null>(null);
+  const [connectingSlug] = useState<string | null>(null);
   const [authTarget, setAuthTarget] = useState<{ slug: string; id: string } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AppRow | null>(null);
   const [settingsTarget, setSettingsTarget] = useState<AppRow | null>(null);
@@ -65,17 +61,14 @@ export function AppTable({
     const connected = searchParams.get("connected");
     const error = searchParams.get("error");
     if (connected) {
-      toast.success(`${connected} connected successfully!`);
+      notifySuccess("apps.feedback.connected_query", t, { name: connected });
       refreshApps();
       window.history.replaceState({}, "", window.location.pathname);
     } else if (error) {
-      toast.error(`Connection failed: ${error}`);
+      notifyError("error.apps.connection_failed", t, { message: error });
       window.history.replaceState({}, "", window.location.pathname);
     }
-  }, [searchParams, refreshApps]);
-
-  const statusFilter =
-    STATUS_OPTIONS.find((s) => s.value === statusValue)?.filterKey ?? "ALL";
+  }, [searchParams, refreshApps, t]);
 
   const filteredApps = useMemo(() => {
     let filtered = apps;
@@ -88,7 +81,7 @@ export function AppTable({
         (a) =>
           a.name.toLowerCase().includes(q) ||
           a.slug.toLowerCase().includes(q) ||
-          (a.description && a.description.toLowerCase().includes(q))
+          (a.description && a.description.toLowerCase().includes(q)),
       );
     }
     return filtered;
@@ -96,94 +89,104 @@ export function AppTable({
 
   const handleSync = useCallback(
     async (app: AppRow) => {
-      toast.info(`Syncing ${app.name}...`);
-      const res = await fetch(`/api/apps/${app.id}/sync`, {
-        method: "POST",
-      });
+      notifyInfo("apps.feedback.sync_started", t, { name: app.name });
+      const res = await fetch(`/api/apps/${app.id}/sync`, { method: "POST" });
       if (res.ok) {
         await refreshApps();
-        toast.success(`${app.name} synced`);
+        notifySuccess("apps.feedback.synced", t, { name: app.name });
       } else {
         await refreshApps();
-        toast.error(`Failed to sync ${app.name}`);
+        notifyError("error.apps.sync_named_failed", t, { name: app.name });
       }
     },
-    [refreshApps]
+    [refreshApps, t],
   );
 
   const handleDelete = useCallback(
     async (app: AppRow) => {
-      const res = await fetch(`/api/apps/${app.id}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(`/api/apps/${app.id}`, { method: "DELETE" });
       if (res.ok) {
         await refreshApps();
-        toast.success("App deleted");
+        notifySuccess("apps.feedback.app_deleted", t);
       } else {
-        toast.error("Failed to delete app");
+        notifyError("error.apps.delete_failed", t);
       }
       setDeleteTarget(null);
     },
-    [refreshApps]
+    [refreshApps, t],
   );
 
   const handleConnect = useCallback(
     (slug: string) => {
       const app = apps.find((a) => a.slug === slug);
       if (!app) {
-        toast.error(`App "${slug}" not found in database. Run prisma seed first.`);
+        notifyError("error.apps.app_not_found", t, { slug });
         return;
       }
-
-      // Close the catalog modal and open the auth modal for this app
       setShowConnect(false);
       setAuthTarget({ slug: app.slug, id: app.id });
     },
-    [apps]
+    [apps, t],
   );
 
   const handleDisconnect = useCallback(
     async (app: AppRow) => {
-      const res = await fetch(`/api/apps/${app.id}/connect`, {
-        method: "DELETE",
-      });
+      const res = await fetch(`/api/apps/${app.id}/connect`, { method: "DELETE" });
       if (res.ok) {
         await refreshApps();
-        toast.success(`${app.name} disconnected`);
+        notifySuccess("apps.feedback.disconnected_named", t, { name: app.name });
       } else {
-        toast.error("Failed to disconnect");
+        notifyError("error.apps.disconnect_failed", t);
       }
     },
-    [refreshApps]
+    [refreshApps, t],
   );
 
   const columns = useMemo(
     () =>
-      getAppColumns({
-        onSync: handleSync,
-        onSettings: (app) => setSettingsTarget(app),
-        onDisconnect: handleDisconnect,
-        onDelete: (app) => setDeleteTarget(app),
-      }),
-    [handleSync, handleDisconnect]
+      getAppColumns(
+        {
+          onSync: handleSync,
+          onSettings: (app) => setSettingsTarget(app),
+          onDisconnect: handleDisconnect,
+          onDelete: (app) => setDeleteTarget(app),
+        },
+        t,
+        locale,
+      ),
+    [handleSync, handleDisconnect, t, locale],
   );
 
   const connectedSlugs = useMemo(
     () => apps.filter((a) => a.status === "READY").map((a) => a.slug),
-    [apps]
+    [apps],
+  );
+
+  const statusOptions: ReadonlyArray<{
+    key: StatusFilterKey;
+    label: string;
+  }> = useMemo(
+    () => [
+      { key: "ALL", label: t("apps.list.filters.all_status") },
+      { key: "PENDING", label: t("apps.statuses.PENDING.label") },
+      { key: "PROCESSING", label: t("apps.statuses.PROCESSING.label") },
+      { key: "READY", label: t("apps.statuses.READY.label") },
+      { key: "ERROR", label: t("apps.statuses.ERROR.label") },
+    ],
+    [t],
   );
 
   return (
     <>
       <div className="flex flex-col min-h-full pt-2 pl-2">
         <PageHeader
-          title="Apps"
-          description="Connect fitness apps to sync health data into your knowledge base."
+          title={t("apps.list.title")}
+          description={t("apps.list.description")}
           className="pl-0 pt-0"
           action={
             <Button size="sm" onClick={() => setShowConnect(true)}>
               <Plus className="mr-1 h-3 w-3" />
-              Connect App
+              {t("apps.list.connect_app")}
             </Button>
           }
         />
@@ -192,25 +195,25 @@ export function AppTable({
         <div className="flex items-center gap-4 mb-6">
           <div className="rounded-lg border bg-card px-5 py-3 min-w-0">
             <p className="text-xs text-muted-foreground whitespace-nowrap">
-              Total
+              {t("apps.list.stats.total")}
             </p>
             <p className="text-lg font-bold tabular-nums">{stats.total}</p>
           </div>
           <div className="rounded-lg border bg-card px-5 py-3 min-w-0">
             <p className="text-xs text-muted-foreground whitespace-nowrap">
-              Connected
+              {t("apps.list.stats.connected")}
             </p>
             <p className="text-lg font-bold tabular-nums">{stats.connected}</p>
           </div>
           <div className="rounded-lg border bg-card px-5 py-3 min-w-0">
             <p className="text-xs text-muted-foreground whitespace-nowrap">
-              Syncing
+              {t("apps.list.stats.syncing")}
             </p>
             <p className="text-lg font-bold tabular-nums">{stats.syncing}</p>
           </div>
           <div className="rounded-lg border bg-card px-5 py-3 min-w-0">
             <p className="text-xs text-muted-foreground whitespace-nowrap">
-              Data Points
+              {t("apps.list.stats.data_points")}
             </p>
             <p className="text-lg font-bold tabular-nums">
               {stats.totalDataPoints}
@@ -226,9 +229,11 @@ export function AppTable({
             toolbar={() => (
               <div className="flex items-center gap-3">
                 <Select
-                  value={statusValue}
+                  value={statusFilter}
                   onValueChange={(val) =>
-                    setStatusValue(val ?? "All Status")
+                    setStatusFilter(
+                      (val as StatusFilterKey) ?? "ALL",
+                    )
                   }
                 >
                   <SelectTrigger className="w-auto min-w-[100px] h-8 text-xs shrink-0">
@@ -236,9 +241,9 @@ export function AppTable({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {STATUS_OPTIONS.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>
-                        {s.value}
+                    {statusOptions.map((s) => (
+                      <SelectItem key={s.key} value={s.key}>
+                        {s.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -247,13 +252,13 @@ export function AppTable({
                 <div className="relative flex-1 min-w-0">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                   <Input
-                    placeholder="Search by name or description..."
+                    placeholder={t("apps.list.search_placeholder")}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="pl-8 pr-20 h-8 text-xs w-full"
                   />
                   <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground tabular-nums">
-                    {filteredApps.length} items
+                    {t("apps.list.items_count", { count: filteredApps.length })}
                   </span>
                 </div>
               </div>
@@ -279,7 +284,7 @@ export function AppTable({
         appId={authTarget?.id ?? null}
         onSuccess={async () => {
           await refreshApps();
-          toast.success("App connected successfully!");
+          notifySuccess("apps.feedback.app_connected_success", t);
         }}
       />
 
