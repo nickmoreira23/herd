@@ -3,17 +3,24 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import { Loader2, Edit2 } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
 import { useWizardStore } from "@/stores/wizard-store"
 import type { WizardField } from "@/lib/validators/network-profile-type"
+import { useT } from "@/lib/i18n/locale-context"
+import type { MessageKey } from "@/lib/i18n/messages/pt-BR"
 
 interface StepReviewProps {
   onBack: () => void
   goToStep: (step: number) => void
 }
 
+const NETWORK_TYPE_KEYS = {
+  INTERNAL: "network.type.INTERNAL",
+  EXTERNAL: "network.type.EXTERNAL",
+} as const satisfies Record<"INTERNAL" | "EXTERNAL", MessageKey>
+
 export function StepReview({ onBack, goToStep }: StepReviewProps) {
   const router = useRouter()
+  const t = useT()
   const { formData, profileTypeConfig, reset } = useWizardStore()
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
@@ -42,7 +49,7 @@ export function StepReview({ onBack, goToStep }: StepReviewProps) {
       reset()
       router.push(`/admin/network/profiles/${json.data.id}`)
     } catch {
-      setError("An unexpected error occurred. Please try again.")
+      setError(t("error.network.profile.create_failed"))
     } finally {
       setIsSubmitting(false)
     }
@@ -56,24 +63,24 @@ export function StepReview({ onBack, goToStep }: StepReviewProps) {
         className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
       >
         <Edit2 className="w-3 h-3" />
-        Edit
+        {t("network.wizard.step7.edit")}
       </button>
     )
   }
 
   function Section({
-    title,
+    titleKey,
     step,
     children,
   }: {
-    title: string
+    titleKey: MessageKey
     step: number
     children: React.ReactNode
   }) {
     return (
       <div className="rounded-lg border border-border overflow-hidden">
         <div className="flex items-center justify-between px-4 py-2.5 bg-muted/30">
-          <h3 className="text-sm font-semibold">{title}</h3>
+          <h3 className="text-sm font-semibold">{t(titleKey)}</h3>
           <EditButton step={step} />
         </div>
         <div className="px-4 py-3 space-y-1.5">{children}</div>
@@ -91,12 +98,16 @@ export function StepReview({ onBack, goToStep }: StepReviewProps) {
     )
   }
 
+  const networkTypeLabel = formData.networkType
+    ? t(NETWORK_TYPE_KEYS[formData.networkType as "INTERNAL" | "EXTERNAL"])
+    : undefined
+
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold">Review & Confirm</h2>
+        <h2 className="text-xl font-semibold">{t("network.wizard.step7.title")}</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Check everything before creating the profile.
+          {t("network.wizard.step7.description")}
         </p>
       </div>
 
@@ -108,67 +119,85 @@ export function StepReview({ onBack, goToStep }: StepReviewProps) {
 
       <div className="space-y-3 max-w-lg">
         {/* Network & Type */}
-        <Section title="Network & Type" step={1}>
+        <Section titleKey="network.wizard.step7.section.network_type" step={1}>
           <Row
-            label="Network"
-            value={formData.networkType}
+            label={t("network.wizard.step7.row.network")}
+            value={networkTypeLabel}
           />
-          <Row label="Profile Type" value={profileTypeConfig?.displayName} />
+          <Row
+            label={t("network.wizard.step7.row.profile_type")}
+            value={profileTypeConfig?.displayName}
+          />
         </Section>
 
         {/* Identity */}
-        <Section title="Identity" step={2}>
+        <Section titleKey="network.wizard.step7.section.identity" step={2}>
           <Row
-            label="Name"
+            label={t("network.wizard.step7.row.name")}
             value={
               formData.firstName && formData.lastName
                 ? `${formData.firstName} ${formData.lastName}`
                 : undefined
             }
           />
-          <Row label="Email" value={formData.email} />
-          <Row label="Phone" value={formData.phone} />
+          <Row label={t("network.wizard.step7.row.email")} value={formData.email} />
+          <Row label={t("network.wizard.step7.row.phone")} value={formData.phone} />
         </Section>
 
         {/* Hierarchy */}
-        <Section title="Hierarchy" step={3}>
+        <Section titleKey="network.wizard.step7.section.hierarchy" step={3}>
           {formData.parentId ? (
-            <p className="text-sm">Parent ID: <span className="font-mono text-xs">{formData.parentId}</span></p>
+            <p className="text-sm">
+              {t("network.wizard.step7.parent_id")}{" "}
+              <span className="font-mono text-xs">{formData.parentId}</span>
+            </p>
           ) : (
-            <p className="text-sm text-muted-foreground">No supervisor assigned</p>
+            <p className="text-sm text-muted-foreground">
+              {t("network.wizard.step7.no_parent")}
+            </p>
           )}
           {formData.teamIds && formData.teamIds.length > 0 && (
             <p className="text-sm text-muted-foreground">
-              {formData.teamIds.length} team(s) assigned
+              {t("network.wizard.step7.teams_assigned", {
+                count: formData.teamIds.length,
+              })}
             </p>
           )}
         </Section>
 
         {/* Roles */}
-        <Section title="Roles" step={4}>
+        <Section titleKey="network.wizard.step7.section.roles" step={4}>
           {formData.roleIds && formData.roleIds.length > 0 ? (
             <p className="text-sm text-muted-foreground">
-              {formData.roleIds.length} role(s) assigned
+              {t("network.wizard.step7.roles_assigned", {
+                count: formData.roleIds.length,
+              })}
             </p>
           ) : (
-            <p className="text-sm text-muted-foreground">No roles assigned</p>
+            <p className="text-sm text-muted-foreground">
+              {t("network.wizard.step7.no_roles")}
+            </p>
           )}
         </Section>
 
         {/* Compensation (external only) */}
         {formData.networkType === "EXTERNAL" && (
-          <Section title="Compensation" step={5}>
+          <Section titleKey="network.wizard.step7.section.compensation" step={5}>
             {formData.compensationPlanId ? (
-              <p className="text-sm text-muted-foreground">Compensation plan selected</p>
+              <p className="text-sm text-muted-foreground">
+                {t("network.wizard.step7.comp_plan_selected")}
+              </p>
             ) : (
-              <p className="text-sm text-muted-foreground">No compensation plan selected</p>
+              <p className="text-sm text-muted-foreground">
+                {t("network.wizard.step7.no_comp_plan")}
+              </p>
             )}
           </Section>
         )}
 
         {/* Extended Attributes */}
         {fields.filter((f) => f.step === 6).length > 0 && (
-          <Section title="Additional Information" step={6}>
+          <Section titleKey="network.wizard.step7.section.attributes" step={6}>
             {fields
               .filter((f) => f.step === 6)
               .map((field) => {
@@ -190,7 +219,7 @@ export function StepReview({ onBack, goToStep }: StepReviewProps) {
           disabled={isSubmitting}
           className="px-4 py-2 rounded-lg text-sm font-medium border border-border hover:bg-muted transition-colors disabled:opacity-50"
         >
-          Back
+          {t("network.wizard.common.back")}
         </button>
         <button
           type="button"
@@ -199,7 +228,9 @@ export function StepReview({ onBack, goToStep }: StepReviewProps) {
           className="flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-all disabled:opacity-70"
         >
           {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-          {isSubmitting ? "Creating Profile..." : "Create Profile"}
+          {isSubmitting
+            ? t("network.wizard.step7.creating")
+            : t("network.wizard.step7.create_button")}
         </button>
       </div>
     </div>

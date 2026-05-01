@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { useWizardStore } from "@/stores/wizard-store"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useT } from "@/lib/i18n/locale-context"
+import type { MessageKey } from "@/lib/i18n/messages/pt-BR"
 
 interface RoleOption {
   id: string
@@ -20,7 +22,13 @@ interface StepRolesProps {
   onBack: () => void
 }
 
+const NETWORK_TYPE_KEYS = {
+  INTERNAL: "network.type.INTERNAL",
+  EXTERNAL: "network.type.EXTERNAL",
+} as const satisfies Record<"INTERNAL" | "EXTERNAL", MessageKey>
+
 export function StepRoles({ onNext, onBack }: StepRolesProps) {
+  const t = useT()
   const { formData, updateFormData } = useWizardStore()
   const [roles, setRoles] = React.useState<RoleOption[]>([])
   const [loading, setLoading] = React.useState(true)
@@ -47,9 +55,9 @@ export function StepRoles({ onNext, onBack }: StepRolesProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold">Role Assignment</h2>
+        <h2 className="text-xl font-semibold">{t("network.wizard.step4.title")}</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Assign roles to control what this profile can access.
+          {t("network.wizard.step4.description")}
         </p>
       </div>
 
@@ -81,12 +89,12 @@ export function StepRoles({ onNext, onBack }: StepRolesProps) {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium">{role.displayName}</span>
-                        {role.networkType && (
+                        {role.networkType && (role.networkType === "INTERNAL" || role.networkType === "EXTERNAL") && (
                           <Badge
                             variant={role.networkType === "INTERNAL" ? "secondary" : "default"}
                             className="text-xs py-0"
                           >
-                            {role.networkType}
+                            {t(NETWORK_TYPE_KEYS[role.networkType])}
                           </Badge>
                         )}
                       </div>
@@ -103,7 +111,7 @@ export function StepRoles({ onNext, onBack }: StepRolesProps) {
                         }}
                         className="text-xs text-muted-foreground hover:text-foreground"
                       >
-                        {permCount} perms
+                        {t("network.wizard.step4.perms_count", { count: permCount })}
                       </button>
                     )}
                   </label>
@@ -116,7 +124,9 @@ export function StepRoles({ onNext, onBack }: StepRolesProps) {
                             key={`${rp.permission.resource}:${rp.permission.action}`}
                             className="inline-flex items-center rounded bg-muted px-2 py-0.5 text-xs font-mono"
                           >
-                            {rp.permission.resource}:{rp.permission.action}
+                            {rp.permission.resource}
+                            {":"}
+                            {rp.permission.action}
                           </span>
                         ))}
                       </div>
@@ -129,7 +139,7 @@ export function StepRoles({ onNext, onBack }: StepRolesProps) {
 
       {selectedIds.length === 0 && (
         <p className="text-sm text-yellow-600 dark:text-yellow-400 max-w-lg">
-          No roles selected. This profile will have no access permissions.
+          {t("network.wizard.step4.no_roles_warning")}
         </p>
       )}
 
@@ -139,14 +149,14 @@ export function StepRoles({ onNext, onBack }: StepRolesProps) {
           onClick={onBack}
           className="px-4 py-2 rounded-lg text-sm font-medium border border-border hover:bg-muted transition-colors"
         >
-          Back
+          {t("network.wizard.common.back")}
         </button>
         <button
           type="button"
           onClick={onNext}
           className="px-6 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-all"
         >
-          Continue
+          {t("network.wizard.common.next")}
         </button>
       </div>
     </div>

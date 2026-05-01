@@ -1605,4 +1605,313 @@ export const messages: Record<MessageKey, string> = {
   "error.profile.email_required": "Email is required",
   "error.profile.save_failed": "Failed to save",
   "error.profile.avatar_upload_failed": "Failed to upload avatar",
+
+  // ============================================================
+  // Network — Phase 1.5.6b-bis
+  // ============================================================
+
+  // Subpanel chrome
+  "network.subpanel.title": "Network",
+  "network.subpanel.all_members": "All Members",
+  "network.subpanel.org_chart": "Org Chart",
+  "network.subpanel.network_map": "Network Map",
+  "network.subpanel.internal": "Internal Network",
+  "network.subpanel.external": "External Network",
+  "network.subpanel.no_departments": "No departments yet.",
+  "network.subpanel.no_channels": "No channels yet.",
+  "network.subpanel.manage": "Manage Network",
+
+  // Manage dialog
+  "network.manage.title": "Manage",
+  "network.manage.description": "Profile Types and Roles.",
+  "network.manage.tab.profiles": "Profile Types",
+  "network.manage.tab.roles": "Roles",
+  "network.manage.close": "Close",
+  "network.manage.new": "New",
+  "network.manage.loading": "Loading…",
+  "network.manage.none_yet": "None yet.",
+  "network.manage.profile_types.description":
+    "Profile types define the kind of member (internal role or external channel).",
+  "network.manage.profile_types.internal": "Internal Network",
+  "network.manage.profile_types.external": "External Network",
+  "network.manage.profile_types.confirm_delete":
+    'Delete profile type "{name}"? This cannot be undone.',
+  "network.manage.profile_types.cannot_delete": "Cannot delete (in use)",
+  "network.manage.profile_types.delete": "Delete",
+  "network.manage.profile_types.edit": "Edit",
+  "network.manage.roles.description":
+    "Roles control what members can do across the network.",
+  "network.manage.roles.general": "General",
+  "network.manage.roles.internal": "Internal Network",
+  "network.manage.roles.external": "External Network",
+  "network.manage.roles.confirm_delete":
+    'Delete role "{name}"? This cannot be undone.',
+  "network.manage.roles.system_role": "System role",
+  "network.manage.roles.delete": "Delete",
+  "network.manage.roles.edit": "Edit",
+
+  // Network type enum
+  "network.type.INTERNAL": "Internal",
+  "network.type.EXTERNAL": "External",
+  "network.type.both": "Both networks",
+  "network.type.internal_only": "Internal only",
+  "network.type.external_only": "External only",
+
+  // Profile status enum
+  "network.profile.status.ACTIVE": "Active",
+  "network.profile.status.PENDING": "Pending",
+  "network.profile.status.SUSPENDED": "Suspended",
+  "network.profile.status.TERMINATED": "Terminated",
+
+  // Profile types — list/table
+  "network.profile_types.list.search_placeholder": "Search profile types...",
+  "network.profile_types.list.column.name": "Name",
+  "network.profile_types.list.column.type": "Type",
+  "network.profile_types.list.column.custom_fields": "Custom Fields",
+  "network.profile_types.list.column.profiles": "Profiles",
+  "network.profile_types.list.column.status": "Status",
+  "network.profile_types.list.fields_count": "{count} fields",
+  "network.profile_types.list.status.active": "Active",
+  "network.profile_types.list.status.inactive": "Inactive",
+  "network.profile_types.list.action.edit": "Edit",
+  "network.profile_types.list.action.deactivate": "Deactivate",
+  "network.profile_types.list.action.activate": "Activate",
+  "network.profile_types.list.confirm_deactivate":
+    "Deactivate this profile type?",
+
+  // Profile types — detail/form
+  "network.profile_types.detail.network_type_label": "Network Type *",
+  "network.profile_types.detail.network_type.internal_hint":
+    "Employees, managers, sales reps",
+  "network.profile_types.detail.network_type.external_hint":
+    "Promoters, influencers, trainers",
+  "network.profile_types.detail.display_name_label": "Display Name *",
+  "network.profile_types.detail.display_name_placeholder":
+    "e.g., Regional Manager",
+  "network.profile_types.detail.slug_label": "Slug *",
+  "network.profile_types.detail.slug_placeholder": "e.g., regional_manager",
+  "network.profile_types.detail.slug_hint":
+    "Unique identifier. Cannot be changed after creation.",
+  "network.profile_types.detail.description_label": "Description",
+  "network.profile_types.detail.description_placeholder":
+    "Brief description of this profile type",
+  "network.profile_types.detail.color_label": "Badge Color",
+  "network.profile_types.detail.sort_order_label": "Sort Order",
+  "network.profile_types.detail.active_label":
+    "Active (visible in wizard and profile creation)",
+  "network.profile_types.detail.wizard_fields_label": "Custom Wizard Fields",
+  "network.profile_types.detail.wizard_fields_hint":
+    "Fields that appear in Step 6 of the profile creation wizard for this type.",
+  "network.profile_types.detail.creating": "Creating...",
+  "network.profile_types.detail.saving": "Saving...",
+  "network.profile_types.detail.create_button": "Create Profile Type",
+  "network.profile_types.detail.save_button": "Save Changes",
+  "network.profile_types.detail.cancel": "Cancel",
+
+  // Profile types — wizard fields editor
+  "network.profile_types.field_editor.empty":
+    "No custom fields yet. Add fields to collect profile-specific data.",
+  "network.profile_types.field_editor.unnamed": "Unnamed field",
+  "network.profile_types.field_editor.required_badge": "required",
+  "network.profile_types.field_editor.label_label": "Label *",
+  "network.profile_types.field_editor.label_placeholder": "Display label",
+  "network.profile_types.field_editor.key_label": "Key *",
+  "network.profile_types.field_editor.key_placeholder": "snake_case_key",
+  "network.profile_types.field_editor.type_label": "Type",
+  "network.profile_types.field_editor.step_label": "Wizard Step",
+  "network.profile_types.field_editor.step_2": "Step 2 — Identity",
+  "network.profile_types.field_editor.step_3": "Step 3 — Hierarchy",
+  "network.profile_types.field_editor.step_6": "Step 6 — Extended Attributes",
+  "network.profile_types.field_editor.placeholder_label": "Placeholder",
+  "network.profile_types.field_editor.placeholder_hint":
+    "Optional placeholder text",
+  "network.profile_types.field_editor.required_field": "Required field",
+  "network.profile_types.field_editor.options_label": "Options",
+  "network.profile_types.field_editor.option_placeholder":
+    "Type option and press Enter",
+  "network.profile_types.field_editor.add_field": "Add Field",
+
+  // Profile type field types enum
+  "network.profile_types.field_type.text": "text",
+  "network.profile_types.field_type.email": "email",
+  "network.profile_types.field_type.phone": "phone",
+  "network.profile_types.field_type.number": "number",
+  "network.profile_types.field_type.textarea": "textarea",
+  "network.profile_types.field_type.select": "select",
+  "network.profile_types.field_type.multi_select": "multi_select",
+  "network.profile_types.field_type.toggle": "toggle",
+  "network.profile_types.field_type.date": "date",
+  "network.profile_types.field_type.url": "url",
+
+  // Roles — list/table
+  "network.roles.list.search_placeholder": "Search roles...",
+  "network.roles.list.column.role": "Role",
+  "network.roles.list.column.slug": "Slug",
+  "network.roles.list.column.network": "Network",
+  "network.roles.list.column.inherits_from": "Inherits From",
+  "network.roles.list.column.members": "Members",
+  "network.roles.list.confirm_delete":
+    'Delete role "{name}"? This cannot be undone.',
+  "network.roles.list.action.edit": "Edit",
+  "network.roles.list.action.delete": "Delete",
+
+  // Roles — detail/form
+  "network.roles.detail.system_role_title": "System Role",
+  "network.roles.detail.system_role_hint":
+    "Some fields on system roles cannot be modified.",
+  "network.roles.detail.display_name_label": "Display Name *",
+  "network.roles.detail.display_name_placeholder": "e.g., Regional Manager",
+  "network.roles.detail.slug_label": "Slug *",
+  "network.roles.detail.slug_placeholder": "e.g., regional_manager",
+  "network.roles.detail.description_label": "Description",
+  "network.roles.detail.description_placeholder":
+    "What is this role responsible for?",
+  "network.roles.detail.network_type_label": "Network Type",
+  "network.roles.detail.network_type_placeholder": "Both networks",
+  "network.roles.detail.parent_role_label": "Inherits From (Parent Role)",
+  "network.roles.detail.parent_role_placeholder": "No parent (top-level role)",
+  "network.roles.detail.parent_role_none": "No parent (top-level role)",
+  "network.roles.detail.parent_role_hint":
+    "This role will inherit all permissions from the parent role.",
+  "network.roles.detail.creating": "Creating...",
+  "network.roles.detail.saving": "Saving...",
+  "network.roles.detail.create_button": "Create Role",
+  "network.roles.detail.save_button": "Save Changes",
+  "network.roles.detail.cancel": "Cancel",
+
+  // Permissions — matrix
+  "network.permissions.matrix.system_title": "System Role",
+  "network.permissions.matrix.system_hint":
+    "Permissions for system roles cannot be modified.",
+  "network.permissions.matrix.saving": "Saving...",
+  "network.permissions.matrix.count_of_total": "{assigned} / {total}",
+
+  // Profiles — list/table
+  "network.profiles.list.search_placeholder": "Search profiles...",
+  "network.profiles.list.column.name": "Name",
+  "network.profiles.list.column.network": "Network",
+  "network.profiles.list.column.profile_type": "Profile Type",
+  "network.profiles.list.column.status": "Status",
+  "network.profiles.list.column.rank": "Rank",
+
+  // Wizard — common chrome
+  "network.wizard.title": "Wizard",
+  "network.wizard.common.step_indicator": "Step {current} of {total}",
+  "network.wizard.common.back": "Back",
+  "network.wizard.common.next": "Continue",
+  "network.wizard.common.finish": "Finish",
+  "network.wizard.common.cancel": "Cancel",
+  "network.wizard.common.required_field": "Required field",
+
+  // Wizard — short labels in progress bar
+  "network.wizard.label.network": "Network",
+  "network.wizard.label.identity": "Identity",
+  "network.wizard.label.hierarchy": "Hierarchy",
+  "network.wizard.label.roles": "Roles",
+  "network.wizard.label.comp_plan": "Comp Plan",
+  "network.wizard.label.details": "Details",
+  "network.wizard.label.review": "Review",
+  "network.wizard.label.step_n": "Step {n}",
+
+  // Wizard — Step 1 (Network Type)
+  "network.wizard.step1.title": "Network Type",
+  "network.wizard.step1.description":
+    "Select which network this profile belongs to.",
+  "network.wizard.step1.internal_label": "Internal",
+  "network.wizard.step1.internal_description":
+    "Employees, managers, and sales staff",
+  "network.wizard.step1.external_label": "External",
+  "network.wizard.step1.external_description":
+    "Promoters, influencers, trainers, and partners",
+  "network.wizard.step1.select_profile_type": "Select Profile Type",
+  "network.wizard.step1.for_network_internal": "for internal network",
+  "network.wizard.step1.for_network_external": "for external network",
+
+  // Wizard — Step 2 (Identity)
+  "network.wizard.step2.title": "Identity",
+  "network.wizard.step2.description": "Basic information for this profile.",
+  "network.wizard.step2.first_name_label": "First Name *",
+  "network.wizard.step2.first_name_placeholder": "Jane",
+  "network.wizard.step2.last_name_label": "Last Name *",
+  "network.wizard.step2.last_name_placeholder": "Doe",
+  "network.wizard.step2.email_label": "Email Address *",
+  "network.wizard.step2.email_placeholder": "jane@example.com",
+  "network.wizard.step2.email_taken":
+    "This email is already registered in the network.",
+  "network.wizard.step2.phone_label": "Phone Number",
+  "network.wizard.step2.phone_placeholder": "+1 (555) 000-0000",
+  "network.wizard.step2.avatar_label": "Profile Photo",
+  "network.wizard.step2.avatar_change": "Change Photo",
+  "network.wizard.step2.avatar_upload": "Upload Photo",
+  "network.wizard.step2.avatar_remove": "Remove",
+  "network.wizard.step2.avatar_hint":
+    "PNG, JPG up to 2MB. Stored locally for now.",
+
+  // Wizard — Step 3 (Hierarchy)
+  "network.wizard.step3.title": "Hierarchy Placement",
+  "network.wizard.step3.description":
+    "Set the supervisor and team assignments for this profile.",
+  "network.wizard.step3.parent_label": "Supervisor / Upline",
+  "network.wizard.step3.parent_optional": "(optional)",
+  "network.wizard.step3.parent_search_placeholder":
+    "Search by name or email...",
+  "network.wizard.step3.searching": "Searching...",
+  "network.wizard.step3.teams_label": "Team Assignments",
+  "network.wizard.step3.no_teams": "No teams created yet.",
+  "network.wizard.step3.team_members_count": "{count} members",
+
+  // Wizard — Step 4 (Roles)
+  "network.wizard.step4.title": "Role Assignment",
+  "network.wizard.step4.description":
+    "Assign roles to control what this profile can access.",
+  "network.wizard.step4.perms_count": "{count} perms",
+  "network.wizard.step4.no_roles_warning":
+    "No roles selected. This profile will have no access permissions.",
+
+  // Wizard — Step 5 (Compensation)
+  "network.wizard.step5.title": "Compensation Plan",
+  "network.wizard.step5.description":
+    "Select the compensation plan for this external network member.",
+  "network.wizard.step5.no_plans":
+    "No compensation plans configured yet. You can assign one later.",
+  "network.wizard.step5.commission_suffix": "commission",
+
+  // Wizard — Step 6 (Attributes)
+  "network.wizard.step6.title": "Additional Information",
+  "network.wizard.step6.no_fields":
+    "No additional fields for this profile type.",
+  "network.wizard.step6.description": "Provide details specific to {type}.",
+  "network.wizard.step6.description_fallback": "this profile type",
+  "network.wizard.step6.select_option": "Select an option",
+
+  // Wizard — Step 7 (Review)
+  "network.wizard.step7.title": "Review & Confirm",
+  "network.wizard.step7.description":
+    "Check everything before creating the profile.",
+  "network.wizard.step7.edit": "Edit",
+  "network.wizard.step7.section.network_type": "Network & Type",
+  "network.wizard.step7.section.identity": "Identity",
+  "network.wizard.step7.section.hierarchy": "Hierarchy",
+  "network.wizard.step7.section.roles": "Roles",
+  "network.wizard.step7.section.compensation": "Compensation",
+  "network.wizard.step7.section.attributes": "Additional Information",
+  "network.wizard.step7.row.network": "Network",
+  "network.wizard.step7.row.profile_type": "Profile Type",
+  "network.wizard.step7.row.name": "Name",
+  "network.wizard.step7.row.email": "Email",
+  "network.wizard.step7.row.phone": "Phone",
+  "network.wizard.step7.parent_id": "Parent ID:",
+  "network.wizard.step7.no_parent": "No supervisor assigned",
+  "network.wizard.step7.teams_assigned": "{count} team(s) assigned",
+  "network.wizard.step7.roles_assigned": "{count} role(s) assigned",
+  "network.wizard.step7.no_roles": "No roles assigned",
+  "network.wizard.step7.comp_plan_selected": "Compensation plan selected",
+  "network.wizard.step7.no_comp_plan": "No compensation plan selected",
+  "network.wizard.step7.creating": "Creating Profile...",
+  "network.wizard.step7.create_button": "Create Profile",
+
+  // Network feedback / errors
+  "error.network.unexpected": "An unexpected error occurred",
+  "error.network.profile.create_failed":
+    "An unexpected error occurred. Please try again.",
 };

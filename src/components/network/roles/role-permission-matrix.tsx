@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { ShieldAlert } from "lucide-react"
 import { getPermissionMeta, getResourceMeta } from "@/lib/permission-metadata"
+import { useT } from "@/lib/i18n/locale-context"
 
 interface Permission {
   id: string
@@ -28,6 +29,7 @@ export function RolePermissionMatrix({
   isSystem = false,
 }: RolePermissionMatrixProps) {
   const router = useRouter()
+  const t = useT()
   const [assigned, setAssigned] = React.useState<Set<string>>(
     new Set(initialAssigned)
   )
@@ -93,9 +95,11 @@ export function RolePermissionMatrix({
         <div className="flex items-start gap-3 rounded-lg bg-amber-500/10 border border-amber-500/20 px-4 py-3">
           <ShieldAlert className="h-4 w-4 mt-0.5 text-amber-500 shrink-0" />
           <div>
-            <p className="text-sm font-medium text-amber-500">System Role</p>
+            <p className="text-sm font-medium text-amber-500">
+              {t("network.permissions.matrix.system_title")}
+            </p>
             <p className="text-xs text-amber-500/80 mt-0.5">
-              Permissions for system roles cannot be modified.
+              {t("network.permissions.matrix.system_hint")}
             </p>
           </div>
         </div>
@@ -106,7 +110,6 @@ export function RolePermissionMatrix({
         const Icon = meta.icon
         const assignedCount = perms.filter((p) => assigned.has(p.id)).length
         const allAssigned = assignedCount === perms.length
-        const noneAssigned = assignedCount === 0
 
         return (
           <div
@@ -122,7 +125,10 @@ export function RolePermissionMatrix({
               </div>
               <div className="flex items-center gap-3 shrink-0">
                 <Badge variant="outline" className="px-1 py-1 text-xs tabular-nums">
-                  {assignedCount} / {perms.length}
+                  {t("network.permissions.matrix.count_of_total", {
+                    assigned: assignedCount,
+                    total: perms.length,
+                  })}
                 </Badge>
                 <Switch
                   checked={allAssigned}
@@ -151,7 +157,9 @@ export function RolePermissionMatrix({
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         {isLoading && (
-                          <span className="text-xs text-muted-foreground">Saving...</span>
+                          <span className="text-xs text-muted-foreground">
+                            {t("network.permissions.matrix.saving")}
+                          </span>
                         )}
                         <Switch
                           checked={assigned.has(perm.id)}

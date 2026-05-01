@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { useT } from "@/lib/i18n/locale-context"
+import type { MessageKey } from "@/lib/i18n/messages/pt-BR"
 import type { WizardField } from "@/lib/validators/network-profile-type"
 
 interface WizardFieldsEditorProps {
@@ -18,6 +20,19 @@ const FIELD_TYPES: WizardField["type"][] = [
   "select", "multi_select", "toggle", "date", "url",
 ]
 
+const FIELD_TYPE_KEYS = {
+  text: "network.profile_types.field_type.text",
+  email: "network.profile_types.field_type.email",
+  phone: "network.profile_types.field_type.phone",
+  number: "network.profile_types.field_type.number",
+  textarea: "network.profile_types.field_type.textarea",
+  select: "network.profile_types.field_type.select",
+  multi_select: "network.profile_types.field_type.multi_select",
+  toggle: "network.profile_types.field_type.toggle",
+  date: "network.profile_types.field_type.date",
+  url: "network.profile_types.field_type.url",
+} as const satisfies Record<WizardField["type"], MessageKey>
+
 const NEW_FIELD: WizardField = {
   key: "",
   label: "",
@@ -28,6 +43,7 @@ const NEW_FIELD: WizardField = {
 }
 
 export function WizardFieldsEditor({ value, onChange }: WizardFieldsEditorProps) {
+  const t = useT()
   const [dragIdx, setDragIdx] = React.useState<number | null>(null)
   const [expandedIdx, setExpandedIdx] = React.useState<number | null>(null)
 
@@ -113,7 +129,7 @@ export function WizardFieldsEditor({ value, onChange }: WizardFieldsEditorProps)
             }
           }}
           onBlur={() => inputVal && addOption(inputVal)}
-          placeholder="Type option and press Enter"
+          placeholder={t("network.profile_types.field_editor.option_placeholder")}
           className="h-7 text-xs"
         />
       </div>
@@ -124,7 +140,7 @@ export function WizardFieldsEditor({ value, onChange }: WizardFieldsEditorProps)
     <div className="space-y-2">
       {value.length === 0 && (
         <p className="text-sm text-muted-foreground text-center py-4 rounded-lg border border-dashed border-border">
-          No custom fields yet. Add fields to collect profile-specific data.
+          {t("network.profile_types.field_editor.empty")}
         </p>
       )}
 
@@ -154,14 +170,18 @@ export function WizardFieldsEditor({ value, onChange }: WizardFieldsEditorProps)
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium truncate">
-                    {field.label || <span className="text-muted-foreground italic">Unnamed field</span>}
+                    {field.label || (
+                      <span className="text-muted-foreground italic">
+                        {t("network.profile_types.field_editor.unnamed")}
+                      </span>
+                    )}
                   </span>
                   <Badge variant="outline" className="text-xs py-0">
-                    {field.type}
+                    {t(FIELD_TYPE_KEYS[field.type])}
                   </Badge>
                   {field.required && (
                     <Badge variant="destructive" className="text-xs py-0">
-                      required
+                      {t("network.profile_types.field_editor.required_badge")}
                     </Badge>
                   )}
                 </div>
@@ -185,7 +205,9 @@ export function WizardFieldsEditor({ value, onChange }: WizardFieldsEditorProps)
             {isExpanded && (
               <div className="border-t border-border px-3 py-3 grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-medium">Label *</label>
+                  <label className="text-xs font-medium">
+                    {t("network.profile_types.field_editor.label_label")}
+                  </label>
                   <Input
                     value={field.label}
                     onChange={(e) => {
@@ -200,23 +222,27 @@ export function WizardFieldsEditor({ value, onChange }: WizardFieldsEditorProps)
                         key: field.key ? field.key : autoKey,
                       })
                     }}
-                    placeholder="Display label"
+                    placeholder={t("network.profile_types.field_editor.label_placeholder")}
                     className="h-7 text-xs"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-medium">Key *</label>
+                  <label className="text-xs font-medium">
+                    {t("network.profile_types.field_editor.key_label")}
+                  </label>
                   <Input
                     value={field.key}
                     onChange={(e) =>
                       updateField(idx, { key: e.target.value.replace(/[^a-z0-9_]/g, "") })
                     }
-                    placeholder="snake_case_key"
+                    placeholder={t("network.profile_types.field_editor.key_placeholder")}
                     className="h-7 text-xs font-mono"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-medium">Type</label>
+                  <label className="text-xs font-medium">
+                    {t("network.profile_types.field_editor.type_label")}
+                  </label>
                   <select
                     value={field.type}
                     onChange={(e) =>
@@ -224,31 +250,41 @@ export function WizardFieldsEditor({ value, onChange }: WizardFieldsEditorProps)
                     }
                     className="flex h-7 w-full rounded-md border border-input bg-transparent px-2 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
                   >
-                    {FIELD_TYPES.map((t) => (
-                      <option key={t} value={t}>
-                        {t}
+                    {FIELD_TYPES.map((ft) => (
+                      <option key={ft} value={ft}>
+                        {t(FIELD_TYPE_KEYS[ft])}
                       </option>
                     ))}
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-medium">Wizard Step</label>
+                  <label className="text-xs font-medium">
+                    {t("network.profile_types.field_editor.step_label")}
+                  </label>
                   <select
                     value={field.step}
                     onChange={(e) => updateField(idx, { step: Number(e.target.value) })}
                     className="flex h-7 w-full rounded-md border border-input bg-transparent px-2 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
                   >
-                    <option value={6}>Step 6 — Extended Attributes</option>
-                    <option value={2}>Step 2 — Identity</option>
-                    <option value={3}>Step 3 — Hierarchy</option>
+                    <option value={6}>
+                      {t("network.profile_types.field_editor.step_6")}
+                    </option>
+                    <option value={2}>
+                      {t("network.profile_types.field_editor.step_2")}
+                    </option>
+                    <option value={3}>
+                      {t("network.profile_types.field_editor.step_3")}
+                    </option>
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-medium">Placeholder</label>
+                  <label className="text-xs font-medium">
+                    {t("network.profile_types.field_editor.placeholder_label")}
+                  </label>
                   <Input
                     value={field.placeholder ?? ""}
                     onChange={(e) => updateField(idx, { placeholder: e.target.value })}
-                    placeholder="Optional placeholder text"
+                    placeholder={t("network.profile_types.field_editor.placeholder_hint")}
                     className="h-7 text-xs"
                   />
                 </div>
@@ -261,12 +297,14 @@ export function WizardFieldsEditor({ value, onChange }: WizardFieldsEditorProps)
                     className="rounded"
                   />
                   <label htmlFor={`required-${idx}`} className="text-xs font-medium cursor-pointer">
-                    Required field
+                    {t("network.profile_types.field_editor.required_field")}
                   </label>
                 </div>
                 {hasOptions && (
                   <div className="col-span-2 space-y-1">
-                    <label className="text-xs font-medium">Options</label>
+                    <label className="text-xs font-medium">
+                      {t("network.profile_types.field_editor.options_label")}
+                    </label>
                     <OptionsInput
                       options={field.options ?? []}
                       onChange={(opts) => updateField(idx, { options: opts })}
@@ -281,7 +319,7 @@ export function WizardFieldsEditor({ value, onChange }: WizardFieldsEditorProps)
 
       <Button type="button" variant="outline" size="sm" onClick={addField} className="w-full">
         <Plus className="w-4 h-4 mr-2" />
-        Add Field
+        {t("network.profile_types.field_editor.add_field")}
       </Button>
     </div>
   )

@@ -2,7 +2,7 @@
 
 > Estabelecido na Etapa 1.5.4 (Ledger Internationalization).
 > Pattern canônico para internacionalizar features do HERD.
-> Versão: 1.4 — última atualização: 2026-04-30 (Etapa 1.5.6b).
+> Versão: 1.5 — última atualização: 2026-04-30 (Etapa 1.5.6b-bis).
 
 Este documento é a referência única de **como** internacionalizar uma feature.
 Ele captura as decisões e templates cravados na Etapa 1.5.4 e serve de base
@@ -252,6 +252,61 @@ Bridge documentado, controlado. NÃO use como solução geral — para tipos
 novos, comece com `Money` tuple desde o design. Helper existe para
 preservar tipo de dado upstream onde já é `number` por razões legítimas.
 
+### Template J: Multi-step wizard pattern
+
+Wizards com múltiplos steps + shell + progress têm estrutura repetida.
+Pattern para internacionalizar:
+
+**Estrutura típica**:
+
+```
+src/components/<feature>/wizard/
+├── wizard-shell.tsx      # frame principal
+├── wizard-progress.tsx   # indicador visual
+├── step-1-{name}.tsx     # primeiro step
+├── step-2-{name}.tsx
+├── ...
+└── step-N-review.tsx     # último step (review/confirm)
+```
+
+**Naming convention de chaves**:
+
+- `<feature>.wizard.title` — título global do wizard.
+- `<feature>.wizard.common.step_indicator` — "Passo {current} de {total}".
+- `<feature>.wizard.common.{back|next|finish|cancel|required_field}` — chrome.
+- `<feature>.wizard.step{N}.{title|description}` — header de cada step.
+- `<feature>.wizard.step{N}.{field}_label` — labels de campos.
+- `<feature>.wizard.step{N}.{specific_string}` — strings específicas.
+
+**Threading de locale**:
+- Shell e progress recebem `locale` como prop quando precisam formatar.
+- Cada step usa `useT()` para strings + recebe `locale` quando precisa.
+
+**Anti-pattern crítico**:
+- ❌ Dynamic key construction em runtime: `t(\`<feature>.wizard.step${n}.title\`)`.
+  Use `STEP_TITLE_KEYS[n] satisfies Record<StepNumber, MessageKey>` map.
+
+Caso primeiro: 1.5.6b-bis (Network — wizard de profiles, 7 steps).
+
+## Pattern: Extração de sub-panel especializado
+
+Cada feature com sub-panel customizado em `src/components/layout/sub-panel.tsx`
+ganha **arquivo próprio** ao ser internacionalizada, removendo a definição
+inline do registry.
+
+Procedimento:
+1. Crie `src/components/<feature>/<feature>-sub-panel.tsx` com `"use client"`.
+2. Mova a função inteira (incluindo tipos locais como `<Feature>SidebarData`).
+3. Importe shared types de `src/components/layout/sub-panel-types.ts`
+   (`SubPanelLink`, `SubPanelCategory`, `SubPanelConfig`, `SUB_PANEL_WIDTH`).
+4. Em `sub-panel.tsx`: substitua a definição inline por
+   `import { <Feature>SubPanel } from "@/components/<feature>/<feature>-sub-panel";`.
+5. Adicione o arquivo novo ao path estrito de `react/jsx-no-literals`.
+
+Pattern cravado em 1.5.6b-bis (NetworkSubPanel). Replicar para
+BlocksSubPanel, KnowledgeSubPanel, MarketplaceSubPanel, ToolsSubPanel,
+OrganizationSubPanel em 1.5.6c-e.
+
 ### Pattern: `labelKey` em interfaces hierárquicas
 
 Quando uma interface representa hierarquia visível na UI (sidebar items,
@@ -355,6 +410,12 @@ quando migrar e a hierarquia inteira passa a falar a língua do usuário.
   identificador estável (id, enum value, slug). Ex: detectar tipo de
   conta pela label "Ativo" vs "Asset" é frágil; use `account.type ===
   "ASSET"` direto. Pattern emergiu na 1.5.6a-bis (projection-spreadsheet).
+- ❌ Dynamic key construction em runtime via template string:
+  `t(\`prefix.${variable}\`)`. TypeScript não consegue verificar que a
+  string montada existe no dicionário, e refactoring quebra silenciosamente.
+  Sempre use map satisfies: `KEYS[variable]` onde `KEYS` é
+  `as const satisfies Record<Variable, MessageKey>`. Pattern emergiu na
+  1.5.6b-bis (wizard step titles + permission matrix).
 - ❌ Exportar configurações com campo `label` literal hardcoded. Separa
   dados (multipliers, options, ids) de apresentação (labels). Forneça
   helper `getXLabel(item, t)` que recebe a função de tradução. Pattern
@@ -465,6 +526,17 @@ ou refinar um existente, atualize este arquivo:
 Este é um documento vivo. A última atualização vai estar no header.
 
 ## Changelog
+
+### v1.5 — 2026-04-30 (Etapa 1.5.6b-bis)
+
+- Pattern de extração de sub-panel especializado documentado como seção
+  própria. NetworkSubPanel é o caso primeiro.
+- Template J adicionado: multi-step wizard pattern com naming convention
+  de chaves, threading de locale, e anti-pattern de dynamic key construction.
+- Anti-pattern: dynamic key construction em runtime via template string
+  (use map satisfies).
+- `src/components/layout/sub-panel-types.ts` extraído para shared types,
+  evitando dependência circular entre sub-panel.tsx e sub-panels específicos.
 
 ### v1.4 — 2026-04-30 (Etapa 1.5.6b)
 

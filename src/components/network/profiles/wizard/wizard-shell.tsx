@@ -10,18 +10,23 @@ import { StepCompensation } from "./step-5-compensation"
 import { StepAttributes } from "./step-6-attributes"
 import { StepReview } from "./step-7-review"
 import { useWizardStore } from "@/stores/wizard-store"
+import { useT } from "@/lib/i18n/locale-context"
+import type { MessageKey } from "@/lib/i18n/messages/pt-BR"
 
-const STEP_LABELS: Record<number, string> = {
-  1: "Network",
-  2: "Identity",
-  3: "Hierarchy",
-  4: "Roles",
-  5: "Comp Plan",
-  6: "Details",
-  7: "Review",
-}
+type StepNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7
+
+const STEP_LABEL_KEYS = {
+  1: "network.wizard.label.network",
+  2: "network.wizard.label.identity",
+  3: "network.wizard.label.hierarchy",
+  4: "network.wizard.label.roles",
+  5: "network.wizard.label.comp_plan",
+  6: "network.wizard.label.details",
+  7: "network.wizard.label.review",
+} as const satisfies Record<StepNumber, MessageKey>
 
 export function WizardShell() {
+  const t = useT()
   const { formData, currentStep, completedSteps, setStep, markStepComplete, effectiveSteps } =
     useWizardStore()
 
@@ -30,7 +35,10 @@ export function WizardShell() {
   const progressSteps = steps.map((n, i) => ({
     number: i + 1,      // display as 1, 2, 3...
     real: n,            // actual step number for component routing
-    label: STEP_LABELS[n] ?? `Step ${n}`,
+    label:
+      n in STEP_LABEL_KEYS
+        ? t(STEP_LABEL_KEYS[n as StepNumber])
+        : t("network.wizard.label.step_n", { n }),
   }))
 
   // Current display position (1-indexed within visible steps)

@@ -4,6 +4,7 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 import { useWizardStore } from "@/stores/wizard-store"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useT } from "@/lib/i18n/locale-context"
 
 interface CompPlanOption {
   id: string
@@ -19,6 +20,7 @@ interface StepCompensationProps {
 }
 
 export function StepCompensation({ onNext, onBack }: StepCompensationProps) {
+  const t = useT()
   const { formData, updateFormData } = useWizardStore()
   const [plans, setPlans] = React.useState<CompPlanOption[]>([])
   const [loading, setLoading] = React.useState(true)
@@ -36,9 +38,9 @@ export function StepCompensation({ onNext, onBack }: StepCompensationProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold">Compensation Plan</h2>
+        <h2 className="text-xl font-semibold">{t("network.wizard.step5.title")}</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Select the compensation plan for this external network member.
+          {t("network.wizard.step5.description")}
         </p>
       </div>
 
@@ -49,7 +51,7 @@ export function StepCompensation({ onNext, onBack }: StepCompensationProps) {
           ))
         ) : plans.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No compensation plans configured yet. You can assign one later.
+            {t("network.wizard.step5.no_plans")}
           </p>
         ) : (
           plans.map((plan) => {
@@ -72,7 +74,9 @@ export function StepCompensation({ onNext, onBack }: StepCompensationProps) {
                 )}
                 {typeof rules?.type === "string" && (
                   <span className="text-xs bg-muted px-2 py-0.5 rounded font-mono">
-                    {rules.type} commission
+                    {rules.type}
+                    {" "}
+                    {t("network.wizard.step5.commission_suffix")}
                   </span>
                 )}
               </button>
@@ -87,14 +91,14 @@ export function StepCompensation({ onNext, onBack }: StepCompensationProps) {
           onClick={onBack}
           className="px-4 py-2 rounded-lg text-sm font-medium border border-border hover:bg-muted transition-colors"
         >
-          Back
+          {t("network.wizard.common.back")}
         </button>
         <button
           type="button"
           onClick={onNext}
           className="px-6 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-all"
         >
-          Continue
+          {t("network.wizard.common.next")}
         </button>
       </div>
     </div>

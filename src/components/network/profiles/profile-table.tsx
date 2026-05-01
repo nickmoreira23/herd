@@ -4,6 +4,9 @@ import Link from "next/link"
 import { createColumnHelper, type ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/components/ui/data-table"
 import { Badge } from "@/components/ui/badge"
+import { useT } from "@/lib/i18n/locale-context"
+import type { MessageKey } from "@/lib/i18n/messages/pt-BR"
+
 type ProfileStatus = "ACTIVE" | "PENDING" | "SUSPENDED" | "TERMINATED"
 
 interface ProfileRow {
@@ -27,11 +30,25 @@ const STATUS_VARIANT: Record<ProfileStatus, "default" | "outline" | "secondary" 
   TERMINATED: "destructive",
 }
 
+const STATUS_KEYS = {
+  ACTIVE: "network.profile.status.ACTIVE",
+  PENDING: "network.profile.status.PENDING",
+  SUSPENDED: "network.profile.status.SUSPENDED",
+  TERMINATED: "network.profile.status.TERMINATED",
+} as const satisfies Record<ProfileStatus, MessageKey>
+
+const NETWORK_TYPE_KEYS = {
+  INTERNAL: "network.type.INTERNAL",
+  EXTERNAL: "network.type.EXTERNAL",
+} as const satisfies Record<"INTERNAL" | "EXTERNAL", MessageKey>
+
 export function ProfileTable({ data }: { data: ProfileRow[] }) {
+  const t = useT()
+
   const columns: ColumnDef<ProfileRow, any>[] = [
     columnHelper.display({
       id: "name",
-      header: "Name",
+      header: () => t("network.profiles.list.column.name"),
       cell: (info) => {
         const row = info.row.original
         return (
@@ -65,16 +82,19 @@ export function ProfileTable({ data }: { data: ProfileRow[] }) {
       },
     }),
     columnHelper.accessor("networkType", {
-      header: "Network",
-      cell: (info) => (
-        <Badge variant={info.getValue() === "INTERNAL" ? "secondary" : "default"}>
-          {info.getValue()}
-        </Badge>
-      ),
+      header: () => t("network.profiles.list.column.network"),
+      cell: (info) => {
+        const nt = info.getValue() as "INTERNAL" | "EXTERNAL"
+        return (
+          <Badge variant={nt === "INTERNAL" ? "secondary" : "default"}>
+            {t(NETWORK_TYPE_KEYS[nt])}
+          </Badge>
+        )
+      },
     }),
     columnHelper.display({
       id: "type",
-      header: "Profile Type",
+      header: () => t("network.profiles.list.column.profile_type"),
       cell: (info) => {
         const pt = info.row.original.profileType
         return pt ? (
@@ -91,19 +111,19 @@ export function ProfileTable({ data }: { data: ProfileRow[] }) {
       },
     }),
     columnHelper.accessor("status", {
-      header: "Status",
+      header: () => t("network.profiles.list.column.status"),
       cell: (info) => {
         const val = info.getValue() as ProfileStatus
         return (
           <Badge variant={STATUS_VARIANT[val]}>
-            {val}
+            {t(STATUS_KEYS[val])}
           </Badge>
         )
       },
     }),
     columnHelper.display({
       id: "rank",
-      header: "Rank",
+      header: () => t("network.profiles.list.column.rank"),
       cell: (info) => {
         const rank = info.row.original.profileRanks?.[0]?.rankTier
         if (!rank) return <span className="text-xs text-muted-foreground">—</span>
@@ -124,7 +144,7 @@ export function ProfileTable({ data }: { data: ProfileRow[] }) {
       data={data}
       columns={columns}
       searchable
-      searchPlaceholder="Search profiles..."
+      searchPlaceholder={t("network.profiles.list.search_placeholder")}
     />
   )
 }
