@@ -2708,4 +2708,165 @@ export const messages: Record<MessageKey, string> = {
     "Failed to create form from template",
   "error.forms.import.no_file_selected": "Please select a file",
   "error.forms.import.failed": "Failed to import form",
+
+  // ============================================================
+  // Tables Admin (Phase 1.5.6d-β.1)
+  // ============================================================
+
+  // Tables — Field types
+  "tables.field_types.singleLineText.label": "Single line text",
+  "tables.field_types.singleLineText.description":
+    "Single line text input",
+  "tables.field_types.multilineText.label": "Long text",
+  "tables.field_types.multilineText.description": "Multiline text area",
+  "tables.field_types.number.label": "Number",
+  "tables.field_types.number.description": "Numeric input",
+  "tables.field_types.currency.label": "Currency",
+  "tables.field_types.currency.description":
+    "Monetary value with symbol",
+  "tables.field_types.percent.label": "Percent",
+  "tables.field_types.percent.description": "Percentage value",
+  "tables.field_types.singleSelect.label": "Single select",
+  "tables.field_types.singleSelect.description":
+    "Choose one option from a list",
+  "tables.field_types.multiSelect.label": "Multi-select",
+  "tables.field_types.multiSelect.description":
+    "Choose multiple options from a list",
+  "tables.field_types.checkbox.label": "Checkbox",
+  "tables.field_types.checkbox.description": "True or false",
+  "tables.field_types.date.label": "Date",
+  "tables.field_types.date.description": "Calendar date",
+  "tables.field_types.url.label": "URL",
+  "tables.field_types.url.description": "Web page address",
+  "tables.field_types.email.label": "Email",
+  "tables.field_types.email.description": "Email address",
+  "tables.field_types.linkedRecord.label": "Linked record",
+  "tables.field_types.linkedRecord.description":
+    "Link to records in another table",
+  "tables.field_types.media.label": "Media",
+  "tables.field_types.media.description": "Images or videos",
+  "tables.field_types.attachment.label": "Attachment",
+  "tables.field_types.attachment.description": "Attached files",
+  "tables.field_types.createdTime.label": "Created time",
+  "tables.field_types.createdTime.description":
+    "Record creation date and time",
+  "tables.field_types.lastModifiedTime.label": "Last modified time",
+  "tables.field_types.lastModifiedTime.description":
+    "Date and time of the last modification",
+  "tables.field_types.autoNumber.label": "Auto number",
+  "tables.field_types.autoNumber.description":
+    "Automatically incremented number",
+  "tables.field_types.formula.label": "Formula",
+  "tables.field_types.formula.description":
+    "Value computed from other fields",
+  "tables.field_types.rollup.label": "Rollup",
+  "tables.field_types.rollup.description":
+    "Aggregation over linked records",
+  "tables.field_types.lookup.label": "Lookup",
+  "tables.field_types.lookup.description":
+    "Value looked up in linked records",
+  "tables.field_types.count.label": "Count",
+  "tables.field_types.count.description": "Number of linked records",
+
+  // Tables — Cells
+  "tables.cells.text.aria_label": "Edit text",
+  "tables.cells.number.aria_label": "Edit number",
+  "tables.cells.date.aria_label": "Edit date",
+  "tables.cells.url.aria_label_url": "Edit URL",
+  "tables.cells.url.aria_label_email": "Edit email",
+  "tables.cells.checkbox.checked": "Checked",
+  "tables.cells.checkbox.unchecked": "Unchecked",
+  "tables.cells.select.no_choices_configured": "No choices configured",
+  "tables.cells.linked_record.id_preview": "{id}…",
+  "tables.cells.linked_record.overflow_count": "+{count}",
+  "tables.cells.media.empty_state": "No media",
+  "tables.cells.media.uploading": "Uploading…",
+  "tables.cells.media.add_more": "Add more",
+  "tables.cells.media.drop_or_click": "Drop files or click",
+  "tables.cells.media.remove": "Remove",
+  "tables.cells.media.previous": "Previous",
+  "tables.cells.media.next": "Next",
+  "tables.cells.media.gallery_position": "{current} / {total}",
+  "tables.cells.media.thumbnail_aria": "Thumbnail {index}",
+  "tables.cells.media.overflow_count": "+{count}",
+  "tables.cells.media.files_count": "{count} files",
+  "tables.cells.media.file_input_label": "Select files",
+
+  // Tables — Toolbar
+  "tables.toolbar.search_placeholder": "Search records…",
+  "tables.toolbar.search_aria": "Search records",
+  "tables.toolbar.records_count": "{count} records",
+  "tables.toolbar.records_count_filtered": "{shown} / {total} records",
+  "tables.toolbar.add_field": "Field",
+  "tables.toolbar.add_record": "Record",
+
+  // Tables — Grid
+  "tables.grid.column_header.drag_handle": "Reorder column",
+  "tables.grid.column_header.primary_key_short": "PK",
+  "tables.grid.column_header.primary_key_title": "Primary key",
+  "tables.grid.column_header.row_number_title": "Row number",
+  "tables.grid.row.drag_handle": "Reorder row",
+  "tables.grid.row.delete_record": "Delete record",
+  "tables.grid.footer.new_record": "New record",
+  "tables.grid.empty.no_search_match": "No records match your search",
+
+  // Tables — View
+  "tables.view.back_to_tables": "Back to Tables",
+  "tables.view.no_description": "No description",
+  "tables.view.process_button": "Process",
+  "tables.view.processing_badge": "Processing…",
+  "tables.view.add_field": "Add field",
+  "tables.view.fields_count": "{count} fields",
+  "tables.view.records_count": "{count} records",
+  "tables.view.chunks_count": "{count} chunks",
+  "tables.view.status.pending": "Pending",
+  "tables.view.status.processing": "Processing",
+  "tables.view.status.ready": "Ready",
+  "tables.view.status.error": "Error",
+
+  // Tables — Field config modal
+  "tables.field_config.title_add": "Add field",
+  "tables.field_config.title_edit": "Edit field",
+  "tables.field_config.name_label": "Name",
+  "tables.field_config.name_placeholder": "e.g. Price, Status, Email",
+  "tables.field_config.type_label": "Type",
+  "tables.field_config.description_label": "Description (optional)",
+  "tables.field_config.description_placeholder":
+    "What does this field store?",
+  "tables.field_config.precision_label": "Decimal precision",
+  "tables.field_config.precision_integer": "0 (integer)",
+  "tables.field_config.currency_symbol_label": "Currency symbol",
+  "tables.field_config.choices_label": "Choices",
+  "tables.field_config.add_choice": "Add choice",
+  "tables.field_config.add_choice_placeholder": "Add a choice…",
+  "tables.field_config.remove_choice": "Remove choice",
+  "tables.field_config.link_to_table_label": "Link to table",
+  "tables.field_config.no_tables_available":
+    "No other tables available to link to. Create another table first.",
+  "tables.field_config.select_table_placeholder": "Select a table…",
+  "tables.field_config.required_field": "Required field",
+  "tables.field_config.add_button": "Add field",
+  "tables.field_config.update_button": "Update field",
+  "tables.field_config.adding": "Adding…",
+  "tables.field_config.updating": "Updating…",
+
+  // Tables — Feedback toasts
+  "tables.feedback.record_deleted": "Record deleted",
+  "tables.feedback.field_added": "Field added",
+  "tables.feedback.field_updated": "Field updated",
+  "tables.feedback.processed_for_knowledge":
+    "Table processed for knowledge base",
+
+  // Tables — Errors
+  "error.tables.upload_failed": "Upload failed",
+  "error.tables.processing_failed": "Processing failed",
+  "error.tables.record_add_failed": "Failed to add record",
+  "error.tables.cell_save_failed": "Failed to save",
+  "error.tables.column_reorder_failed": "Failed to reorder columns",
+  "error.tables.row_reorder_failed": "Failed to reorder rows",
+  "error.tables.field_name_required": "Field name is required",
+  "error.tables.linked_table_required": "Please select a table to link to",
+  "error.tables.field_create_failed": "Failed to add field",
+  "error.tables.field_update_failed": "Failed to update field",
+  "error.tables.unexpected_error": "An unexpected error occurred",
 };

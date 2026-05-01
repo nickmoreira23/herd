@@ -20,7 +20,8 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
 import { TableToolbar } from "./table-toolbar";
 import { FieldConfigModal } from "./field-config-modal";
 import {
@@ -136,6 +137,7 @@ function SortableColumnHeader({
   width: number;
   onResize: (fieldId: string, delta: number) => void;
 }) {
+  const t = useT();
   const {
     attributes,
     listeners,
@@ -163,6 +165,7 @@ function SortableColumnHeader({
       <div className="flex items-center gap-1 overflow-hidden">
         <button
           className="cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-muted-foreground shrink-0 -ml-1"
+          aria-label={t("tables.grid.column_header.drag_handle")}
           {...attributes}
           {...listeners}
         >
@@ -172,8 +175,11 @@ function SortableColumnHeader({
           {field.name}
         </span>
         {field.isPrimary && (
-          <span className="text-[9px] text-emerald-500 font-bold shrink-0">
-            PK
+          <span
+            className="text-[9px] text-emerald-500 font-bold shrink-0"
+            title={t("tables.grid.column_header.primary_key_title")}
+          >
+            {t("tables.grid.column_header.primary_key_short")}
           </span>
         )}
       </div>
@@ -185,7 +191,8 @@ function SortableColumnHeader({
 // ─── Cell with text value for tooltip ────────────────────────
 function getCellTextValue(
   value: unknown,
-  field: TableFieldRow
+  // field reserved for future per-type formatting
+  _field: TableFieldRow
 ): string {
   if (value == null || value === "") return "";
   if (typeof value === "object") {
@@ -219,6 +226,7 @@ function SortableRow({
   ) => React.ReactNode;
   onDelete: (recordId: string) => void;
 }) {
+  const t = useT();
   const {
     attributes,
     listeners,
@@ -245,6 +253,7 @@ function SortableRow({
         <div className="flex items-center justify-center gap-0.5">
           <button
             className="cursor-grab active:cursor-grabbing text-muted-foreground/30 hover:text-muted-foreground shrink-0"
+            aria-label={t("tables.grid.row.drag_handle")}
             {...attributes}
             {...listeners}
           >
@@ -280,9 +289,10 @@ function SortableRow({
         <button
           className="text-muted-foreground/40 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity text-xs"
           onClick={() => onDelete(record.id)}
-          title="Delete record"
+          title={t("tables.grid.row.delete_record")}
+          aria-label={t("tables.grid.row.delete_record")}
         >
-          &times;
+          {"×"}
         </button>
       </div>
     </div>
@@ -305,6 +315,7 @@ export function TableGrid({
   totalRecords: initialTotal,
   onFieldsChange,
 }: TableGridProps) {
+  const t = useT();
   const [localFields, setLocalFields] =
     useState<TableFieldRow[]>(fields);
   const [records, setRecords] =
@@ -387,9 +398,9 @@ export function TableGrid({
     if (res.ok) {
       await refreshRecords();
     } else {
-      toast.error("Failed to add record");
+      notifyError("error.tables.record_add_failed", t);
     }
-  }, [table.id, refreshRecords]);
+  }, [table.id, refreshRecords, t]);
 
   const deleteRecord = useCallback(
     async (recordId: string) => {
@@ -400,10 +411,10 @@ export function TableGrid({
       if (res.ok) {
         setRecords((prev) => prev.filter((r) => r.id !== recordId));
         setTotalRecords((prev) => prev - 1);
-        toast.success("Record deleted");
+        notifySuccess("tables.feedback.record_deleted", t);
       }
     },
-    [table.id]
+    [table.id, t]
   );
 
   const updateCell = useCallback(
@@ -426,12 +437,12 @@ export function TableGrid({
           }
         );
         if (!res.ok) {
-          toast.error("Failed to save");
+          notifyError("error.tables.cell_save_failed", t);
           await refreshRecords();
         }
       }, 500);
     },
-    [table.id, refreshRecords]
+    [table.id, refreshRecords, t]
   );
 
   const handleCellClick = useCallback(
@@ -526,15 +537,15 @@ export function TableGrid({
         if (res.ok) {
           onFieldsChange();
         } else {
-          toast.error("Failed to reorder columns");
+          notifyError("error.tables.column_reorder_failed", t);
           setLocalFields(fields);
         }
       } catch {
-        toast.error("Failed to reorder columns");
+        notifyError("error.tables.column_reorder_failed", t);
         setLocalFields(fields);
       }
     },
-    [localFields, fields, table.id, onFieldsChange]
+    [localFields, fields, table.id, onFieldsChange, t]
   );
 
   // ─── Row reorder ────────────────────────────────────────────
@@ -562,11 +573,11 @@ export function TableGrid({
           }
         );
       } catch {
-        toast.error("Failed to reorder rows");
+        notifyError("error.tables.row_reorder_failed", t);
         await refreshRecords();
       }
     },
-    [records, table.id, refreshRecords]
+    [records, table.id, refreshRecords, t]
   );
 
   function renderCell(
@@ -624,8 +635,11 @@ export function TableGrid({
           >
             <div className="flex border-b sticky top-0 z-10 bg-muted/50">
               {/* Row number column */}
-              <div className="w-14 flex-shrink-0 px-2 py-2 text-[10px] text-muted-foreground font-medium text-center border-r bg-muted/50">
-                #
+              <div
+                className="w-14 flex-shrink-0 px-2 py-2 text-[10px] text-muted-foreground font-medium text-center border-r bg-muted/50"
+                title={t("tables.grid.column_header.row_number_title")}
+              >
+                {"#"}
               </div>
               <SortableContext
                 items={localFields.map((f) => f.id)}
@@ -677,15 +691,15 @@ export function TableGrid({
               onClick={addRecord}
               className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
             >
-              <span className="text-lg leading-none">+</span>
-              New record
+              <span className="text-lg leading-none">{"+"}</span>
+              {t("tables.grid.footer.new_record")}
             </button>
           </div>
         </div>
 
         {filteredRecords.length === 0 && records.length > 0 && (
           <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
-            No records match your search
+            {t("tables.grid.empty.no_search_match")}
           </div>
         )}
       </div>
