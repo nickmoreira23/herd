@@ -2936,6 +2936,61 @@ export const messages = {
   "error.tables.field_create_failed": "Falha ao adicionar campo",
   "error.tables.field_update_failed": "Falha ao atualizar campo",
   "error.tables.unexpected_error": "Ocorreu um erro inesperado",
+
+  // Tables — Import (Airtable)
+  "tables.import.airtable.header.title": "Importar do Airtable",
+  "tables.import.airtable.header.step_1_base": "1. Base",
+  "tables.import.airtable.header.step_2_table": "2. Tabela",
+  "tables.import.airtable.header.step_3_fields": "3. Campos",
+  "tables.import.airtable.header.step_4_import": "4. Importar",
+  "tables.import.airtable.steps.bases.intro":
+    "Selecione uma base do Airtable para importar.",
+  "tables.import.airtable.steps.bases.loading": "Carregando bases…",
+  "tables.import.airtable.steps.bases.empty":
+    "Nenhuma base encontrada. Verifique se o seu token do Airtable tem acesso a pelo menos uma base.",
+  "tables.import.airtable.steps.tables.intro":
+    "Selecione uma tabela para importar.",
+  "tables.import.airtable.steps.tables.loading": "Carregando tabelas…",
+  "tables.import.airtable.steps.tables.fields_count": "{count} campos",
+  "tables.import.airtable.steps.tables.fields_count_with_description":
+    "{count} campos — {description}",
+  "tables.import.airtable.steps.mapping.intro":
+    "Revise os mapeamentos de campos. Ajuste os tipos, renomeie campos ou ignore os que não precisar.",
+  "tables.import.airtable.steps.mapping.col_airtable_field":
+    "Campo do Airtable",
+  "tables.import.airtable.steps.mapping.col_herd_type": "Tipo HERD",
+  "tables.import.airtable.steps.mapping.col_herd_name": "Nome HERD",
+  "tables.import.airtable.steps.mapping.col_skip": "Ignorar",
+  "tables.import.airtable.steps.mapping.fields_selected":
+    "{active} de {total} campos selecionados",
+  "tables.import.airtable.steps.mapping.import_button": "Importar {table}",
+  "tables.import.airtable.steps.progress.importing": "Importando {table}…",
+  "tables.import.airtable.steps.progress.records_imported":
+    "{count} registros importados",
+  "tables.import.airtable.steps.progress.do_not_close":
+    "Isto pode levar alguns minutos para tabelas grandes. Não feche este diálogo.",
+  "tables.import.airtable.steps.progress.error_title": "Falha na importação",
+  "tables.import.airtable.steps.progress.error_unknown":
+    "Ocorreu um erro desconhecido",
+  "tables.import.airtable.steps.progress.partial_imported":
+    "{count} registros foram importados antes do erro.",
+  "tables.import.airtable.steps.progress.success_title":
+    "Importação concluída",
+  "tables.import.airtable.steps.progress.success_summary":
+    "Importados com sucesso {count} registros de {table}.",
+  "tables.import.airtable.navigation.view_table": "Ver tabela",
+  "error.tables.import.airtable.load_bases_failed":
+    "Falha ao carregar bases",
+  "error.tables.import.airtable.connect_failed":
+    "Falha ao conectar com o Airtable",
+  "error.tables.import.airtable.load_tables_failed":
+    "Falha ao carregar tabelas",
+  "error.tables.import.airtable.fetch_tables_failed":
+    "Falha ao buscar tabelas",
+  "error.tables.import.airtable.import_failed":
+    "Falha ao importar",
+  "error.tables.import.airtable.start_failed":
+    "Falha ao iniciar importação",
 } as const;
 
 export type MessageKey = keyof typeof messages;

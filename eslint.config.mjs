@@ -177,6 +177,8 @@ const eslintConfig = defineConfig([
       "src/components/tables/table-view.tsx",
       "src/components/tables/table-toolbar.tsx",
       "src/components/tables/field-config-modal.tsx",
+      // Phase 1.5.6d-β.2 — Tables Admin (Airtable import wizard)
+      "src/components/tables/airtable-import-modal.tsx",
       // integrations/error.tsx (and [id]/error.tsx) are INTENTIONALLY
       // excluded: per Etapa 1.5.5 decision (Opção 2), shell-generic
       // strings were extracted to shell.error.* but feature-specific
