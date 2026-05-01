@@ -2543,4 +2543,169 @@ export const messages: Record<MessageKey, string> = {
   // Forms — Builder errors
   "error.forms.builder.publish_failed": "Failed to publish form",
   "error.forms.builder.close_failed": "Failed to close form",
+
+  // Forms — List page (chrome)
+  "forms.list.title": "Forms",
+  "forms.list.description":
+    "Intake forms, surveys, and structured data collection templates.",
+  "forms.list.create_form": "Create Form",
+  "forms.list.import": "Import",
+  "forms.list.search_placeholder": "Search by name or description...",
+  "forms.list.items_count": "{count} items",
+  "forms.list.filter.all_status": "All Status",
+  "forms.list.stats.total": "Total",
+  "forms.list.stats.active": "Active",
+  "forms.list.stats.draft": "Draft",
+  "forms.list.stats.total_responses": "Total Responses",
+
+  // Forms — List columns
+  "forms.list.column.name": "Name",
+  "forms.list.column.status": "Status",
+  "forms.list.column.access": "Access",
+  "forms.list.column.responses": "Responses",
+  "forms.list.column.created": "Created",
+  "forms.list.column.open_form": "Open Form",
+
+  // Forms — Access modes
+  "forms.access.PUBLIC.label": "Public",
+  "forms.access.PRIVATE.label": "Private",
+
+  // Forms — Empty state
+  "forms.empty.title": "No forms yet",
+  "forms.empty.description":
+    "Create intake forms, surveys, and data collection templates. Forms can be shared with partners and customers to gather structured information.",
+  "forms.empty.create_first": "Create your first form",
+  "forms.empty.list_description":
+    "Create a form or import from an external service.",
+
+  // Forms — Create modal
+  "forms.create.title": "Create Form",
+  "forms.create.tab.blank": "Blank Form",
+  "forms.create.tab.templates": "Templates",
+  "forms.create.name_label": "Name",
+  "forms.create.name_placeholder":
+    "e.g. Team Onboarding, Customer Feedback",
+  "forms.create.description_label": "Description (optional)",
+  "forms.create.description_placeholder": "What is this form for?",
+  "forms.create.submit_blank": "Create Blank Form",
+  "forms.create.submitting": "Creating...",
+  "forms.create.templates_hint":
+    "Choose a pre-made template to get started quickly. You can customize it after creation.",
+
+  // Forms — Delete dialog
+  "forms.delete.title": "Delete form",
+  "forms.delete.confirm_message":
+    "Are you sure you want to delete “{name}”? All sections, fields, and responses will be permanently removed. This action cannot be undone.",
+
+  // Forms — Settings (page-level)
+  "forms.settings.name_label": "Form Name",
+  "forms.settings.description_label": "Description",
+  "forms.settings.description_placeholder": "Describe what this form is for",
+  "forms.settings.thank_you_label": "Thank You Message",
+  "forms.settings.thank_you_placeholder":
+    "Shown after the form is submitted",
+  "forms.settings.access_mode_label": "Access Mode",
+  "forms.settings.access_mode.public": "Public (anyone with the link)",
+  "forms.settings.access_mode.private": "Private (password required)",
+  "forms.settings.access_password_label": "Access Password",
+  "forms.settings.access_password_placeholder":
+    "Enter a password for form access",
+  "forms.settings.max_responses_label": "Max Responses (optional)",
+  "forms.settings.max_responses_placeholder": "Leave empty for unlimited",
+  "forms.settings.save_button": "Save Settings",
+
+  // Forms — Responses (table + detail)
+  "forms.responses.back_to_form": "Back to Form",
+  "forms.responses.title": "Responses — {name}",
+  "forms.responses.description_one": "{count} total response",
+  "forms.responses.description_other": "{count} total responses",
+  "forms.responses.search_placeholder": "Search by name or email...",
+  "forms.responses.column.submitter": "Submitter",
+  "forms.responses.column.status": "Status",
+  "forms.responses.column.submitted": "Submitted",
+  "forms.responses.column.view_response": "View Response",
+  "forms.responses.anonymous": "Anonymous",
+  "forms.responses.detail.title": "Response Detail",
+  "forms.responses.detail.submitter": "Submitter:",
+  "forms.responses.detail.submitted": "Submitted:",
+  "forms.responses.status.PENDING": "Pending",
+  "forms.responses.status.PROCESSING": "Processing",
+  "forms.responses.status.READY": "Processed",
+  "forms.responses.status.ERROR": "Error",
+  "forms.responses.value.yes": "Yes",
+  "forms.responses.value.no": "No",
+
+  // Forms — Templates (catalog UI)
+  "forms.templates.field_count_one": "{count} field",
+  "forms.templates.field_count_other": "{count} fields",
+  "forms.templates.use_template": "Use Template",
+  "forms.templates.category.Internal": "Internal",
+  "forms.templates.category.Customer": "Customer",
+  "forms.templates.category.Partners": "Partners",
+  "forms.templates.category.Events": "Events",
+  "forms.templates.category.Support": "Support",
+  "forms.templates.team-onboarding.name":
+    "Team Onboarding Questionnaire",
+  "forms.templates.team-onboarding.description":
+    "Collect essential information from new team members during onboarding.",
+  "forms.templates.customer-feedback.name": "Customer Feedback Survey",
+  "forms.templates.customer-feedback.description":
+    "Gather feedback from customers about their experience with your products or services.",
+  "forms.templates.partner-application.name": "Partner Application Form",
+  "forms.templates.partner-application.description":
+    "Intake form for prospective partners or affiliates applying to your program.",
+  "forms.templates.product-interest.name": "Product Interest Survey",
+  "forms.templates.product-interest.description":
+    "Understand customer interest in your products, pricing sensitivity, and feature priorities.",
+  "forms.templates.event-registration.name": "Event Registration Form",
+  "forms.templates.event-registration.description":
+    "Collect registrations and preferences for events, webinars, or meetups.",
+  "forms.templates.nps-survey.name": "NPS Survey",
+  "forms.templates.nps-survey.description":
+    "Net Promoter Score survey — quick single-question format with follow-up.",
+  "forms.templates.support-ticket.name": "Support Ticket Form",
+  "forms.templates.support-ticket.description":
+    "Structured support request intake with categorization and severity.",
+  "forms.templates.knowledge-contribution.name":
+    "Knowledge Contribution Form",
+  "forms.templates.knowledge-contribution.description":
+    "Allow team members or community to submit knowledge articles, tips, or resources.",
+
+  // Forms — Import modal
+  "forms.import.title": "Import Form",
+  "forms.import.format_label": "Format",
+  "forms.import.file_label": "File",
+  "forms.import.format.google_forms.label": "Google Forms (JSON)",
+  "forms.import.format.google_forms.description":
+    "Export your Google Form as JSON",
+  "forms.import.format.typeform.label": "Typeform (JSON)",
+  "forms.import.format.typeform.description":
+    "Export your Typeform as JSON",
+  "forms.import.format.surveymonkey.label": "SurveyMonkey (CSV)",
+  "forms.import.format.surveymonkey.description":
+    "Export survey results as CSV",
+  "forms.import.click_to_select": "Click to select a {accept} file",
+  "forms.import.file_size_kb": "({size} KB)",
+  "forms.import.submit": "Import Form",
+  "forms.import.submitting": "Importing...",
+
+  // Forms — Feedback toasts
+  "forms.feedback.form_created": "Form created",
+  "forms.feedback.form_deleted": "Form deleted",
+  "forms.feedback.settings_saved": "Settings saved",
+  "forms.feedback.response_deleted": "Response deleted",
+  "forms.feedback.template_applied": "Form created from template",
+  "forms.import.feedback.imported_successfully":
+    "Form imported successfully",
+
+  // Forms — Errors
+  "error.forms.name_required": "Name is required",
+  "error.forms.create_failed": "Failed to create form",
+  "error.forms.delete_failed": "Failed to delete form",
+  "error.forms.update_failed": "Failed to save settings",
+  "error.forms.response_delete_failed": "Failed to delete response",
+  "error.forms.template_apply_failed":
+    "Failed to create form from template",
+  "error.forms.import.no_file_selected": "Please select a file",
+  "error.forms.import.failed": "Failed to import form",
 };

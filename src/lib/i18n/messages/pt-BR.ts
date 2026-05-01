@@ -2596,6 +2596,178 @@ export const messages = {
   // Forms — Builder errors
   "error.forms.builder.publish_failed": "Falha ao publicar formulário",
   "error.forms.builder.close_failed": "Falha ao fechar formulário",
+
+  // Forms — List page (chrome)
+  "forms.list.title": "Formulários",
+  "forms.list.description":
+    "Formulários de captação, pesquisas e modelos estruturados de coleta de dados.",
+  "forms.list.create_form": "Criar formulário",
+  "forms.list.import": "Importar",
+  "forms.list.search_placeholder": "Buscar por nome ou descrição…",
+  "forms.list.items_count": "{count} itens",
+  "forms.list.filter.all_status": "Todos os status",
+  "forms.list.stats.total": "Total",
+  "forms.list.stats.active": "Ativos",
+  "forms.list.stats.draft": "Rascunhos",
+  "forms.list.stats.total_responses": "Total de respostas",
+
+  // Forms — List columns
+  "forms.list.column.name": "Nome",
+  "forms.list.column.status": "Status",
+  "forms.list.column.access": "Acesso",
+  "forms.list.column.responses": "Respostas",
+  "forms.list.column.created": "Criado",
+  "forms.list.column.open_form": "Abrir formulário",
+
+  // Forms — Access modes
+  "forms.access.PUBLIC.label": "Público",
+  "forms.access.PRIVATE.label": "Privado",
+
+  // Forms — Empty state
+  "forms.empty.title": "Nenhum formulário ainda",
+  "forms.empty.description":
+    "Crie formulários de captação, pesquisas e modelos de coleta de dados. Formulários podem ser compartilhados com parceiros e clientes para reunir informações estruturadas.",
+  "forms.empty.create_first": "Criar seu primeiro formulário",
+  "forms.empty.list_description":
+    "Crie um formulário ou importe de um serviço externo.",
+
+  // Forms — Create modal
+  "forms.create.title": "Criar formulário",
+  "forms.create.tab.blank": "Formulário em branco",
+  "forms.create.tab.templates": "Modelos",
+  "forms.create.name_label": "Nome",
+  "forms.create.name_placeholder":
+    "ex.: Onboarding de Equipe, Feedback de Cliente",
+  "forms.create.description_label": "Descrição (opcional)",
+  "forms.create.description_placeholder": "Para que serve este formulário?",
+  "forms.create.submit_blank": "Criar formulário em branco",
+  "forms.create.submitting": "Criando…",
+  "forms.create.templates_hint":
+    "Escolha um modelo pronto para começar rapidamente. Você pode personalizá-lo após a criação.",
+
+  // Forms — Delete dialog
+  "forms.delete.title": "Excluir formulário",
+  "forms.delete.confirm_message":
+    "Tem certeza que deseja excluir “{name}”? Todas as seções, campos e respostas serão removidos permanentemente. Esta ação não pode ser desfeita.",
+
+  // Forms — Settings (page-level)
+  "forms.settings.name_label": "Nome do formulário",
+  "forms.settings.description_label": "Descrição",
+  "forms.settings.description_placeholder":
+    "Descreva para que serve este formulário",
+  "forms.settings.thank_you_label": "Mensagem de agradecimento",
+  "forms.settings.thank_you_placeholder":
+    "Exibida após o envio do formulário",
+  "forms.settings.access_mode_label": "Modo de acesso",
+  "forms.settings.access_mode.public": "Público (qualquer pessoa com o link)",
+  "forms.settings.access_mode.private": "Privado (senha obrigatória)",
+  "forms.settings.access_password_label": "Senha de acesso",
+  "forms.settings.access_password_placeholder":
+    "Defina uma senha para acessar o formulário",
+  "forms.settings.max_responses_label": "Máximo de respostas (opcional)",
+  "forms.settings.max_responses_placeholder":
+    "Deixe vazio para ilimitado",
+  "forms.settings.save_button": "Salvar configurações",
+
+  // Forms — Responses (table + detail)
+  "forms.responses.back_to_form": "Voltar ao formulário",
+  "forms.responses.title": "Respostas — {name}",
+  "forms.responses.description_one": "{count} resposta no total",
+  "forms.responses.description_other": "{count} respostas no total",
+  "forms.responses.search_placeholder": "Buscar por nome ou e-mail…",
+  "forms.responses.column.submitter": "Quem enviou",
+  "forms.responses.column.status": "Status",
+  "forms.responses.column.submitted": "Enviado",
+  "forms.responses.column.view_response": "Ver resposta",
+  "forms.responses.anonymous": "Anônimo",
+  "forms.responses.detail.title": "Detalhe da resposta",
+  "forms.responses.detail.submitter": "Remetente:",
+  "forms.responses.detail.submitted": "Enviado:",
+  "forms.responses.status.PENDING": "Pendente",
+  "forms.responses.status.PROCESSING": "Processando",
+  "forms.responses.status.READY": "Processado",
+  "forms.responses.status.ERROR": "Erro",
+  "forms.responses.value.yes": "Sim",
+  "forms.responses.value.no": "Não",
+
+  // Forms — Templates (catalog UI)
+  "forms.templates.field_count_one": "{count} campo",
+  "forms.templates.field_count_other": "{count} campos",
+  "forms.templates.use_template": "Usar modelo",
+  "forms.templates.category.Internal": "Interno",
+  "forms.templates.category.Customer": "Cliente",
+  "forms.templates.category.Partners": "Parceiros",
+  "forms.templates.category.Events": "Eventos",
+  "forms.templates.category.Support": "Suporte",
+  "forms.templates.team-onboarding.name":
+    "Questionário de onboarding de equipe",
+  "forms.templates.team-onboarding.description":
+    "Colete informações essenciais de novos membros durante o onboarding.",
+  "forms.templates.customer-feedback.name":
+    "Pesquisa de feedback de cliente",
+  "forms.templates.customer-feedback.description":
+    "Reúna feedback de clientes sobre a experiência com seus produtos ou serviços.",
+  "forms.templates.partner-application.name":
+    "Formulário de aplicação para parceiros",
+  "forms.templates.partner-application.description":
+    "Formulário de captação para parceiros ou afiliados se candidatarem ao seu programa.",
+  "forms.templates.product-interest.name":
+    "Pesquisa de interesse em produtos",
+  "forms.templates.product-interest.description":
+    "Entenda o interesse dos clientes nos seus produtos, sensibilidade a preços e prioridades de funcionalidades.",
+  "forms.templates.event-registration.name":
+    "Formulário de inscrição em evento",
+  "forms.templates.event-registration.description":
+    "Colete inscrições e preferências para eventos, webinars ou meetups.",
+  "forms.templates.nps-survey.name": "Pesquisa NPS",
+  "forms.templates.nps-survey.description":
+    "Pesquisa Net Promoter Score — formato rápido de uma única pergunta com follow-up.",
+  "forms.templates.support-ticket.name": "Formulário de chamado de suporte",
+  "forms.templates.support-ticket.description":
+    "Captação estruturada de solicitações de suporte com categorização e severidade.",
+  "forms.templates.knowledge-contribution.name":
+    "Formulário de contribuição de conhecimento",
+  "forms.templates.knowledge-contribution.description":
+    "Permita que membros da equipe ou comunidade enviem artigos, dicas ou recursos de conhecimento.",
+
+  // Forms — Import modal
+  "forms.import.title": "Importar formulário",
+  "forms.import.format_label": "Formato",
+  "forms.import.file_label": "Arquivo",
+  "forms.import.format.google_forms.label": "Google Forms (JSON)",
+  "forms.import.format.google_forms.description":
+    "Exporte seu Google Form como JSON",
+  "forms.import.format.typeform.label": "Typeform (JSON)",
+  "forms.import.format.typeform.description":
+    "Exporte seu Typeform como JSON",
+  "forms.import.format.surveymonkey.label": "SurveyMonkey (CSV)",
+  "forms.import.format.surveymonkey.description":
+    "Exporte os resultados da pesquisa como CSV",
+  "forms.import.click_to_select": "Clique para selecionar um arquivo {accept}",
+  "forms.import.file_size_kb": "({size} KB)",
+  "forms.import.submit": "Importar formulário",
+  "forms.import.submitting": "Importando…",
+
+  // Forms — Feedback toasts
+  "forms.feedback.form_created": "Formulário criado",
+  "forms.feedback.form_deleted": "Formulário excluído",
+  "forms.feedback.settings_saved": "Configurações salvas",
+  "forms.feedback.response_deleted": "Resposta excluída",
+  "forms.feedback.template_applied": "Formulário criado a partir do modelo",
+  "forms.import.feedback.imported_successfully":
+    "Formulário importado com sucesso",
+
+  // Forms — Errors
+  "error.forms.name_required": "Nome é obrigatório",
+  "error.forms.create_failed": "Falha ao criar formulário",
+  "error.forms.delete_failed": "Falha ao excluir formulário",
+  "error.forms.update_failed": "Falha ao salvar configurações",
+  "error.forms.response_delete_failed": "Falha ao excluir resposta",
+  "error.forms.template_apply_failed":
+    "Falha ao criar formulário a partir do modelo",
+  "error.forms.import.no_file_selected":
+    "Por favor, selecione um arquivo",
+  "error.forms.import.failed": "Falha ao importar formulário",
 } as const;
 
 export type MessageKey = keyof typeof messages;

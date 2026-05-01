@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { FormTemplateCard } from "./form-template-card";
 import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
 
 interface Template {
   key: string;
@@ -20,6 +21,7 @@ interface FormTemplatePickerProps {
 }
 
 export function FormTemplatePicker({ onCreated }: FormTemplatePickerProps) {
+  const t = useT();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState<string | null>(null);
@@ -41,10 +43,10 @@ export function FormTemplatePicker({ onCreated }: FormTemplatePickerProps) {
       });
       if (res.ok) {
         const json = await res.json();
-        toast.success("Form created from template");
+        notifySuccess("forms.feedback.template_applied", t);
         onCreated(json.data.id);
       } else {
-        toast.error("Failed to create form from template");
+        notifyError("error.forms.template_apply_failed", t);
       }
     } finally {
       setCreating(null);
@@ -61,16 +63,17 @@ export function FormTemplatePicker({ onCreated }: FormTemplatePickerProps) {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-      {templates.map((t) => (
+      {templates.map((tpl) => (
         <FormTemplateCard
-          key={t.key}
-          name={t.name}
-          description={t.description}
-          icon={t.icon}
-          category={t.category}
-          fieldCount={t.fieldCount}
-          onUse={() => handleUse(t.key)}
-          loading={creating === t.key}
+          key={tpl.key}
+          templateKey={tpl.key}
+          fallbackName={tpl.name}
+          fallbackDescription={tpl.description}
+          fallbackCategory={tpl.category}
+          icon={tpl.icon}
+          fieldCount={tpl.fieldCount}
+          onUse={() => handleUse(tpl.key)}
+          loading={creating === tpl.key}
         />
       ))}
     </div>
