@@ -18,6 +18,10 @@ import {
   Loader2,
   Globe,
 } from "lucide-react";
+import type { Locale } from "@/lib/i18n/locales";
+import type { MessageKey } from "@/lib/i18n/t";
+import { formatDate } from "@/lib/i18n/format-date";
+import { linkStatusLabelKey } from "@/lib/links/status-options";
 import type { LinkRow } from "./types";
 
 interface ColumnActions {
@@ -28,37 +32,41 @@ interface ColumnActions {
   onDelete: (link: LinkRow) => void;
 }
 
-function formatContentLength(chars: number): string {
-  if (chars < 1000) return `${chars} chars`;
-  if (chars < 1_000_000) return `${(chars / 1000).toFixed(1)}K chars`;
-  return `${(chars / 1_000_000).toFixed(1)}M chars`;
+type TranslateFn = (
+  key: MessageKey,
+  params?: Record<string, string | number>,
+) => string;
+
+function formatContentLength(chars: number, t: TranslateFn): string {
+  if (chars < 1000) return t("links.list.content.chars_short", { count: chars });
+  if (chars < 1_000_000)
+    return t("links.list.content.chars_thousands", {
+      count: (chars / 1000).toFixed(1),
+    });
+  return t("links.list.content.chars_millions", {
+    count: (chars / 1_000_000).toFixed(1),
+  });
 }
 
-const STATUS_CONFIG: Record<
+const STATUS_STYLES: Record<
   string,
-  { label: string; className: string; spinning?: boolean }
+  { className: string; spinning?: boolean }
 > = {
-  PENDING: {
-    label: "Pending",
-    className: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
-  },
+  PENDING: { className: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20" },
   PROCESSING: {
-    label: "Scraping",
     className: "bg-blue-500/10 text-blue-500 border-blue-500/20",
     spinning: true,
   },
   READY: {
-    label: "Ready",
     className: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
   },
-  ERROR: {
-    label: "Error",
-    className: "bg-red-500/10 text-red-500 border-red-500/20",
-  },
+  ERROR: { className: "bg-red-500/10 text-red-500 border-red-500/20" },
 };
 
 export function getLinkColumns(
-  actions: ColumnActions
+  actions: ColumnActions,
+  t: TranslateFn,
+  locale: Locale,
 ): ColumnDef<LinkRow>[] {
   return [
     {
@@ -68,7 +76,7 @@ export function getLinkColumns(
           className="inline-flex items-center gap-1 text-xs font-medium hover:text-foreground/80"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Name
+          {t("links.list.columns.name")}
           <ArrowUpDown className="h-3 w-3" />
         </button>
       ),
@@ -91,7 +99,9 @@ export function getLinkColumns(
     },
     {
       accessorKey: "domain",
-      header: () => <span className="text-xs">Domain</span>,
+      header: () => (
+        <span className="text-xs">{t("links.list.columns.domain")}</span>
+      ),
       cell: ({ row }) => (
         <Badge
           variant="outline"
@@ -108,7 +118,7 @@ export function getLinkColumns(
           className="inline-flex items-center gap-1 text-xs font-medium hover:text-foreground/80"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Content
+          {t("links.list.columns.content")}
           <ArrowUpDown className="h-3 w-3" />
         </button>
       ),
@@ -118,20 +128,25 @@ export function getLinkColumns(
           if (link.status === "PROCESSING") {
             return (
               <span className="text-xs text-blue-500 tabular-nums">
-                {link.pagesScraped}/{link.pagesDiscovered} pages
+                {t("links.list.content.pages_progress", {
+                  scraped: link.pagesScraped,
+                  total: link.pagesDiscovered,
+                })}
               </span>
             );
           }
           return (
             <span className="text-sm tabular-nums text-muted-foreground">
-              {link.pagesScraped} pages
+              {t("links.list.content.pages_count", {
+                scraped: link.pagesScraped,
+              })}
             </span>
           );
         }
         return (
           <span className="text-sm tabular-nums text-muted-foreground">
             {link.contentLength > 0
-              ? formatContentLength(link.contentLength)
+              ? formatContentLength(link.contentLength, t)
               : "—"}
           </span>
         );
@@ -139,21 +154,26 @@ export function getLinkColumns(
     },
     {
       accessorKey: "status",
-      header: () => <span className="text-xs">Status</span>,
+      header: () => (
+        <span className="text-xs">{t("links.list.columns.status")}</span>
+      ),
       cell: ({ row }) => {
         const link = row.original;
         const status = link.status;
-        const config = STATUS_CONFIG[status] || STATUS_CONFIG.PENDING;
+        const style = STATUS_STYLES[status] ?? STATUS_STYLES.PENDING;
 
         // Custom label for full-site crawling
         if (link.scrapeMode === "FULL_SITE" && status === "PROCESSING") {
           return (
             <Badge
               variant="outline"
-              className={`text-xs font-medium ${config.className}`}
+              className={`text-xs font-medium ${style.className}`}
             >
               <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-              Crawling {link.pagesScraped}/{link.pagesDiscovered}
+              {t("links.list.status.crawling_progress", {
+                scraped: link.pagesScraped,
+                total: link.pagesDiscovered,
+              })}
             </Badge>
           );
         }
@@ -161,12 +181,12 @@ export function getLinkColumns(
         return (
           <Badge
             variant="outline"
-            className={`text-xs font-medium ${config.className}`}
+            className={`text-xs font-medium ${style.className}`}
           >
-            {config.spinning && (
+            {style.spinning && (
               <Loader2 className="h-3 w-3 mr-1 animate-spin" />
             )}
-            {config.label}
+            {t(linkStatusLabelKey(status))}
           </Badge>
         );
       },
@@ -178,14 +198,14 @@ export function getLinkColumns(
           className="inline-flex items-center gap-1 text-xs font-medium hover:text-foreground/80"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Last Scraped
+          {t("links.list.columns.last_scraped")}
           <ArrowUpDown className="h-3 w-3" />
         </button>
       ),
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">
           {row.original.lastScrapedAt
-            ? new Date(row.original.lastScrapedAt).toLocaleDateString()
+            ? formatDate(new Date(row.original.lastScrapedAt), locale, "short")
             : "—"}
         </span>
       ),
@@ -204,28 +224,30 @@ export function getLinkColumns(
               onClick={() => actions.onViewContent(row.original)}
             >
               <Eye className="mr-2 h-3.5 w-3.5" />
-              View Content
+              {t("links.list.row_actions.view_content")}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => actions.onOpenUrl(row.original)}>
               <ExternalLink className="mr-2 h-3.5 w-3.5" />
-              Open URL
+              {t("links.list.row_actions.open_url")}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => actions.onRescrape(row.original)}>
               <RefreshCw className="mr-2 h-3.5 w-3.5" />
               {row.original.scrapeMode === "FULL_SITE"
-                ? "Re-crawl"
-                : "Re-scrape"}
+                ? t("links.list.row_actions.recrawl")
+                : t("links.list.row_actions.rescrape")}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => actions.onToggleActive(row.original)}
             >
-              {row.original.isActive ? "Deactivate" : "Activate"}
+              {row.original.isActive
+                ? t("links.list.row_actions.deactivate")
+                : t("links.list.row_actions.activate")}
             </DropdownMenuItem>
             <DropdownMenuItem
               className="text-destructive"
               onClick={() => actions.onDelete(row.original)}
             >
-              Delete
+              {t("links.list.row_actions.delete")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

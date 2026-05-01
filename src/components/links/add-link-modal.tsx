@@ -13,7 +13,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Link2, Globe, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import { notifyError, notifySuccess } from "@/lib/i18n/notify";
+import {
+  LINK_SCRAPE_MODES,
+  linkScrapeModeLabelKey,
+  type LinkScrapeMode,
+} from "@/lib/links/scrape-modes";
 
 interface AddLinkModalProps {
   open: boolean;
@@ -21,15 +27,21 @@ interface AddLinkModalProps {
   onComplete: () => void;
 }
 
+const SCRAPE_MODE_ICONS: Record<LinkScrapeMode, typeof Link2> = {
+  SINGLE: Link2,
+  FULL_SITE: Globe,
+};
+
 export function AddLinkModal({
   open,
   onOpenChange,
   onComplete,
 }: AddLinkModalProps) {
+  const t = useT();
   const [url, setUrl] = useState("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [scrapeMode, setScrapeMode] = useState<"SINGLE" | "FULL_SITE">("SINGLE");
+  const [scrapeMode, setScrapeMode] = useState<LinkScrapeMode>("SINGLE");
   const [maxPages, setMaxPages] = useState(100);
   const [submitting, setSubmitting] = useState(false);
 
@@ -44,14 +56,14 @@ export function AddLinkModal({
 
   async function handleSubmit() {
     if (!url.trim()) {
-      toast.error("URL is required");
+      notifyError("error.links.url_required", t);
       return;
     }
 
     try {
       new URL(url.trim());
     } catch {
-      toast.error("Please enter a valid URL");
+      notifyError("error.links.invalid_url", t);
       return;
     }
 
@@ -70,15 +82,15 @@ export function AddLinkModal({
       });
 
       if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        toast.error(err?.error || "Failed to add link");
+        notifyError("error.links.add_failed", t);
         return;
       }
 
-      toast.success(
+      notifySuccess(
         scrapeMode === "FULL_SITE"
-          ? "Site added — crawling in progress"
-          : "Link added — scraping in progress"
+          ? "links.feedback.added_crawling"
+          : "links.feedback.added_scraping",
+        t,
       );
       reset();
       onOpenChange(false);
@@ -100,47 +112,43 @@ export function AddLinkModal({
     >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add Link</DialogTitle>
+          <DialogTitle>{t("links.add_modal.title")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label className="text-xs">URL</Label>
+            <Label className="text-xs">{t("links.add_modal.url.label")}</Label>
             <Input
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://example.com/docs"
+              placeholder={t("links.add_modal.url.placeholder")}
               type="url"
             />
           </div>
 
           {/* Scrape mode toggle */}
           <div className="space-y-1.5">
-            <Label className="text-xs">Scrape Mode</Label>
+            <Label className="text-xs">
+              {t("links.add_modal.scrape_mode.label")}
+            </Label>
             <div className="flex rounded-lg border p-0.5 bg-muted/50">
-              <button
-                type="button"
-                className={`flex-1 flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                  scrapeMode === "SINGLE"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                onClick={() => setScrapeMode("SINGLE")}
-              >
-                <Link2 className="h-3 w-3" />
-                Single Page
-              </button>
-              <button
-                type="button"
-                className={`flex-1 flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                  scrapeMode === "FULL_SITE"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                onClick={() => setScrapeMode("FULL_SITE")}
-              >
-                <Globe className="h-3 w-3" />
-                Full Site
-              </button>
+              {LINK_SCRAPE_MODES.map((value) => {
+                const Icon = SCRAPE_MODE_ICONS[value];
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    className={`flex-1 flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                      scrapeMode === value
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    onClick={() => setScrapeMode(value)}
+                  >
+                    <Icon className="h-3 w-3" />
+                    {t(linkScrapeModeLabelKey(value))}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -148,7 +156,9 @@ export function AddLinkModal({
           {scrapeMode === "FULL_SITE" && (
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Label className="text-xs">Max Pages</Label>
+                <Label className="text-xs">
+                  {t("links.add_modal.max_pages.label")}
+                </Label>
                 <span className="text-xs text-muted-foreground tabular-nums">
                   {maxPages}
                 </span>
@@ -163,25 +173,27 @@ export function AddLinkModal({
                 step={10}
               />
               <p className="text-[10px] text-muted-foreground">
-                Crawl up to {maxPages} pages under this URL
+                {t("links.add_modal.max_pages.help", { count: maxPages })}
               </p>
             </div>
           )}
 
           <div className="space-y-1.5">
-            <Label className="text-xs">Name (optional)</Label>
+            <Label className="text-xs">{t("links.add_modal.name.label")}</Label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Auto-detected from page title"
+              placeholder={t("links.add_modal.name.placeholder")}
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Description (optional)</Label>
+            <Label className="text-xs">
+              {t("links.add_modal.description.label")}
+            </Label>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="What is this page about?"
+              placeholder={t("links.add_modal.description.placeholder")}
               rows={2}
             />
           </div>
@@ -194,17 +206,17 @@ export function AddLinkModal({
             {submitting ? (
               <>
                 <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                Adding...
+                {t("links.add_modal.submit.adding")}
               </>
             ) : scrapeMode === "FULL_SITE" ? (
               <>
                 <Globe className="h-3.5 w-3.5 mr-1.5" />
-                Add & Crawl Site
+                {t("links.add_modal.submit.add_and_crawl")}
               </>
             ) : (
               <>
                 <Link2 className="h-3.5 w-3.5 mr-1.5" />
-                Add Link
+                {t("links.add_modal.submit.add_link")}
               </>
             )}
           </Button>

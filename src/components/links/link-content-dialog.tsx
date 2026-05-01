@@ -12,6 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ExternalLink, RefreshCw, Loader2, Search, Globe } from "lucide-react";
+import { useT, useLocale } from "@/lib/i18n/locale-context";
+import { formatDate } from "@/lib/i18n/format-date";
+import type { MessageKey } from "@/lib/i18n/t";
+import { linkStatusLabelKey } from "@/lib/links/status-options";
 import { CrawlProgress } from "./crawl-progress";
 import type { LinkRow, LinkPageRow } from "./types";
 
@@ -22,23 +26,16 @@ interface LinkContentDialogProps {
   onRescrape: (link: LinkRow) => void;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
-  PENDING: {
-    label: "Pending",
-    className: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
-  },
-  PROCESSING: {
-    label: "Scraping",
-    className: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-  },
-  READY: {
-    label: "Ready",
-    className: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-  },
-  ERROR: {
-    label: "Error",
-    className: "bg-red-500/10 text-red-500 border-red-500/20",
-  },
+type TranslateFn = (
+  key: MessageKey,
+  params?: Record<string, string | number>,
+) => string;
+
+const STATUS_CLASSNAMES: Record<string, string> = {
+  PENDING: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
+  PROCESSING: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+  READY: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+  ERROR: "bg-red-500/10 text-red-500 border-red-500/20",
 };
 
 const STATUS_DOT: Record<string, string> = {
@@ -48,10 +45,15 @@ const STATUS_DOT: Record<string, string> = {
   PROCESSING: "bg-blue-500",
 };
 
-function formatContentLength(chars: number): string {
-  if (chars < 1000) return `${chars} chars`;
-  if (chars < 1_000_000) return `${(chars / 1000).toFixed(1)}K`;
-  return `${(chars / 1_000_000).toFixed(1)}M`;
+function formatContentLength(chars: number, t: TranslateFn): string {
+  if (chars < 1000) return t("links.list.content.chars_short", { count: chars });
+  if (chars < 1_000_000)
+    return t("links.list.content.chars_thousands", {
+      count: (chars / 1000).toFixed(1),
+    });
+  return t("links.list.content.chars_millions", {
+    count: (chars / 1_000_000).toFixed(1),
+  });
 }
 
 export function LinkContentDialog({
@@ -89,8 +91,10 @@ function SinglePageContentDialog({
   onOpenChange,
   onRescrape,
 }: LinkContentDialogProps) {
+  const t = useT();
+  const locale = useLocale();
   if (!link) return null;
-  const statusConfig = STATUS_CONFIG[link.status] || STATUS_CONFIG.PENDING;
+  const statusClass = STATUS_CLASSNAMES[link.status] ?? STATUS_CLASSNAMES.PENDING;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -115,13 +119,15 @@ function SinglePageContentDialog({
             </Badge>
             <Badge
               variant="outline"
-              className={`text-xs ${statusConfig.className}`}
+              className={`text-xs ${statusClass}`}
             >
-              {statusConfig.label}
+              {t(linkStatusLabelKey(link.status))}
             </Badge>
             {link.lastScrapedAt && (
               <span className="text-xs text-muted-foreground">
-                Scraped {new Date(link.lastScrapedAt).toLocaleDateString()}
+                {t("links.content_dialog.scraped_at", {
+                  date: formatDate(new Date(link.lastScrapedAt), locale, "short"),
+                })}
               </span>
             )}
           </div>
@@ -131,18 +137,23 @@ function SinglePageContentDialog({
           {link.status === "PROCESSING" && (
             <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground">
               <Loader2 className="h-6 w-6 animate-spin" />
-              <p className="text-sm">Scraping in progress...</p>
+              <p className="text-sm">
+                {t("links.content_dialog.scraping_in_progress")}
+              </p>
             </div>
           )}
           {link.status === "PENDING" && (
             <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground">
-              <p className="text-sm">Scraping has not started yet.</p>
+              <p className="text-sm">
+                {t("links.content_dialog.scraping_not_started")}
+              </p>
             </div>
           )}
           {link.status === "ERROR" && (
             <div className="flex flex-col items-center justify-center h-full gap-2">
               <p className="text-sm text-destructive">
-                {link.errorMessage || "An error occurred during scraping."}
+                {link.errorMessage ||
+                  t("links.content_dialog.error_default")}
               </p>
             </div>
           )}
@@ -153,7 +164,7 @@ function SinglePageContentDialog({
           )}
           {link.status === "READY" && !link.textContent && (
             <p className="text-sm text-muted-foreground">
-              No content was extracted from this page.
+              {t("links.content_dialog.no_content_extracted")}
             </p>
           )}
         </div>
@@ -165,7 +176,7 @@ function SinglePageContentDialog({
             onClick={() => window.open(link.url, "_blank")}
           >
             <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-            Open URL
+            {t("links.content_dialog.actions.open_url")}
           </Button>
           <Button
             variant="outline"
@@ -173,7 +184,7 @@ function SinglePageContentDialog({
             onClick={() => onRescrape(link)}
           >
             <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-            Re-scrape
+            {t("links.content_dialog.actions.rescrape")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -187,6 +198,8 @@ function FullSiteContentDialog({
   onOpenChange,
   onRescrape,
 }: LinkContentDialogProps) {
+  const t = useT();
+  const locale = useLocale();
   if (!link) return null;
 
   const [pages, setPages] = useState<LinkPageRow[]>(
@@ -197,7 +210,7 @@ function FullSiteContentDialog({
   const [loadingContent, setLoadingContent] = useState(false);
   const [pageSearch, setPageSearch] = useState("");
 
-  const statusConfig = STATUS_CONFIG[link.status] || STATUS_CONFIG.PENDING;
+  const statusClass = STATUS_CLASSNAMES[link.status] ?? STATUS_CLASSNAMES.PENDING;
 
   // Load pages list when dialog opens
   useEffect(() => {
@@ -238,7 +251,6 @@ function FullSiteContentDialog({
   );
 
   const handleCrawlComplete = useCallback(() => {
-    // Refresh pages after crawl completes
     fetch(`/api/links/${link.id}`)
       .then((r) => r.json())
       .then((json) => {
@@ -281,17 +293,21 @@ function FullSiteContentDialog({
               variant="outline"
               className="text-xs bg-orange-500/10 text-orange-500 border-orange-500/20"
             >
-              {link.pagesScraped} pages
+              {t("links.content_dialog.pages_count", {
+                count: link.pagesScraped,
+              })}
             </Badge>
             <Badge
               variant="outline"
-              className={`text-xs ${statusConfig.className}`}
+              className={`text-xs ${statusClass}`}
             >
-              {statusConfig.label}
+              {t(linkStatusLabelKey(link.status))}
             </Badge>
             {link.lastScrapedAt && (
               <span className="text-xs text-muted-foreground">
-                Crawled {new Date(link.lastScrapedAt).toLocaleDateString()}
+                {t("links.content_dialog.crawled_at", {
+                  date: formatDate(new Date(link.lastScrapedAt), locale, "short"),
+                })}
               </span>
             )}
           </div>
@@ -316,7 +332,7 @@ function FullSiteContentDialog({
                 <div className="relative">
                   <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
                   <Input
-                    placeholder="Filter pages..."
+                    placeholder={t("links.content_dialog.search_placeholder")}
                     value={pageSearch}
                     onChange={(e) => setPageSearch(e.target.value)}
                     className="pl-7 h-7 text-xs"
@@ -347,7 +363,7 @@ function FullSiteContentDialog({
                         </p>
                         {page.contentLength > 0 && (
                           <p className="text-[10px] text-muted-foreground tabular-nums">
-                            {formatContentLength(page.contentLength)}
+                            {formatContentLength(page.contentLength, t)}
                           </p>
                         )}
                       </div>
@@ -356,7 +372,7 @@ function FullSiteContentDialog({
                 ))}
                 {filteredPages.length === 0 && (
                   <p className="text-xs text-muted-foreground text-center py-4">
-                    No pages found
+                    {t("links.content_dialog.no_pages")}
                   </p>
                 )}
               </div>
@@ -367,7 +383,7 @@ function FullSiteContentDialog({
               {!selectedPageId && (
                 <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground">
                   <p className="text-sm">
-                    Select a page from the list to view its content
+                    {t("links.content_dialog.empty_selection")}
                   </p>
                 </div>
               )}
@@ -399,8 +415,8 @@ function FullSiteContentDialog({
                   ) : (
                     <p className="text-sm text-muted-foreground">
                       {selectedPage.status === "ERROR"
-                        ? "This page failed to scrape."
-                        : "No content available for this page."}
+                        ? t("links.content_dialog.page.error_scrape")
+                        : t("links.content_dialog.page.no_content")}
                     </p>
                   )}
                 </>
@@ -416,7 +432,7 @@ function FullSiteContentDialog({
             onClick={() => window.open(link.url, "_blank")}
           >
             <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-            Open URL
+            {t("links.content_dialog.actions.open_url")}
           </Button>
           <Button
             variant="outline"
@@ -424,10 +440,11 @@ function FullSiteContentDialog({
             onClick={() => onRescrape(link)}
           >
             <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-            Re-crawl
+            {t("links.content_dialog.actions.recrawl")}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
