@@ -19,6 +19,7 @@ import "@xyflow/react/dist/style.css";
 import Dagre from "@dagrejs/dagre";
 import { Badge } from "@/components/ui/badge";
 import { UserCircle, Award } from "lucide-react";
+import { useT } from "@/lib/i18n/locale-context";
 
 interface Profile {
   id: string;
@@ -106,6 +107,7 @@ function NetworkNode({ data }: NodeProps) {
 const nodeTypes = { networkNode: NetworkNode };
 
 export function NetworkMapCanvas() {
+  const t = useT();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -171,7 +173,7 @@ export function NetworkMapCanvas() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[600px] text-sm text-muted-foreground">
-        Loading network map...
+        {t("organization.network_map.loading")}
       </div>
     );
   }
@@ -180,9 +182,9 @@ export function NetworkMapCanvas() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Network Map</h1>
+          <h1 className="text-2xl font-bold">{t("organization.network_map.title")}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Interactive view of your external network — sponsors, downlines, and partner relationships.
+            {t("organization.network_map.description")}
           </p>
         </div>
       </div>
@@ -212,16 +214,20 @@ export function NetworkMapCanvas() {
             />
             <Panel position="top-left">
               <Badge variant="outline" className="px-1 py-1 text-xs bg-card">
-                {profiles.length} partners
+                {t("organization.network_map.badge.partners_count", {
+                  count: profiles.length,
+                })}
               </Badge>
             </Panel>
           </ReactFlow>
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center p-8">
             <UserCircle className="h-12 w-12 text-muted-foreground/30 mb-3" />
-            <p className="text-sm font-medium">No external network profiles yet</p>
+            <p className="text-sm font-medium">
+              {t("organization.network_map.empty.title")}
+            </p>
             <p className="text-xs text-muted-foreground mt-1">
-              External partners will appear here once added to the network.
+              {t("organization.network_map.empty.description")}
             </p>
           </div>
         )}

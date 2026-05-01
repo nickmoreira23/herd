@@ -3,6 +3,7 @@ import { CommissionPageClient } from "@/components/network/promoters/commission-
 import { toNumber } from "@/lib/utils";
 import { connection } from "next/server";
 import { getLocale } from "@/lib/i18n/get-locale";
+import { t } from "@/lib/i18n/t";
 
 export default async function CommissionsPage() {
   await connection();
@@ -118,9 +119,9 @@ export default async function CommissionsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Promoters</h1>
+        <h1 className="text-2xl font-bold">{t("network.promoters.page.title", locale)}</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Manage door-to-door promoter commissions — plans, org trees, agreements, and payout tracking.
+          {t("network.promoters.page.description", locale)}
         </p>
       </div>
       <CommissionPageClient

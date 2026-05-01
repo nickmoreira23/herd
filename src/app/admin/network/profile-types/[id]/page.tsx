@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma"
 import { ProfileTypeForm } from "@/components/network/profile-types/profile-type-form"
 import type { WizardField } from "@/lib/validations/network"
 import { connection } from "next/server";
+import { getLocale } from "@/lib/i18n/get-locale";
+import { t } from "@/lib/i18n/t";
 
 export default async function EditProfileTypePage({
   params,
@@ -10,6 +12,7 @@ export default async function EditProfileTypePage({
   params: Promise<{ id: string }>
 }) {
   await connection();
+  const locale = await getLocale();
   const { id } = await params
 
   const profileType = await prisma.networkProfileType.findUnique({ where: { id } })
@@ -18,8 +21,8 @@ export default async function EditProfileTypePage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">{`Edit: ${profileType.displayName}`}</h1>
-        <p className="text-sm text-muted-foreground mt-1">Modify profile type settings and wizard fields.</p>
+        <h1 className="text-2xl font-bold">{t("network.profile_types.detail.title", locale, { name: profileType.displayName })}</h1>
+        <p className="text-sm text-muted-foreground mt-1">{t("network.profile_types.detail.description", locale)}</p>
       </div>
       <ProfileTypeForm
         mode="edit"
