@@ -20,7 +20,21 @@ export const Level = z.enum([
   "integration",
 ]);
 
-export const TechnicalCategory = z.enum(["block", "tool", "foundation"]);
+export const TechnicalCategory = z.enum([
+  // architectural canonical (4)
+  "block",
+  "block-group",
+  "tool",
+  "top-level-feature",
+  // thematic dimensions
+  "foundation",
+  "financial",
+  "infrastructure",
+  "sales",
+  "marketing",
+  "support",
+  "commerce",
+]);
 
 export const Perspective = z.enum([
   "business",
