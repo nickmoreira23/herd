@@ -1,17 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-
-interface IndexEntry {
-  uid: string;
-  id: string;
-  level: string;
-  title_pt_BR: string;
-  title_en_US: string;
-  description_pt_BR: string;
-  description_en_US: string;
-  body_pt_BR: string;
-  body_en_US: string;
-}
+import { hrefForEntry } from "../../src/lib/handbook/href-for-entry";
+import type { IndexEntry } from "../../src/lib/handbook/search-index";
 
 let cachedIndex: IndexEntry[] | null = null;
 
@@ -51,7 +41,7 @@ export function executeFetch(id: string): FetchResult | { error: string } {
     id: entry.uid,
     title: entry.title_en_US,
     text: entry.body_en_US,
-    url: `https://herd.com/admin/handbook/${entry.level}/${entry.id}`,
+    url: `https://herd.com${hrefForEntry(entry)}`,
     metadata: {
       level: entry.level,
       title_pt_BR: entry.title_pt_BR,

@@ -97,6 +97,20 @@ The `/api/mcp` route deploys with the rest of the admin (same Next.js infra). `M
 - **HTTP**: logs go to the Next.js dev console. JSON-RPC errors come back in the response body (`{result:{isError:true, content:[...]}}`).
 - **Index cache**: tools cache `search-index.json` in memory (module-level). After `gen:all` that changes the index, restart the dev server to invalidate.
 
+### Tests
+
+Automated coverage lives in `mcp/__tests__/` (vitest, runs with `npm test`). Integration-style: hits the real `mcp/generated/search-index.json` — same input the production server consumes. Avoids fixture↔prod drift.
+
+- `search.test.ts` (11 cases): empty/whitespace queries, exact match, ordering by field weight, limit, snippet with `<mark>`, hierarchical URLs (layer/category/feature, layer-only, meta), bilingual.
+- `fetch.test.ts` (6 cases): valid UID, unknown UID → error, hierarchical URL, layer URL, meta URL, bilingual metadata.
+- `server.test.ts` (2 cases): smoke for `createServer()`.
+
+**Not covered day-1** (deferred):
+- HTTP route handler (requires a running Next.js server during the test).
+- End-to-end stdio transport (requires spawning a child process).
+
+Both layers are exercised via manual curl (HTTP) or by a real client connecting (stdio). Promote to automated tests when it starts to bite.
+
 ## Glossary
 
 - **Bearer token**: Auth scheme where the client sends `Authorization: Bearer <token>` in the header. Day-1 of the HTTP transport uses a static token configured via env var.
