@@ -1,0 +1,10 @@
+# Auto-generated. Do not edit by hand. Regenerate via npm run gen:xrefmap.
+version: 1
+references:
+  herd.foundation.handbook:
+    level: foundation
+    id: handbook
+    path: docs/handbook/foundation/handbook
+    title:
+      pt-BR: Handbook
+      en-US: Handbook

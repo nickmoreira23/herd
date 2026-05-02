@@ -1,0 +1,51 @@
+id: handbook
+uid: herd.foundation.handbook
+level: foundation
+technical_category: foundation
+
+title:
+  pt-BR: "Handbook"
+  en-US: "Handbook"
+description:
+  pt-BR: "Sistema de documentação do HERD: 4 artefatos, 6 níveis, doc-first."
+  en-US: "HERD's documentation system: 4 artifacts, 6 levels, doc-first."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-01
+updated: 2026-05-01
+
+children: []
+consumes: []
+consumed_by: []
+related: []
+
+source_paths:
+  - "docs/handbook/"
+  - "src/components/handbook/"
+  - "src/app/admin/handbook/"
+  - "mcp/"
+  - "schemas/"
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: true
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog
+
+metadata:
+  herd:
+    is_meta: true
+    documents_concepts:
+      - level
+      - feature.yml
+      - SKILL.md
+      - AGENTS.md
+      - MCP
