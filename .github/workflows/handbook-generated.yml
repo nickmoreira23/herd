@@ -8,6 +8,8 @@ on:
       - 'mcp/generated/**'
       - 'schemas/**'
       - 'scripts/build-*.ts'
+      - 'package.json'
+      - 'package-lock.json'
 
 jobs:
   freshness:
