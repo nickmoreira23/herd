@@ -8,6 +8,13 @@ references:
     title:
       pt-BR: Pagamentos de Comissões
       en-US: Commissions Payments
+  herd.block.financial.journal-entries:
+    level: block
+    id: journal-entries
+    path: docs/handbook/blocks/financial/journal-entries
+    title:
+      pt-BR: Lançamentos Contábeis
+      en-US: Journal Entries
   herd.block.miscellaneous.contacts:
     level: block
     id: contacts

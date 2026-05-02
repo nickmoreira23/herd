@@ -127,6 +127,38 @@
       "body_en_US": "---\ntitle: Commissions Payments\ndescription: Records and flows of commission payments to partners, sellers, and channels. Events consumed by the ledger for audit and reconciliation.\nlocale: en-US\nuid: herd.block.financial.commissions-payments\n---\n\n> **For AI agents:** This Markdown file is the canonical form of this entry. Use `Accept: text/markdown` or append `.md` to the URL to avoid HTML rendering.\n\n# Commissions Payments\n\nRecords and flows of commission payments to partners, sellers, and channels. Events consumed by the ledger for audit and reconciliation.\n\n## Business\n\n<!-- TODO: Business perspective. -->\n\n## Product\n\n<!-- TODO: Product perspective. -->\n\n## Architecture\n\n<!-- TODO: Architecture perspective. -->\n\n## Operations\n\n<!-- TODO: Operations perspective. -->\n\n## Glossary\n\n<!-- TODO: Local glossary. -->\n\n## Changelog\n\n- **2026-05-02** — Initial publication.\n"
     },
     {
+      "uid": "herd.block.financial.journal-entries",
+      "id": "journal-entries",
+      "level": "block",
+      "parent": "herd.category.blocks.financial",
+      "status": "draft",
+      "owners": [
+        "@nick"
+      ],
+      "since": "2026-05-02",
+      "updated": "2026-05-02",
+      "consumes": [],
+      "consumed_by": [
+        "herd.tool.financial.ledger"
+      ],
+      "related": [],
+      "source_paths": [
+        "src/lib/ledger/post-journal-entry.ts",
+        "src/lib/ledger/reverse-journal-entry.ts",
+        "src/lib/ledger/build-balanced-entry.ts",
+        "src/lib/ledger/get-entry-details.ts",
+        "src/lib/ledger/find-reversals-of.ts",
+        "src/lib/ledger/types.ts",
+        "prisma/schema.prisma"
+      ],
+      "title_pt_BR": "Lançamentos Contábeis",
+      "title_en_US": "Journal Entries",
+      "description_pt_BR": "Registros imutáveis de débito/crédito que compõem o ledger. Eventos atomicamente balanceados, postados via fluxo único de write.",
+      "description_en_US": "Immutable debit/credit records that compose the ledger. Atomically balanced events posted via a single write path.",
+      "body_pt_BR": "---\ntitle: Lançamentos Contábeis\ndescription: Registros imutáveis de débito/crédito que compõem o ledger. Eventos atomicamente balanceados, postados via fluxo único de write.\nlocale: pt-BR\nuid: herd.block.financial.journal-entries\n---\n\n> **Para agentes de IA:** Este arquivo Markdown é a forma canônica desta entry. Use `Accept: text/markdown` ou adicione `.md` à URL para evitar renderização HTML.\n\n# Lançamentos Contábeis\n\nRegistros imutáveis de débito/crédito que compõem o ledger. Eventos atomicamente balanceados, postados via fluxo único de write.\n\n## Business\n\n<!-- TODO: Business perspective. -->\n\n## Product\n\n<!-- TODO: Product perspective. -->\n\n## Architecture\n\n<!-- TODO: Architecture perspective. -->\n\n## Operations\n\n<!-- TODO: Operations perspective. -->\n\n## Glossary\n\n<!-- TODO: Local glossary. -->\n\n## Changelog\n\n- **2026-05-02** — Publicação inicial.\n",
+      "body_en_US": "---\ntitle: Journal Entries\ndescription: Immutable debit/credit records that compose the ledger. Atomically balanced events posted via a single write path.\nlocale: en-US\nuid: herd.block.financial.journal-entries\n---\n\n> **For AI agents:** This Markdown file is the canonical form of this entry. Use `Accept: text/markdown` or append `.md` to the URL to avoid HTML rendering.\n\n# Journal Entries\n\nImmutable debit/credit records that compose the ledger. Atomically balanced events posted via a single write path.\n\n## Business\n\n<!-- TODO: Business perspective. -->\n\n## Product\n\n<!-- TODO: Product perspective. -->\n\n## Architecture\n\n<!-- TODO: Architecture perspective. -->\n\n## Operations\n\n<!-- TODO: Operations perspective. -->\n\n## Glossary\n\n<!-- TODO: Local glossary. -->\n\n## Changelog\n\n- **2026-05-02** — Initial publication.\n"
+    },
+    {
       "uid": "herd.category.blocks.miscellaneous",
       "id": "miscellaneous",
       "level": "category",

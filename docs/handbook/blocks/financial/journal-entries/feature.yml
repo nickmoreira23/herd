@@ -1,0 +1,42 @@
+id: journal-entries
+uid: herd.block.financial.journal-entries
+level: block
+technical_category: block
+title:
+  pt-BR: Lançamentos Contábeis
+  en-US: Journal Entries
+description:
+  pt-BR: Registros imutáveis de débito/crédito que compõem o ledger. Eventos
+    atomicamente balanceados, postados via fluxo único de write.
+  en-US: Immutable debit/credit records that compose the ledger. Atomically
+    balanced events posted via a single write path.
+status: draft
+owners:
+  - "@nick"
+since: 2026-05-02
+updated: 2026-05-02
+parent: herd.category.blocks.financial
+children: []
+consumes: []
+consumed_by:
+  - herd.tool.financial.ledger
+related: []
+source_paths:
+  - src/lib/ledger/post-journal-entry.ts
+  - src/lib/ledger/reverse-journal-entry.ts
+  - src/lib/ledger/build-balanced-entry.ts
+  - src/lib/ledger/get-entry-details.ts
+  - src/lib/ledger/find-reversals-of.ts
+  - src/lib/ledger/types.ts
+  - prisma/schema.prisma
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog
