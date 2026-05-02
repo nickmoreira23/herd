@@ -10,7 +10,7 @@ description:
     para auditoria, conciliação e cálculos derivados.
   en-US: Immutable append-only event log of financial events, foundational for
     audit, reconciliation, and derived calculations.
-status: draft
+status: active
 owners:
   - "@nick"
 since: 2026-05-02
