@@ -1122,7 +1122,7 @@ function HandbookSubPanel() {
               Meta
             </p>
             {metaEntries.map((entry) => {
-              const href = `/admin/handbook/_meta/${entry.id}`;
+              const href = `/admin/handbook/meta/${entry.id}`;
               const active = isActive(href);
               return (
                 <Link
