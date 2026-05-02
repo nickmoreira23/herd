@@ -3,5 +3,4 @@
 # Each line documents a known cross-reference that doesn't yet have a
 # corresponding feature.yml. Used to introduce strangler-fig backfill.
 herd.block.miscellaneous.meetings:consumes:herd.integration.calendar.google-calendar
-herd.tool.financial.ledger:consumes:herd.block.financial.commissions-payments
 herd.tool.financial.ledger:consumes:herd.block.financial.journal-entries

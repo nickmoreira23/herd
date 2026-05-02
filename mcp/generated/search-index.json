@@ -74,6 +74,59 @@
       "body_en_US": "---\ntitle: Blocks\ndescription: Layer that organizes data blocks by nature — identity, media, time, commercial, financial.\nlocale: en-US\nuid: herd.layer.blocks\n---\n\n> **For AI agents:** This Markdown file is the canonical form of this entry. Use `Accept: text/markdown` or append `.md` to the URL to avoid HTML rendering.\n\n# Blocks\n\nThe Blocks layer is HERD's foundation for **data primitives** — entities the platform tracks with stable identities and CRUD semantics. Contacts, Meetings, Deals, Documents, Images: each is a Block. Blocks are the most-consumed primitives in HERD; tools and solutions read and write to blocks constantly.\n\n## Business\n\nA Block is the atomic unit of *what HERD knows*. While Tools execute and Solutions deliver value, Blocks are *the data*. Every commercial interaction either creates new Block instances (a new Contact, a new Meeting, a new Deal) or modifies existing ones (Contact lifecycle changes, Deal stage progression).\n\nBlocks are categorized by **data nature** — Identity (contacts, profiles), Media (documents, images, videos), Time (meetings, scheduling), Commercial (deals, pipelines), Financial (invoices, payments). This taxonomy organizes the data model in a way that humans and AI agents can navigate intuitively.\n\n<!-- TODO: 2-3 more paragraphs on the strategic value of stable block identities, how lifecycle stages on blocks drive commercial workflows, how block ownership and access control work. -->\n\n## Product\n\n<!-- TODO: How users (sales, marketing, support, admins) interact with blocks in HERD's admin UI. List/detail views per block type, filters and segmentation, bulk operations, related-block navigation. -->\n\n## Architecture\n\nThe Blocks layer in the Handbook organizes documentation hierarchically. Block categories are introduced lazily — created when the first block of a given category is documented. Day-1 the Blocks layer has one category, `miscellaneous`, which holds blocks (`contacts`, `meetings`) that have not yet been classified into their final category. The miscellaneous category will shrink as the backfill etapa proceeds.\n\nEach Block in HERD owns a Prisma model and exposes CRUD via REST endpoints. Blocks support cross-references via `consumes` and `consumed_by` in the Handbook graph: a Meeting consumes a Contact (every meeting must link to at least one contact), and a Contact is consumed_by Meetings (referenced from many meetings).\n\n<!-- TODO: 2-3 more paragraphs on architectural implications: how Block schemas are versioned, how RLS policies are uniform across blocks, how block-groups (intra-block organization, e.g. contacts.leads) work. -->\n\n## Operations\n\n<!-- TODO: Conventions for working with Blocks: when to introduce a new Block vs. extend an existing one with a block-group, deduplication strategies, GDPR/LGPD handling per block category. -->\n\n## Glossary\n\n<!-- TODO: Local glossary of Block-specific terms (Block, block-group, lifecycle, primary identity, foreign reference, soft delete, etc.). -->\n\n## Changelog\n\n- **2026-05-02** — Initial publication. Layer overview created during Handbook UI Sub-etapa 1.5.\n"
     },
     {
+      "uid": "herd.category.blocks.financial",
+      "id": "financial",
+      "level": "category",
+      "parent": "herd.layer.blocks",
+      "status": "active",
+      "owners": [
+        "@nick"
+      ],
+      "since": "2026-05-02",
+      "updated": "2026-05-02",
+      "consumes": [],
+      "consumed_by": [],
+      "related": [],
+      "source_paths": [],
+      "title_pt_BR": "Blocos Financeiros",
+      "title_en_US": "Financial Blocks",
+      "description_pt_BR": "Primitivos de dados financeiros — registros, fluxos, eventos imutáveis — que servem como base para ferramentas e fluxos do produto.",
+      "description_en_US": "Financial data primitives — records, flows, immutable events — that serve as the foundation for tools and product flows.",
+      "body_pt_BR": "---\ntitle: Blocos Financeiros\ndescription: Primitivos de dados financeiros — registros, fluxos, eventos imutáveis — que servem como base para ferramentas e fluxos do produto.\nlocale: pt-BR\nuid: herd.category.blocks.financial\n---\n\n> **Para agentes de IA:** Este arquivo Markdown é a forma canônica desta entry. Use `Accept: text/markdown` ou adicione `.md` à URL para evitar renderização HTML.\n\n# Blocos Financeiros\n\nPrimitivos de dados financeiros — registros, fluxos, eventos imutáveis — que servem como base para ferramentas e fluxos do produto.\n\n## Business\n\n<!-- TODO: Business perspective. -->\n\n## Product\n\n<!-- TODO: Product perspective. -->\n\n## Architecture\n\n<!-- TODO: Architecture perspective. -->\n\n## Operations\n\n<!-- TODO: Operations perspective. -->\n\n## Glossary\n\n<!-- TODO: Local glossary. -->\n\n## Changelog\n\n- **2026-05-02** — Publicação inicial.\n",
+      "body_en_US": "---\ntitle: Financial Blocks\ndescription: Financial data primitives — records, flows, immutable events — that serve as the foundation for tools and product flows.\nlocale: en-US\nuid: herd.category.blocks.financial\n---\n\n> **For AI agents:** This Markdown file is the canonical form of this entry. Use `Accept: text/markdown` or append `.md` to the URL to avoid HTML rendering.\n\n# Financial Blocks\n\nFinancial data primitives — records, flows, immutable events — that serve as the foundation for tools and product flows.\n\n## Business\n\n<!-- TODO: Business perspective. -->\n\n## Product\n\n<!-- TODO: Product perspective. -->\n\n## Architecture\n\n<!-- TODO: Architecture perspective. -->\n\n## Operations\n\n<!-- TODO: Operations perspective. -->\n\n## Glossary\n\n<!-- TODO: Local glossary. -->\n\n## Changelog\n\n- **2026-05-02** — Initial publication.\n"
+    },
+    {
+      "uid": "herd.block.financial.commissions-payments",
+      "id": "commissions-payments",
+      "level": "block",
+      "parent": "herd.category.blocks.financial",
+      "status": "draft",
+      "owners": [
+        "@nick"
+      ],
+      "since": "2026-05-02",
+      "updated": "2026-05-02",
+      "consumes": [],
+      "consumed_by": [
+        "herd.tool.financial.ledger"
+      ],
+      "related": [],
+      "source_paths": [
+        "src/lib/validators/commission.ts",
+        "src/lib/validators/commission-ledger.ts",
+        "src/app/api/commissions",
+        "src/app/api/commission-ledger",
+        "src/app/admin/commissions",
+        "src/components/commissions"
+      ],
+      "title_pt_BR": "Pagamentos de Comissões",
+      "title_en_US": "Commissions Payments",
+      "description_pt_BR": "Registros e fluxos de pagamento de comissões para parceiros, vendedores e canais. Eventos consumidos pelo ledger para auditoria e conciliação.",
+      "description_en_US": "Records and flows of commission payments to partners, sellers, and channels. Events consumed by the ledger for audit and reconciliation.",
+      "body_pt_BR": "---\ntitle: Pagamentos de Comissões\ndescription: Registros e fluxos de pagamento de comissões para parceiros, vendedores e canais. Eventos consumidos pelo ledger para auditoria e conciliação.\nlocale: pt-BR\nuid: herd.block.financial.commissions-payments\n---\n\n> **Para agentes de IA:** Este arquivo Markdown é a forma canônica desta entry. Use `Accept: text/markdown` ou adicione `.md` à URL para evitar renderização HTML.\n\n# Pagamentos de Comissões\n\nRegistros e fluxos de pagamento de comissões para parceiros, vendedores e canais. Eventos consumidos pelo ledger para auditoria e conciliação.\n\n## Business\n\n<!-- TODO: Business perspective. -->\n\n## Product\n\n<!-- TODO: Product perspective. -->\n\n## Architecture\n\n<!-- TODO: Architecture perspective. -->\n\n## Operations\n\n<!-- TODO: Operations perspective. -->\n\n## Glossary\n\n<!-- TODO: Local glossary. -->\n\n## Changelog\n\n- **2026-05-02** — Publicação inicial.\n",
+      "body_en_US": "---\ntitle: Commissions Payments\ndescription: Records and flows of commission payments to partners, sellers, and channels. Events consumed by the ledger for audit and reconciliation.\nlocale: en-US\nuid: herd.block.financial.commissions-payments\n---\n\n> **For AI agents:** This Markdown file is the canonical form of this entry. Use `Accept: text/markdown` or append `.md` to the URL to avoid HTML rendering.\n\n# Commissions Payments\n\nRecords and flows of commission payments to partners, sellers, and channels. Events consumed by the ledger for audit and reconciliation.\n\n## Business\n\n<!-- TODO: Business perspective. -->\n\n## Product\n\n<!-- TODO: Product perspective. -->\n\n## Architecture\n\n<!-- TODO: Architecture perspective. -->\n\n## Operations\n\n<!-- TODO: Operations perspective. -->\n\n## Glossary\n\n<!-- TODO: Local glossary. -->\n\n## Changelog\n\n- **2026-05-02** — Initial publication.\n"
+    },
+    {
       "uid": "herd.category.blocks.miscellaneous",
       "id": "miscellaneous",
       "level": "category",

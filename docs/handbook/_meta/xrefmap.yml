@@ -1,6 +1,13 @@
 # Auto-generated. Do not edit by hand. Regenerate via npm run gen:xrefmap.
 version: 1
 references:
+  herd.block.financial.commissions-payments:
+    level: block
+    id: commissions-payments
+    path: docs/handbook/blocks/financial/commissions-payments
+    title:
+      pt-BR: Pagamentos de Comissões
+      en-US: Commissions Payments
   herd.block.miscellaneous.contacts:
     level: block
     id: contacts
@@ -15,6 +22,13 @@ references:
     title:
       pt-BR: Reuniões
       en-US: Meetings
+  herd.category.blocks.financial:
+    level: category
+    id: financial
+    path: docs/handbook/blocks/financial/(overview)
+    title:
+      pt-BR: Blocos Financeiros
+      en-US: Financial Blocks
   herd.category.blocks.miscellaneous:
     level: category
     id: miscellaneous

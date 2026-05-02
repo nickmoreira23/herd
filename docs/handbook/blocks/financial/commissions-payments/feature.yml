@@ -1,0 +1,41 @@
+id: commissions-payments
+uid: herd.block.financial.commissions-payments
+level: block
+technical_category: block
+title:
+  pt-BR: Pagamentos de Comissões
+  en-US: Commissions Payments
+description:
+  pt-BR: Registros e fluxos de pagamento de comissões para parceiros, vendedores e
+    canais. Eventos consumidos pelo ledger para auditoria e conciliação.
+  en-US: Records and flows of commission payments to partners, sellers, and
+    channels. Events consumed by the ledger for audit and reconciliation.
+status: draft
+owners:
+  - "@nick"
+since: 2026-05-02
+updated: 2026-05-02
+parent: herd.category.blocks.financial
+children: []
+consumes: []
+consumed_by:
+  - herd.tool.financial.ledger
+related: []
+source_paths:
+  - src/lib/validators/commission.ts
+  - src/lib/validators/commission-ledger.ts
+  - src/app/api/commissions
+  - src/app/api/commission-ledger
+  - src/app/admin/commissions
+  - src/components/commissions
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog
