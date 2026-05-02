@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { findByUid, entryFilesystemPath } from "@/lib/handbook/search-index";
 import { readEntryBilingual } from "@/lib/handbook/read-entry";
 import { githubEditUrl, adminLocaleToHandbookLocale } from "@/lib/handbook/config";
+import { resolveBilingualCrossRefs } from "@/lib/handbook/cross-refs";
 import { HandbookBilingualView } from "@/components/handbook/handbook-bilingual-view";
 import { getLocale } from "@/lib/i18n/get-locale";
 
@@ -44,6 +45,7 @@ export default async function MetaEntryPage({
           relativePath: bilingual.enUS.relativePath,
         },
       }}
+      crossRefs={resolveBilingualCrossRefs(indexEntry)}
       owners={indexEntry.owners}
       updated={indexEntry.updated}
       status={indexEntry.status}

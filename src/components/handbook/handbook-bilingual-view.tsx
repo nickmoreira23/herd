@@ -4,7 +4,10 @@ import { useHandbookLocale } from "./use-handbook-locale";
 import { HandbookEntryHeader } from "./handbook-entry-header";
 import { HandbookReader } from "./handbook-reader";
 import { HandbookChildrenList, type ChildItem } from "./handbook-children-list";
+import { HandbookCrossReferences } from "./handbook-cross-references";
 import { githubEditUrl, type HandbookLocale } from "@/lib/handbook/config";
+import { transformMarkdown } from "@/lib/handbook/transform-markdown";
+import type { BilingualCrossRefs } from "@/lib/handbook/cross-refs";
 
 interface LocaleData {
   title: string;
@@ -27,6 +30,7 @@ interface BilingualCrumb {
 interface Props {
   crumbs: BilingualCrumb[];
   entry: BilingualEntry;
+  crossRefs: BilingualCrossRefs;
   owners: string[];
   updated: string;
   status: string;
@@ -40,6 +44,7 @@ interface Props {
 export function HandbookBilingualView({
   crumbs,
   entry,
+  crossRefs,
   owners,
   updated,
   status,
@@ -53,6 +58,7 @@ export function HandbookBilingualView({
     useHandbookLocale(userDefaultLocale);
   const data = locale === "pt-BR" ? entry.ptBR : entry.enUS;
   const githubUrl = githubEditUrl(data.relativePath);
+  const transformedBody = transformMarkdown(data.body);
 
   return (
     <div className="p-8 max-w-5xl mx-auto">
@@ -75,7 +81,9 @@ export function HandbookBilingualView({
         selfUrl={selfUrl}
       />
 
-      <HandbookReader body={data.body} />
+      <HandbookReader body={transformedBody} locale={locale} />
+
+      <HandbookCrossReferences crossRefs={crossRefs} locale={locale} />
 
       {children && children.length > 0 && (
         <HandbookChildrenList

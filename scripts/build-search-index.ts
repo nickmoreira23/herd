@@ -14,6 +14,9 @@ interface IndexEntry {
   owners: string[];
   since: string;
   updated: string;
+  consumes: string[];
+  consumed_by: string[];
+  related: string[];
   title_pt_BR: string;
   title_en_US: string;
   description_pt_BR: string;
@@ -51,6 +54,9 @@ async function main() {
       owners: data.owners,
       since: data.since,
       updated: data.updated,
+      consumes: data.consumes,
+      consumed_by: data.consumed_by,
+      related: data.related,
       title_pt_BR: data.title["pt-BR"],
       title_en_US: data.title["en-US"],
       description_pt_BR: data.description["pt-BR"],

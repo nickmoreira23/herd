@@ -20,6 +20,9 @@ export interface IndexEntry {
   owners: string[];
   since: string;
   updated: string;
+  consumes: string[];
+  consumed_by: string[];
+  related: string[];
   title_pt_BR: string;
   title_en_US: string;
   description_pt_BR: string;
