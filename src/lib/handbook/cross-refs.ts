@@ -1,5 +1,6 @@
 import { findByUid, type IndexEntry } from "./search-index";
 import { isAllowlisted } from "./allowlist";
+import { hrefForEntry } from "./href-for-entry";
 
 export interface ResolvedRef {
   uid: string;
@@ -8,19 +9,6 @@ export interface ResolvedRef {
   resolvedTitlePtBR?: string;
   resolvedTitleEnUS?: string;
   href?: string;
-}
-
-function hrefForEntry(entry: IndexEntry): string {
-  if (entry.level === "meta") return `/admin/handbook/meta/${entry.id}`;
-  if (entry.level === "layer") return `/admin/handbook/${entry.id}`;
-  if (entry.level === "category") {
-    const layerId = entry.parent?.split(".").pop();
-    return `/admin/handbook/${layerId}/${entry.id}`;
-  }
-  const parts = entry.parent?.split(".") ?? [];
-  const layerId = parts[2];
-  const categoryId = parts[3];
-  return `/admin/handbook/${layerId}/${categoryId}/${entry.id}`;
 }
 
 export function resolveCrossRefs(

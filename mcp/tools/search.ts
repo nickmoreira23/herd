@@ -1,17 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-
-interface IndexEntry {
-  uid: string;
-  id: string;
-  level: string;
-  title_pt_BR: string;
-  title_en_US: string;
-  description_pt_BR: string;
-  description_en_US: string;
-  body_pt_BR: string;
-  body_en_US: string;
-}
+import { searchEntries } from "../../src/lib/handbook/search";
+import type { IndexEntry } from "../../src/lib/handbook/search-index";
 
 let cachedIndex: IndexEntry[] | null = null;
 
@@ -26,24 +16,6 @@ function loadIndex(): IndexEntry[] {
   return cachedIndex;
 }
 
-function score(entry: IndexEntry, query: string): number {
-  const q = query.toLowerCase();
-  let s = 0;
-
-  if (entry.uid.toLowerCase().includes(q)) s += 10;
-  if (entry.id.toLowerCase().includes(q)) s += 8;
-  if (entry.title_en_US.toLowerCase().includes(q)) s += 5;
-  if (entry.title_pt_BR.toLowerCase().includes(q)) s += 5;
-
-  if (entry.description_en_US.toLowerCase().includes(q)) s += 3;
-  if (entry.description_pt_BR.toLowerCase().includes(q)) s += 3;
-
-  if (entry.body_en_US.toLowerCase().includes(q)) s += 1;
-  if (entry.body_pt_BR.toLowerCase().includes(q)) s += 1;
-
-  return s;
-}
-
 export interface SearchResult {
   id: string;
   title: string;
@@ -51,20 +23,22 @@ export interface SearchResult {
   url: string;
 }
 
+/**
+ * MCP search tool — wraps the shared lexical search and returns the
+ * ChatGPT-compatible shape: { results: [{ id, title, text, url }] }.
+ *
+ * Locale is fixed to en-US for MCP callers (LLMs); the in-app dialog
+ * uses the user's locale.
+ */
 export function executeSearch(query: string): { results: SearchResult[] } {
-  const idx = loadIndex();
-  const scored = idx
-    .map((e) => ({ entry: e, s: score(e, query) }))
-    .filter((x) => x.s > 0)
-    .sort((a, b) => b.s - a.s)
-    .slice(0, 20);
-
-  const results: SearchResult[] = scored.map(({ entry }) => ({
-    id: entry.uid,
-    title: entry.title_en_US,
-    text: entry.description_en_US,
-    url: `https://herd.com/admin/handbook/${entry.level}/${entry.id}`,
-  }));
-
-  return { results };
+  const entries = loadIndex();
+  const results = searchEntries(entries, query, { locale: "en-US", limit: 20 });
+  return {
+    results: results.map((r) => ({
+      id: r.uid,
+      title: r.title,
+      text: r.description,
+      url: `https://herd.com${r.url}`,
+    })),
+  };
 }
