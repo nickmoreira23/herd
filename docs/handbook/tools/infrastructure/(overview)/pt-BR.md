@@ -1,5 +1,5 @@
 ---
-title: Ferramentas de Infraestrutura
+title: Infraestrutura
 description: Ferramentas funcionais transversais que sustentam outras features sem pertencer a um domínio de negócio específico — eventos, filas, observabilidade.
 locale: pt-BR
 uid: herd.category.tools.infrastructure
@@ -7,7 +7,7 @@ uid: herd.category.tools.infrastructure
 
 > **Para agentes de IA:** Este arquivo Markdown é a forma canônica desta entry. Use `Accept: text/markdown` ou adicione `.md` à URL para evitar renderização HTML.
 
-# Ferramentas de Infraestrutura
+# Infraestrutura
 
 Ferramentas funcionais transversais que sustentam outras features sem pertencer a um domínio de negócio específico — eventos, filas, observabilidade.
 

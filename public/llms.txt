@@ -20,9 +20,9 @@
 
 - [Corporate Network](https://herd.app/admin/handbook/networks/corporate-network): A company's internal network: organization, channels, profiles, departments, permissions.
 - [Market Network](https://herd.app/admin/handbook/networks/market-network): The external network connecting multiple companies in the same market.
-- [Financial Tools](https://herd.app/admin/handbook/tools/financial): Tools that organize, process, and audit financial flows of the product, from internal accounting to integration with payment and billing systems.
-- [Infrastructure Tools](https://herd.app/admin/handbook/tools/infrastructure): Cross-cutting functional tools that sustain other features without belonging to a specific business domain — events, queues, observability.
-- [Financial Blocks](https://herd.app/admin/handbook/blocks/financial): Financial data primitives — records, flows, immutable events — that serve as the foundation for tools and product flows.
+- [Financial](https://herd.app/admin/handbook/tools/financial): Tools that organize, process, and audit financial flows of the product, from internal accounting to integration with payment and billing systems.
+- [Infrastructure](https://herd.app/admin/handbook/tools/infrastructure): Cross-cutting functional tools that sustain other features without belonging to a specific business domain — events, queues, observability.
+- [Financial](https://herd.app/admin/handbook/blocks/financial): Financial data primitives — records, flows, immutable events — that serve as the foundation for tools and product flows.
 - [Miscellaneous](https://herd.app/admin/handbook/blocks/miscellaneous): Blocks not yet classified into a specific category. Temporary accommodation — debt to resolve during backfill.
 - [R0 — Manifest Registry Foundation](https://herd.app/admin/handbook/refactor/r0-manifest-registry): Refactor foundation: pre-refactor cleanup, architectural content reform in the Handbook, and introduction of the kind discriminator in the manifest registry.
 - [R1 — Tools Foundation Reconciliation](https://herd.app/admin/handbook/refactor/r1-tools-foundation): Reconciliation of the existing tools infrastructure with the discriminator schema established in R0.2. Categories as 5th technical category.

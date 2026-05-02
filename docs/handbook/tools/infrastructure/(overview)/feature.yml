@@ -3,8 +3,8 @@ uid: herd.category.tools.infrastructure
 level: category
 technical_category: foundation
 title:
-  pt-BR: Ferramentas de Infraestrutura
-  en-US: Infrastructure Tools
+  pt-BR: Infraestrutura
+  en-US: Infrastructure
 description:
   pt-BR: Ferramentas funcionais transversais que sustentam outras features sem
     pertencer a um domínio de negócio específico — eventos, filas, observabilidade.

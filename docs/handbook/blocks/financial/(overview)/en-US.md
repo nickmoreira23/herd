@@ -1,5 +1,5 @@
 ---
-title: Financial Blocks
+title: Financial
 description: Financial data primitives — records, flows, immutable events — that serve as the foundation for tools and product flows.
 locale: en-US
 uid: herd.category.blocks.financial
@@ -7,7 +7,7 @@ uid: herd.category.blocks.financial
 
 > **For AI agents:** This Markdown file is the canonical form of this entry. Use `Accept: text/markdown` or append `.md` to the URL to avoid HTML rendering.
 
-# Financial Blocks
+# Financial
 
 Financial data primitives — records, flows, immutable events — that serve as the foundation for tools and product flows.
 

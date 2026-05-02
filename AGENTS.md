@@ -161,6 +161,23 @@ The hierarchy:
 2. **Categories**: introduced per layer as needed (e.g., `marketing` under `tools`).
 3. **Features individuais**: concrete features inside a category.
 
+### Category naming convention
+
+Category titles **never repeat the layer's name**. The layer is already
+established by the URL, breadcrumb, and sub-panel — repeating it on every
+category bloats the breadcrumb and reads as noise.
+
+| Layer | ✓ Use | ✗ Avoid |
+|---|---|---|
+| `tools` | "Financial", "Marketing", "Infrastructure" | "Financial Tools", "Marketing Tools" |
+| `blocks` | "Financial", "Miscellaneous" | "Financial Blocks" |
+| `integrations` | "Payment", "Communication", "Calendar" | "Payment Integrations" |
+| `solutions` | "Healthcare", "Sales Department" | "Healthcare Solutions" |
+| `networks` | (categories TBD) | — |
+
+This applies to both `pt-BR` and `en-US` titles in `feature.yml` and the
+`(overview)/{pt-BR,en-US}.md` H1/frontmatter.
+
 Plus a separate `_meta` namespace for documentation about the documentation
 system itself (e.g., `herd.meta.handbook`).
 

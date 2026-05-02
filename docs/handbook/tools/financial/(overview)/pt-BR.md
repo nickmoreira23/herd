@@ -1,5 +1,5 @@
 ---
-title: Ferramentas Financeiras
+title: Financeiro
 description: Ferramentas que organizam, processam e auditam fluxos financeiros do produto, da contabilidade interna até integração com sistemas de pagamento e faturamento.
 locale: pt-BR
 uid: herd.category.tools.financial
@@ -7,7 +7,7 @@ uid: herd.category.tools.financial
 
 > **Para agentes de IA:** Este arquivo Markdown é a forma canônica desta entry. Use `Accept: text/markdown` ou adicione `.md` à URL para evitar renderização HTML.
 
-# Ferramentas Financeiras
+# Financeiro
 
 Ferramentas que organizam, processam e auditam fluxos financeiros do produto, da contabilidade interna até integração com sistemas de pagamento e faturamento.
 

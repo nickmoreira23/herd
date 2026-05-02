@@ -3,8 +3,8 @@ uid: herd.category.blocks.financial
 level: category
 technical_category: foundation
 title:
-  pt-BR: Blocos Financeiros
-  en-US: Financial Blocks
+  pt-BR: Financeiro
+  en-US: Financial
 description:
   pt-BR: Primitivos de dados financeiros — registros, fluxos, eventos imutáveis —
     que servem como base para ferramentas e fluxos do produto.
