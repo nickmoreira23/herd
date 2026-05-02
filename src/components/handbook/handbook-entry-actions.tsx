@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Copy, Link as LinkIcon, ExternalLink } from "lucide-react";
+import { MoreHorizontal, Copy, Link as LinkIcon, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import type { HandbookLocale } from "@/lib/handbook/config";
 
@@ -34,7 +34,6 @@ export function HandbookEntryActions({
   clearOverride,
   hasOverride,
 }: Props) {
-  const triggerLabel = locale === "pt-BR" ? "Opções" : "Options";
   const t = (pt: string, en: string) => (locale === "pt-BR" ? pt : en);
 
   function copyMarkdown() {
@@ -50,9 +49,11 @@ export function HandbookEntryActions({
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="outline" size="sm" />}>
-        {triggerLabel}
-        <ChevronDown className="h-4 w-4 ml-1" />
+      <DropdownMenuTrigger
+        render={<Button variant="outline" size="icon" />}
+        aria-label={t("Opções", "Options")}
+      >
+        <MoreHorizontal className="h-4 w-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={copyMarkdown}>
