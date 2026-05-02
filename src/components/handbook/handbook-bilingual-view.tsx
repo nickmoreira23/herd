@@ -71,7 +71,7 @@ export function HandbookBilingualView({
   const canonicalNote = extractCanonicalNote(data.body);
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
+    <div className="space-y-8 p-6">
       <HandbookEntryHeader
         crumbs={crumbs.map((c) => ({
           label: locale === "pt-BR" ? c.labelPtBR : c.labelEnUS,

@@ -14,6 +14,8 @@ interface Props {
   /** Owners are intentionally NOT rendered (the `@nick` chip was noisy). Kept
    * in the type for API compatibility with callers that still pass it. */
   owners: string[];
+  /** `updated` is preserved on the prop API but not rendered here yet — moves
+   * to a dedicated metadata strip in a later iteration. */
   updated: string;
   status: string;
   locale: HandbookLocale;
@@ -25,11 +27,17 @@ interface Props {
   selfUrl: string;
 }
 
+/**
+ * Page header for a Handbook entry. Shape mirrors `/admin/blocks` (the
+ * "All Blocks" page) for visual consistency: large bold title, muted
+ * subtitle, no chrome above. The breadcrumb is folded into the title line —
+ * ancestors render muted, the current entry's title renders in foreground —
+ * so we don't repeat the entry name twice.
+ */
 export function HandbookEntryHeader({
   crumbs,
   title,
   description,
-  updated,
   status,
   locale,
   setOverride,
@@ -40,81 +48,57 @@ export function HandbookEntryHeader({
   selfUrl,
 }: Props) {
   return (
-    <header className="mb-8">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          {/* Breadcrumb-as-title: ancestors are muted links, the title is the
-              last (bold, dark) crumb. Status pill sits inline on the right. */}
-          <nav
-            aria-label="Breadcrumb"
-            className="flex items-center gap-2 flex-wrap"
+    <header className="flex items-start justify-between gap-4">
+      <div className="flex-1 min-w-0">
+        <div className="flex items-baseline gap-3 flex-wrap">
+          <h1
+            aria-label={title}
+            className="m-0 text-2xl font-bold flex items-baseline gap-2 flex-wrap"
           >
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              {crumbs.map((c, idx) => (
-                <Fragment key={idx}>
-                  {idx > 0 && <span className="select-none">/</span>}
-                  {c.href ? (
-                    <Link
-                      href={c.href}
-                      className="hover:text-foreground transition-colors"
-                    >
-                      {c.label}
-                    </Link>
-                  ) : (
-                    <span>{c.label}</span>
-                  )}
-                </Fragment>
-              ))}
-              {crumbs.length > 0 && <span className="select-none">/</span>}
-            </div>
-            <h1 className="text-base font-semibold text-foreground m-0">
-              {title}
-            </h1>
-            <Badge variant={status === "active" ? "default" : "secondary"}>
-              {status}
-            </Badge>
-          </nav>
-
-          <p className="text-sm text-muted-foreground mt-2">{description}</p>
-
-          <p
-            className="text-xs text-muted-foreground/70 mt-1"
-            title={updated}
-          >
-            {locale === "pt-BR" ? "Atualizado " : "Updated "}
-            {formatRelative(updated, locale)}
-          </p>
+            {crumbs.map((c, idx) => (
+              <Fragment key={idx}>
+                {idx > 0 && (
+                  <span className="text-muted-foreground/40 select-none font-normal">
+                    /
+                  </span>
+                )}
+                {c.href ? (
+                  <Link
+                    href={c.href}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {c.label}
+                  </Link>
+                ) : (
+                  <span className="text-muted-foreground">{c.label}</span>
+                )}
+              </Fragment>
+            ))}
+            {crumbs.length > 0 && (
+              <span className="text-muted-foreground/40 select-none font-normal">
+                /
+              </span>
+            )}
+            <span className="text-foreground">{title}</span>
+          </h1>
+          <Badge variant={status === "active" ? "default" : "secondary"}>
+            {status}
+          </Badge>
         </div>
+        <p className="text-sm text-muted-foreground mt-1">{description}</p>
+      </div>
 
-        <div data-handbook-toolbar className="shrink-0">
-          <HandbookEntryActions
-            markdown={markdownRaw}
-            githubEditUrl={githubEditUrl}
-            selfUrl={selfUrl}
-            locale={locale}
-            setOverride={setOverride}
-            clearOverride={clearOverride}
-            hasOverride={hasOverride}
-          />
-        </div>
+      <div data-handbook-toolbar className="shrink-0">
+        <HandbookEntryActions
+          markdown={markdownRaw}
+          githubEditUrl={githubEditUrl}
+          selfUrl={selfUrl}
+          locale={locale}
+          setOverride={setOverride}
+          clearOverride={clearOverride}
+          hasOverride={hasOverride}
+        />
       </div>
     </header>
   );
-}
-
-function formatRelative(isoDate: string, locale: HandbookLocale): string {
-  const d = new Date(isoDate);
-  const days = Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
-  if (locale === "pt-BR") {
-    if (days <= 0) return "hoje";
-    if (days === 1) return "ontem";
-    if (days < 7) return `há ${days} dias`;
-    if (days < 30) return `há ${Math.floor(days / 7)} semana(s)`;
-    return `em ${d.toLocaleDateString("pt-BR")}`;
-  }
-  if (days <= 0) return "today";
-  if (days === 1) return "yesterday";
-  if (days < 7) return `${days} days ago`;
-  if (days < 30) return `${Math.floor(days / 7)} week(s) ago`;
-  return `on ${d.toLocaleDateString("en-US")}`;
 }
