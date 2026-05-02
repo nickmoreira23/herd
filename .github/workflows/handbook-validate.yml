@@ -9,6 +9,8 @@ on:
       - 'scripts/validate-feature-yml.ts'
       - 'scripts/validate-handbook-graph.ts'
       - '.agents/skills/**'
+      - 'package.json'
+      - 'package-lock.json'
 
 jobs:
   validate:
