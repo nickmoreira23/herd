@@ -430,6 +430,7 @@ export const messages: Record<MessageKey, string> = {
   "nav.sidebar.chat": "Chat",
   "nav.sidebar.organization": "Organization",
   "nav.sidebar.knowledge": "Knowledge",
+  "nav.sidebar.handbook": "Handbook",
   "nav.sidebar.network": "Network",
   "nav.sidebar.marketplace": "Marketplace",
   "nav.sidebar.ledger": "Ledger",

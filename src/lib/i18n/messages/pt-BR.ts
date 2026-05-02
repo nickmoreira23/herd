@@ -435,6 +435,7 @@ export const messages = {
   "nav.sidebar.chat": "Chat",
   "nav.sidebar.organization": "Organização",
   "nav.sidebar.knowledge": "Conhecimento",
+  "nav.sidebar.handbook": "Handbook",
   "nav.sidebar.network": "Rede",
   "nav.sidebar.marketplace": "Marketplace",
   "nav.sidebar.ledger": "Ledger",
