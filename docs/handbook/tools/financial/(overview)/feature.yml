@@ -1,0 +1,34 @@
+id: financial
+uid: herd.category.tools.financial
+level: category
+technical_category: foundation
+title:
+  pt-BR: Ferramentas Financeiras
+  en-US: Financial Tools
+description:
+  pt-BR: Ferramentas que organizam, processam e auditam fluxos financeiros do
+    produto, da contabilidade interna até integração com sistemas de pagamento e
+    faturamento.
+  en-US: Tools that organize, process, and audit financial flows of the product,
+    from internal accounting to integration with payment and billing systems.
+status: active
+owners:
+  - "@nick"
+since: 2026-05-02
+updated: 2026-05-02
+parent: herd.layer.tools
+children: []
+consumes: []
+consumed_by: []
+related: []
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

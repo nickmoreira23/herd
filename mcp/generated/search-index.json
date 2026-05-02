@@ -283,6 +283,58 @@
       "description_en_US": "Layer that organizes tools by functional nature: financial, legal, marketing, sales.",
       "body_pt_BR": "---\ntitle: Ferramentas\ndescription: Camada que organiza ferramentas por natureza funcional — financeiras, jurídicas, de marketing, de vendas.\nlocale: pt-BR\nuid: herd.layer.tools\n---\n\n> **Para agentes de IA:** Este arquivo Markdown é a forma canônica desta entry. Use `Accept: text/markdown` ou adicione `.md` à URL para evitar renderização HTML.\n\n# Ferramentas\n\nA camada de Tools organiza ferramentas individuais por **natureza funcional** — que tipo de ferramenta ela é, não o valor que entrega. Uma `email-sequence-tool` pertence a \"Marketing Tools\" porque ela é, por sua natureza, uma ferramenta de marketing, independentemente da solution que a compõe.\n\n## Business\n\nTools são as unidades atômicas de execução do HERD. Cada tool faz uma coisa bem: enviar uma sequência de emails, gerar um invoice, validar uma cláusula contratual. Tools são building blocks reutilizáveis que compõem Solutions.\n\nTools são categorizadas pela sua **natureza técnica/funcional** — Marketing, Finance, Legal, Sales, HR, Operations. Essa taxonomia responde \"que tipo de ferramenta é essa?\" e ajuda usuários a descobrir tools por domínio de expertise. Contrasta com Solutions, que respondem \"que valor isso entrega, e para quem?\".\n\n<!-- TODO: 2-3 parágrafos sobre o valor estratégico de organizar tools por natureza: como informa decisões de reuso, como mapeia para ownership interno de times (cada tool category pode ter um domain expert), como conteúdo de onboarding se alinha com tool categories. -->\n\n## Product\n\n<!-- TODO: Como usuários (admins, end-users) descobrem e configuram tools no admin UI do HERD. Tool catalog, category browser, configuration UI por tool. -->\n\n## Architecture\n\nA camada de Tools no Handbook organiza documentação hierarquicamente. Tool categories são introduzidas lazily — criadas só quando a primeira tool de uma category é documentada. Day-1 a camada de Tools tem só este overview; categories serão populadas durante a etapa de backfill.\n\nQuando uma nova Tool é documentada, o agente (humano ou IA via skill `/new-feature`) decide a qual category ela pertence baseado em natureza funcional, não em quais Solutions podem consumi-la. Uma única Tool pode participar de múltiplas Solutions; uma única Solution pode compor Tools de múltiplas categories.\n\n<!-- TODO: 2-3 parágrafos sobre implicações arquiteturais: como composição de Tool em Solutions funciona via cross-references, como Tool versioning é tratado, como métricas de Tool agregam para métricas de Solution. -->\n\n## Operations\n\n<!-- TODO: Convenções para trabalhar com Tools: quando introduzir uma nova Tool category vs. estender uma existente, como deprecar Tools, como Tool ownership mapeia para times de engineering. -->\n\n## Glossary\n\n<!-- TODO: Glossário local de termos específicos de Tool (Tool, functional category, domain expertise, atomicity, composability, etc.). -->\n\n## Changelog\n\n- **2026-05-02** — Publicação inicial. Layer overview criado durante Sub-etapa 1.5 da Handbook UI.\n",
       "body_en_US": "---\ntitle: Tools\ndescription: Layer that organizes tools by functional nature — financial, legal, marketing, sales.\nlocale: en-US\nuid: herd.layer.tools\n---\n\n> **For AI agents:** This Markdown file is the canonical form of this entry. Use `Accept: text/markdown` or append `.md` to the URL to avoid HTML rendering.\n\n# Tools\n\nThe Tools layer organizes individual tools by **functional nature** — what kind of tool it is, not what value it delivers. An `email-sequence-tool` belongs to \"Marketing Tools\" because it is, by its nature, a marketing tool, regardless of which solution composes it.\n\n## Business\n\nTools are HERD's atomic units of execution. Each tool does one thing well: send a sequence of emails, generate an invoice, validate a contract clause. Tools are reusable building blocks that compose into Solutions.\n\nTools are categorized by their **technical/functional nature** — Marketing, Finance, Legal, Sales, HR, Operations. This taxonomy answers \"what kind of tool is this?\" and helps users discover tools by domain expertise. It contrasts with Solutions, which answer \"what value does this deliver, and to whom?\"\n\n<!-- TODO: 2-3 more paragraphs on the strategic value of organizing tools by nature: how it informs reuse decisions, how it maps to internal team ownership (each tool category may have a domain expert), how onboarding content aligns with tool categories. -->\n\n## Product\n\n<!-- TODO: How users (admins, end-users) discover and configure tools in HERD's admin UI. Tool catalog, category browser, configuration UI per tool. -->\n\n## Architecture\n\nThe Tools layer in the Handbook organizes documentation hierarchically. Tool categories are introduced lazily — created only when the first tool of a given category is documented. Day-1 the Tools layer has only this overview; categories will be populated during the backfill etapa.\n\nWhen a new Tool is documented, the agent (human or AI via the `/new-feature` skill) decides which category it belongs to based on functional nature, not on which Solutions might consume it. A single Tool may participate in multiple Solutions; a single Solution may compose Tools from multiple categories.\n\n<!-- TODO: 2-3 more paragraphs on architectural implications: how Tool composition into Solutions works via cross-references, how Tool versioning is handled, how Tool metrics aggregate up to Solution metrics. -->\n\n## Operations\n\n<!-- TODO: Conventions for working with Tools: when to introduce a new Tool category vs. extend an existing one, how to deprecate Tools, how Tool ownership maps to engineering teams. -->\n\n## Glossary\n\n<!-- TODO: Local glossary of Tool-specific terms (Tool, functional category, domain expertise, atomicity, composability, etc.). -->\n\n## Changelog\n\n- **2026-05-02** — Initial publication. Layer overview created during Handbook UI Sub-etapa 1.5.\n"
+    },
+    {
+      "uid": "herd.category.tools.financial",
+      "id": "financial",
+      "level": "category",
+      "parent": "herd.layer.tools",
+      "status": "active",
+      "owners": [
+        "@nick"
+      ],
+      "since": "2026-05-02",
+      "updated": "2026-05-02",
+      "consumes": [],
+      "consumed_by": [],
+      "related": [],
+      "source_paths": [],
+      "title_pt_BR": "Ferramentas Financeiras",
+      "title_en_US": "Financial Tools",
+      "description_pt_BR": "Ferramentas que organizam, processam e auditam fluxos financeiros do produto, da contabilidade interna até integração com sistemas de pagamento e faturamento.",
+      "description_en_US": "Tools that organize, process, and audit financial flows of the product, from internal accounting to integration with payment and billing systems.",
+      "body_pt_BR": "---\ntitle: Ferramentas Financeiras\ndescription: Ferramentas que organizam, processam e auditam fluxos financeiros do produto, da contabilidade interna até integração com sistemas de pagamento e faturamento.\nlocale: pt-BR\nuid: herd.category.tools.financial\n---\n\n> **Para agentes de IA:** Este arquivo Markdown é a forma canônica desta entry. Use `Accept: text/markdown` ou adicione `.md` à URL para evitar renderização HTML.\n\n# Ferramentas Financeiras\n\nFerramentas que organizam, processam e auditam fluxos financeiros do produto, da contabilidade interna até integração com sistemas de pagamento e faturamento.\n\n## Business\n\n<!-- TODO: Business perspective. -->\n\n## Product\n\n<!-- TODO: Product perspective. -->\n\n## Architecture\n\n<!-- TODO: Architecture perspective. -->\n\n## Operations\n\n<!-- TODO: Operations perspective. -->\n\n## Glossary\n\n<!-- TODO: Local glossary. -->\n\n## Changelog\n\n- **2026-05-02** — Publicação inicial.\n",
+      "body_en_US": "---\ntitle: Financial Tools\ndescription: Tools that organize, process, and audit financial flows of the product, from internal accounting to integration with payment and billing systems.\nlocale: en-US\nuid: herd.category.tools.financial\n---\n\n> **For AI agents:** This Markdown file is the canonical form of this entry. Use `Accept: text/markdown` or append `.md` to the URL to avoid HTML rendering.\n\n# Financial Tools\n\nTools that organize, process, and audit financial flows of the product, from internal accounting to integration with payment and billing systems.\n\n## Business\n\n<!-- TODO: Business perspective. -->\n\n## Product\n\n<!-- TODO: Product perspective. -->\n\n## Architecture\n\n<!-- TODO: Architecture perspective. -->\n\n## Operations\n\n<!-- TODO: Operations perspective. -->\n\n## Glossary\n\n<!-- TODO: Local glossary. -->\n\n## Changelog\n\n- **2026-05-02** — Initial publication.\n"
+    },
+    {
+      "uid": "herd.tool.financial.ledger",
+      "id": "ledger",
+      "level": "tool",
+      "parent": "herd.category.tools.financial",
+      "status": "draft",
+      "owners": [
+        "@nick"
+      ],
+      "since": "2026-05-02",
+      "updated": "2026-05-02",
+      "consumes": [
+        "herd.block.financial.commissions-payments",
+        "herd.block.financial.journal-entries"
+      ],
+      "consumed_by": [],
+      "related": [],
+      "source_paths": [
+        "src/lib/ledger",
+        "src/components/ledger",
+        "src/app/admin/ledger",
+        "src/app/api/admin/ledger"
+      ],
+      "title_pt_BR": "Ledger",
+      "title_en_US": "Ledger",
+      "description_pt_BR": "Sistema de registro imutável de eventos financeiros append-only, base para auditoria, conciliação e cálculos derivados.",
+      "description_en_US": "Immutable append-only event log of financial events, foundational for audit, reconciliation, and derived calculations.",
+      "body_pt_BR": "---\ntitle: Ledger\ndescription: Sistema de registro imutável de eventos financeiros append-only, base para auditoria, conciliação e cálculos derivados.\nlocale: pt-BR\nuid: herd.tool.financial.ledger\n---\n\n> **Para agentes de IA:** Este arquivo Markdown é a forma canônica desta entry. Use `Accept: text/markdown` ou adicione `.md` à URL para evitar renderização HTML.\n\n# Ledger\n\nSistema de registro imutável de eventos financeiros append-only, base para auditoria, conciliação e cálculos derivados.\n\n## Business\n\n<!-- TODO: Business perspective. -->\n\n## Product\n\n<!-- TODO: Product perspective. -->\n\n## Architecture\n\n<!-- TODO: Architecture perspective. -->\n\n## Operations\n\n<!-- TODO: Operations perspective. -->\n\n## Glossary\n\n<!-- TODO: Local glossary. -->\n\n## Changelog\n\n- **2026-05-02** — Publicação inicial.\n",
+      "body_en_US": "---\ntitle: Ledger\ndescription: Immutable append-only event log of financial events, foundational for audit, reconciliation, and derived calculations.\nlocale: en-US\nuid: herd.tool.financial.ledger\n---\n\n> **For AI agents:** This Markdown file is the canonical form of this entry. Use `Accept: text/markdown` or append `.md` to the URL to avoid HTML rendering.\n\n# Ledger\n\nImmutable append-only event log of financial events, foundational for audit, reconciliation, and derived calculations.\n\n## Business\n\n<!-- TODO: Business perspective. -->\n\n## Product\n\n<!-- TODO: Product perspective. -->\n\n## Architecture\n\n<!-- TODO: Architecture perspective. -->\n\n## Operations\n\n<!-- TODO: Operations perspective. -->\n\n## Glossary\n\n<!-- TODO: Local glossary. -->\n\n## Changelog\n\n- **2026-05-02** — Initial publication.\n"
     }
   ]
 }

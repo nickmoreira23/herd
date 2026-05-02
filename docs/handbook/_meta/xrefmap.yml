@@ -36,6 +36,13 @@ references:
     title:
       pt-BR: Rede de Mercado
       en-US: Market Network
+  herd.category.tools.financial:
+    level: category
+    id: financial
+    path: docs/handbook/tools/financial/(overview)
+    title:
+      pt-BR: Ferramentas Financeiras
+      en-US: Financial Tools
   herd.layer.blocks:
     level: layer
     id: blocks
@@ -85,3 +92,10 @@ references:
     title:
       pt-BR: Handbook
       en-US: Handbook
+  herd.tool.financial.ledger:
+    level: tool
+    id: ledger
+    path: docs/handbook/tools/financial/ledger
+    title:
+      pt-BR: Ledger
+      en-US: Ledger

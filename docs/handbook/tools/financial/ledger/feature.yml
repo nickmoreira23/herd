@@ -1,0 +1,40 @@
+id: ledger
+uid: herd.tool.financial.ledger
+level: tool
+technical_category: tool
+title:
+  pt-BR: Ledger
+  en-US: Ledger
+description:
+  pt-BR: Sistema de registro imutável de eventos financeiros append-only, base
+    para auditoria, conciliação e cálculos derivados.
+  en-US: Immutable append-only event log of financial events, foundational for
+    audit, reconciliation, and derived calculations.
+status: draft
+owners:
+  - "@nick"
+since: 2026-05-02
+updated: 2026-05-02
+parent: herd.category.tools.financial
+children: []
+consumes:
+  - herd.block.financial.commissions-payments
+  - herd.block.financial.journal-entries
+consumed_by: []
+related: []
+source_paths:
+  - src/lib/ledger
+  - src/components/ledger
+  - src/app/admin/ledger
+  - src/app/api/admin/ledger
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog
