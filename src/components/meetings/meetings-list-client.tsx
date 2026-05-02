@@ -35,6 +35,7 @@ import type { MeetingRow } from "./types";
 
 interface MeetingsListClientProps {
   initialMeetings: MeetingRow[];
+  extraHeaderActions?: React.ReactNode;
 }
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
@@ -397,7 +398,7 @@ function CalendarView({
 
 // ─── Main Component ─────────────────────────────────────────────────
 
-export function MeetingsListClient({ initialMeetings }: MeetingsListClientProps) {
+export function MeetingsListClient({ initialMeetings, extraHeaderActions }: MeetingsListClientProps) {
   const router = useRouter();
   const [meetings, setMeetings] = useState<MeetingRow[]>(initialMeetings);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -465,6 +466,7 @@ export function MeetingsListClient({ initialMeetings }: MeetingsListClientProps)
 
   const headerActions = (
     <>
+      {extraHeaderActions}
       <Button
         variant="outline"
         size="sm"

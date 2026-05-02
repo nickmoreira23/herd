@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 import { crawlSiteForProducts } from "@/lib/products/site-crawler";
 
 const scrapeSchema = z.object({

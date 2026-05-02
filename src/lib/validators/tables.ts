@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 
 export const knowledgeTableFieldTypes = [
   "singleLineText",
@@ -45,7 +45,7 @@ export const createKnowledgeTableFieldSchema = z.object({
   name: z.string().min(1).max(255),
   type: z.enum(knowledgeTableFieldTypes),
   description: z.string().max(500).optional(),
-  options: z.record(z.unknown()).optional(),
+  options: z.record(z.string(), z.unknown()).optional(),
   isPrimary: z.boolean().optional(),
   isRequired: z.boolean().optional(),
 });
@@ -53,7 +53,7 @@ export const createKnowledgeTableFieldSchema = z.object({
 export const updateKnowledgeTableFieldSchema = z.object({
   name: z.string().min(1).max(255).optional(),
   description: z.string().max(500).optional(),
-  options: z.record(z.unknown()).optional(),
+  options: z.record(z.string(), z.unknown()).optional(),
   isRequired: z.boolean().optional(),
   sortOrder: z.number().int().min(0).optional(),
 });
@@ -65,15 +65,15 @@ export const reorderFieldsSchema = z.object({
 // --- Record CRUD ---
 
 export const createKnowledgeTableRecordSchema = z.object({
-  data: z.record(z.unknown()),
+  data: z.record(z.string(), z.unknown()),
 });
 
 export const updateKnowledgeTableRecordSchema = z.object({
-  data: z.record(z.unknown()),
+  data: z.record(z.string(), z.unknown()),
 });
 
 export const batchCreateRecordsSchema = z.object({
-  records: z.array(z.object({ data: z.record(z.unknown()) })).min(1).max(100),
+  records: z.array(z.object({ data: z.record(z.string(), z.unknown()) })).min(1).max(100),
 });
 
 // Inferred types

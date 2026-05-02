@@ -1,0 +1,35 @@
+id: blocks
+uid: herd.layer.blocks
+level: layer
+technical_category: foundation
+
+title:
+  pt-BR: "Blocos"
+  en-US: "Blocks"
+description:
+  pt-BR: "Camada que organiza blocos de dados por natureza: identidade, mídia, tempo, comercial, financeiro."
+  en-US: "Layer that organizes data blocks by nature: identity, media, time, commercial, financial."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-02
+updated: 2026-05-02
+
+parent: null
+children: []
+consumes: []
+consumed_by: []
+related: []
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

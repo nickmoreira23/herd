@@ -1,0 +1,46 @@
+@media print {
+  /* Force every Collapsible panel open, regardless of UI state. */
+  [data-slot="collapsible-content"] {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Hide the chevron rotator inside section triggers. */
+  [data-slot="collapsible-trigger"] svg {
+    display: none !important;
+  }
+
+  /* Plainer header: no hover bg, simple border, tight padding. */
+  [data-slot="collapsible-trigger"] {
+    background: none !important;
+    border-bottom: 1px solid #ccc !important;
+    padding: 0.25rem 0 !important;
+  }
+
+  /* Hide interactive chrome that has no place on paper. */
+  [data-handbook-toolbar],
+  [data-handbook-language-toggle],
+  [data-handbook-actions],
+  nav[aria-label="Breadcrumb"] {
+    display: none !important;
+  }
+
+  /* Force readable monochrome on white. */
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Avoid awkward page breaks inside a section heading. */
+  [data-slot="collapsible-trigger"] {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  /* Avoid splitting code blocks across pages when possible. */
+  pre {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}

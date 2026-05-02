@@ -1,0 +1,33 @@
+id: financial
+uid: herd.category.blocks.financial
+level: category
+technical_category: foundation
+title:
+  pt-BR: Blocos Financeiros
+  en-US: Financial Blocks
+description:
+  pt-BR: Primitivos de dados financeiros — registros, fluxos, eventos imutáveis —
+    que servem como base para ferramentas e fluxos do produto.
+  en-US: Financial data primitives — records, flows, immutable events — that serve
+    as the foundation for tools and product flows.
+status: active
+owners:
+  - "@nick"
+since: 2026-05-02
+updated: 2026-05-02
+parent: herd.layer.blocks
+children: []
+consumes: []
+consumed_by: []
+related: []
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

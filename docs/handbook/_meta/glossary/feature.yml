@@ -1,0 +1,31 @@
+id: glossary
+uid: herd.meta.glossary
+level: meta
+technical_category: foundation
+
+title:
+  pt-BR: "Glossário"
+  en-US: "Glossary"
+description:
+  pt-BR: "Glossário global agregado dos termos definidos em todas as entries do Handbook."
+  en-US: "Global glossary aggregated from terms defined across all Handbook entries."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-02
+updated: 2026-05-02
+
+parent: null
+children: []
+consumes: []
+consumed_by: []
+related: []
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - architecture

@@ -17,9 +17,10 @@ import { LayoutGrid, List, Users } from "lucide-react";
 
 interface ContactsClientProps {
   initialContacts: ContactRowType[];
+  headerActions?: React.ReactNode;
 }
 
-export function ContactsClient({ initialContacts }: ContactsClientProps) {
+export function ContactsClient({ initialContacts, headerActions }: ContactsClientProps) {
   const [contacts] = useState(initialContacts);
   const [search, setSearch] = useState("");
   const [tagFilter, setTagFilter] = useState<string>("");
@@ -59,7 +60,10 @@ export function ContactsClient({ initialContacts }: ContactsClientProps) {
             Pessoas com quem você se relaciona — leads, prospects, clientes.
           </p>
         </div>
-        <CreateContactDialog />
+        <div className="flex items-center gap-2">
+          {headerActions}
+          <CreateContactDialog />
+        </div>
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">

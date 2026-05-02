@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 import type { WizardField } from "./network-profile-type";
 
 export const createNetworkProfileSchema = z.object({

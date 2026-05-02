@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 
 export const createD2DPartnerSchema = z.object({
   name: z.string().min(1, "Name is required"),

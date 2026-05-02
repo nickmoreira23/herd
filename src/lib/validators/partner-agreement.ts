@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 
 export const createAgreementSchema = z.object({
   d2dPartnerId: z.string().uuid(),

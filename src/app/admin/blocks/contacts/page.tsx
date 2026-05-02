@@ -4,6 +4,7 @@ import { ContactsClient } from "@/components/contacts/contacts-client";
 import type { ContactRow } from "@/components/contacts/types";
 import ContactsLoading from "./loading";
 import { connection } from "next/server";
+import { ViewHandbookButtonAutoServer } from "@/components/handbook/view-handbook-button-auto-server";
 
 async function ContactsContent() {
   await connection();
@@ -20,7 +21,12 @@ async function ContactsContent() {
     updatedAt: c.updatedAt.toISOString(),
   }));
 
-  return <ContactsClient initialContacts={serialized} />;
+  return (
+    <ContactsClient
+      initialContacts={serialized}
+      headerActions={<ViewHandbookButtonAutoServer />}
+    />
+  );
 }
 
 export default function ContactsPage() {

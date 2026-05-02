@@ -1,5 +1,5 @@
-# Format: <feature-id>:<field>:<dangling-ref>
+# Format: <feature-uid>:<field>:<dangling-ref-uid>
 # This file MUST only shrink. Danger.js (Sub-etapa 6) enforces non-growth.
 # Each line documents a known cross-reference that doesn't yet have a
 # corresponding feature.yml. Used to introduce strangler-fig backfill.
-meetings:consumes:google-calendar
+herd.block.miscellaneous.meetings:consumes:herd.integration.calendar.google-calendar

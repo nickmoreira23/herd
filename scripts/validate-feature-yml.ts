@@ -1,9 +1,25 @@
 import "dotenv/config";
 import { readFileSync } from "node:fs";
-import { resolve, relative, dirname, basename } from "node:path";
+import { resolve, relative, dirname, basename, sep } from "node:path";
 import { parse } from "yaml";
 import fastGlob from "fast-glob";
 import { FeatureYmlSchema } from "../schemas/feature.zod";
+
+const FIXED_LAYERS = new Set([
+  "networks",
+  "solutions",
+  "tools",
+  "blocks",
+  "integrations",
+]);
+
+const FEATURE_LEVELS = new Set([
+  "network",
+  "solution",
+  "tool",
+  "block",
+  "integration",
+]);
 
 async function main() {
   const root = resolve(__dirname, "..");
@@ -34,19 +50,105 @@ async function main() {
 
     const data = result.data;
     const dir = dirname(file);
-    const expectedId = basename(dir);
-    const expectedLevel = basename(dirname(dir));
+    const rel = relative(handbookRoot, dir);
+    const segments = rel.split(sep);
 
-    if (data.id !== expectedId) {
-      errors.push(`${relative(root, file)}: id="${data.id}" but directory is "${expectedId}"`);
+    // Layout rules:
+    //   layer:    {layer}/(overview)              — 2 segments, last == "(overview)"
+    //   category: {layer}/{category}/(overview)   — 3 segments, last == "(overview)"
+    //   feature:  {layer}/{category}/{id}         — 3 segments, all kebab
+    //   meta:     _meta/{id}                      — 2 segments, first == "_meta"
+
+    const lvl = data.level;
+    const fileRel = relative(root, file);
+
+    if (lvl === "layer") {
+      if (segments.length !== 2 || segments[1] !== "(overview)") {
+        errors.push(`${fileRel}: level=layer expects path {layer}/(overview)/, got ${rel}`);
+        continue;
+      }
+      const layerName = segments[0];
+      if (!FIXED_LAYERS.has(layerName)) {
+        errors.push(`${fileRel}: layer "${layerName}" not in fixed set [${[...FIXED_LAYERS].join(", ")}]`);
+      }
+      if (data.id !== layerName) {
+        errors.push(`${fileRel}: id="${data.id}" but layer dir is "${layerName}"`);
+      }
+      const expectedUid = `herd.layer.${layerName}`;
+      if (data.uid !== expectedUid) {
+        errors.push(`${fileRel}: uid="${data.uid}" but should be "${expectedUid}"`);
+      }
+      if (data.parent != null) {
+        errors.push(`${fileRel}: layers must have parent: null`);
+      }
+    } else if (lvl === "category") {
+      if (segments.length !== 3 || segments[2] !== "(overview)") {
+        errors.push(`${fileRel}: level=category expects path {layer}/{category}/(overview)/, got ${rel}`);
+        continue;
+      }
+      const layerName = segments[0];
+      const catId = segments[1];
+      if (!FIXED_LAYERS.has(layerName)) {
+        errors.push(`${fileRel}: layer "${layerName}" not in fixed set`);
+      }
+      if (data.id !== catId) {
+        errors.push(`${fileRel}: id="${data.id}" but category dir is "${catId}"`);
+      }
+      const expectedUid = `herd.category.${layerName}.${catId}`;
+      if (data.uid !== expectedUid) {
+        errors.push(`${fileRel}: uid="${data.uid}" but should be "${expectedUid}"`);
+      }
+      const expectedParent = `herd.layer.${layerName}`;
+      if (data.parent !== expectedParent) {
+        errors.push(`${fileRel}: parent="${data.parent}" but should be "${expectedParent}"`);
+      }
+    } else if (FEATURE_LEVELS.has(lvl)) {
+      if (segments.length !== 3) {
+        errors.push(`${fileRel}: level=${lvl} expects path {layer}/{category}/{id}/, got ${rel}`);
+        continue;
+      }
+      const layerName = segments[0];
+      const catId = segments[1];
+      const featId = segments[2];
+      if (featId === "(overview)") {
+        errors.push(`${fileRel}: feature dir cannot be "(overview)" — that's reserved for category overview`);
+        continue;
+      }
+      if (!FIXED_LAYERS.has(layerName)) {
+        errors.push(`${fileRel}: layer "${layerName}" not in fixed set`);
+      }
+      if (data.id !== featId) {
+        errors.push(`${fileRel}: id="${data.id}" but feature dir is "${featId}"`);
+      }
+      const expectedUid = `herd.${lvl}.${catId}.${featId}`;
+      if (data.uid !== expectedUid) {
+        errors.push(`${fileRel}: uid="${data.uid}" but should be "${expectedUid}"`);
+      }
+      const expectedParent = `herd.category.${layerName}.${catId}`;
+      if (data.parent !== expectedParent) {
+        errors.push(`${fileRel}: parent="${data.parent}" but should be "${expectedParent}"`);
+      }
+    } else if (lvl === "meta") {
+      if (segments.length !== 2 || segments[0] !== "_meta") {
+        errors.push(`${fileRel}: level=meta expects path _meta/{id}/, got ${rel}`);
+        continue;
+      }
+      const id = segments[1];
+      if (data.id !== id) {
+        errors.push(`${fileRel}: id="${data.id}" but meta dir is "${id}"`);
+      }
+      const expectedUid = `herd.meta.${id}`;
+      if (data.uid !== expectedUid) {
+        errors.push(`${fileRel}: uid="${data.uid}" but should be "${expectedUid}"`);
+      }
+      if (data.parent != null) {
+        errors.push(`${fileRel}: meta entries must have parent: null`);
+      }
+    } else {
+      errors.push(`${fileRel}: unhandled level "${lvl}"`);
     }
-    if (data.level !== expectedLevel) {
-      errors.push(`${relative(root, file)}: level="${data.level}" but directory is "${expectedLevel}"`);
-    }
-    const expectedUid = `herd.${data.level}.${data.id}`;
-    if (data.uid !== expectedUid) {
-      errors.push(`${relative(root, file)}: uid="${data.uid}" but should be "${expectedUid}"`);
-    }
+
+    void basename;
   }
 
   if (errors.length > 0) {

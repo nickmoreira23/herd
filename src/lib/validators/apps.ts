@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 
 export const KNOWLEDGE_APP_CATEGORIES = ["FITNESS", "HEALTH", "NUTRITION", "OTHER"] as const;
 export const KNOWLEDGE_APP_DATA_CATEGORIES = [

@@ -1,0 +1,35 @@
+id: integrations
+uid: herd.layer.integrations
+level: layer
+technical_category: foundation
+
+title:
+  pt-BR: "Integrações"
+  en-US: "Integrations"
+description:
+  pt-BR: "Camada que organiza integrações com sistemas externos por finalidade: pagamento, calendário, comunicação."
+  en-US: "Layer that organizes integrations with external systems by purpose: payment, calendar, communication."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-02
+updated: 2026-05-02
+
+parent: null
+children: []
+consumes: []
+consumed_by: []
+related: []
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

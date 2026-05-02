@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-utils";
 import { decrypt } from "@/lib/encryption";
 import { RechargeService } from "@/lib/services/recharge";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 const createWebhookSchema = z.object({
   topic: z.string().min(1),

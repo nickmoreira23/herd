@@ -43,6 +43,7 @@ import {
   Apple,
   MessageSquare,
   Receipt,
+  Brain,
   type LucideIcon,
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
@@ -84,7 +85,8 @@ const navItems: NavItem[] = [
   { type: "link", href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { type: "link", href: "/admin/chat", label: "Chat", icon: MessageSquare },
   { type: "link", href: "/admin/organization/profile", label: "Organization", icon: Building2 },
-  { type: "link", href: "/admin/organization/knowledge", label: "Knowledge", icon: BookOpen },
+  { type: "link", href: "/admin/organization/knowledge", label: "Knowledge", icon: Brain },
+  { type: "link", href: "/admin/handbook", label: "Handbook", icon: BookOpen },
   { type: "link", href: "/admin/network", label: "Network", icon: Network },
   { type: "link", href: "/admin/marketplace", label: "Marketplace", icon: ShoppingBag },
   { type: "link", href: "/admin/ledger", label: "Ledger", icon: Receipt },

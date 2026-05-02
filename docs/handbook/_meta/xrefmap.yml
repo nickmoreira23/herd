@@ -1,24 +1,150 @@
 # Auto-generated. Do not edit by hand. Regenerate via npm run gen:xrefmap.
 version: 1
 references:
-  herd.block.contacts:
+  herd.block.financial.commissions-payments:
+    level: block
+    id: commissions-payments
+    path: docs/handbook/blocks/financial/commissions-payments
+    title:
+      pt-BR: Pagamentos de Comissões
+      en-US: Commissions Payments
+  herd.block.financial.journal-entries:
+    level: block
+    id: journal-entries
+    path: docs/handbook/blocks/financial/journal-entries
+    title:
+      pt-BR: Lançamentos Contábeis
+      en-US: Journal Entries
+  herd.block.miscellaneous.contacts:
     level: block
     id: contacts
-    path: docs/handbook/block/contacts
+    path: docs/handbook/blocks/miscellaneous/contacts
     title:
       pt-BR: Contatos
       en-US: Contacts
-  herd.block.meetings:
+  herd.block.miscellaneous.meetings:
     level: block
     id: meetings
-    path: docs/handbook/block/meetings
+    path: docs/handbook/blocks/miscellaneous/meetings
     title:
       pt-BR: Reuniões
       en-US: Meetings
-  herd.foundation.handbook:
-    level: foundation
+  herd.category.blocks.financial:
+    level: category
+    id: financial
+    path: docs/handbook/blocks/financial/(overview)
+    title:
+      pt-BR: Blocos Financeiros
+      en-US: Financial Blocks
+  herd.category.blocks.miscellaneous:
+    level: category
+    id: miscellaneous
+    path: docs/handbook/blocks/miscellaneous/(overview)
+    title:
+      pt-BR: Diversos
+      en-US: Miscellaneous
+  herd.category.networks.corporate-network:
+    level: category
+    id: corporate-network
+    path: docs/handbook/networks/corporate-network/(overview)
+    title:
+      pt-BR: Rede Corporativa
+      en-US: Corporate Network
+  herd.category.networks.market-network:
+    level: category
+    id: market-network
+    path: docs/handbook/networks/market-network/(overview)
+    title:
+      pt-BR: Rede de Mercado
+      en-US: Market Network
+  herd.category.tools.financial:
+    level: category
+    id: financial
+    path: docs/handbook/tools/financial/(overview)
+    title:
+      pt-BR: Ferramentas Financeiras
+      en-US: Financial Tools
+  herd.category.tools.infrastructure:
+    level: category
+    id: infrastructure
+    path: docs/handbook/tools/infrastructure/(overview)
+    title:
+      pt-BR: Ferramentas de Infraestrutura
+      en-US: Infrastructure Tools
+  herd.layer.blocks:
+    level: layer
+    id: blocks
+    path: docs/handbook/blocks/(overview)
+    title:
+      pt-BR: Blocos
+      en-US: Blocks
+  herd.layer.integrations:
+    level: layer
+    id: integrations
+    path: docs/handbook/integrations/(overview)
+    title:
+      pt-BR: Integrações
+      en-US: Integrations
+  herd.layer.networks:
+    level: layer
+    id: networks
+    path: docs/handbook/networks/(overview)
+    title:
+      pt-BR: Redes
+      en-US: Networks
+  herd.layer.solutions:
+    level: layer
+    id: solutions
+    path: docs/handbook/solutions/(overview)
+    title:
+      pt-BR: Soluções
+      en-US: Solutions
+  herd.layer.tools:
+    level: layer
+    id: tools
+    path: docs/handbook/tools/(overview)
+    title:
+      pt-BR: Ferramentas
+      en-US: Tools
+  herd.meta.glossary:
+    level: meta
+    id: glossary
+    path: docs/handbook/_meta/glossary
+    title:
+      pt-BR: Glossário
+      en-US: Glossary
+  herd.meta.handbook:
+    level: meta
     id: handbook
-    path: docs/handbook/foundation/handbook
+    path: docs/handbook/_meta/handbook
     title:
       pt-BR: Handbook
       en-US: Handbook
+  herd.meta.llms-txt:
+    level: meta
+    id: llms-txt
+    path: docs/handbook/_meta/llms-txt
+    title:
+      pt-BR: llms.txt
+      en-US: llms.txt
+  herd.meta.mcp:
+    level: meta
+    id: mcp
+    path: docs/handbook/_meta/mcp
+    title:
+      pt-BR: Servidor MCP
+      en-US: MCP Server
+  herd.tool.financial.ledger:
+    level: tool
+    id: ledger
+    path: docs/handbook/tools/financial/ledger
+    title:
+      pt-BR: Ledger
+      en-US: Ledger
+  herd.tool.infrastructure.domain-events:
+    level: tool
+    id: domain-events
+    path: docs/handbook/tools/infrastructure/domain-events
+    title:
+      pt-BR: Eventos de Domínio
+      en-US: Domain Events

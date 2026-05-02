@@ -3,6 +3,8 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import searchIndex from "../../../mcp/generated/search-index.json";
+import { adminLocaleToHandbookLocale } from "@/lib/handbook/config";
 import {
   PanelLeftClose,
   Settings2,
@@ -197,6 +199,11 @@ export const subPanelRegistry: Record<string, SubPanelConfig> = {
       { href: "/admin/ledger/entries", label: "Journal Entries", icon: FileText },
     ],
   },
+  handbook: {
+    id: "handbook",
+    label: "Handbook",
+    links: [], // Dynamically rendered by HandbookSubPanel
+  },
 };
 
 // Map a sidebar href to a sub-panel ID (if it should open one)
@@ -210,6 +217,7 @@ export const hrefToSubPanel: Record<string, string> = {
   "/admin/integrations": "integrations",
   "/admin/marketplace": "marketplace",
   "/admin/ledger": "ledger",
+  "/admin/handbook": "handbook",
 };
 
 // All hrefs that belong to a sub-panel (used to auto-detect active panel from pathname)
@@ -219,6 +227,7 @@ export function getSubPanelIdForPath(pathname: string): string | null {
   if (pathname.startsWith("/admin/tools")) return "tools";
   if (pathname.startsWith("/admin/marketplace")) return "marketplace";
   if (pathname.startsWith("/admin/ledger")) return "ledger";
+  if (pathname.startsWith("/admin/handbook")) return "handbook";
   if (pathname.startsWith("/admin/network")) return "network";
   if (pathname.startsWith("/admin/organization/knowledge")) return "knowledge";
   if (pathname.startsWith("/admin/organization")) return "organization";
@@ -1017,6 +1026,140 @@ function OrganizationSubPanel() {
   );
 }
 
+// ─── Handbook Sub-Panel (5 layers + meta, from search-index) ────────
+
+interface HandbookIndexEntry {
+  uid: string;
+  id: string;
+  level: string;
+  title_pt_BR: string;
+  title_en_US: string;
+}
+
+// Display order for the 5 fixed layers.
+const LAYER_ORDER = ["networks", "solutions", "tools", "blocks", "integrations"];
+
+function HandbookSubPanel() {
+  const pathname = usePathname();
+  const { setSubPanelCollapsed } = useUIStore();
+  const adminLocale = useLocale();
+  const handbookLocale = adminLocaleToHandbookLocale(adminLocale);
+  const titleOf = (e: HandbookIndexEntry) =>
+    handbookLocale === "pt-BR" ? e.title_pt_BR : e.title_en_US;
+
+  const { layers, metaEntries } = useMemo(() => {
+    const all = (searchIndex as { entries: HandbookIndexEntry[] }).entries;
+    const layerMap = new Map<string, HandbookIndexEntry>();
+    const meta: HandbookIndexEntry[] = [];
+    for (const e of all) {
+      if (e.level === "layer") layerMap.set(e.id, e);
+      else if (e.level === "meta") meta.push(e);
+    }
+    const layers = LAYER_ORDER
+      .map((id) => layerMap.get(id))
+      .filter((e): e is HandbookIndexEntry => Boolean(e));
+    meta.sort((a, b) =>
+      handbookLocale === "pt-BR"
+        ? a.title_pt_BR.localeCompare(b.title_pt_BR)
+        : a.title_en_US.localeCompare(b.title_en_US),
+    );
+    return { layers, metaEntries: meta };
+  }, [handbookLocale]);
+
+  const isActive = (href: string) => {
+    if (href === "/admin/handbook") return pathname === "/admin/handbook";
+    return pathname === href || pathname.startsWith(href + "/");
+  };
+
+  return (
+    <div
+      className="shrink-0 flex flex-col border-r border-border bg-card h-screen transition-all duration-200 ease-in-out"
+      style={{ width: SUB_PANEL_WIDTH }}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between pt-6 pb-4">
+        <h2 className="text-[16px] font-semibold truncate pl-6">Handbook</h2>
+        <button
+          onClick={() => setSubPanelCollapsed(true)}
+          className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-accent mr-4"
+          title="Collapse panel"
+        >
+          <PanelLeftClose className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Links */}
+      <nav className="flex-1 pb-4 overflow-y-auto px-3 space-y-0.5">
+        {/* Overview link */}
+        <Link
+          href="/admin/handbook"
+          className={cn(
+            "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+            isActive("/admin/handbook")
+              ? "bg-primary/10 text-primary dark:bg-brand/10 dark:text-brand"
+              : "text-muted-foreground hover:bg-accent hover:text-foreground",
+          )}
+        >
+          <LayoutGrid className="h-4 w-4 shrink-0" />
+          <span className="truncate">Overview</span>
+        </Link>
+
+        {/* Layers section */}
+        <div className="mt-4">
+          <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+            Layers
+          </p>
+          {layers.map((entry) => {
+            const href = `/admin/handbook/${entry.id}`;
+            const active = isActive(href);
+            return (
+              <Link
+                key={entry.uid}
+                href={href}
+                className={cn(
+                  "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  active
+                    ? "bg-primary/10 text-primary dark:bg-brand/10 dark:text-brand"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                )}
+              >
+                <span className="truncate">{titleOf(entry)}</span>
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Meta entries (about the handbook itself) */}
+        {metaEntries.length > 0 && (
+          <div className="mt-6 pt-3 border-t border-border">
+            <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+              Meta
+            </p>
+            {metaEntries.map((entry) => {
+              const href = `/admin/handbook/meta/${entry.id}`;
+              const active = isActive(href);
+              return (
+                <Link
+                  key={entry.uid}
+                  href={href}
+                  className={cn(
+                    "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                    active
+                      ? "bg-primary/10 text-primary dark:bg-brand/10 dark:text-brand"
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                  )}
+                >
+                  <span className="truncate">{titleOf(entry)}</span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </nav>
+    </div>
+  );
+}
+
 // ─── Generic Sub-Panel (static registry) ─────────────────────────────
 
 function GenericSubPanel({ config }: { config: SubPanelConfig }) {
@@ -1087,6 +1230,7 @@ export function SubPanel() {
   if (subPanelId === "tools") return <ToolsSubPanel />;
   if (subPanelId === "marketplace") return <MarketplaceSubPanel />;
   if (subPanelId === "organization") return <OrganizationSubPanel />;
+  if (subPanelId === "handbook") return <HandbookSubPanel />;
 
   // All other panels use static registry
   const config = subPanelRegistry[subPanelId];

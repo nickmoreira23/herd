@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ZodError, type ZodSchema } from "zod";
+import { ZodError, type ZodSchema } from "zod/v4";
 
 export function apiSuccess<T>(data: T, status = 200) {
   return NextResponse.json({ data }, { status });

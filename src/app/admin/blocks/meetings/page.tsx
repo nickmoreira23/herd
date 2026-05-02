@@ -4,6 +4,7 @@ import { MeetingsListClient } from "@/components/meetings/meetings-list-client";
 import type { MeetingRow } from "@/components/meetings/types";
 import MeetingsLoading from "./loading";
 import { connection } from "next/server";
+import { ViewHandbookButtonAutoServer } from "@/components/handbook/view-handbook-button-auto-server";
 
 async function MeetingsContent() {
   await connection();
@@ -27,7 +28,12 @@ async function MeetingsContent() {
     })),
   }));
 
-  return <MeetingsListClient initialMeetings={serialized} />;
+  return (
+    <MeetingsListClient
+      initialMeetings={serialized}
+      extraHeaderActions={<ViewHandbookButtonAutoServer />}
+    />
+  );
 }
 
 export default function MeetingsPage() {

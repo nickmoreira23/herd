@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 import {
   KICKBACK_TYPES,
   PARTNER_BENEFIT_TYPES,

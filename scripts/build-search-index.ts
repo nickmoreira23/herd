@@ -9,6 +9,16 @@ interface IndexEntry {
   uid: string;
   id: string;
   level: string;
+  parent: string | null;
+  status: string;
+  owners: string[];
+  since: string;
+  updated: string;
+  consumes: string[];
+  consumed_by: string[];
+  related: string[];
+  source_paths: string[];
+  admin_paths: string[];
   title_pt_BR: string;
   title_en_US: string;
   description_pt_BR: string;
@@ -41,6 +51,16 @@ async function main() {
       uid: data.uid,
       id: data.id,
       level: data.level,
+      parent: data.parent ?? null,
+      status: data.status,
+      owners: data.owners,
+      since: data.since,
+      updated: data.updated,
+      consumes: data.consumes,
+      consumed_by: data.consumed_by,
+      related: data.related,
+      source_paths: data.source_paths,
+      admin_paths: data.admin_paths,
       title_pt_BR: data.title["pt-BR"],
       title_en_US: data.title["en-US"],
       description_pt_BR: data.description["pt-BR"],

@@ -1,0 +1,35 @@
+id: networks
+uid: herd.layer.networks
+level: layer
+technical_category: foundation
+
+title:
+  pt-BR: "Redes"
+  en-US: "Networks"
+description:
+  pt-BR: "Camada que organiza os diferentes tipos de redes que o HERD suporta: corporativas, de mercado e multi-mercado."
+  en-US: "Layer that organizes the different types of networks HERD supports: corporate, market, and multi-market."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-02
+updated: 2026-05-02
+
+parent: null
+children: []
+consumes: []
+consumed_by: []
+related: []
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

@@ -1,0 +1,35 @@
+id: solutions
+uid: herd.layer.solutions
+level: layer
+technical_category: foundation
+
+title:
+  pt-BR: "Soluções"
+  en-US: "Solutions"
+description:
+  pt-BR: "Camada que organiza pacotes de funcionalidades focados em valor de negócio: por mercado, por departamento, por segmento."
+  en-US: "Layer that organizes feature packages focused on business value: by market, by department, by segment."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-02
+updated: 2026-05-02
+
+parent: null
+children: []
+consumes: []
+consumed_by: []
+related: []
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

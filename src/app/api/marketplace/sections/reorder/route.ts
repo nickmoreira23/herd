@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
+import { z } from "zod/v4";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError, parseAndValidate } from "@/lib/api-utils";
 

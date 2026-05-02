@@ -1,0 +1,39 @@
+id: domain-events
+uid: herd.tool.infrastructure.domain-events
+level: tool
+technical_category: foundation
+title:
+  pt-BR: Eventos de Domínio
+  en-US: Domain Events
+description:
+  pt-BR: Sinais imutáveis emitidos quando algo importante acontece no produto.
+    Outras features inscrevem-se para reagir, com garantia transacional via
+    outbox.
+  en-US: Immutable signals emitted when something significant happens in the
+    product. Other features subscribe to react, with transactional guarantees
+    via the outbox pattern.
+status: active
+owners:
+  - "@nick"
+since: 2026-04-30
+updated: 2026-05-02
+parent: herd.category.tools.infrastructure
+children: []
+consumes: []
+consumed_by: []
+related:
+  - herd.tool.financial.ledger
+source_paths:
+  - src/lib/domain-events
+  - src/scripts/worker-domain-events.ts
+artifacts:
+  handbook: true
+  skill: true
+  mcp: false
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

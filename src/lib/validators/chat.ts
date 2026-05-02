@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 
 export const CLAUDE_MODELS = [
   { id: "claude-opus-4-20250514", label: "Opus", description: "Most capable" },

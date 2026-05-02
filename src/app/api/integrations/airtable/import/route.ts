@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import { apiSuccess, apiError } from "@/lib/api-utils";
 import { decrypt } from "@/lib/encryption";
-import { z } from "zod";
+import { z } from "zod/v4";
 import {
   AirtableService,
   downloadAirtableAttachment,
@@ -17,7 +17,7 @@ const fieldMappingSchema = z.object({
   airtableFieldType: z.string(),
   herdFieldType: z.string(),
   herdFieldName: z.string(),
-  options: z.record(z.unknown()).optional(),
+  options: z.record(z.string(), z.unknown()).optional(),
   skip: z.boolean().optional(),
 });
 

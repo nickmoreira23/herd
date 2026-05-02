@@ -1,0 +1,35 @@
+id: tools
+uid: herd.layer.tools
+level: layer
+technical_category: foundation
+
+title:
+  pt-BR: "Ferramentas"
+  en-US: "Tools"
+description:
+  pt-BR: "Camada que organiza ferramentas por sua natureza funcional: financeiras, jurídicas, de marketing, de vendas."
+  en-US: "Layer that organizes tools by functional nature: financial, legal, marketing, sales."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-02
+updated: 2026-05-02
+
+parent: null
+children: []
+consumes: []
+consumed_by: []
+related: []
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog
