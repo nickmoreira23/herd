@@ -64,6 +64,13 @@ references:
     title:
       pt-BR: Ferramentas Financeiras
       en-US: Financial Tools
+  herd.category.tools.infrastructure:
+    level: category
+    id: infrastructure
+    path: docs/handbook/tools/infrastructure/(overview)
+    title:
+      pt-BR: Ferramentas de Infraestrutura
+      en-US: Infrastructure Tools
   herd.layer.blocks:
     level: layer
     id: blocks
@@ -134,3 +141,10 @@ references:
     title:
       pt-BR: Ledger
       en-US: Ledger
+  herd.tool.infrastructure.domain-events:
+    level: tool
+    id: domain-events
+    path: docs/handbook/tools/infrastructure/domain-events
+    title:
+      pt-BR: Eventos de Domínio
+      en-US: Domain Events

@@ -1,7 +1,7 @@
 # HERD
 
 > HERD is an AI-native B2B platform for marketing networks.
-> Currently 19 documented entries across 5 layers (Networks, Solutions, Tools, Blocks, Integrations) plus a meta namespace.
+> Currently 21 documented entries across 5 layers (Networks, Solutions, Tools, Blocks, Integrations) plus a meta namespace.
 
 ## Documentation
 
@@ -20,6 +20,7 @@
 - [Corporate Network](https://herd.app/admin/handbook/networks/corporate-network): A company's internal network: organization, channels, profiles, departments, permissions.
 - [Market Network](https://herd.app/admin/handbook/networks/market-network): The external network connecting multiple companies in the same market.
 - [Financial Tools](https://herd.app/admin/handbook/tools/financial): Tools that organize, process, and audit financial flows of the product, from internal accounting to integration with payment and billing systems.
+- [Infrastructure Tools](https://herd.app/admin/handbook/tools/infrastructure): Cross-cutting functional tools that sustain other features without belonging to a specific business domain — events, queues, observability.
 - [Financial Blocks](https://herd.app/admin/handbook/blocks/financial): Financial data primitives — records, flows, immutable events — that serve as the foundation for tools and product flows.
 - [Miscellaneous](https://herd.app/admin/handbook/blocks/miscellaneous): Blocks not yet classified into a specific category. Temporary accommodation — debt to resolve during backfill.
 

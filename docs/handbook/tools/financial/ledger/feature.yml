@@ -21,7 +21,8 @@ consumes:
   - herd.block.financial.commissions-payments
   - herd.block.financial.journal-entries
 consumed_by: []
-related: []
+related:
+  - herd.tool.infrastructure.domain-events
 source_paths:
   - src/lib/ledger
   - src/components/ledger

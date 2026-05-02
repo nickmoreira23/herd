@@ -14,6 +14,12 @@ Glossário global agregado a partir das seções `## Glossary` de todas as entri
 
 <!-- BEGIN_GENERATED_GLOSSARY -->
 
+### Aggregate
+
+**From [Eventos de Domínio](/admin/handbook/tools/infrastructure/domain-events):**
+
+Entidade de domínio sobre a qual um evento é. Identificada por `aggregateType` + `aggregateId` (UUID).
+
 ### Append-only
 
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
@@ -38,17 +44,39 @@ Esquema de auth onde o cliente envia `Authorization: Bearer <token>` no header. 
 
 Entry nova criada para anular o efeito de uma entry anterior; preserva a entry original intacta.
 
+### Domain Event
+
+**From [Eventos de Domínio](/admin/handbook/tools/infrastructure/domain-events):**
+
+Registro imutável de algo significativo que aconteceu em um bounded context. Fato no passado, não comando.
+
 ### Double-entry
 
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
 
 Modelo contábil onde todo movimento é registrado simultaneamente como débito e crédito em contas diferentes, somando zero.
 
+### Exhaustion
+
+**From [Eventos de Domínio](/admin/handbook/tools/infrastructure/domain-events):**
+
+Estado após 5 tentativas falhas. `nextAttemptAt = NULL`, auto-retry para, intervenção manual necessária.
+
+### Handler
+
+**From [Eventos de Domínio](/admin/handbook/tools/infrastructure/domain-events):**
+
+Função que reage a um evento de um dado `eventType`. Registrada estaticamente. Deve ser idempotente.
+
 ### Idempotency key
 
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
 
 Chave que identifica unicamente uma requisição; permite retry seguro sem efeito duplicado.
+
+**From [Eventos de Domínio](/admin/handbook/tools/infrastructure/domain-events):**
+
+Chave única opcional na emissão. Emit repetido com a mesma chave retorna o evento existente se payload match, lança se divergir.
 
 ### Journal entry
 
@@ -85,6 +113,12 @@ Model Context Protocol — spec aberta que define como AI assistants consultam r
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
 
 Representação `(amountCents: bigint, currency)` — nunca `number` ou `Decimal` solto.
+
+### Outbox
+
+**From [Eventos de Domínio](/admin/handbook/tools/infrastructure/domain-events):**
+
+A tabela `domain_events` que guarda eventos entre emissão e entrega. Transacional com a mudança de estado do produtor.
 
 ### postedAt
 
@@ -139,5 +173,11 @@ Transport MCP via HTTP que suporta tanto SSE quanto request/response direto. Imp
 **From [Servidor MCP](/admin/handbook/meta/mcp):**
 
 Função invocável pelo cliente MCP. Cada tool tem nome, descrição, input schema (JSON Schema) e implementação.
+
+### Worker
+
+**From [Eventos de Domínio](/admin/handbook/tools/infrastructure/domain-events):**
+
+Processo CLI (`npm run worker:domain-events`) que pega eventos pendentes e despacha para handlers.
 
 <!-- END_GENERATED_GLOSSARY -->

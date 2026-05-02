@@ -12,10 +12,17 @@ aggregates:
 status: stable
 metadata:
   herd:
-    classification_pending: unclassified
-    target_path: .agents/skills/feature-foundation-domain-events/
-    notes: "Migration to feature-{level}-{id}/ layout deferred to backfill etapa."
+    classification_pending: migrated_to_handbook
+    target_path: docs/handbook/tools/infrastructure/domain-events/
+    notes: "Canonical content migrated to the Handbook. This file is kept as a backward-compatible shim for existing references and may be removed once all callers point to the Handbook entry."
 ---
+
+> **Note:** This skill has been migrated to the Handbook. Canonical
+> documentation now lives at
+> [`docs/handbook/tools/infrastructure/domain-events/`](../../../docs/handbook/tools/infrastructure/domain-events/)
+> (UID `herd.tool.infrastructure.domain-events`). This file is kept for
+> backward compat with existing references and may be removed in a future
+> cleanup.
 
 # Domain Events — Skill Reference
 
