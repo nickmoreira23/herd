@@ -1,0 +1,34 @@
+name: Handbook Generated Artifacts
+
+on:
+  pull_request:
+    paths:
+      - 'docs/handbook/**'
+      - '.agents/skills/**'
+      - 'mcp/generated/**'
+      - 'schemas/**'
+      - 'scripts/build-*.ts'
+
+jobs:
+  freshness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run gen:all
+
+      - name: Fail if generated artifacts drift
+        run: |
+          if [ -n "$(git status --porcelain mcp/generated/ docs/handbook/_meta/xrefmap.yml schemas/)" ]; then
+            echo "::error::Generated artifacts out of date. Run 'npm run gen:all' and commit."
+            git status --porcelain
+            git diff
+            exit 1
+          fi

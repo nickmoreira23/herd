@@ -1,14 +1,22 @@
 ---
+name: ledger-foundation
+description: Working with HERD's double-entry ledger. Use this skill whenever the user mentions accounts, journal entries, journal lines, money operations, balance calculations, reversals, idempotency in financial flows, or modifies code under src/lib/ledger/ or src/lib/money/. Read this BEFORE making any financial change. Do NOT use for non-financial accounting concerns (audit logs of unrelated state, etc.) — this skill is specifically about the double-entry ledger.
+license: Apache-2.0
 title: Ledger (Double-Entry Bookkeeping)
 phase: "1"
 etapa: "1.9"
-version: "1.0"
+version: "1.1"
 last_updated: "2026-04-30"
 aggregates:
   - Account
   - JournalEntry
   - JournalLine
 status: stable
+metadata:
+  herd:
+    classification_pending: foundation
+    target_path: .agents/skills/feature-foundation-ledger/
+    notes: "Migration to feature-{level}-{id}/ layout deferred to backfill etapa."
 ---
 
 # Ledger — Skill Reference

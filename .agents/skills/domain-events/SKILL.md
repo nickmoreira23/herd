@@ -1,4 +1,7 @@
 ---
+name: domain-events-foundation
+description: Working with HERD's domain events outbox pattern. Use this skill whenever the user mentions emitting events, event handlers, the domain_events table, retry policy, idempotency keys, or modifies code under src/lib/domain-events/. Read this BEFORE making any change to event emission, handler registration, or the worker. Do NOT use for unrelated event-like patterns (UI events, analytics events) — this skill is specifically about the domain events outbox.
+license: Apache-2.0
 title: Domain Events Outbox
 phase: "1"
 etapa: "1.9"
@@ -7,6 +10,11 @@ last_updated: "2026-04-30"
 aggregates:
   - DomainEvent
 status: stable
+metadata:
+  herd:
+    classification_pending: foundation
+    target_path: .agents/skills/feature-foundation-domain-events/
+    notes: "Migration to feature-{level}-{id}/ layout deferred to backfill etapa."
 ---
 
 # Domain Events — Skill Reference
