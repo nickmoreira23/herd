@@ -38,6 +38,12 @@ Histórico cronológico imutável de todas as mudanças, usado para auditoria e 
 
 Esquema de auth onde o cliente envia `Authorization: Bearer <token>` no header. Day-1 do HTTP transport usa token estático configurado via env var.
 
+### BlockGroupSpec
+
+**From [R0 — Manifest Registry Foundation](/admin/handbook/refactor/r0-manifest-registry):**
+
+especificação aninhada para grupos de block (ex.: packages como grupo de products). Mora dentro do campo `groups?` do block pai. R3 exercitará isto.
+
 ### Compensating entry
 
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
@@ -55,6 +61,12 @@ Registro imutável de algo significativo que aconteceu em um bounded context. Fa
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
 
 Modelo contábil onde todo movimento é registrado simultaneamente como débito e crédito em contas diferentes, somando zero.
+
+### EntityManifest
+
+**From [R0 — Manifest Registry Foundation](/admin/handbook/refactor/r0-manifest-registry):**
+
+união discriminada de `BlockManifest | ToolManifest | FeatureManifest`. Substitui o `BlockManifest` monolítico pré-R0.
 
 ### Exhaustion
 
@@ -95,6 +107,12 @@ Componente individual de uma entry — vincula uma account, direção (D/C), amo
 **From [Servidor MCP](/admin/handbook/meta/mcp):**
 
 Protocolo de RPC baseado em JSON usado pelo MCP. Requests têm `{jsonrpc, id, method, params}`; responses têm `{jsonrpc, id, result}` ou `{jsonrpc, id, error}`.
+
+### kind
+
+**From [R0 — Manifest Registry Foundation](/admin/handbook/refactor/r0-manifest-registry):**
+
+campo discriminador em `EntityManifest`. Valores: `"block" | "tool" | "top_level_feature"`. Determina shape estrutural e onde o manifest mora fisicamente.
 
 ### llms.txt
 
@@ -173,6 +191,12 @@ Transport MCP via HTTP que suporta tanto SSE quanto request/response direto. Imp
 **From [Servidor MCP](/admin/handbook/meta/mcp):**
 
 Função invocável pelo cliente MCP. Cada tool tem nome, descrição, input schema (JSON Schema) e implementação.
+
+### type guard
+
+**From [R0 — Manifest Registry Foundation](/admin/handbook/refactor/r0-manifest-registry):**
+
+função de narrowing TypeScript (`isBlockManifest`, etc.) que confirma o `kind` de um `EntityManifest` em runtime, permitindo o compilador acessar campos kind-specific com segurança.
 
 ### Worker
 

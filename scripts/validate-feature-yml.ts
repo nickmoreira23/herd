@@ -11,6 +11,7 @@ const FIXED_LAYERS = new Set([
   "tools",
   "blocks",
   "integrations",
+  "refactor",
 ]);
 
 const FEATURE_LEVELS = new Set([
