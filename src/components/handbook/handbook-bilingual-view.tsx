@@ -59,6 +59,10 @@ export function HandbookBilingualView({
 }: Props) {
   const { locale, setOverride, clearOverride, hasOverride } =
     useHandbookLocale(userDefaultLocale);
+  // Single-locale render: only the active locale flows to the children.
+  // The other locale's body never enters the DOM. If you ever see "double"
+  // counts via querySelectorAll in dev, that's HMR leaving an orphan
+  // <main> in the tree — query inside the visible main only.
   const data = locale === "pt-BR" ? entry.ptBR : entry.enUS;
   const githubUrl = githubEditUrl(data.relativePath);
   const transformedBody = transformMarkdown(data.body);
