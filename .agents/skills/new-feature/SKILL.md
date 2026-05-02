@@ -6,7 +6,7 @@ metadata:
   herd:
     is_meta: true
     invokes_script: scripts/run.ts
-    version: "2.0"
+    version: "2.1"
     classification: meta-skill
 ---
 
@@ -91,6 +91,32 @@ The script prints next steps but does NOT run them automatically:
    (search-index.json, manifest.json, xrefmap.yml).
 4. Run `npm run validate:handbook` to verify schema + graph rules.
 5. Stage and commit when ready.
+
+## After scaffolding
+
+The scaffolder produces structure (feature.yml + 2 markdowns with TODOs).
+Handbook entries are living documents — they keep maturing as the
+feature does. The expected lifecycle:
+
+1. **Scaffold** — `npm run gen:feature` creates the structure with
+   `status: draft` and TODOs in every perspective.
+2. **Fill perspectives** as the feature matures. Don't try to fill
+   everything at scaffold time — Business and Architecture usually
+   come first; Product, Operations, Glossary, Changelog accrete over
+   days/weeks. Glossary terms in entries are aggregated automatically
+   into the global glossary at `herd.meta.glossary` on next `gen:all`.
+3. **Promote to active** — when the feature reaches production
+   maturity, change `status: draft` → `status: active` in feature.yml
+   and bump `updated:` to the current date.
+4. **Maintain** — when code changes alter behavior documented in any
+   perspective, update the perspective in both locales and bump
+   `updated:`. See AGENTS.md → "Documentation discipline" for the
+   full rule.
+5. **Regenerate** — `npm run gen:all` after any content change.
+   `npm run validate:handbook` confirms the structure stays valid.
+6. **Commit** the Handbook update **alongside** the code that
+   triggered it, not as a separate PR. Doc-and-code together is the
+   convention.
 
 ## Failure modes
 

@@ -302,6 +302,60 @@ defined in only one locale appear in the other locale with a
 deterministic output (the "Last updated" line is derived from the
 `updated:` field of contributing entries, never from `Date.now()`).
 
+## Documentation discipline
+
+The Handbook (`docs/handbook/`) is the source of truth for what HERD
+is, how it works, and how to operate it. It complements (not replaces)
+inline code comments and READMEs.
+
+### When to update the Handbook
+
+If your PR modifies code in `src/lib/[feature]/`, `src/services/[feature]/`,
+or an equivalent product path, check whether a corresponding Handbook
+entry exists (search `docs/handbook/**/feature.yml` for matching
+`source_paths`):
+
+- **Entry exists, behavior changed:** update the relevant perspective(s)
+  in `pt-BR.md` and `en-US.md`, bump `updated:` in `feature.yml`. Run
+  `npm run gen:all` and `npm run validate:handbook`.
+- **Entry exists, only refactor (no behavior change):** no Handbook
+  update needed.
+- **Entry doesn't exist, feature is substantive:** create the entry
+  via `npm run gen:feature` and fill at least Business + Architecture
+  perspectives now; the other perspectives can mature with the feature.
+- **Entry doesn't exist, feature is internal/experimental:** add the
+  path to a future backfill backlog (not blocking).
+
+### Specs that include substantive work
+
+Specs produced via the chat-code-handoff protocol that crave
+substantive changes (new feature, refactor of existing feature) should
+include an explicit **"Update Handbook"** task before the commit task.
+Trivial changes (typos, formatting, lint debt cleanup, CI housekeeping,
+import migrations without behavior change) skip this task. Changes to
+the Handbook schema or to its tooling (scripts under `scripts/build-*.ts`,
+`schemas/feature.zod.ts`) always include it (self-reference).
+
+### Cross-references and allowlist
+
+If your feature consumes another feature, declare it in `consumes:` of
+`feature.yml` using the full UID. If the target doesn't exist yet, add
+it to `docs/handbook/_meta/.legacy-allowlist.txt` (strangler-fig
+pattern). The allowlist must only shrink — Danger.js warns on growth.
+
+### Bilingual parity
+
+`pt-BR.md` and `en-US.md` should be content-equivalent (not literal
+translation — same coverage, idiomatic prose in each locale). Danger.js
+warns if you only update one locale.
+
+### Why this matters
+
+Without doc discipline, the Handbook drifts from reality. A drifted
+Handbook is worse than no Handbook — it lies confidently. The
+5-minute cost of updating docs alongside code is small; the cost of
+debugging based on stale docs is enormous.
+
 ## Boundaries
 
 - Never edit `mcp/generated/`, `schemas/feature.schema.json`,
