@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Plus, Minus, Loader2 } from "lucide-react";
-import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -14,14 +13,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { BLOCK_ICON_MAP } from "@/lib/blocks/block-meta";
 import { getBlockLabel, getCategoryLabel } from "@/lib/blocks/block-labels";
-import { useLocale } from "@/lib/i18n/locale-context";
+import { useLocale, useT } from "@/lib/i18n/locale-context";
+import { notifyError, notifySuccess } from "@/lib/i18n/notify";
 import type { Locale } from "@/lib/i18n/locales";
+import type { MessageKey } from "@/lib/i18n/messages/pt-BR";
 import type { BlockCategory } from "@/lib/blocks/block-categories";
 import { DEFAULT_CATEGORY_COLOR } from "@/lib/blocks/block-categories";
 import {
   KNOWLEDGE_BLOCKS_SETTING_KEY,
   KNOWLEDGE_FALLBACK_CATEGORY_ID,
-  KNOWLEDGE_FALLBACK_CATEGORY_LABEL,
   groupSelectedSources,
 } from "@/lib/knowledge-commons/constants";
 
@@ -46,6 +46,7 @@ export function ManageKnowledgeDialog({
   allBlockNames,
   onSave,
 }: Props) {
+  const t = useT();
   const locale = useLocale();
   const [selected, setSelected] = useState<Set<string>>(new Set(value));
   const [saving, setSaving] = useState(false);
@@ -56,7 +57,7 @@ export function ManageKnowledgeDialog({
 
   const categoryLabel = (id: string) =>
     id === KNOWLEDGE_FALLBACK_CATEGORY_ID
-      ? KNOWLEDGE_FALLBACK_CATEGORY_LABEL
+      ? t("knowledge.manage.fallback_category")
       : getCategoryLabel(id, locale);
 
   const categoryColor = (id: string) =>
@@ -131,10 +132,10 @@ export function ManageKnowledgeDialog({
       });
       if (!res.ok) throw new Error("Failed to save");
       onSave(new Set(selected));
-      toast.success("Sources updated");
+      notifySuccess("knowledge.manage.feedback.saved", t);
       onOpenChange(false);
     } catch {
-      toast.error("Failed to save settings");
+      notifyError("error.knowledge.manage.save_failed" as MessageKey, t);
     } finally {
       setSaving(false);
     }
@@ -144,10 +145,9 @@ export function ManageKnowledgeDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Manage Sources</DialogTitle>
+          <DialogTitle>{t("knowledge.manage.title")}</DialogTitle>
           <DialogDescription>
-            Choose which blocks become knowledge sources. Categories and order
-            mirror the Blocks tool.
+            {t("knowledge.manage.description")}
           </DialogDescription>
         </DialogHeader>
 
@@ -155,12 +155,12 @@ export function ManageKnowledgeDialog({
           {/* Available sources */}
           <div className="flex flex-col min-h-0">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">
-              Available sources
+              {t("knowledge.manage.available_sources")}
             </p>
             <div className="flex-1 overflow-y-auto rounded-md border bg-background/50 p-2 space-y-3">
               {noneAvailable && (
                 <p className="text-xs text-muted-foreground italic px-2 py-3 text-center">
-                  All blocks added.
+                  {t("knowledge.manage.all_added")}
                 </p>
               )}
               {availableGroups.map((group) => (
@@ -172,6 +172,8 @@ export function ManageKnowledgeDialog({
                   action="add"
                   onAction={addBlock}
                   color={categoryColor(group.categoryId)}
+                  addTitle={t("knowledge.manage.action.add")}
+                  removeTitle={t("knowledge.manage.action.remove")}
                 />
               ))}
             </div>
@@ -180,12 +182,12 @@ export function ManageKnowledgeDialog({
           {/* Selected sources */}
           <div className="flex flex-col min-h-0">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">
-              Selected sources
+              {t("knowledge.manage.selected_sources")}
             </p>
             <div className="flex-1 overflow-y-auto rounded-md border bg-background/50 p-2 space-y-3">
               {noneSelected && (
                 <p className="text-xs text-muted-foreground italic px-2 py-3 text-center">
-                  No sources selected yet.
+                  {t("knowledge.manage.none_selected")}
                 </p>
               )}
               {selectedGroups.map((group) => (
@@ -196,6 +198,8 @@ export function ManageKnowledgeDialog({
                   locale={locale}
                   action="remove"
                   onAction={removeBlock}
+                  addTitle={t("knowledge.manage.action.add")}
+                  removeTitle={t("knowledge.manage.action.remove")}
                 />
               ))}
             </div>
@@ -208,11 +212,11 @@ export function ManageKnowledgeDialog({
             onClick={() => onOpenChange(false)}
             disabled={saving}
           >
-            Cancel
+            {t("common.actions.cancel")}
           </Button>
           <Button onClick={handleSave} disabled={saving}>
             {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Save
+            {t("common.actions.save")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -227,6 +231,8 @@ function CategoryGroup({
   action,
   onAction,
   color,
+  addTitle,
+  removeTitle,
 }: {
   label: string;
   blocks: string[];
@@ -235,6 +241,8 @@ function CategoryGroup({
   onAction: (blockName: string) => void;
   /** When set, header label and block icons inherit this hex color. */
   color?: string;
+  addTitle: string;
+  removeTitle: string;
 }) {
   return (
     <div>
@@ -266,7 +274,7 @@ function CategoryGroup({
                 variant="ghost"
                 className="h-6 w-6"
                 onClick={() => onAction(name)}
-                title={action === "add" ? "Add as source" : "Remove source"}
+                title={action === "add" ? addTitle : removeTitle}
               >
                 {action === "add" ? (
                   <Plus className="h-3.5 w-3.5" />

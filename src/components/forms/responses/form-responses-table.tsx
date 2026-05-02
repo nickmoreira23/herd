@@ -8,12 +8,14 @@ import { FormResponseDetail } from "./form-response-detail";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Search } from "lucide-react";
-import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import type {
   FormResponseRow,
   FormSectionRow,
 } from "../types";
+import { useT, useLocale } from "@/lib/i18n/locale-context";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
+import { pluralize } from "@/lib/i18n/pluralize";
 
 interface FormResponsesTableProps {
   formId: string;
@@ -29,6 +31,8 @@ export function FormResponsesTable({
   sections,
 }: FormResponsesTableProps) {
   const router = useRouter();
+  const t = useT();
+  const locale = useLocale();
   const [responses, setResponses] =
     useState<FormResponseRow[]>(initialResponses);
   const [search, setSearch] = useState("");
@@ -60,12 +64,12 @@ export function FormResponsesTable({
       );
       if (res.ok) {
         await refreshResponses();
-        toast.success("Response deleted");
+        notifySuccess("forms.feedback.response_deleted", t);
       } else {
-        toast.error("Failed to delete response");
+        notifyError("error.forms.response_delete_failed", t);
       }
     },
-    [formId, refreshResponses]
+    [formId, refreshResponses, t]
   );
 
   const columns = useMemo(
@@ -73,9 +77,16 @@ export function FormResponsesTable({
       getFormResponseColumns({
         onView: (r) => setViewTarget(r),
         onDelete: handleDelete,
+        t,
+        locale,
       }),
-    [handleDelete]
+    [handleDelete, t, locale]
   );
+
+  const totalDescription = pluralize(responses.length, locale, {
+    one: t("forms.responses.description_one", { count: responses.length }),
+    other: t("forms.responses.description_other", { count: responses.length }),
+  });
 
   return (
     <>
@@ -89,13 +100,13 @@ export function FormResponsesTable({
             }
           >
             <ArrowLeft className="h-3.5 w-3.5 mr-1" />
-            Back to Form
+            {t("forms.responses.back_to_form")}
           </Button>
         </div>
 
         <PageHeader
-          title={`Responses — ${formName}`}
-          description={`${responses.length} total response${responses.length !== 1 ? "s" : ""}`}
+          title={t("forms.responses.title", { name: formName })}
+          description={totalDescription}
           className="pl-0 pt-0"
         />
 
@@ -108,13 +119,13 @@ export function FormResponsesTable({
                 <div className="relative flex-1 min-w-0">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                   <Input
-                    placeholder="Search by name or email..."
+                    placeholder={t("forms.responses.search_placeholder")}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="pl-8 pr-20 h-8 text-xs w-full"
                   />
                   <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground tabular-nums">
-                    {filteredResponses.length} items
+                    {t("forms.list.items_count", { count: filteredResponses.length })}
                   </span>
                 </div>
               </div>
@@ -130,6 +141,7 @@ export function FormResponsesTable({
         }}
         response={viewTarget}
         sections={sections}
+        locale={locale}
       />
     </>
   );

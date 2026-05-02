@@ -1,55 +1,61 @@
 "use client";
 
 import Link from "next/link";
-import {
-  FileText,
-  Image,
-  Video,
-  Music,
-  Table2,
-  ClipboardList,
-  Link2,
-  Rss,
-  Plug,
-  Settings2,
-  type LucideIcon,
-} from "lucide-react";
+import { Settings2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { useLocale, useT } from "@/lib/i18n/locale-context";
+import { formatNumber } from "@/lib/i18n/format-number";
+import { getBlockLabel } from "@/lib/blocks/block-labels";
+import { BLOCK_ICON_MAP } from "@/lib/blocks/block-meta";
 
 interface BlockInfo {
   name: string;
-  label: string;
-  icon: LucideIcon;
   href: string;
   count: number;
 }
 
-const BLOCK_CONFIG: Array<{
-  name: string;
-  label: string;
-  icon: LucideIcon;
-  href: string;
-}> = [
-  { name: "documents", label: "Documents", icon: FileText, href: "/admin/organization/knowledge/documents" },
-  { name: "images", label: "Images", icon: Image, href: "/admin/organization/knowledge/images" },
-  { name: "videos", label: "Videos", icon: Video, href: "/admin/organization/knowledge/videos" },
-  { name: "audios", label: "Audios", icon: Music, href: "/admin/organization/knowledge/audios" },
-  { name: "tables", label: "Tables", icon: Table2, href: "/admin/organization/knowledge/tables" },
-  { name: "forms", label: "Forms", icon: ClipboardList, href: "/admin/organization/knowledge/forms" },
-  { name: "links", label: "Links", icon: Link2, href: "/admin/organization/knowledge/links" },
-  { name: "feeds", label: "Feeds", icon: Rss, href: "/admin/organization/knowledge/feeds" },
-  { name: "apps", label: "Apps", icon: Plug, href: "/admin/organization/knowledge/apps" },
-];
+const BLOCK_HREF: Record<string, string> = {
+  documents: "/admin/organization/knowledge/documents",
+  images: "/admin/organization/knowledge/images",
+  videos: "/admin/organization/knowledge/videos",
+  audios: "/admin/organization/knowledge/audios",
+  tables: "/admin/organization/knowledge/tables",
+  forms: "/admin/organization/knowledge/forms",
+  links: "/admin/organization/knowledge/links",
+  feeds: "/admin/organization/knowledge/feeds",
+  apps: "/admin/organization/knowledge/apps",
+};
+
+const BLOCK_ORDER = [
+  "documents",
+  "images",
+  "videos",
+  "audios",
+  "tables",
+  "forms",
+  "links",
+  "feeds",
+  "apps",
+] as const;
 
 interface KnowledgeDashboardProps {
   counts: Record<string, number>;
   enabledBlocks: string[];
 }
 
-export function KnowledgeDashboard({ counts, enabledBlocks }: KnowledgeDashboardProps) {
-  const blocks: BlockInfo[] = BLOCK_CONFIG
-    .filter((b) => enabledBlocks.includes(b.name))
-    .map((b) => ({ ...b, count: counts[b.name] ?? 0 }));
+export function KnowledgeDashboard({
+  counts,
+  enabledBlocks,
+}: KnowledgeDashboardProps) {
+  const t = useT();
+  const locale = useLocale();
+  const blocks: BlockInfo[] = BLOCK_ORDER
+    .filter((b) => enabledBlocks.includes(b))
+    .map((b) => ({
+      name: b,
+      href: BLOCK_HREF[b] ?? "#",
+      count: counts[b] ?? 0,
+    }));
 
   const totalItems = Object.values(counts).reduce((sum, c) => sum + c, 0);
 
@@ -57,9 +63,14 @@ export function KnowledgeDashboard({ counts, enabledBlocks }: KnowledgeDashboard
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold">All Sources</h1>
+        <h1 className="text-2xl font-bold">
+          {t("knowledge.dashboard.title")}
+        </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          {totalItems.toLocaleString()} total items across {blocks.length} sources
+          {t("knowledge.dashboard.summary", {
+            total: formatNumber(totalItems, locale, "integer"),
+            count: blocks.length,
+          })}
         </p>
       </div>
 
@@ -68,29 +79,38 @@ export function KnowledgeDashboard({ counts, enabledBlocks }: KnowledgeDashboard
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Settings2 className="h-10 w-10 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-1">No sources selected</h3>
+            <h3 className="text-lg font-medium mb-1">
+              {t("knowledge.dashboard.empty.title")}
+            </h3>
             <p className="text-sm text-muted-foreground">
-              Use “Manage Sources” in the sidebar to add blocks.
+              {t("knowledge.dashboard.empty.description")}
             </p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {blocks.map((block) => (
-            <Link key={block.name} href={block.href}>
-              <Card className="hover:border-primary/50 transition-colors cursor-pointer h-full">
-                <CardContent className="flex items-center gap-4 py-5">
-                  <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/10 shrink-0">
-                    <block.icon className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-medium truncate">{block.label}</h3>
-                    <p className="text-2xl font-bold tabular-nums">{block.count.toLocaleString()}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+          {blocks.map((block) => {
+            const Icon = BLOCK_ICON_MAP[block.name];
+            return (
+              <Link key={block.name} href={block.href}>
+                <Card className="hover:border-primary/50 transition-colors cursor-pointer h-full">
+                  <CardContent className="flex items-center gap-4 py-5">
+                    <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/10 shrink-0">
+                      {Icon && <Icon className="h-5 w-5 text-primary" />}
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-medium truncate">
+                        {getBlockLabel(block.name, locale)}
+                      </h3>
+                      <p className="text-2xl font-bold tabular-nums">
+                        {formatNumber(block.count, locale, "integer")}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

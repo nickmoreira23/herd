@@ -14,7 +14,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Rss, Clock, CalendarDays, CalendarRange, Loader2, X, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import { notifyError, notifySuccess } from "@/lib/i18n/notify";
+import {
+  FEED_SYNC_INTERVALS,
+  feedSyncIntervalLabelKey,
+  type FeedSyncInterval,
+} from "@/lib/feeds/sync-intervals";
 
 interface AddFeedModalProps {
   open: boolean;
@@ -22,23 +28,22 @@ interface AddFeedModalProps {
   onComplete: () => void;
 }
 
-type Frequency = "HOURLY" | "DAILY" | "WEEKLY";
-
-const FREQUENCY_OPTIONS: { value: Frequency; label: string; icon: typeof Clock }[] = [
-  { value: "HOURLY", label: "Hourly", icon: Clock },
-  { value: "DAILY", label: "Daily", icon: CalendarDays },
-  { value: "WEEKLY", label: "Weekly", icon: CalendarRange },
-];
+const FREQUENCY_ICONS: Record<FeedSyncInterval, typeof Clock> = {
+  HOURLY: Clock,
+  DAILY: CalendarDays,
+  WEEKLY: CalendarRange,
+};
 
 export function AddFeedModal({
   open,
   onOpenChange,
   onComplete,
 }: AddFeedModalProps) {
+  const t = useT();
   const [feedUrl, setFeedUrl] = useState("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [frequency, setFrequency] = useState<Frequency>("DAILY");
+  const [frequency, setFrequency] = useState<FeedSyncInterval>("DAILY");
   const [instructions, setInstructions] = useState("");
   const [includeKeywords, setIncludeKeywords] = useState<string[]>([]);
   const [excludeKeywords, setExcludeKeywords] = useState<string[]>([]);
@@ -90,14 +95,14 @@ export function AddFeedModal({
 
   async function handleSubmit() {
     if (!feedUrl.trim()) {
-      toast.error("Feed URL is required");
+      notifyError("error.feeds.url_required", t);
       return;
     }
 
     try {
       new URL(feedUrl.trim());
     } catch {
-      toast.error("Please enter a valid URL");
+      notifyError("error.feeds.invalid_url", t);
       return;
     }
 
@@ -119,12 +124,11 @@ export function AddFeedModal({
       });
 
       if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        toast.error(err?.error || "Failed to add feed");
+        notifyError("error.feeds.add_failed", t);
         return;
       }
 
-      toast.success("Feed added — syncing articles");
+      notifySuccess("feeds.feedback.added", t);
       reset();
       onOpenChange(false);
       onComplete();
@@ -145,42 +149,42 @@ export function AddFeedModal({
     >
       <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add RSS Feed</DialogTitle>
+          <DialogTitle>{t("feeds.add_modal.title")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           {/* Feed URL */}
           <div className="space-y-1.5">
-            <Label className="text-xs">Feed URL</Label>
+            <Label className="text-xs">{t("feeds.add_modal.feed_url.label")}</Label>
             <Input
               value={feedUrl}
               onChange={(e) => setFeedUrl(e.target.value)}
-              placeholder="https://blog.example.com/rss.xml"
+              placeholder={t("feeds.add_modal.feed_url.placeholder")}
               type="url"
             />
             <p className="text-[10px] text-muted-foreground">
-              RSS or Atom feed URL. Blog URLs with feed auto-discovery also work.
+              {t("feeds.add_modal.feed_url.help")}
             </p>
           </div>
 
           {/* Frequency */}
           <div className="space-y-1.5">
-            <Label className="text-xs">Check Frequency</Label>
+            <Label className="text-xs">{t("feeds.add_modal.frequency.label")}</Label>
             <div className="flex rounded-lg border p-0.5 bg-muted/50">
-              {FREQUENCY_OPTIONS.map((opt) => {
-                const Icon = opt.icon;
+              {FEED_SYNC_INTERVALS.map((value) => {
+                const Icon = FREQUENCY_ICONS[value];
                 return (
                   <button
-                    key={opt.value}
+                    key={value}
                     type="button"
                     className={`flex-1 flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                      frequency === opt.value
+                      frequency === value
                         ? "bg-background text-foreground shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
                     }`}
-                    onClick={() => setFrequency(opt.value)}
+                    onClick={() => setFrequency(value)}
                   >
                     <Icon className="h-3 w-3" />
-                    {opt.label}
+                    {t(feedSyncIntervalLabelKey(value))}
                   </button>
                 );
               })}
@@ -191,17 +195,19 @@ export function AddFeedModal({
           <div className="space-y-1.5">
             <div className="flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5 text-violet-500" />
-              <Label className="text-xs font-medium">Agent Instructions</Label>
+              <Label className="text-xs font-medium">
+                {t("feeds.add_modal.instructions.label")}
+              </Label>
             </div>
             <Textarea
               value={instructions}
               onChange={(e) => setInstructions(e.target.value)}
-              placeholder="Describe what you're looking for in natural language. For example: 'I'm interested in fitness apps, startups that have raised money, new product launches, and anything related to health tech AI.'"
+              placeholder={t("feeds.add_modal.instructions.placeholder")}
               rows={4}
               className="text-sm"
             />
             <p className="text-[10px] text-muted-foreground">
-              An AI agent will read each article&apos;s title, summary, and categories to decide if it matches your intent. Be descriptive — the more context you give, the better the results.
+              {t("feeds.add_modal.instructions.help")}
             </p>
           </div>
 
@@ -216,10 +222,12 @@ export function AddFeedModal({
             ) : (
               <ChevronDown className="h-3 w-3" />
             )}
-            Advanced Filters & Options
+            {t("feeds.add_modal.advanced.toggle")}
             {(includeKeywords.length > 0 || excludeKeywords.length > 0) && (
               <Badge variant="outline" className="text-[10px] ml-1 px-1.5 py-0">
-                {includeKeywords.length + excludeKeywords.length} keywords
+                {t("feeds.add_modal.advanced.keyword_count", {
+                  count: includeKeywords.length + excludeKeywords.length,
+                })}
               </Badge>
             )}
           </button>
@@ -228,7 +236,9 @@ export function AddFeedModal({
             <div className="space-y-4 pl-2 border-l-2 border-muted">
               {/* Include keywords */}
               <div className="space-y-1.5">
-                <Label className="text-xs">Include Keywords (optional)</Label>
+                <Label className="text-xs">
+                  {t("feeds.add_modal.include_keywords.label")}
+                </Label>
                 <Input
                   value={includeInput}
                   onChange={(e) => setIncludeInput(e.target.value)}
@@ -241,7 +251,7 @@ export function AddFeedModal({
                       setIncludeKeywords
                     )
                   }
-                  placeholder="Type keyword and press Enter"
+                  placeholder={t("feeds.add_modal.include_keywords.placeholder")}
                 />
                 {includeKeywords.length > 0 && (
                   <div className="flex flex-wrap gap-1 pt-1">
@@ -265,13 +275,15 @@ export function AddFeedModal({
                   </div>
                 )}
                 <p className="text-[10px] text-muted-foreground">
-                  Pre-filter by keyword before AI evaluation. Articles must match at least one keyword to be considered.
+                  {t("feeds.add_modal.include_keywords.help")}
                 </p>
               </div>
 
               {/* Exclude keywords */}
               <div className="space-y-1.5">
-                <Label className="text-xs">Exclude Keywords (optional)</Label>
+                <Label className="text-xs">
+                  {t("feeds.add_modal.exclude_keywords.label")}
+                </Label>
                 <Input
                   value={excludeInput}
                   onChange={(e) => setExcludeInput(e.target.value)}
@@ -284,7 +296,7 @@ export function AddFeedModal({
                       setExcludeKeywords
                     )
                   }
-                  placeholder="Type keyword and press Enter"
+                  placeholder={t("feeds.add_modal.exclude_keywords.placeholder")}
                 />
                 {excludeKeywords.length > 0 && (
                   <div className="flex flex-wrap gap-1 pt-1">
@@ -312,7 +324,9 @@ export function AddFeedModal({
               {/* Max entries */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs">Max Articles Per Sync</Label>
+                  <Label className="text-xs">
+                    {t("feeds.add_modal.max_articles.label")}
+                  </Label>
                   <span className="text-xs text-muted-foreground tabular-nums">
                     {maxEntriesPerSync}
                   </span>
@@ -330,21 +344,23 @@ export function AddFeedModal({
 
               {/* Name (optional) */}
               <div className="space-y-1.5">
-                <Label className="text-xs">Name (optional)</Label>
+                <Label className="text-xs">{t("feeds.add_modal.name.label")}</Label>
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Auto-detected from feed"
+                  placeholder={t("feeds.add_modal.name.placeholder")}
                 />
               </div>
 
               {/* Description */}
               <div className="space-y-1.5">
-                <Label className="text-xs">Description (optional)</Label>
+                <Label className="text-xs">
+                  {t("feeds.add_modal.description.label")}
+                </Label>
                 <Textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="What is this feed about?"
+                  placeholder={t("feeds.add_modal.description.placeholder")}
                   rows={2}
                 />
               </div>
@@ -359,12 +375,12 @@ export function AddFeedModal({
             {submitting ? (
               <>
                 <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                Adding...
+                {t("feeds.add_modal.submit.adding")}
               </>
             ) : (
               <>
                 <Rss className="h-3.5 w-3.5 mr-1.5" />
-                Add Feed
+                {t("feeds.add_modal.submit.add")}
               </>
             )}
           </Button>

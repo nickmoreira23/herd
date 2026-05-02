@@ -8,6 +8,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/lib/i18n/locale-context";
 
 interface FormDeleteDialogProps {
   open: boolean;
@@ -22,23 +23,22 @@ export function FormDeleteDialog({
   formName,
   onConfirm,
 }: FormDeleteDialogProps) {
+  const t = useT();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Delete form</DialogTitle>
+          <DialogTitle>{t("forms.delete.title")}</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
-          Are you sure you want to delete &ldquo;{formName}&rdquo;? All
-          sections, fields, and responses will be permanently removed. This
-          action cannot be undone.
+          {t("forms.delete.confirm_message", { name: formName })}
         </p>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("common.actions.cancel")}
           </Button>
           <Button variant="destructive" onClick={onConfirm}>
-            Delete
+            {t("common.actions.delete")}
           </Button>
         </DialogFooter>
       </DialogContent>

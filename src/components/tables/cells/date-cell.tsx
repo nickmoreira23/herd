@@ -1,14 +1,22 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useT, useLocale } from "@/lib/i18n/locale-context";
+import { formatDate } from "@/lib/i18n/format-date";
 import type { CellRendererProps, CellEditorProps } from "./index";
 
-export function DateCellRenderer({ value }: CellRendererProps) {
+export function DateCellRenderer({ value, field }: CellRendererProps) {
+  const locale = useLocale();
   if (!value) {
-    return <span className="text-muted-foreground/40 text-sm">—</span>;
+    return <span className="text-muted-foreground/40 text-sm">{"—"}</span>;
   }
   const date = new Date(String(value));
-  const formatted = isNaN(date.getTime()) ? String(value) : date.toLocaleDateString();
+  const isValid = !isNaN(date.getTime());
+  const preset =
+    field.type === "createdTime" || field.type === "lastModifiedTime"
+      ? "dateTime"
+      : "short";
+  const formatted = isValid ? formatDate(date, locale, preset) : String(value);
   return (
     <span className="text-sm" title={String(value)}>
       {formatted}
@@ -22,6 +30,7 @@ export function DateCellEditor({
   onCommit,
   onCancel,
 }: CellEditorProps) {
+  const t = useT();
   const [dateStr, setDateStr] = useState(() => {
     if (!value) return "";
     const d = new Date(String(value));
@@ -55,6 +64,7 @@ export function DateCellEditor({
         onCommit();
       }}
       onKeyDown={handleKeyDown}
+      aria-label={t("tables.cells.date.aria_label")}
       className="w-full h-full text-sm border-0 bg-transparent outline-none focus:ring-1 focus:ring-primary rounded px-1.5"
     />
   );

@@ -8,6 +8,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/lib/i18n/locale-context";
 
 interface FeedDeleteDialogProps {
   open: boolean;
@@ -22,23 +23,22 @@ export function FeedDeleteDialog({
   feedName,
   onConfirm,
 }: FeedDeleteDialogProps) {
+  const t = useT();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Delete feed</DialogTitle>
+          <DialogTitle>{t("feeds.delete_dialog.title")}</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
-          Are you sure you want to delete &ldquo;{feedName}&rdquo;? All imported
-          articles and sync history will be permanently removed. This action
-          cannot be undone.
+          {t("feeds.delete_dialog.confirm", { name: feedName })}
         </p>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("feeds.delete_dialog.cancel")}
           </Button>
           <Button variant="destructive" onClick={onConfirm}>
-            Delete
+            {t("feeds.delete_dialog.delete")}
           </Button>
         </DialogFooter>
       </DialogContent>

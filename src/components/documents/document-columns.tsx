@@ -15,6 +15,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ArrowUpDown, MoreHorizontal, Eye, Download, Loader2, FolderInput, FolderOpen } from "lucide-react";
 import type { DocumentRow, FolderRow } from "@/lib/knowledge-commons/types";
+import type { Locale } from "@/lib/i18n/locales";
+import type { MessageKey } from "@/lib/i18n/t";
+import { formatDate } from "@/lib/i18n/format-date";
+import { mediaStatusMeta } from "@/lib/knowledge/media-status";
 
 interface ColumnActions {
   onView: (doc: DocumentRow) => void;
@@ -24,6 +28,8 @@ interface ColumnActions {
   folders?: FolderRow[];
   onMoveToFolder?: (doc: DocumentRow, folderId: string | null) => void;
 }
+
+type TFn = (key: MessageKey, params?: Record<string, string | number>) => string;
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -39,14 +45,11 @@ const FILE_TYPE_COLORS: Record<string, string> = {
   CSV: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
 };
 
-const STATUS_CONFIG: Record<string, { label: string; className: string; spinning?: boolean }> = {
-  PENDING: { label: "Pending", className: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20" },
-  PROCESSING: { label: "Processing", className: "bg-blue-500/10 text-blue-500 border-blue-500/20", spinning: true },
-  READY: { label: "Ready", className: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" },
-  ERROR: { label: "Error", className: "bg-red-500/10 text-red-500 border-red-500/20" },
-};
-
-export function getDocumentColumns(actions: ColumnActions): ColumnDef<DocumentRow>[] {
+export function getDocumentColumns(
+  actions: ColumnActions,
+  t: TFn,
+  locale: Locale,
+): ColumnDef<DocumentRow>[] {
   return [
     {
       accessorKey: "name",
@@ -55,7 +58,7 @@ export function getDocumentColumns(actions: ColumnActions): ColumnDef<DocumentRo
           className="inline-flex items-center gap-1 text-xs font-medium hover:text-foreground/80"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Name
+          {t("documents.columns.name")}
           <ArrowUpDown className="h-3 w-3" />
         </button>
       ),
@@ -75,7 +78,7 @@ export function getDocumentColumns(actions: ColumnActions): ColumnDef<DocumentRo
     },
     {
       accessorKey: "fileType",
-      header: () => <span className="text-xs">Type</span>,
+      header: () => <span className="text-xs">{t("documents.columns.type")}</span>,
       cell: ({ row }) => {
         const fileType = row.original.fileType;
         const colors = FILE_TYPE_COLORS[fileType] || "bg-zinc-500/10 text-zinc-400 border-zinc-500/20";
@@ -93,7 +96,7 @@ export function getDocumentColumns(actions: ColumnActions): ColumnDef<DocumentRo
           className="inline-flex items-center gap-1 text-xs font-medium hover:text-foreground/80"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Size
+          {t("documents.columns.size")}
           <ArrowUpDown className="h-3 w-3" />
         </button>
       ),
@@ -105,14 +108,13 @@ export function getDocumentColumns(actions: ColumnActions): ColumnDef<DocumentRo
     },
     {
       accessorKey: "status",
-      header: () => <span className="text-xs">Status</span>,
+      header: () => <span className="text-xs">{t("documents.columns.status")}</span>,
       cell: ({ row }) => {
-        const status = row.original.status;
-        const config = STATUS_CONFIG[status] || STATUS_CONFIG.PENDING;
+        const meta = mediaStatusMeta(row.original.status);
         return (
-          <Badge variant="outline" className={`text-xs font-medium ${config.className}`}>
-            {config.spinning && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
-            {config.label}
+          <Badge variant="outline" className={`text-xs font-medium ${meta.toneClass}`}>
+            {meta.spinning && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+            {t(meta.labelKey)}
           </Badge>
         );
       },
@@ -124,13 +126,13 @@ export function getDocumentColumns(actions: ColumnActions): ColumnDef<DocumentRo
           className="inline-flex items-center gap-1 text-xs font-medium hover:text-foreground/80"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Uploaded
+          {t("documents.columns.uploaded")}
           <ArrowUpDown className="h-3 w-3" />
         </button>
       ),
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">
-          {new Date(row.getValue("uploadedAt") as string).toLocaleDateString()}
+          {formatDate(new Date(row.getValue("uploadedAt") as string), locale, "short")}
         </span>
       ),
     },
@@ -151,11 +153,11 @@ export function getDocumentColumns(actions: ColumnActions): ColumnDef<DocumentRo
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => actions.onView(doc)}>
                 <Eye className="mr-2 h-3.5 w-3.5" />
-                View
+                {t("documents.columns.actions.view")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => actions.onDownload(doc)}>
                 <Download className="mr-2 h-3.5 w-3.5" />
-                Download
+                {t("documents.columns.actions.download")}
               </DropdownMenuItem>
 
               {hasMove && (
@@ -164,7 +166,7 @@ export function getDocumentColumns(actions: ColumnActions): ColumnDef<DocumentRo
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
                       <FolderInput className="mr-2 h-3.5 w-3.5" />
-                      Move to folder
+                      {t("documents.columns.actions.move_to_folder")}
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent>
                       {doc.folderId && (
@@ -172,7 +174,7 @@ export function getDocumentColumns(actions: ColumnActions): ColumnDef<DocumentRo
                           onClick={() => actions.onMoveToFolder!(doc, null)}
                         >
                           <FolderOpen className="mr-2 h-3.5 w-3.5" />
-                          Root (no folder)
+                          {t("documents.columns.actions.move_to_root")}
                         </DropdownMenuItem>
                       )}
                       {rootFolders
@@ -196,13 +198,15 @@ export function getDocumentColumns(actions: ColumnActions): ColumnDef<DocumentRo
 
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => actions.onToggleActive(doc)}>
-                {doc.isActive ? "Deactivate" : "Activate"}
+                {doc.isActive
+                  ? t("documents.columns.actions.deactivate")
+                  : t("documents.columns.actions.activate")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="text-destructive"
                 onClick={() => actions.onDelete(doc)}
               >
-                Delete
+                {t("documents.columns.actions.delete")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

@@ -1,5 +1,23 @@
 "use client";
 
+/**
+ * Blocks route surface for TABLE listing.
+ *
+ * Coexists with src/components/tables/table-list.tsx (or
+ * Knowledge route surface). Both share fetch + columns + handlers +
+ * stats logic but use different chrome wrappers:
+ * - This file: BlockListPage shell (unified chrome).
+ * - table-list.tsx: DataTable + inline chrome.
+ *
+ * Architectural decision (1.5.6e): kept separate. Extracting a shared
+ * useBlockListing() hook is feasible but deferred — Surface (top-level
+ * feature post-Phase 1.5) may redefine how blocks are exposed across
+ * routes, potentially making this pattern obsolete. Revisit after
+ * Surface is built.
+ *
+ * See: docs/discovery/KNOWLEDGE_ROUTE_LAYER_AUDIT.md
+ */
+
 import { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { getTableColumns } from "./table-columns";
@@ -10,20 +28,25 @@ import { BlockListPage } from "@/components/shared/block-list-page";
 import type { FilterDef, StatCard } from "@/components/shared/block-list-page/types";
 import { Button } from "@/components/ui/button";
 import { Plus, Download, Table2 } from "lucide-react";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
+import type { Locale } from "@/lib/i18n/locales";
 import type { TableRow, TableStats } from "./types";
 
 interface TablesListClientProps {
   initialTables: TableRow[];
   initialStats: TableStats;
   airtableConnected?: boolean;
+  locale: Locale;
 }
 
 export function TablesListClient({
   initialTables,
   initialStats,
   airtableConnected = false,
+  locale,
 }: TablesListClientProps) {
+  const t = useT();
   const router = useRouter();
   const [tables, setTables] = useState<TableRow[]>(initialTables);
   const [stats, setStats] = useState<TableStats>(initialStats);
@@ -52,48 +75,55 @@ export function TablesListClient({
     });
     if (res.ok) {
       await refreshTables();
-      toast.success(table.isActive ? "Deactivated" : "Activated");
+      notifySuccess(
+        table.isActive
+          ? "tables.feedback.deactivated"
+          : "tables.feedback.activated",
+        t,
+      );
     }
-  }, [refreshTables]);
+  }, [refreshTables, t]);
 
   const handleDelete = useCallback(async (table: TableRow) => {
     const res = await fetch(`/api/tables/${table.id}`, { method: "DELETE" });
     if (res.ok) {
       await refreshTables();
-      toast.success("Table deleted");
+      notifySuccess("tables.feedback.table_deleted", t);
     } else {
-      toast.error("Failed to delete table");
+      notifyError("error.tables.delete_failed", t);
     }
     setDeleteTarget(null);
-  }, [refreshTables]);
+  }, [refreshTables, t]);
 
   const columns = useMemo(
     () => getTableColumns({
+      t,
+      locale,
       onOpen: handleOpen,
       onToggleActive: handleToggleActive,
       onDelete: (table) => setDeleteTarget(table),
     }),
-    [handleOpen, handleToggleActive]
+    [t, locale, handleOpen, handleToggleActive]
   );
 
   // Stats
   const statCards: StatCard[] = [
-    { label: "Total", value: String(stats.total) },
-    { label: "Ready", value: String(stats.ready) },
-    { label: "Processing", value: String(stats.processing) },
-    { label: "Total Records", value: String(stats.totalRecords) },
+    { label: t("tables.list.stats.total"), value: String(stats.total) },
+    { label: t("tables.list.stats.ready"), value: String(stats.ready) },
+    { label: t("tables.list.stats.processing"), value: String(stats.processing) },
+    { label: t("tables.list.stats.total_records"), value: String(stats.totalRecords) },
   ];
 
   // Filters
   const filters: FilterDef<TableRow>[] = [
     {
       key: "status",
-      label: "All Status",
+      label: t("tables.list.filter.all_status"),
       options: [
-        { value: "PENDING", label: "Pending" },
-        { value: "PROCESSING", label: "Processing" },
-        { value: "READY", label: "Ready" },
-        { value: "ERROR", label: "Error" },
+        { value: "PENDING", label: t("tables.list.status.pending") },
+        { value: "PROCESSING", label: t("tables.list.status.processing") },
+        { value: "READY", label: t("tables.list.status.ready") },
+        { value: "ERROR", label: t("tables.list.status.error") },
       ],
       filterFn: (item, value) => item.status === value,
     },
@@ -105,12 +135,12 @@ export function TablesListClient({
       {airtableConnected && (
         <Button size="sm" variant="outline" onClick={() => setShowImport(true)}>
           <Download className="mr-1 h-3 w-3" />
-          Import from Airtable
+          {t("tables.list.import_from_airtable")}
         </Button>
       )}
       <Button size="sm" onClick={() => setShowCreate(true)}>
         <Plus className="mr-1 h-3 w-3" />
-        Create Table
+        {t("tables.list.create_table")}
       </Button>
     </>
   );
@@ -132,20 +162,20 @@ export function TablesListClient({
   return (
     <BlockListPage<TableRow>
       blockName="tables"
-      title="Tables"
-      description="Structured datasets, lookup tables, and reference data for operations and reporting."
+      title={t("tables.list.title")}
+      description={t("tables.list.description")}
       data={tables}
-      getId={(t) => t.id}
+      getId={(tbl) => tbl.id}
       columns={columns}
       onRowClick={handleOpen}
-      searchPlaceholder="Search by name or description..."
-      searchFn={(t, q) => t.name.toLowerCase().includes(q) || (t.description?.toLowerCase().includes(q) ?? false)}
+      searchPlaceholder={t("tables.list.search_placeholder")}
+      searchFn={(tbl, q) => tbl.name.toLowerCase().includes(q) || (tbl.description?.toLowerCase().includes(q) ?? false)}
       filters={filters}
       stats={statCards}
       headerActions={headerActions}
       emptyIcon={Table2}
-      emptyTitle="No tables yet"
-      emptyDescription="Create a table or import from Airtable."
+      emptyTitle={t("tables.empty.title")}
+      emptyDescription={t("tables.empty.short_description")}
       modals={modals}
       showAgent={false}
     />

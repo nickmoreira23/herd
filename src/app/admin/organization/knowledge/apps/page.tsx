@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { AppTable } from "@/components/apps/app-table";
-import { KnowledgeAppsEmpty } from "@/components/knowledge/apps/knowledge-apps-empty";
+import { AppsEmpty } from "@/components/apps/apps-empty";
 import { connection } from "next/server";
 
 export default async function KnowledgeAppsPage() {
@@ -43,7 +43,7 @@ export default async function KnowledgeAppsPage() {
   };
 
   if (apps.length === 0) {
-    return <KnowledgeAppsEmpty />;
+    return <AppsEmpty />;
   }
 
   return (

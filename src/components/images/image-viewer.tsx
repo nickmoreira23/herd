@@ -13,7 +13,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Loader2, Save, RefreshCw, Download } from "lucide-react";
-import { toast } from "sonner";
+import { useT, useLocale } from "@/lib/i18n/locale-context";
+import { notifyError, notifySuccess } from "@/lib/i18n/notify";
+import { formatDate } from "@/lib/i18n/format-date";
+import { mediaStatusMeta } from "@/lib/knowledge/media-status";
 import type { ImageRow } from "@/lib/knowledge-commons/types";
 
 function formatFileSize(bytes: number): string {
@@ -21,13 +24,6 @@ function formatFileSize(bytes: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
-
-const STATUS_STYLES: Record<string, string> = {
-  PENDING: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
-  PROCESSING: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-  READY: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-  ERROR: "bg-red-500/10 text-red-500 border-red-500/20",
-};
 
 const FILE_TYPE_STYLES: Record<string, string> = {
   PNG: "bg-purple-500/10 text-purple-500 border-purple-500/20",
@@ -51,6 +47,8 @@ export function ImageViewer({
   onOpenChange,
   onUpdate,
 }: ImageViewerProps) {
+  const t = useT();
+  const locale = useLocale();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
@@ -59,7 +57,6 @@ export function ImageViewer({
   const [loadingContent, setLoadingContent] = useState(false);
   const [activeTab, setActiveTab] = useState<"preview" | "description">("preview");
 
-  // Sync form state when image changes
   useEffect(() => {
     if (image) {
       setName(image.name);
@@ -69,7 +66,6 @@ export function ImageViewer({
     }
   }, [image]);
 
-  // Fetch text content when viewing description tab
   const fetchTextContent = useCallback(async () => {
     if (!image) return;
     setLoadingContent(true);
@@ -103,10 +99,10 @@ export function ImageViewer({
         }),
       });
       if (res.ok) {
-        toast.success("Image updated");
+        notifySuccess("images.feedback.updated", t);
         onUpdate();
       } else {
-        toast.error("Failed to update");
+        notifyError("error.images.update_failed", t);
       }
     } finally {
       setSaving(false);
@@ -121,10 +117,10 @@ export function ImageViewer({
         method: "POST",
       });
       if (res.ok) {
-        toast.success("Processing started");
+        notifySuccess("images.feedback.processing_started", t);
         onUpdate();
       } else {
-        toast.error("Processing failed");
+        notifyError("error.images.processing_failed", t);
       }
     } finally {
       setProcessing(false);
@@ -142,6 +138,7 @@ export function ImageViewer({
   if (!image) return null;
 
   const hasChanges = name !== image.name || description !== (image.description || "");
+  const statusMeta = mediaStatusMeta(image.status);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -149,10 +146,12 @@ export function ImageViewer({
         <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <DialogTitle className="sr-only">Image Viewer</DialogTitle>
+              <DialogTitle className="sr-only">{t("images.viewer.title")}</DialogTitle>
               <div className="space-y-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Name</Label>
+                  <Label className="text-xs text-muted-foreground">
+                    {t("images.viewer.field_name")}
+                  </Label>
                   <Input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
@@ -160,11 +159,13 @@ export function ImageViewer({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Description</Label>
+                  <Label className="text-xs text-muted-foreground">
+                    {t("images.viewer.field_description")}
+                  </Label>
                   <Textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Add a description..."
+                    placeholder={t("images.viewer.field_description_placeholder")}
                     rows={2}
                     className="text-sm resize-none"
                   />
@@ -173,38 +174,29 @@ export function ImageViewer({
             </div>
             <div className="flex flex-col items-end gap-2 shrink-0">
               <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleDownload}
-                >
+                <Button size="sm" variant="outline" onClick={handleDownload}>
                   <Download className="h-3 w-3 mr-1" />
-                  Download
+                  {t("images.viewer.action_download")}
                 </Button>
-                <Button
-                  size="sm"
-                  onClick={handleSave}
-                  disabled={saving || !hasChanges}
-                >
+                <Button size="sm" onClick={handleSave} disabled={saving || !hasChanges}>
                   {saving ? (
                     <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                   ) : (
                     <Save className="h-3 w-3 mr-1" />
                   )}
-                  Save
+                  {t("images.viewer.action_save")}
                 </Button>
               </div>
             </div>
           </div>
 
-          {/* Metadata row */}
           <div className="flex items-center gap-3 mt-4 flex-wrap">
             <Badge variant="outline" className={`text-xs ${FILE_TYPE_STYLES[image.fileType] || ""}`}>
               {image.fileType}
             </Badge>
-            <Badge variant="outline" className={`text-xs ${STATUS_STYLES[image.status] || ""}`}>
+            <Badge variant="outline" className={`text-xs ${statusMeta.toneClass}`}>
               {image.status === "PROCESSING" && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
-              {image.status}
+              {t(statusMeta.labelKey)}
             </Badge>
             <span className="text-xs text-muted-foreground">{formatFileSize(image.fileSize)}</span>
             {image.width && image.height && (
@@ -213,10 +205,14 @@ export function ImageViewer({
               </span>
             )}
             <span className="text-xs text-muted-foreground">
-              Uploaded {new Date(image.uploadedAt).toLocaleDateString()}
+              {t("images.viewer.uploaded_at", {
+                date: formatDate(new Date(image.uploadedAt), locale, "short"),
+              })}
             </span>
             {image.chunkCount > 0 && (
-              <span className="text-xs text-muted-foreground">{image.chunkCount} chunks</span>
+              <span className="text-xs text-muted-foreground">
+                {t("images.viewer.chunks_count", { count: image.chunkCount })}
+              </span>
             )}
             {(image.status === "ERROR" || image.status === "READY" || image.status === "PENDING") && (
               <Button
@@ -231,19 +227,19 @@ export function ImageViewer({
                 ) : (
                   <RefreshCw className="h-3 w-3 mr-1" />
                 )}
-                {image.status === "PENDING" ? "Process" : "Re-process"}
+                {image.status === "PENDING"
+                  ? t("images.viewer.action_process")
+                  : t("images.viewer.action_reprocess")}
               </Button>
             )}
           </div>
 
-          {/* Error message */}
           {image.status === "ERROR" && image.errorMessage && (
             <div className="mt-3 rounded-md bg-red-500/10 border border-red-500/20 px-3 py-2">
               <p className="text-xs text-red-500">{image.errorMessage}</p>
             </div>
           )}
 
-          {/* Tabs */}
           {image.status === "READY" && (
             <div className="flex gap-1 mt-3">
               <button
@@ -254,7 +250,7 @@ export function ImageViewer({
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                Preview
+                {t("images.viewer.tab_preview")}
               </button>
               <button
                 onClick={() => setActiveTab("description")}
@@ -264,35 +260,37 @@ export function ImageViewer({
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                AI Description
+                {t("images.viewer.tab_description")}
               </button>
             </div>
           )}
         </DialogHeader>
 
-        {/* Content area */}
         <div className="flex-1 overflow-auto min-h-0">
           {image.status === "PENDING" && (
             <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-              Image has not been processed yet. Click &ldquo;Process&rdquo; to generate a description.
+              {t("images.viewer.state_pending")}
             </div>
           )}
 
           {image.status === "PROCESSING" && (
             <div className="flex flex-col items-center justify-center h-full gap-2">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">Processing image...</p>
+              <p className="text-sm text-muted-foreground">
+                {t("images.viewer.state_processing")}
+              </p>
             </div>
           )}
 
           {image.status === "ERROR" && (
             <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-              Processing failed. Click &ldquo;Re-process&rdquo; to try again.
+              {t("images.viewer.state_error")}
             </div>
           )}
 
           {image.status === "READY" && activeTab === "preview" && (
             <div className="flex items-center justify-center p-6 h-full">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={image.fileUrl}
                 alt={image.name}
@@ -313,7 +311,7 @@ export function ImageViewer({
                 </pre>
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-12">
-                  No AI description generated yet.
+                  {t("images.viewer.no_description")}
                 </p>
               )}
             </div>

@@ -1,15 +1,37 @@
 "use client";
 
+/**
+ * Blocks route surface for DOCUMENT listing.
+ *
+ * Coexists with src/components/documents/document-table.tsx (or
+ * Knowledge route surface). Both share fetch + columns + handlers +
+ * stats logic but use different chrome wrappers:
+ * - This file: BlockListPage shell (unified chrome).
+ * - document-table.tsx: DataTable + inline chrome + Folders/Breadcrumbs.
+ * - Note: also imported by src/app/admin/operation/documents/page.tsx
+ *   (third consumer outside the Knowledge/Blocks dual-route pattern).
+ *
+ * Architectural decision (1.5.6e): kept separate. Extracting a shared
+ * useBlockListing() hook is feasible but deferred — Surface (top-level
+ * feature post-Phase 1.5) may redefine how blocks are exposed across
+ * routes, potentially making this pattern obsolete. Revisit after
+ * Surface is built.
+ *
+ * See: docs/discovery/KNOWLEDGE_ROUTE_LAYER_AUDIT.md
+ */
+
 import { useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, FolderPlus, FileText } from "lucide-react";
-import { toast } from "sonner";
+import { useT, useLocale } from "@/lib/i18n/locale-context";
+import { notifyError, notifySuccess } from "@/lib/i18n/notify";
 import { BlockListPage } from "@/components/shared/block-list-page";
 import type { FilterDef } from "@/components/shared/block-list-page";
 import { BlockAgentPanel } from "@/components/shared/block-agent-panel";
 import { FolderNav } from "@/components/shared/knowledge-commons/folder-nav";
 import { FolderDialog } from "@/components/shared/knowledge-commons/folder-dialog";
 import { DeleteDialog } from "@/components/shared/knowledge-commons/delete-dialog";
+import { MEDIA_STATUS_OPTIONS } from "@/lib/knowledge/media-status";
 import { getDocumentColumns } from "./document-columns";
 import { UploadModal } from "./upload-modal";
 import { DocumentViewer } from "./document-viewer";
@@ -24,6 +46,8 @@ export function DocumentsListClient({
   initialDocuments,
   initialFolders,
 }: DocumentsListClientProps) {
+  const t = useT();
+  const locale = useLocale();
   const [documents, setDocuments] = useState<DocumentRow[]>(initialDocuments);
   const [folders, setFolders] = useState<FolderRow[]>(initialFolders);
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
@@ -32,19 +56,14 @@ export function DocumentsListClient({
   const [showFolderDialog, setShowFolderDialog] = useState(false);
   const [editingFolder, setEditingFolder] = useState<FolderRow | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DocumentRow | null>(null);
-  const [deleteFolderTarget, setDeleteFolderTarget] =
-    useState<FolderRow | null>(null);
+  const [deleteFolderTarget, setDeleteFolderTarget] = useState<FolderRow | null>(null);
   const [viewerDoc, setViewerDoc] = useState<DocumentRow | null>(null);
 
-  // ── Display data ─────────────────────────────────────────────────
-  // When searching, pass ALL documents — BlockListPage applies searchFn.
-  // When not searching, pass only documents in the current folder.
   const displayData = useMemo(() => {
     if (search) return documents;
     return documents.filter((d) => d.folderId === currentFolderId);
   }, [documents, search, currentFolderId]);
 
-  // ── Data refresh ─────────────────────────────────────────────────
   const refreshData = useCallback(async () => {
     try {
       const [docsRes, foldersRes] = await Promise.all([
@@ -64,7 +83,6 @@ export function DocumentsListClient({
     }
   }, []);
 
-  // ── Action handlers ──────────────────────────────────────────────
   const handleView = useCallback((doc: DocumentRow) => {
     setViewerDoc(doc);
   }, []);
@@ -85,10 +103,13 @@ export function DocumentsListClient({
       });
       if (res.ok) {
         await refreshData();
-        toast.success(doc.isActive ? "Deactivated" : "Activated");
+        notifySuccess(
+          doc.isActive ? "documents.feedback.deactivated" : "documents.feedback.activated",
+          t,
+        );
       }
     },
-    [refreshData],
+    [refreshData, t],
   );
 
   const handleDeleteDoc = useCallback(
@@ -96,13 +117,13 @@ export function DocumentsListClient({
       const res = await fetch(`/api/documents/${doc.id}`, { method: "DELETE" });
       if (res.ok) {
         await refreshData();
-        toast.success("Document deleted");
+        notifySuccess("documents.feedback.deleted", t);
       } else {
-        toast.error("Failed to delete document");
+        notifyError("error.documents.delete_failed", t);
       }
       setDeleteTarget(null);
     },
-    [refreshData],
+    [refreshData, t],
   );
 
   const handleDeleteFolder = useCallback(
@@ -115,14 +136,13 @@ export function DocumentsListClient({
           setCurrentFolderId(folder.parentId);
         }
         await refreshData();
-        toast.success("Folder deleted");
+        notifySuccess("documents.feedback.folder_deleted", t);
       } else {
-        const err = await res.json().catch(() => null);
-        toast.error(err?.error || "Failed to delete folder");
+        notifyError("error.documents.folder_delete_failed", t);
       }
       setDeleteFolderTarget(null);
     },
-    [refreshData, currentFolderId],
+    [refreshData, currentFolderId, t],
   );
 
   const handleMoveToFolder = useCallback(
@@ -134,66 +154,65 @@ export function DocumentsListClient({
       });
       if (res.ok) {
         await refreshData();
-        toast.success(folderId ? "Moved to folder" : "Moved to root");
+        notifySuccess(
+          folderId ? "documents.feedback.moved_to_folder" : "documents.feedback.moved_to_root",
+          t,
+        );
       }
     },
-    [refreshData],
+    [refreshData, t],
   );
 
-  // ── Columns ──────────────────────────────────────────────────────
   const columns = useMemo(
     () =>
-      getDocumentColumns({
-        onView: handleView,
-        onDownload: handleDownload,
-        onToggleActive: handleToggleActive,
-        onDelete: (doc) => setDeleteTarget(doc),
-        folders,
-        onMoveToFolder: handleMoveToFolder,
-      }),
-    [handleView, handleDownload, handleToggleActive, folders, handleMoveToFolder],
+      getDocumentColumns(
+        {
+          onView: handleView,
+          onDownload: handleDownload,
+          onToggleActive: handleToggleActive,
+          onDelete: (doc) => setDeleteTarget(doc),
+          folders,
+          onMoveToFolder: handleMoveToFolder,
+        },
+        t,
+        locale,
+      ),
+    [handleView, handleDownload, handleToggleActive, folders, handleMoveToFolder, t, locale],
   );
 
-  // ── Filters ──────────────────────────────────────────────────────
   const filters: FilterDef<DocumentRow>[] = useMemo(
     () => [
       {
         key: "fileType",
-        label: "All Types",
-        options: [
-          { value: "PDF", label: "PDF" },
-          { value: "DOCX", label: "DOCX" },
-          { value: "TXT", label: "TXT" },
-          { value: "MD", label: "MD" },
-          { value: "CSV", label: "CSV" },
-        ],
+        label: t("documents.list.filter_all_types"),
+        options: ["PDF", "DOCX", "TXT", "MD", "CSV"].map((v) => ({
+          value: v,
+          label: v,
+        })),
         filterFn: (item: DocumentRow, val: string) => item.fileType === val,
       },
       {
         key: "status",
-        label: "All Status",
-        options: [
-          { value: "PENDING", label: "Pending" },
-          { value: "PROCESSING", label: "Processing" },
-          { value: "READY", label: "Ready" },
-          { value: "ERROR", label: "Error" },
-        ],
+        label: t("documents.list.filter_all_status"),
+        options: MEDIA_STATUS_OPTIONS.map((s) => ({
+          value: s.value,
+          label: t(s.labelKey),
+        })),
         filterFn: (item: DocumentRow, val: string) => item.status === val,
       },
     ],
-    [],
+    [t],
   );
 
-  // ── Render ───────────────────────────────────────────────────────
   return (
     <BlockListPage<DocumentRow>
       blockName="documents"
-      title="Documents"
-      description="Guides, policies, SOPs, and reference materials for your team and partners."
+      title={t("documents.list.title")}
+      description={t("documents.list.description")}
       data={displayData}
       getId={(d) => d.id}
       columns={columns}
-      searchPlaceholder="Search by name, description, or file..."
+      searchPlaceholder={t("documents.list.search_placeholder")}
       searchFn={(item, q) =>
         item.name.toLowerCase().includes(q) ||
         (item.description?.toLowerCase().includes(q) ?? false) ||
@@ -213,11 +232,11 @@ export function DocumentsListClient({
             }}
           >
             <FolderPlus className="mr-1 h-3 w-3" />
-            New Folder
+            {t("documents.list.new_folder_button")}
           </Button>
           <Button size="sm" onClick={() => setShowUpload(true)}>
             <Plus className="mr-1 h-3 w-3" />
-            Upload Document
+            {t("documents.list.upload_button")}
           </Button>
         </>
       }
@@ -231,14 +250,14 @@ export function DocumentsListClient({
             setShowFolderDialog(true);
           }}
           onDelete={(folder) => setDeleteFolderTarget(folder)}
-          rootLabel="All Documents"
+          rootLabel={t("documents.list.breadcrumb_root")}
           countKey="documents"
           isSearching={!!search}
         />
       }
       emptyIcon={FileText}
-      emptyTitle="No documents yet"
-      emptyDescription="Upload documents to build your knowledge base. Guides, policies, SOPs, and reference materials for your team and partners."
+      emptyTitle={t("documents.empty.title")}
+      emptyDescription={t("documents.empty.description")}
       showAgent={false}
       modals={
         <>

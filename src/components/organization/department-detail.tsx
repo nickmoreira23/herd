@@ -14,7 +14,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ArrowLeft, Users, Building2, Plus, X, UserCircle } from "lucide-react";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
 
 interface Member {
   departmentId: string;
@@ -66,6 +67,7 @@ interface DepartmentDetailProps {
 }
 
 export function DepartmentDetail({ department: initial, allProfiles }: DepartmentDetailProps) {
+  const t = useT();
   const router = useRouter();
   const [department, setDepartment] = useState(initial);
   const [addingMember, setAddingMember] = useState(false);
@@ -85,13 +87,13 @@ export function DepartmentDetail({ department: initial, allProfiles }: Departmen
       body: JSON.stringify({ profileId: selectedProfileId }),
     });
     if (res.ok) {
-      toast.success("Member added");
+      notifySuccess("organization.feedback.member_added", t);
       setSelectedProfileId("");
       setAddingMember(false);
       await refresh();
       router.refresh();
     } else {
-      toast.error("Failed to add member");
+      notifyError("error.organization.member_add_failed", t);
     }
   };
 
@@ -102,7 +104,7 @@ export function DepartmentDetail({ department: initial, allProfiles }: Departmen
       body: JSON.stringify({ profileId }),
     });
     if (res.ok) {
-      toast.success("Member removed");
+      notifySuccess("organization.feedback.member_removed", t);
       await refresh();
       router.refresh();
     }
@@ -119,7 +121,7 @@ export function DepartmentDetail({ department: initial, allProfiles }: Departmen
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
-        Back to Departments
+        {t("organization.departments.detail.back")}
       </Link>
 
       {/* Header */}
@@ -140,12 +142,13 @@ export function DepartmentDetail({ department: initial, allProfiles }: Departmen
           )}
           {department.parent && (
             <p className="text-xs text-muted-foreground ml-7">
-              Part of{" "}
               <Link
                 href={`/admin/organization/departments/${department.parent.id}`}
                 className="hover:underline font-medium"
               >
-                {department.parent.name}
+                {t("organization.departments.detail.part_of", {
+                  name: department.parent.name,
+                })}
               </Link>
             </p>
           )}
@@ -157,7 +160,9 @@ export function DepartmentDetail({ department: initial, allProfiles }: Departmen
       {/* Head */}
       {department.head && (
         <div className="rounded-xl ring-1 ring-foreground/10 p-4">
-          <p className="text-xs text-muted-foreground font-medium mb-2">Department Head</p>
+          <p className="text-xs text-muted-foreground font-medium mb-2">
+            {t("organization.departments.detail.head_label")}
+          </p>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
               <UserCircle className="h-5 w-5 text-muted-foreground" />
@@ -177,7 +182,9 @@ export function DepartmentDetail({ department: initial, allProfiles }: Departmen
         <div>
           <div className="flex items-center gap-2 mb-3">
             <Building2 className="h-4 w-4 text-muted-foreground" />
-            <h2 className="text-sm font-semibold">Sub-departments</h2>
+            <h2 className="text-sm font-semibold">
+              {t("organization.departments.detail.sub_departments")}
+            </h2>
             <Badge variant="outline" className="px-1 py-1 text-xs">
               {department.children.length}
             </Badge>
@@ -198,7 +205,9 @@ export function DepartmentDetail({ department: initial, allProfiles }: Departmen
                     <p className="text-sm font-medium truncate">{child.name}</p>
                     {child.head && (
                       <p className="text-xs text-muted-foreground">
-                        Led by {child.head.firstName} {child.head.lastName}
+                        {t("organization.departments.detail.led_by", {
+                          name: `${child.head.firstName} ${child.head.lastName}`,
+                        })}
                       </p>
                     )}
                   </div>
@@ -210,7 +219,9 @@ export function DepartmentDetail({ department: initial, allProfiles }: Departmen
               ))}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">No sub-departments.</p>
+            <p className="text-sm text-muted-foreground">
+              {t("organization.departments.detail.no_sub_departments")}
+            </p>
           )}
         </div>
 
@@ -218,7 +229,9 @@ export function DepartmentDetail({ department: initial, allProfiles }: Departmen
         <div>
           <div className="flex items-center gap-2 mb-3">
             <Users className="h-4 w-4 text-muted-foreground" />
-            <h2 className="text-sm font-semibold">Members</h2>
+            <h2 className="text-sm font-semibold">
+              {t("organization.departments.detail.members")}
+            </h2>
             <Badge variant="outline" className="px-1 py-1 text-xs">
               {department.members.length}
             </Badge>
@@ -229,7 +242,7 @@ export function DepartmentDetail({ department: initial, allProfiles }: Departmen
               onClick={() => setAddingMember(!addingMember)}
             >
               <Plus className="h-3 w-3 mr-1" />
-              Add
+              {t("organization.departments.detail.add")}
             </Button>
           </div>
 
@@ -241,11 +254,13 @@ export function DepartmentDetail({ department: initial, allProfiles }: Departmen
                 onValueChange={(val) => setSelectedProfileId(val === "NONE" ? "" : val ?? "")}
               >
                 <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select a person..." />
+                  <SelectValue
+                    placeholder={t("organization.departments.detail.select_person_placeholder")}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="NONE" disabled>
-                    Select a person...
+                    {t("organization.departments.detail.select_person_placeholder")}
                   </SelectItem>
                   {availableProfiles.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
@@ -255,7 +270,7 @@ export function DepartmentDetail({ department: initial, allProfiles }: Departmen
                 </SelectContent>
               </Select>
               <Button size="sm" onClick={addMember} disabled={!selectedProfileId}>
-                Add
+                {t("organization.departments.detail.add")}
               </Button>
               <Button
                 size="sm"
@@ -296,7 +311,7 @@ export function DepartmentDetail({ department: initial, allProfiles }: Departmen
                   <button
                     onClick={() => removeMember(m.profileId)}
                     className="p-1 rounded hover:bg-muted opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                    title="Remove"
+                    title={t("organization.departments.detail.remove_title")}
                   >
                     <X className="h-3.5 w-3.5 text-muted-foreground" />
                   </button>
@@ -304,7 +319,9 @@ export function DepartmentDetail({ department: initial, allProfiles }: Departmen
               ))}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">No members yet.</p>
+            <p className="text-sm text-muted-foreground">
+              {t("organization.departments.detail.no_members")}
+            </p>
           )}
         </div>
       </div>

@@ -18,6 +18,9 @@ import {
   Search,
   Rss,
 } from "lucide-react";
+import { useT, useLocale } from "@/lib/i18n/locale-context";
+import { formatDate } from "@/lib/i18n/format-date";
+import { feedStatusLabelKey } from "@/lib/feeds/status-options";
 import type { RSSFeedRow, RSSEntryRow } from "./types";
 
 interface FeedEntriesDialogProps {
@@ -34,23 +37,11 @@ const STATUS_DOT: Record<string, string> = {
   PROCESSING: "bg-blue-500",
 };
 
-const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
-  PENDING: {
-    label: "Pending",
-    className: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
-  },
-  PROCESSING: {
-    label: "Syncing",
-    className: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-  },
-  READY: {
-    label: "Ready",
-    className: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-  },
-  ERROR: {
-    label: "Error",
-    className: "bg-red-500/10 text-red-500 border-red-500/20",
-  },
+const STATUS_CLASSNAMES: Record<string, string> = {
+  PENDING: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
+  PROCESSING: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+  READY: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+  ERROR: "bg-red-500/10 text-red-500 border-red-500/20",
 };
 
 export function FeedEntriesDialog({
@@ -59,6 +50,9 @@ export function FeedEntriesDialog({
   onOpenChange,
   onSync,
 }: FeedEntriesDialogProps) {
+  const t = useT();
+  const locale = useLocale();
+
   if (!feed) return null;
 
   const [entries, setEntries] = useState<RSSEntryRow[]>([]);
@@ -67,7 +61,7 @@ export function FeedEntriesDialog({
   const [loadingContent, setLoadingContent] = useState(false);
   const [entrySearch, setEntrySearch] = useState("");
 
-  const statusConfig = STATUS_CONFIG[feed.status] || STATUS_CONFIG.PENDING;
+  const statusClass = STATUS_CLASSNAMES[feed.status] ?? STATUS_CLASSNAMES.PENDING;
 
   useEffect(() => {
     if (open) {
@@ -142,17 +136,21 @@ export function FeedEntriesDialog({
               variant="outline"
               className="text-xs bg-orange-500/10 text-orange-500 border-orange-500/20"
             >
-              {feed.entryCount} articles
+              {t("feeds.entries_dialog.articles_count", {
+                count: feed.entryCount,
+              })}
             </Badge>
             <Badge
               variant="outline"
-              className={`text-xs ${statusConfig.className}`}
+              className={`text-xs ${statusClass}`}
             >
-              {statusConfig.label}
+              {t(feedStatusLabelKey(feed.status))}
             </Badge>
             {feed.lastCheckedAt && (
               <span className="text-xs text-muted-foreground">
-                Checked {new Date(feed.lastCheckedAt).toLocaleDateString()}
+                {t("feeds.entries_dialog.checked_at", {
+                  date: formatDate(new Date(feed.lastCheckedAt), locale, "short"),
+                })}
               </span>
             )}
           </div>
@@ -166,7 +164,7 @@ export function FeedEntriesDialog({
               <div className="relative">
                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
                 <Input
-                  placeholder="Filter articles..."
+                  placeholder={t("feeds.entries_dialog.search_placeholder")}
                   value={entrySearch}
                   onChange={(e) => setEntrySearch(e.target.value)}
                   className="pl-7 h-7 text-xs"
@@ -195,7 +193,11 @@ export function FeedEntriesDialog({
                       <div className="flex items-center gap-1.5 mt-0.5">
                         {entry.publishedAt && (
                           <p className="text-[10px] text-muted-foreground">
-                            {new Date(entry.publishedAt).toLocaleDateString()}
+                            {formatDate(
+                              new Date(entry.publishedAt),
+                              locale,
+                              "short",
+                            )}
                           </p>
                         )}
                         {entry.author && (
@@ -222,7 +224,7 @@ export function FeedEntriesDialog({
               ))}
               {filteredEntries.length === 0 && (
                 <p className="text-xs text-muted-foreground text-center py-4">
-                  No articles found
+                  {t("feeds.entries_dialog.no_articles")}
                 </p>
               )}
             </div>
@@ -233,7 +235,7 @@ export function FeedEntriesDialog({
             {!selectedEntryId && (
               <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground">
                 <p className="text-sm">
-                  Select an article from the list to view its content
+                  {t("feeds.entries_dialog.empty_selection")}
                 </p>
               </div>
             )}
@@ -272,10 +274,10 @@ export function FeedEntriesDialog({
                 ) : (
                   <p className="text-sm text-muted-foreground">
                     {selectedEntry.status === "ERROR"
-                      ? "This article failed to scrape."
+                      ? t("feeds.entries_dialog.entry.error_scrape")
                       : selectedEntry.status === "PENDING"
-                        ? "This article hasn't been scraped yet."
-                        : "No content available for this article."}
+                        ? t("feeds.entries_dialog.entry.pending")
+                        : t("feeds.entries_dialog.entry.no_content")}
                   </p>
                 )}
               </>
@@ -291,7 +293,7 @@ export function FeedEntriesDialog({
             disabled={!feed.siteUrl}
           >
             <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-            Open Site
+            {t("feeds.entries_dialog.actions.open_site")}
           </Button>
           <Button
             variant="outline"
@@ -299,7 +301,7 @@ export function FeedEntriesDialog({
             onClick={() => onSync(feed)}
           >
             <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-            Sync Now
+            {t("feeds.entries_dialog.actions.sync_now")}
           </Button>
         </DialogFooter>
       </DialogContent>

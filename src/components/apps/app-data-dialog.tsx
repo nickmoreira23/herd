@@ -8,7 +8,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -17,37 +16,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
+import { useT, useLocale } from "@/lib/i18n/locale-context";
+import { formatDate } from "@/lib/i18n/format-date";
+import {
+  appDataPointStatusLabelKey,
+  dataCategoryLabelKey,
+} from "@/lib/apps/provider-catalog";
 import type { AppRow, AppDataPointRow } from "./types";
 
-const DATA_CATEGORY_LABELS: Record<string, string> = {
-  SLEEP: "Sleep",
-  ACTIVITY: "Activity",
-  RECOVERY: "Recovery",
-  HEART_RATE: "Heart Rate",
-  WORKOUT: "Workout",
-  READINESS: "Readiness",
-  BODY: "Body",
-  APP_NUTRITION: "Nutrition",
-  APP_OTHER: "Other",
-};
-
-const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
-  PENDING: {
-    label: "Pending",
-    className: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
-  },
-  PROCESSING: {
-    label: "Processing",
-    className: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-  },
-  READY: {
-    label: "Ready",
-    className: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-  },
-  ERROR: {
-    label: "Error",
-    className: "bg-red-500/10 text-red-500 border-red-500/20",
-  },
+const DATA_POINT_STATUS_CLASSNAMES: Record<string, string> = {
+  PENDING: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
+  PROCESSING: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+  READY: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+  ERROR: "bg-red-500/10 text-red-500 border-red-500/20",
 };
 
 interface AppDataDialogProps {
@@ -61,6 +42,8 @@ export function AppDataDialog({
   open,
   onOpenChange,
 }: AppDataDialogProps) {
+  const t = useT();
+  const locale = useLocale();
   const [dataPoints, setDataPoints] = useState<AppDataPointRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState("ALL");
@@ -81,7 +64,7 @@ export function AppDataDialog({
       params.set("limit", "200");
 
       const res = await fetch(
-        `/api/apps/${app!.id}/data?${params.toString()}`
+        `/api/apps/${app!.id}/data?${params.toString()}`,
       );
       const json = await res.json();
       if (json.data?.dataPoints) {
@@ -99,34 +82,41 @@ export function AppDataDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-4xl max-h-[85vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle className="pr-8">{app.name} — Data Points</DialogTitle>
+          <DialogTitle className="pr-8">
+            {t("apps.data_dialog.title", { name: app.name })}
+          </DialogTitle>
           <div className="flex items-center gap-2 pt-1">
             <Badge
               variant="outline"
               className="text-xs bg-violet-500/10 text-violet-500 border-violet-500/20"
             >
-              {app.dataPointCount} total
+              {t("apps.data_dialog.total", { count: app.dataPointCount })}
             </Badge>
             <Badge
               variant="outline"
               className="text-xs bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
             >
-              {app.readyDataPointCount} ready
+              {t("apps.data_dialog.ready", { count: app.readyDataPointCount })}
             </Badge>
           </div>
         </DialogHeader>
 
         {/* Filter */}
         <div className="flex items-center gap-2">
-          <Select value={categoryFilter} onValueChange={(val) => setCategoryFilter(val ?? "ALL")}>
+          <Select
+            value={categoryFilter}
+            onValueChange={(val) => setCategoryFilter(val ?? "ALL")}
+          >
             <SelectTrigger className="w-auto min-w-[140px] h-8 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL">All Categories</SelectItem>
+              <SelectItem value="ALL">
+                {t("apps.data_dialog.filter_all")}
+              </SelectItem>
               {app.dataCategories.map((cat) => (
                 <SelectItem key={cat} value={cat}>
-                  {DATA_CATEGORY_LABELS[cat] || cat}
+                  {t(dataCategoryLabelKey(cat))}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -142,13 +132,15 @@ export function AppDataDialog({
           )}
           {!loading && dataPoints.length === 0 && (
             <div className="flex items-center justify-center h-32 text-sm text-muted-foreground">
-              No data points synced yet.
+              {t("apps.data_dialog.empty")}
             </div>
           )}
           {!loading && dataPoints.length > 0 && (
             <div className="divide-y">
               {dataPoints.map((dp) => {
-                const statusConfig = STATUS_CONFIG[dp.status] || STATUS_CONFIG.PENDING;
+                const statusClass =
+                  DATA_POINT_STATUS_CLASSNAMES[dp.status] ??
+                  DATA_POINT_STATUS_CLASSNAMES.PENDING;
                 const isExpanded = expandedId === dp.id;
                 return (
                   <div key={dp.id} className="px-4 py-3">
@@ -159,23 +151,25 @@ export function AppDataDialog({
                       }
                     >
                       <span className="text-sm font-medium tabular-nums min-w-[90px]">
-                        {new Date(dp.date).toLocaleDateString()}
+                        {formatDate(new Date(dp.date), locale, "short")}
                       </span>
                       <Badge
                         variant="outline"
                         className="text-[10px] bg-violet-500/5 text-violet-500 border-violet-500/20"
                       >
-                        {DATA_CATEGORY_LABELS[dp.category] || dp.category}
+                        {t(dataCategoryLabelKey(dp.category))}
                       </Badge>
                       <Badge
                         variant="outline"
-                        className={`text-[10px] ${statusConfig.className}`}
+                        className={`text-[10px] ${statusClass}`}
                       >
-                        {statusConfig.label}
+                        {t(appDataPointStatusLabelKey(dp.status))}
                       </Badge>
                       <span className="flex-1" />
                       <span className="text-xs text-muted-foreground">
-                        {isExpanded ? "Collapse" : "Expand"}
+                        {isExpanded
+                          ? t("apps.data_dialog.collapse")
+                          : t("apps.data_dialog.expand")}
                       </span>
                     </button>
                     {isExpanded && (
@@ -186,11 +180,11 @@ export function AppDataDialog({
                           </pre>
                         ) : dp.status === "ERROR" ? (
                           <p className="text-sm text-destructive">
-                            {dp.errorMessage || "Processing failed."}
+                            {dp.errorMessage || t("apps.data_dialog.processing_failed")}
                           </p>
                         ) : (
                           <p className="text-sm text-muted-foreground italic">
-                            Not yet processed.
+                            {t("apps.data_dialog.not_processed")}
                           </p>
                         )}
                       </div>

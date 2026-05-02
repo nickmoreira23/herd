@@ -28,7 +28,9 @@ import {
   AlertCircle,
   Download,
 } from "lucide-react";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import { notifyError } from "@/lib/i18n/notify";
+import type { MessageKey } from "@/lib/i18n/t";
 
 // ─── Field type mapping (client-side mirror) ────────────────────
 
@@ -88,7 +90,7 @@ const HERD_FIELD_TYPES = [
   "createdTime",
   "lastModifiedTime",
   "autoNumber",
-];
+] as const;
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -167,6 +169,7 @@ export function AirtableImportModal({
   onOpenChange,
   onComplete,
 }: AirtableImportModalProps) {
+  const t = useT();
   const router = useRouter();
   const [step, setStep] = useState<Step>("select-base");
   const [loading, setLoading] = useState(false);
@@ -214,32 +217,37 @@ export function AirtableImportModal({
         .then((r) => r.json())
         .then((json) => {
           if (json.data) setBases(json.data);
-          else toast.error(json.error || "Failed to load bases");
+          else notifyError("error.tables.import.airtable.load_bases_failed", t);
         })
-        .catch(() => toast.error("Failed to connect to Airtable"))
+        .catch(() =>
+          notifyError("error.tables.import.airtable.connect_failed", t)
+        )
         .finally(() => setLoading(false));
     }
-  }, [open, step, bases.length]);
+  }, [open, step, bases.length, t]);
 
   // Step 2: Fetch tables for selected base
-  const fetchTables = useCallback(async (baseId: string) => {
-    setLoading(true);
-    try {
-      const res = await fetch(
-        `/api/integrations/airtable/bases/${baseId}/tables`
-      );
-      const json = await res.json();
-      if (json.data) {
-        setTables(json.data);
-      } else {
-        toast.error(json.error || "Failed to load tables");
+  const fetchTables = useCallback(
+    async (baseId: string) => {
+      setLoading(true);
+      try {
+        const res = await fetch(
+          `/api/integrations/airtable/bases/${baseId}/tables`
+        );
+        const json = await res.json();
+        if (json.data) {
+          setTables(json.data);
+        } else {
+          notifyError("error.tables.import.airtable.load_tables_failed", t);
+        }
+      } catch {
+        notifyError("error.tables.import.airtable.fetch_tables_failed", t);
+      } finally {
+        setLoading(false);
       }
-    } catch {
-      toast.error("Failed to fetch tables");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [t]
+  );
 
   // Build field mappings from selected table
   const buildFieldMappings = useCallback((table: AirtableTable) => {
@@ -312,7 +320,7 @@ export function AirtableImportModal({
 
       const json = await res.json();
       if (!res.ok) {
-        toast.error(json.error || "Import failed");
+        notifyError("error.tables.import.airtable.import_failed", t);
         setStep("field-mapping");
         setLoading(false);
         return;
@@ -343,11 +351,11 @@ export function AirtableImportModal({
         }
       }, 2000);
     } catch {
-      toast.error("Failed to start import");
+      notifyError("error.tables.import.airtable.start_failed", t);
       setStep("field-mapping");
       setLoading(false);
     }
-  }, [selectedBase, selectedTable, fieldMappings]);
+  }, [selectedBase, selectedTable, fieldMappings, t]);
 
   const activeFieldCount = fieldMappings.filter((m) => !m.skip).length;
 
@@ -362,26 +370,26 @@ export function AirtableImportModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Download className="h-4 w-4" />
-            Import from Airtable
+            {t("tables.import.airtable.header.title")}
           </DialogTitle>
         </DialogHeader>
 
         {/* Step indicator */}
         <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
           <span className={step === "select-base" ? "text-foreground font-medium" : ""}>
-            1. Base
+            {t("tables.import.airtable.header.step_1_base")}
           </span>
-          <span>&rarr;</span>
+          <span>{"→"}</span>
           <span className={step === "select-table" ? "text-foreground font-medium" : ""}>
-            2. Table
+            {t("tables.import.airtable.header.step_2_table")}
           </span>
-          <span>&rarr;</span>
+          <span>{"→"}</span>
           <span className={step === "field-mapping" ? "text-foreground font-medium" : ""}>
-            3. Fields
+            {t("tables.import.airtable.header.step_3_fields")}
           </span>
-          <span>&rarr;</span>
+          <span>{"→"}</span>
           <span className={step === "importing" || step === "complete" ? "text-foreground font-medium" : ""}>
-            4. Import
+            {t("tables.import.airtable.header.step_4_import")}
           </span>
         </div>
 
@@ -389,19 +397,18 @@ export function AirtableImportModal({
         {step === "select-base" && (
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              Select an Airtable base to import from.
+              {t("tables.import.airtable.steps.bases.intro")}
             </p>
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 <span className="ml-2 text-sm text-muted-foreground">
-                  Loading bases...
+                  {t("tables.import.airtable.steps.bases.loading")}
                 </span>
               </div>
             ) : bases.length === 0 ? (
               <div className="text-center py-12 text-sm text-muted-foreground">
-                No bases found. Make sure your Airtable token has access to at
-                least one base.
+                {t("tables.import.airtable.steps.bases.empty")}
               </div>
             ) : (
               <div className="grid gap-2">
@@ -441,20 +448,20 @@ export function AirtableImportModal({
                 }}
               >
                 <ArrowLeft className="h-3 w-3 mr-1" />
-                Back
+                {t("common.actions.back")}
               </Button>
               <Badge variant="outline" className="text-xs">
                 {selectedBase?.name}
               </Badge>
             </div>
             <p className="text-sm text-muted-foreground">
-              Select a table to import.
+              {t("tables.import.airtable.steps.tables.intro")}
             </p>
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 <span className="ml-2 text-sm text-muted-foreground">
-                  Loading tables...
+                  {t("tables.import.airtable.steps.tables.loading")}
                 </span>
               </div>
             ) : (
@@ -471,8 +478,14 @@ export function AirtableImportModal({
                         {table.name}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {table.fields.length} fields
-                        {table.description && ` — ${table.description}`}
+                        {table.description
+                          ? t("tables.import.airtable.steps.tables.fields_count_with_description", {
+                              count: table.fields.length,
+                              description: table.description,
+                            })
+                          : t("tables.import.airtable.steps.tables.fields_count", {
+                              count: table.fields.length,
+                            })}
                       </p>
                     </div>
                   </button>
@@ -496,29 +509,36 @@ export function AirtableImportModal({
                 }}
               >
                 <ArrowLeft className="h-3 w-3 mr-1" />
-                Back
+                {t("common.actions.back")}
               </Button>
               <Badge variant="outline" className="text-xs">
                 {selectedBase?.name}
               </Badge>
-              <span className="text-muted-foreground text-xs">&rarr;</span>
+              <span className="text-muted-foreground text-xs">{"→"}</span>
               <Badge variant="outline" className="text-xs">
                 {selectedTable?.name}
               </Badge>
             </div>
 
             <p className="text-sm text-muted-foreground">
-              Review field mappings. Adjust types, rename fields, or skip fields
-              you don&apos;t need.
+              {t("tables.import.airtable.steps.mapping.intro")}
             </p>
 
             {/* Field mapping table */}
             <div className="border rounded-lg overflow-hidden">
               <div className="grid grid-cols-[1fr_140px_1fr_60px] gap-0 text-xs font-medium text-muted-foreground bg-muted/50 border-b">
-                <div className="px-3 py-2">Airtable Field</div>
-                <div className="px-3 py-2">HERD Type</div>
-                <div className="px-3 py-2">HERD Name</div>
-                <div className="px-3 py-2 text-center">Skip</div>
+                <div className="px-3 py-2">
+                  {t("tables.import.airtable.steps.mapping.col_airtable_field")}
+                </div>
+                <div className="px-3 py-2">
+                  {t("tables.import.airtable.steps.mapping.col_herd_type")}
+                </div>
+                <div className="px-3 py-2">
+                  {t("tables.import.airtable.steps.mapping.col_herd_name")}
+                </div>
+                <div className="px-3 py-2 text-center">
+                  {t("tables.import.airtable.steps.mapping.col_skip")}
+                </div>
               </div>
               <div className="max-h-[45vh] overflow-y-auto divide-y">
                 {fieldMappings.map((mapping, idx) => (
@@ -546,9 +566,11 @@ export function AirtableImportModal({
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {HERD_FIELD_TYPES.map((t) => (
-                            <SelectItem key={t} value={t}>
-                              {t}
+                          {HERD_FIELD_TYPES.map((typeKey) => (
+                            <SelectItem key={typeKey} value={typeKey}>
+                              {t(
+                                `tables.field_types.${typeKey}.label` as MessageKey
+                              )}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -583,14 +605,19 @@ export function AirtableImportModal({
 
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">
-                {activeFieldCount} of {fieldMappings.length} fields selected
+                {t("tables.import.airtable.steps.mapping.fields_selected", {
+                  active: activeFieldCount,
+                  total: fieldMappings.length,
+                })}
               </span>
               <Button
                 onClick={handleImport}
                 disabled={activeFieldCount === 0}
               >
                 <ArrowRight className="h-3.5 w-3.5 mr-1" />
-                Import {selectedTable?.name}
+                {t("tables.import.airtable.steps.mapping.import_button", {
+                  table: selectedTable?.name ?? "",
+                })}
               </Button>
             </div>
           </div>
@@ -602,10 +629,14 @@ export function AirtableImportModal({
             <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
             <div className="text-center">
               <p className="text-sm font-medium">
-                Importing {selectedTable?.name}...
+                {t("tables.import.airtable.steps.progress.importing", {
+                  table: selectedTable?.name ?? "",
+                })}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                {importProgress.recordCount} records imported
+                {t("tables.import.airtable.steps.progress.records_imported", {
+                  count: importProgress.recordCount,
+                })}
               </p>
             </div>
             <div className="w-full max-w-xs bg-muted rounded-full h-2 overflow-hidden">
@@ -618,8 +649,7 @@ export function AirtableImportModal({
               />
             </div>
             <p className="text-[10px] text-muted-foreground">
-              This may take a few minutes for large tables. Do not close this
-              dialog.
+              {t("tables.import.airtable.steps.progress.do_not_close")}
             </p>
           </div>
         )}
@@ -633,14 +663,18 @@ export function AirtableImportModal({
                   <AlertCircle className="h-6 w-6 text-red-500" />
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-medium">Import Failed</p>
+                  <p className="text-sm font-medium">
+                    {t("tables.import.airtable.steps.progress.error_title")}
+                  </p>
                   <p className="text-xs text-muted-foreground mt-1 max-w-md">
-                    {importProgress.errorMessage || "An unknown error occurred"}
+                    {importProgress.errorMessage ||
+                      t("tables.import.airtable.steps.progress.error_unknown")}
                   </p>
                   {importProgress.recordCount > 0 && (
                     <p className="text-xs text-muted-foreground mt-1">
-                      {importProgress.recordCount} records were imported before
-                      the error.
+                      {t("tables.import.airtable.steps.progress.partial_imported", {
+                        count: importProgress.recordCount,
+                      })}
                     </p>
                   )}
                 </div>
@@ -650,7 +684,7 @@ export function AirtableImportModal({
                     size="sm"
                     onClick={() => onOpenChange(false)}
                   >
-                    Close
+                    {t("common.actions.close")}
                   </Button>
                   {importedTableId && (
                     <Button
@@ -663,7 +697,7 @@ export function AirtableImportModal({
                         );
                       }}
                     >
-                      View Table
+                      {t("tables.import.airtable.navigation.view_table")}
                     </Button>
                   )}
                 </div>
@@ -674,10 +708,14 @@ export function AirtableImportModal({
                   <Check className="h-6 w-6 text-emerald-500" />
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-medium">Import Complete</p>
+                  <p className="text-sm font-medium">
+                    {t("tables.import.airtable.steps.progress.success_title")}
+                  </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Successfully imported {importProgress.recordCount} records
-                    from {selectedTable?.name}.
+                    {t("tables.import.airtable.steps.progress.success_summary", {
+                      count: importProgress.recordCount,
+                      table: selectedTable?.name ?? "",
+                    })}
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -689,7 +727,7 @@ export function AirtableImportModal({
                       onComplete();
                     }}
                   >
-                    Close
+                    {t("common.actions.close")}
                   </Button>
                   <Button
                     size="sm"
@@ -701,7 +739,7 @@ export function AirtableImportModal({
                       );
                     }}
                   >
-                    View Table
+                    {t("tables.import.airtable.navigation.view_table")}
                   </Button>
                 </div>
               </>

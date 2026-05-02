@@ -4,6 +4,7 @@ import { FinancialPageClient } from "@/components/financials/financial-page-clie
 import { getFinancialDefaults } from "../data";
 import type { FinancialInputs } from "@/lib/financial-engine";
 import { connection } from "next/server";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 export default async function EditModelPage({
   params,
@@ -16,9 +17,10 @@ export default async function EditModelPage({
   // "new" is handled by the /new route, skip it here
   if (id === "new") return notFound();
 
-  const [snapshot, defaults] = await Promise.all([
+  const [snapshot, defaults, locale] = await Promise.all([
     prisma.financialSnapshot.findUnique({ where: { id } }),
     getFinancialDefaults(),
+    getLocale(),
   ]);
 
   if (!snapshot) return notFound();
@@ -35,6 +37,7 @@ export default async function EditModelPage({
       initialName={snapshot.scenarioName || ""}
       initialColor={snapshot.color || "#3B82F6"}
       initialInputs={snapshot.assumptions as unknown as FinancialInputs}
+      locale={locale}
     />
   );
 }

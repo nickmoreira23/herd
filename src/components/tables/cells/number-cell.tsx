@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useT } from "@/lib/i18n/locale-context";
 import type { CellRendererProps, CellEditorProps } from "./index";
 
 function formatNumber(
@@ -30,7 +31,7 @@ export function NumberCellRenderer({ value, field }: CellRendererProps) {
   const formatted = formatNumber(value, field.type, field.options);
   return (
     <span className="text-sm tabular-nums text-right block" title={formatted}>
-      {formatted || <span className="text-muted-foreground/40">—</span>}
+      {formatted || <span className="text-muted-foreground/40">{"—"}</span>}
     </span>
   );
 }
@@ -41,6 +42,7 @@ export function NumberCellEditor({
   onCommit,
   onCancel,
 }: CellEditorProps) {
+  const t = useT();
   const [text, setText] = useState(
     value != null && value !== "" ? String(value) : ""
   );
@@ -74,6 +76,7 @@ export function NumberCellEditor({
         onCommit();
       }}
       onKeyDown={handleKeyDown}
+      aria-label={t("tables.cells.number.aria_label")}
       className="w-full h-full text-sm text-right border-0 bg-transparent outline-none focus:ring-1 focus:ring-primary rounded px-1.5 tabular-nums"
       step="any"
     />

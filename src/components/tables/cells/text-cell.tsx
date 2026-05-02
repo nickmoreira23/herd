@@ -2,13 +2,14 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
+import { useT } from "@/lib/i18n/locale-context";
 import type { CellRendererProps, CellEditorProps } from "./index";
 
 export function TextCellRenderer({ value }: CellRendererProps) {
   const text = value != null ? String(value) : "";
   return (
     <span className="text-sm truncate block" title={text}>
-      {text || <span className="text-muted-foreground/40">—</span>}
+      {text || <span className="text-muted-foreground/40">{"—"}</span>}
     </span>
   );
 }
@@ -20,6 +21,7 @@ export function TextCellEditor({
   onCommit,
   onCancel,
 }: CellEditorProps) {
+  const t = useT();
   const [text, setText] = useState(value != null ? String(value) : "");
   const inputRef = useRef<HTMLTextAreaElement | HTMLInputElement>(null);
   const isMultiline = field.type === "multilineText";
@@ -56,6 +58,7 @@ export function TextCellEditor({
           onCommit();
         }}
         onKeyDown={handleKeyDown}
+        aria-label={t("tables.cells.text.aria_label")}
         className="h-full min-h-[60px] text-sm border-0 rounded-none focus-visible:ring-1 focus-visible:ring-primary resize-none p-1.5"
         rows={3}
       />
@@ -73,6 +76,7 @@ export function TextCellEditor({
         onCommit();
       }}
       onKeyDown={handleKeyDown}
+      aria-label={t("tables.cells.text.aria_label")}
       className="w-full h-full text-sm border-0 bg-transparent outline-none focus:ring-1 focus:ring-primary rounded px-1.5"
     />
   );

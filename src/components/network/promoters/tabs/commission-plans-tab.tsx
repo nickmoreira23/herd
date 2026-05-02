@@ -5,8 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Pencil, Trash2, Power, DollarSign, Percent, BarChart3, Copy, CalendarDays } from "lucide-react";
-import { formatPercent, formatCurrency, toNumber } from "@/lib/utils";
-import { toast } from "sonner";
+import { toNumber } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale-context";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
+import { formatNumberAsMoney } from "@/lib/money/format";
+import { formatNumber } from "@/lib/i18n/format-number";
+import { formatDate } from "@/lib/i18n/format-date";
+import type { Locale } from "@/lib/i18n/locales";
 import { CommissionPlanEditor } from "../editors/commission-plan-editor";
 import type { SubscriptionTier } from "@/types";
 
@@ -34,9 +39,11 @@ interface PlanWithRelations {
 interface CommissionPlansTabProps {
   initialPlans: PlanWithRelations[];
   tiers: SubscriptionTier[];
+  locale: Locale;
 }
 
-export function CommissionPlansTab({ initialPlans, tiers }: CommissionPlansTabProps) {
+export function CommissionPlansTab({ initialPlans, tiers, locale }: CommissionPlansTabProps) {
+  const t = useT();
   const [plans, setPlans] = useState(initialPlans);
   const [editPlan, setEditPlan] = useState<PlanWithRelations | null>(null);
   const [showCreate, setShowCreate] = useState(false);
@@ -54,40 +61,40 @@ export function CommissionPlansTab({ initialPlans, tiers }: CommissionPlansTabPr
       body: JSON.stringify({ isActive: !plan.isActive }),
     });
     await refresh();
-    toast.success(plan.isActive ? "Plan deactivated" : "Plan activated");
-  }, [refresh]);
+    notifySuccess(plan.isActive ? "network.promoters.feedback.plan_deactivated" : "network.promoters.feedback.plan_activated", t);
+  }, [refresh, t]);
 
   const handleDelete = useCallback(async (plan: PlanWithRelations) => {
     if (plan._count.agreements > 0) {
-      toast.error("Cannot delete a plan with active agreements");
+      notifyError("error.network.promoters.plan.delete_with_agreements", t);
       return;
     }
-    if (!confirm(`Delete "${plan.name} v${plan.version}"?`)) return;
+    if (!confirm(t("network.promoters.plans.confirm_delete", { name: plan.name, version: plan.version }))) return;
     await fetch(`/api/commission-plans/${plan.id}`, { method: "DELETE" });
     await refresh();
-    toast.success("Plan deleted");
-  }, [refresh]);
+    notifySuccess("network.promoters.feedback.plan_deleted", t);
+  }, [refresh, t]);
 
   const handleDuplicate = useCallback(async (plan: PlanWithRelations) => {
     const res = await fetch(`/api/commission-plans/${plan.id}/duplicate`, { method: "POST" });
     if (!res.ok) {
-      toast.error("Failed to duplicate plan");
+      notifyError("error.network.promoters.plan.duplicate_failed", t);
       return;
     }
     await refresh();
-    toast.success(`Created v${plan.version + 1} of "${plan.name}"`);
-  }, [refresh]);
+    notifySuccess("network.promoters.feedback.plan_duplicated", t, { name: plan.name, version: plan.version + 1 });
+  }, [refresh, t]);
 
   return (
     <>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground max-w-lg">
-            Commission plans define upfront bonuses and residual rates per subscription tier and role. Only one plan can be active at a time.
+            {t("network.promoters.plans.description")}
           </p>
           <Button size="sm" onClick={() => setShowCreate(true)}>
             <Plus className="mr-1.5 h-3.5 w-3.5" />
-            New Plan
+            {t("network.promoters.plans.new_button")}
           </Button>
         </div>
 
@@ -95,9 +102,9 @@ export function CommissionPlansTab({ initialPlans, tiers }: CommissionPlansTabPr
           <Card>
             <CardContent className="py-12 text-center">
               <DollarSign className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
-              <p className="font-medium">No commission plans yet</p>
+              <p className="font-medium">{t("network.promoters.plans.empty_title")}</p>
               <p className="text-sm text-muted-foreground mt-1 max-w-sm mx-auto">
-                Create your first plan to define how D2D reps earn bonuses and residuals.
+                {t("network.promoters.plans.empty_description")}
               </p>
             </CardContent>
           </Card>
@@ -119,17 +126,17 @@ export function CommissionPlansTab({ initialPlans, tiers }: CommissionPlansTabPr
                           <h3 className="font-semibold text-sm">{plan.name}</h3>
                           <Badge variant="outline" className="text-[10px] px-1.5 py-0">v{plan.version}</Badge>
                           {plan.isActive && (
-                            <Badge className="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 text-[10px] px-1.5 py-0">Active</Badge>
+                            <Badge className="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 text-[10px] px-1.5 py-0">{t("network.promoters.plans.active_badge")}</Badge>
                           )}
                         </div>
                         {plan.notes && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{plan.notes}</p>}
                       </div>
                     </div>
                     <div className="flex gap-0.5">
-                      <Button variant="ghost" size="icon-sm" onClick={() => setEditPlan(plan)} title="Edit"><Pencil className="h-3.5 w-3.5" /></Button>
-                      <Button variant="ghost" size="icon-sm" onClick={() => handleDuplicate(plan)} title="Duplicate"><Copy className="h-3.5 w-3.5" /></Button>
-                      <Button variant="ghost" size="icon-sm" onClick={() => handleToggleActive(plan)} title={plan.isActive ? "Deactivate" : "Activate"}><Power className="h-3.5 w-3.5" /></Button>
-                      <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(plan)} title="Delete"><Trash2 className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon-sm" onClick={() => setEditPlan(plan)} title={t("common.actions.edit")}><Pencil className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon-sm" onClick={() => handleDuplicate(plan)} title={t("network.promoters.plans.action.duplicate")}><Copy className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon-sm" onClick={() => handleToggleActive(plan)} title={plan.isActive ? t("network.promoters.plans.action.deactivate") : t("network.promoters.plans.action.activate")}><Power className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(plan)} title={t("common.actions.delete")}><Trash2 className="h-3.5 w-3.5" /></Button>
                     </div>
                   </div>
 
@@ -137,30 +144,30 @@ export function CommissionPlansTab({ initialPlans, tiers }: CommissionPlansTabPr
                     <div className="flex items-center gap-2.5 rounded-lg bg-muted/50 px-3 py-2">
                       <Percent className="h-3.5 w-3.5 text-muted-foreground" />
                       <div>
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Residual</p>
-                        <p className="font-semibold text-sm">{formatPercent(toNumber(plan.residualPercent))}</p>
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("network.promoters.plans.metric.residual")}</p>
+                        <p className="font-semibold text-sm">{formatNumber(toNumber(plan.residualPercent), locale, "percent")}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2.5 rounded-lg bg-muted/50 px-3 py-2">
                       <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
                       <div>
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Overrides</p>
-                        <p className="font-semibold text-sm">{plan.overrideRules.length} rules</p>
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("network.promoters.plans.metric.overrides")}</p>
+                        <p className="font-semibold text-sm">{t("network.promoters.plans.metric.overrides_count", { count: plan.overrideRules.length })}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2.5 rounded-lg bg-muted/50 px-3 py-2">
                       <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
                       <div>
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Agreements</p>
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("network.promoters.plans.metric.agreements")}</p>
                         <p className="font-semibold text-sm">{plan._count.agreements}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2.5 rounded-lg bg-muted/50 px-3 py-2">
                       <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
                       <div>
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Effective</p>
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("network.promoters.plans.metric.effective")}</p>
                         <p className="font-semibold text-sm text-xs">
-                          {plan.effectiveFrom ? new Date(plan.effectiveFrom).toLocaleDateString() : "—"}
+                          {plan.effectiveFrom ? formatDate(new Date(plan.effectiveFrom), locale, "short") : "—"}
                         </p>
                       </div>
                     </div>
@@ -171,8 +178,8 @@ export function CommissionPlansTab({ initialPlans, tiers }: CommissionPlansTabPr
                       {repRates.map((rate) => (
                         <div key={rate.id} className="rounded-lg border border-dashed px-3 py-2">
                           <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{rate.subscriptionTier.name}</p>
-                          <p className="font-semibold text-sm">{formatCurrency(toNumber(rate.upfrontBonus))}</p>
-                          <p className="text-[10px] text-muted-foreground">{formatPercent(toNumber(rate.residualPercent))} residual</p>
+                          <p className="font-semibold text-sm">{formatNumberAsMoney(toNumber(rate.upfrontBonus), locale)}</p>
+                          <p className="text-[10px] text-muted-foreground">{t("network.promoters.plans.residual_suffix", { value: formatNumber(toNumber(rate.residualPercent), locale, "percent") })}</p>
                         </div>
                       ))}
                     </div>

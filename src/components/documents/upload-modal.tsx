@@ -12,7 +12,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Upload, Loader2, FileUp } from "lucide-react";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import { notifyError, notifySuccess } from "@/lib/i18n/notify";
 
 interface UploadModalProps {
   open: boolean;
@@ -23,7 +24,14 @@ interface UploadModalProps {
 
 const ACCEPTED_TYPES = ".pdf,.docx,.txt,.md,.csv";
 
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export function UploadModal({ open, onOpenChange, onComplete, folderId }: UploadModalProps) {
+  const t = useT();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -45,8 +53,8 @@ export function UploadModal({ open, onOpenChange, onComplete, folderId }: Upload
   }
 
   async function handleUpload() {
-    if (!file) { toast.error("Select a file"); return; }
-    if (!name.trim()) { toast.error("Name is required"); return; }
+    if (!file) { notifyError("error.documents.select_file", t); return; }
+    if (!name.trim()) { notifyError("error.documents.name_required", t); return; }
 
     setUploading(true);
     try {
@@ -58,8 +66,7 @@ export function UploadModal({ open, onOpenChange, onComplete, folderId }: Upload
         body: formData,
       });
       if (!uploadRes.ok) {
-        const err = await uploadRes.json().catch(() => null);
-        toast.error(err?.error || "File upload failed");
+        notifyError("error.documents.upload_failed", t);
         return;
       }
       const uploadJson = await uploadRes.json();
@@ -79,7 +86,7 @@ export function UploadModal({ open, onOpenChange, onComplete, folderId }: Upload
           folderId: folderId || undefined,
         }),
       });
-      if (!docRes.ok) { toast.error("Failed to save document"); return; }
+      if (!docRes.ok) { notifyError("error.documents.save_failed", t); return; }
       const docJson = await docRes.json();
 
       // Trigger processing (fire-and-forget)
@@ -87,7 +94,7 @@ export function UploadModal({ open, onOpenChange, onComplete, folderId }: Upload
         method: "POST",
       }).catch(() => {});
 
-      toast.success("Document uploaded. Processing started...");
+      notifySuccess("documents.feedback.uploaded", t);
       reset();
       onOpenChange(false);
       onComplete();
@@ -100,7 +107,7 @@ export function UploadModal({ open, onOpenChange, onComplete, folderId }: Upload
     <Dialog open={open} onOpenChange={(v) => { if (!uploading) { onOpenChange(v); if (!v) reset(); } }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Upload Document</DialogTitle>
+          <DialogTitle>{t("documents.upload.title")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           {/* Drop zone */}
@@ -133,17 +140,17 @@ export function UploadModal({ open, onOpenChange, onComplete, folderId }: Upload
                 <FileUp className="h-8 w-8 text-brand" />
                 <p className="text-sm font-medium">{file.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {(file.size / 1024).toFixed(1)} KB
+                  {formatFileSize(file.size)}
                 </p>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-1">
                 <Upload className="h-8 w-8 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground">
-                  Drop a file here or click to browse
+                  {t("documents.upload.drop_here")}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  PDF, DOCX, TXT, MD, or CSV
+                  {t("documents.upload.accepted_formats")}
                 </p>
               </div>
             )}
@@ -151,24 +158,28 @@ export function UploadModal({ open, onOpenChange, onComplete, folderId }: Upload
 
           {/* Fields */}
           <div className="space-y-1.5">
-            <Label className="text-xs">Name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Document name" />
+            <Label className="text-xs">{t("documents.upload.field_name")}</Label>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={t("documents.upload.field_name_placeholder")}
+            />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Description (optional)</Label>
+            <Label className="text-xs">{t("documents.upload.field_description")}</Label>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="What is this document about?"
+              placeholder={t("documents.upload.field_description_placeholder")}
               rows={2}
             />
           </div>
 
           <Button onClick={handleUpload} disabled={uploading || !file} className="w-full">
             {uploading ? (
-              <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />Uploading...</>
+              <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />{t("documents.upload.button_uploading")}</>
             ) : (
-              <><Upload className="h-3.5 w-3.5 mr-1.5" />Upload Document</>
+              <><Upload className="h-3.5 w-3.5 mr-1.5" />{t("documents.upload.button_idle")}</>
             )}
           </Button>
         </div>

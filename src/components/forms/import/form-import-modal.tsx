@@ -18,7 +18,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Upload, Loader2, FileText } from "lucide-react";
-import { toast } from "sonner";
+import type { MessageKey } from "@/lib/i18n/messages/pt-BR";
+import { useT } from "@/lib/i18n/locale-context";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
 
 interface FormImportModalProps {
   open: boolean;
@@ -26,24 +28,29 @@ interface FormImportModalProps {
   onImported: (formId: string) => void;
 }
 
-const FORMATS = [
+const FORMATS: ReadonlyArray<{
+  value: string;
+  accept: string;
+  labelKey: MessageKey;
+  descriptionKey: MessageKey;
+}> = [
   {
     value: "google_forms",
-    label: "Google Forms (JSON)",
     accept: ".json",
-    description: "Export your Google Form as JSON",
+    labelKey: "forms.import.format.google_forms.label",
+    descriptionKey: "forms.import.format.google_forms.description",
   },
   {
     value: "typeform",
-    label: "Typeform (JSON)",
     accept: ".json",
-    description: "Export your Typeform as JSON",
+    labelKey: "forms.import.format.typeform.label",
+    descriptionKey: "forms.import.format.typeform.description",
   },
   {
     value: "surveymonkey",
-    label: "SurveyMonkey (CSV)",
     accept: ".csv",
-    description: "Export survey results as CSV",
+    labelKey: "forms.import.format.surveymonkey.label",
+    descriptionKey: "forms.import.format.surveymonkey.description",
   },
 ];
 
@@ -52,6 +59,7 @@ export function FormImportModal({
   onOpenChange,
   onImported,
 }: FormImportModalProps) {
+  const t = useT();
   const [format, setFormat] = useState("google_forms");
   const [file, setFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
@@ -67,7 +75,7 @@ export function FormImportModal({
 
   async function handleImport() {
     if (!file) {
-      toast.error("Please select a file");
+      notifyError("error.forms.import.no_file_selected", t);
       return;
     }
 
@@ -84,13 +92,12 @@ export function FormImportModal({
 
       if (res.ok) {
         const json = await res.json();
-        toast.success("Form imported successfully");
+        notifySuccess("forms.import.feedback.imported_successfully", t);
         reset();
         onOpenChange(false);
         onImported(json.data.id);
       } else {
-        const json = await res.json().catch(() => null);
-        toast.error(json?.error || "Failed to import form");
+        notifyError("error.forms.import.failed", t);
       }
     } finally {
       setImporting(false);
@@ -109,12 +116,12 @@ export function FormImportModal({
     >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Import Form</DialogTitle>
+          <DialogTitle>{t("forms.import.title")}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label className="text-xs">Format</Label>
+            <Label className="text-xs">{t("forms.import.format_label")}</Label>
             <Select value={format} onValueChange={(v) => setFormat(v ?? "google_forms")}>
               <SelectTrigger className="w-full">
                 <SelectValue />
@@ -122,20 +129,20 @@ export function FormImportModal({
               <SelectContent>
                 {FORMATS.map((f) => (
                   <SelectItem key={f.value} value={f.value}>
-                    {f.label}
+                    {t(f.labelKey)}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             {selectedFormat && (
               <p className="text-xs text-muted-foreground">
-                {selectedFormat.description}
+                {t(selectedFormat.descriptionKey)}
               </p>
             )}
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs">File</Label>
+            <Label className="text-xs">{t("forms.import.file_label")}</Label>
             <input
               ref={fileInputRef}
               type="file"
@@ -152,14 +159,18 @@ export function FormImportModal({
                   <FileText className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">{file.name}</span>
                   <span className="text-xs text-muted-foreground">
-                    ({(file.size / 1024).toFixed(1)} KB)
+                    {t("forms.import.file_size_kb", {
+                      size: (file.size / 1024).toFixed(1),
+                    })}
                   </span>
                 </div>
               ) : (
                 <div>
                   <Upload className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
                   <p className="text-xs text-muted-foreground">
-                    Click to select a {selectedFormat?.accept || ""} file
+                    {t("forms.import.click_to_select", {
+                      accept: selectedFormat?.accept || "",
+                    })}
                   </p>
                 </div>
               )}
@@ -169,18 +180,18 @@ export function FormImportModal({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("common.actions.cancel")}
           </Button>
           <Button onClick={handleImport} disabled={importing || !file}>
             {importing ? (
               <>
                 <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                Importing...
+                {t("forms.import.submitting")}
               </>
             ) : (
               <>
                 <Upload className="h-3.5 w-3.5 mr-1.5" />
-                Import Form
+                {t("forms.import.submit")}
               </>
             )}
           </Button>

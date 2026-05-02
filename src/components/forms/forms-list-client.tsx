@@ -1,5 +1,23 @@
 "use client";
 
+/**
+ * Blocks route surface for FORM listing.
+ *
+ * Coexists with src/components/forms/form-list.tsx (or
+ * Knowledge route surface). Both share fetch + columns + handlers +
+ * stats logic but use different chrome wrappers:
+ * - This file: BlockListPage shell (unified chrome).
+ * - form-list.tsx: DataTable + inline chrome.
+ *
+ * Architectural decision (1.5.6e): kept separate. Extracting a shared
+ * useBlockListing() hook is feasible but deferred — Surface (top-level
+ * feature post-Phase 1.5) may redefine how blocks are exposed across
+ * routes, potentially making this pattern obsolete. Revisit after
+ * Surface is built.
+ *
+ * See: docs/discovery/KNOWLEDGE_ROUTE_LAYER_AUDIT.md
+ */
+
 import { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { getFormColumns } from "./form-columns";
@@ -10,8 +28,9 @@ import { BlockListPage } from "@/components/shared/block-list-page";
 import type { FilterDef, StatCard } from "@/components/shared/block-list-page/types";
 import { Button } from "@/components/ui/button";
 import { Plus, Upload, ClipboardList } from "lucide-react";
-import { toast } from "sonner";
 import type { FormRow, FormStats } from "./types";
+import { useT, useLocale } from "@/lib/i18n/locale-context";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
 
 interface FormsListClientProps {
   initialForms: FormRow[];
@@ -23,6 +42,8 @@ export function FormsListClient({
   initialStats,
 }: FormsListClientProps) {
   const router = useRouter();
+  const t = useT();
+  const locale = useLocale();
   const [forms, setForms] = useState<FormRow[]>(initialForms);
   const [stats, setStats] = useState<FormStats>(initialStats);
   const [showCreate, setShowCreate] = useState(false);
@@ -42,22 +63,16 @@ export function FormsListClient({
     router.push(`/admin/organization/knowledge/forms/${form.id}`);
   }, [router]);
 
-  const handleCopyLink = useCallback((form: FormRow) => {
-    const url = `${window.location.origin}/f/${form.slug}`;
-    navigator.clipboard.writeText(url);
-    toast.success("Share link copied to clipboard");
-  }, []);
-
   const handleDelete = useCallback(async (form: FormRow) => {
     const res = await fetch(`/api/forms/${form.id}`, { method: "DELETE" });
     if (res.ok) {
       await refreshForms();
-      toast.success("Form deleted");
+      notifySuccess("forms.feedback.form_deleted", t);
     } else {
-      toast.error("Failed to delete form");
+      notifyError("error.forms.delete_failed", t);
     }
     setDeleteTarget(null);
-  }, [refreshForms]);
+  }, [refreshForms, t]);
 
   const handleCreated = useCallback((formId?: string) => {
     if (formId) {
@@ -70,29 +85,30 @@ export function FormsListClient({
   const columns = useMemo(
     () => getFormColumns({
       onOpen: handleOpen,
-      onCopyLink: handleCopyLink,
       onDelete: (form) => setDeleteTarget(form),
+      t,
+      locale,
     }),
-    [handleOpen, handleCopyLink]
+    [handleOpen, t, locale]
   );
 
   // Stats
   const statCards: StatCard[] = [
-    { label: "Total", value: String(stats.total) },
-    { label: "Active", value: String(stats.active) },
-    { label: "Draft", value: String(stats.draft) },
-    { label: "Total Responses", value: String(stats.totalResponses) },
+    { label: t("forms.list.stats.total"), value: String(stats.total) },
+    { label: t("forms.list.stats.active"), value: String(stats.active) },
+    { label: t("forms.list.stats.draft"), value: String(stats.draft) },
+    { label: t("forms.list.stats.total_responses"), value: String(stats.totalResponses) },
   ];
 
   // Filters
   const filters: FilterDef<FormRow>[] = [
     {
       key: "formStatus",
-      label: "All Status",
+      label: t("forms.list.filter.all_status"),
       options: [
-        { value: "DRAFT", label: "Draft" },
-        { value: "ACTIVE", label: "Active" },
-        { value: "CLOSED", label: "Closed" },
+        { value: "DRAFT", label: t("forms.statuses.DRAFT.label") },
+        { value: "ACTIVE", label: t("forms.statuses.ACTIVE.label") },
+        { value: "CLOSED", label: t("forms.statuses.CLOSED.label") },
       ],
       filterFn: (item, value) => item.formStatus === value,
     },
@@ -103,11 +119,11 @@ export function FormsListClient({
     <>
       <Button size="sm" variant="outline" onClick={() => setShowImport(true)}>
         <Upload className="mr-1 h-3 w-3" />
-        Import
+        {t("forms.list.import")}
       </Button>
       <Button size="sm" onClick={() => setShowCreate(true)}>
         <Plus className="mr-1 h-3 w-3" />
-        Create Form
+        {t("forms.list.create_form")}
       </Button>
     </>
   );
@@ -129,20 +145,20 @@ export function FormsListClient({
   return (
     <BlockListPage<FormRow>
       blockName="forms"
-      title="Forms"
-      description="Intake forms, surveys, and structured data collection templates."
+      title={t("forms.list.title")}
+      description={t("forms.list.description")}
       data={forms}
       getId={(f) => f.id}
       columns={columns}
       onRowClick={handleOpen}
-      searchPlaceholder="Search by name or description..."
+      searchPlaceholder={t("forms.list.search_placeholder")}
       searchFn={(f, q) => f.name.toLowerCase().includes(q) || (f.description?.toLowerCase().includes(q) ?? false)}
       filters={filters}
       stats={statCards}
       headerActions={headerActions}
       emptyIcon={ClipboardList}
-      emptyTitle="No forms yet"
-      emptyDescription="Create a form or import from an external service."
+      emptyTitle={t("forms.empty.title")}
+      emptyDescription={t("forms.empty.list_description")}
       modals={modals}
       showAgent={false}
     />

@@ -1,11 +1,33 @@
 "use client";
 
+/**
+ * Blocks route surface for FEED listing.
+ *
+ * Coexists with src/components/feeds/feed-table.tsx (or
+ * Knowledge route surface). Both share fetch + columns + handlers +
+ * stats logic but use different chrome wrappers:
+ * - This file: BlockListPage shell (unified chrome).
+ * - feed-table.tsx: DataTable + inline chrome.
+ *
+ * Architectural decision (1.5.6e): kept separate. Extracting a shared
+ * useBlockListing() hook is feasible but deferred — Surface (top-level
+ * feature post-Phase 1.5) may redefine how blocks are exposed across
+ * routes, potentially making this pattern obsolete. Revisit after
+ * Surface is built.
+ *
+ * See: docs/discovery/KNOWLEDGE_ROUTE_LAYER_AUDIT.md
+ */
+
 import { useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Rss } from "lucide-react";
 import { toast } from "sonner";
+import { useT, useLocale } from "@/lib/i18n/locale-context";
+import { notifyError, notifyInfo, notifySuccess } from "@/lib/i18n/notify";
+import { pluralize } from "@/lib/i18n/pluralize";
 import { BlockListPage } from "@/components/shared/block-list-page";
 import type { FilterDef, StatCard } from "@/components/shared/block-list-page";
+import { FEED_STATUSES, feedStatusLabelKey } from "@/lib/feeds/status-options";
 import { getFeedColumns } from "./feed-columns";
 import { AddFeedModal } from "./add-feed-modal";
 import { FeedDeleteDialog } from "./feed-delete-dialog";
@@ -22,6 +44,8 @@ export function FeedsListClient({
   initialFeeds,
   initialStats,
 }: FeedsListClientProps) {
+  const t = useT();
+  const locale = useLocale();
   const [feeds, setFeeds] = useState<RSSFeedRow[]>(initialFeeds);
   const [stats, setStats] = useState<RSSFeedStats>(initialStats);
   const [showAdd, setShowAdd] = useState(false);
@@ -42,22 +66,25 @@ export function FeedsListClient({
   // ── Action handlers ───────────────────────────────────────────────
   const handleSync = useCallback(
     async (feed: RSSFeedRow) => {
-      toast.info("Syncing feed...");
+      notifyInfo("feeds.feedback.syncing", t);
       const res = await fetch(`/api/feeds/${feed.id}/sync`, {
         method: "POST",
       });
       if (res.ok) {
         const json = await res.json();
+        const count = Number(json.data?.entriesScraped ?? 0);
         await refreshFeeds();
-        toast.success(
-          `Sync complete — ${json.data.entriesScraped} new articles`,
-        );
+        const message = pluralize(count, locale, {
+          one: t("feeds.feedback.sync_complete_one"),
+          other: t("feeds.feedback.sync_complete_other", { count }),
+        });
+        toast.success(message);
       } else {
         await refreshFeeds();
-        toast.error("Sync failed");
+        notifyError("error.feeds.sync_failed", t);
       }
     },
-    [refreshFeeds],
+    [refreshFeeds, t, locale],
   );
 
   const handleToggleActive = useCallback(
@@ -69,10 +96,13 @@ export function FeedsListClient({
       });
       if (res.ok) {
         await refreshFeeds();
-        toast.success(feed.isActive ? "Feed deactivated" : "Feed activated");
+        notifySuccess(
+          feed.isActive ? "feeds.feedback.deactivated" : "feeds.feedback.activated",
+          t,
+        );
       }
     },
-    [refreshFeeds],
+    [refreshFeeds, t],
   );
 
   const handleDelete = useCallback(
@@ -80,26 +110,30 @@ export function FeedsListClient({
       const res = await fetch(`/api/feeds/${feed.id}`, { method: "DELETE" });
       if (res.ok) {
         await refreshFeeds();
-        toast.success("Feed deleted");
+        notifySuccess("feeds.feedback.deleted", t);
       } else {
-        toast.error("Failed to delete feed");
+        notifyError("error.feeds.delete_failed", t);
       }
       setDeleteTarget(null);
     },
-    [refreshFeeds],
+    [refreshFeeds, t],
   );
 
   // ── Columns ───────────────────────────────────────────────────────
   const columns = useMemo(
     () =>
-      getFeedColumns({
-        onViewEntries: (feed) => setEntriesTarget(feed),
-        onSync: handleSync,
-        onSettings: (feed) => setSettingsTarget(feed),
-        onToggleActive: handleToggleActive,
-        onDelete: (feed) => setDeleteTarget(feed),
-      }),
-    [handleSync, handleToggleActive],
+      getFeedColumns(
+        {
+          onViewEntries: (feed) => setEntriesTarget(feed),
+          onSync: handleSync,
+          onSettings: (feed) => setSettingsTarget(feed),
+          onToggleActive: handleToggleActive,
+          onDelete: (feed) => setDeleteTarget(feed),
+        },
+        t,
+        locale,
+      ),
+    [handleSync, handleToggleActive, t, locale],
   );
 
   // ── Filters ───────────────────────────────────────────────────────
@@ -107,40 +141,41 @@ export function FeedsListClient({
     () => [
       {
         key: "status",
-        label: "All Status",
-        options: [
-          { value: "PENDING", label: "Pending" },
-          { value: "PROCESSING", label: "Processing" },
-          { value: "READY", label: "Ready" },
-          { value: "ERROR", label: "Error" },
-        ],
+        label: t("feeds.list.filter_all_status"),
+        options: FEED_STATUSES.map((status) => ({
+          value: status,
+          label: t(feedStatusLabelKey(status)),
+        })),
         filterFn: (item: RSSFeedRow, val: string) => item.status === val,
       },
     ],
-    [],
+    [t],
   );
 
   // ── Stats ─────────────────────────────────────────────────────────
   const statCards: StatCard[] = useMemo(
     () => [
-      { label: "Total", value: String(stats.total) },
-      { label: "Active", value: String(stats.active) },
-      { label: "Articles", value: String(stats.totalEntries) },
-      { label: "Error", value: String(stats.error) },
+      { label: t("feeds.list.stats.total"), value: String(stats.total) },
+      { label: t("feeds.list.stats.active"), value: String(stats.active) },
+      {
+        label: t("feeds.list.stats.articles"),
+        value: String(stats.totalEntries),
+      },
+      { label: t("feeds.list.stats.error"), value: String(stats.error) },
     ],
-    [stats],
+    [stats, t],
   );
 
   // ── Render ────────────────────────────────────────────────────────
   return (
     <BlockListPage<RSSFeedRow>
       blockName="feeds"
-      title="Feeds"
-      description="Subscribe to RSS feeds to automatically import articles into your knowledge base."
+      title={t("feeds.list.title")}
+      description={t("feeds.list.description")}
       data={feeds}
       getId={(f) => f.id}
       columns={columns}
-      searchPlaceholder="Search by name or URL..."
+      searchPlaceholder={t("feeds.list.search_placeholder")}
       searchFn={(item, q) =>
         item.name.toLowerCase().includes(q) ||
         item.feedUrl.toLowerCase().includes(q) ||
@@ -151,16 +186,16 @@ export function FeedsListClient({
       headerActions={
         <Button size="sm" onClick={() => setShowAdd(true)}>
           <Plus className="mr-1 h-3 w-3" />
-          Add Feed
+          {t("feeds.list.add_feed_button")}
         </Button>
       }
       emptyIcon={Rss}
-      emptyTitle="No feeds yet"
-      emptyDescription="Add RSS feed URLs to automatically monitor blogs and news sources. New articles matching your criteria will be imported into your knowledge base on a schedule."
+      emptyTitle={t("feeds.empty.title")}
+      emptyDescription={t("feeds.empty.description")}
       emptyAction={
         <Button variant="outline" onClick={() => setShowAdd(true)}>
           <Rss className="mr-2 h-4 w-4" />
-          Add your first feed
+          {t("feeds.empty.add_first")}
         </Button>
       }
       modals={

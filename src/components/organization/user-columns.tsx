@@ -10,6 +10,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { useT, useLocale } from "@/lib/i18n/locale-context";
+import { formatDate } from "@/lib/i18n/format-date";
+import type { MessageKey } from "@/lib/i18n/messages/pt-BR";
 import type { UserRow } from "./user-table";
 
 interface ColumnActions {
@@ -25,9 +28,206 @@ const STATUS_COLORS: Record<string, string> = {
   TERMINATED: "border-red-400/50 bg-red-400/10 text-red-400",
 };
 
-function toTitleCase(str: string) {
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+const STATUS_LABEL_KEYS = {
+  ACTIVE: "organization.users.status.active",
+  PENDING: "organization.users.status.pending",
+  SUSPENDED: "organization.users.status.suspended",
+  TERMINATED: "organization.users.status.terminated",
+} as const satisfies Record<string, MessageKey>;
+
+const NETWORK_LABEL_KEYS = {
+  INTERNAL: "organization.users.network.internal",
+  EXTERNAL: "organization.users.network.external",
+} as const satisfies Record<string, MessageKey>;
+
+// --- Header components -----------------------------------------------------
+
+function SortHeader({
+  labelKey,
+  onClick,
+}: {
+  labelKey: MessageKey;
+  onClick: () => void;
+}) {
+  const t = useT();
+  return (
+    <button
+      className="inline-flex items-center gap-1 text-xs font-medium hover:text-foreground/80"
+      onClick={onClick}
+    >
+      {t(labelKey)}
+      <ArrowUpDown className="h-3 w-3" />
+    </button>
+  );
 }
+
+function PlainHeader({ labelKey }: { labelKey: MessageKey }) {
+  const t = useT();
+  return <span className="text-xs">{t(labelKey)}</span>;
+}
+
+function SelectAllCheckbox({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: (val: boolean) => void;
+}) {
+  const t = useT();
+  return (
+    <input
+      type="checkbox"
+      checked={checked}
+      onChange={(e) => onChange(e.target.checked)}
+      className="rounded border-muted-foreground/30"
+      aria-label={t("organization.users.column.select_all")}
+    />
+  );
+}
+
+function SelectRowCheckbox({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: (val: boolean) => void;
+}) {
+  const t = useT();
+  return (
+    <input
+      type="checkbox"
+      checked={checked}
+      onChange={(e) => onChange(e.target.checked)}
+      className="rounded border-muted-foreground/30"
+      aria-label={t("organization.users.column.select_row")}
+    />
+  );
+}
+
+// --- Cell components -------------------------------------------------------
+
+function NameCell({ user, onEdit }: { user: UserRow; onEdit: (u: UserRow) => void }) {
+  return (
+    <button
+      className="flex flex-col text-left hover:underline"
+      onClick={() => onEdit(user)}
+    >
+      <span className="text-sm font-medium">
+        {user.firstName} {user.lastName}
+      </span>
+      <span className="text-xs text-muted-foreground">{user.email}</span>
+    </button>
+  );
+}
+
+function NetworkCell({ networkType }: { networkType: string }) {
+  const t = useT();
+  const key = NETWORK_LABEL_KEYS[networkType as keyof typeof NETWORK_LABEL_KEYS];
+  return (
+    <Badge variant="outline" className="text-xs font-normal px-1 py-1">
+      {key ? t(key) : networkType}
+    </Badge>
+  );
+}
+
+function ProfileTypeCell({ displayName }: { displayName: string }) {
+  return (
+    <Badge variant="outline" className="text-xs font-normal px-1 py-1">
+      {displayName}
+    </Badge>
+  );
+}
+
+function RolesCell({ user }: { user: UserRow }) {
+  const roles = user.profileRoles;
+  if (!roles.length) return <span className="text-xs text-muted-foreground">—</span>;
+  return (
+    <div className="flex flex-wrap gap-1">
+      {roles.slice(0, 2).map((pr) => (
+        <Badge key={pr.role.id} variant="outline" className="text-xs font-normal px-1 py-1">
+          {pr.role.displayName}
+        </Badge>
+      ))}
+      {roles.length > 2 && (
+        <span className="text-xs text-muted-foreground">+{roles.length - 2}</span>
+      )}
+    </div>
+  );
+}
+
+function StatusCell({ status }: { status: string }) {
+  const t = useT();
+  const key = STATUS_LABEL_KEYS[status as keyof typeof STATUS_LABEL_KEYS];
+  return (
+    <Badge
+      variant="outline"
+      className={`text-xs font-normal px-1 py-1 ${STATUS_COLORS[status] || ""}`}
+    >
+      {key ? t(key) : status}
+    </Badge>
+  );
+}
+
+function LastLoginCell({ date }: { date: Date | string | null }) {
+  const t = useT();
+  const locale = useLocale();
+  if (!date)
+    return (
+      <span className="text-sm text-muted-foreground">
+        {t("organization.users.column.never")}
+      </span>
+    );
+  return (
+    <span className="text-sm text-muted-foreground">
+      {formatDate(new Date(date), locale, "short")}
+    </span>
+  );
+}
+
+function CreatedAtCell({ date }: { date: Date | string }) {
+  const locale = useLocale();
+  return (
+    <span className="text-sm text-muted-foreground">
+      {formatDate(new Date(date), locale, "short")}
+    </span>
+  );
+}
+
+function ActionsCell({
+  user,
+  onEdit,
+  onDelete,
+  onToggleStatus,
+}: {
+  user: UserRow;
+  onEdit: (u: UserRow) => void;
+  onDelete: (u: UserRow) => void;
+  onToggleStatus: (u: UserRow) => void;
+}) {
+  const t = useT();
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" />}>
+        <MoreHorizontal className="h-4 w-4" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => onEdit(user)}>
+          {t("common.actions.edit")}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onToggleStatus(user)}>
+          {user.status === "SUSPENDED"
+            ? t("organization.users.action.activate")
+            : t("organization.users.action.suspend")}
+        </DropdownMenuItem>
+        <DropdownMenuItem className="text-destructive" onClick={() => onDelete(user)}>
+          {t("common.actions.delete")}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+// --- Column factory --------------------------------------------------------
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getUserColumns(actions: ColumnActions): ColumnDef<UserRow, any>[] {
@@ -35,21 +235,15 @@ export function getUserColumns(actions: ColumnActions): ColumnDef<UserRow, any>[
     {
       id: "select",
       header: ({ table }) => (
-        <input
-          type="checkbox"
+        <SelectAllCheckbox
           checked={table.getIsAllPageRowsSelected()}
-          onChange={(e) => table.toggleAllPageRowsSelected(e.target.checked)}
-          className="rounded border-muted-foreground/30"
-          aria-label="Select all"
+          onChange={(val) => table.toggleAllPageRowsSelected(val)}
         />
       ),
       cell: ({ row }) => (
-        <input
-          type="checkbox"
+        <SelectRowCheckbox
           checked={row.getIsSelected()}
-          onChange={(e) => row.toggleSelected(e.target.checked)}
-          className="rounded border-muted-foreground/30"
-          aria-label="Select row"
+          onChange={(val) => row.toggleSelected(val)}
         />
       ),
       enableSorting: false,
@@ -58,155 +252,64 @@ export function getUserColumns(actions: ColumnActions): ColumnDef<UserRow, any>[
     {
       accessorKey: "firstName",
       header: ({ column }) => (
-        <button
-          className="inline-flex items-center gap-1 text-xs font-medium hover:text-foreground/80"
+        <SortHeader
+          labelKey="organization.users.column.name"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Name
-          <ArrowUpDown className="h-3 w-3" />
-        </button>
+        />
       ),
-      cell: ({ row }) => (
-        <button
-          className="flex flex-col text-left hover:underline"
-          onClick={() => actions.onEdit(row.original)}
-        >
-          <span className="text-sm font-medium">
-            {row.original.firstName} {row.original.lastName}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            {row.original.email}
-          </span>
-        </button>
-      ),
+      cell: ({ row }) => <NameCell user={row.original} onEdit={actions.onEdit} />,
     },
     {
       accessorKey: "networkType",
-      header: () => <span className="text-xs">Network</span>,
-      cell: ({ row }) => {
-        const nt = row.original.networkType;
-        return (
-          <Badge
-            variant="outline"
-            className="text-xs font-normal px-1 py-1"
-          >
-            {toTitleCase(nt)}
-          </Badge>
-        );
-      },
+      header: () => <PlainHeader labelKey="organization.users.column.network" />,
+      cell: ({ row }) => <NetworkCell networkType={row.original.networkType} />,
     },
     {
       accessorKey: "profileType",
-      header: () => <span className="text-xs">Profile Type</span>,
-      cell: ({ row }) => {
-        const pt = row.original.profileType;
-        return (
-          <Badge
-            variant="outline"
-            className="text-xs font-normal px-1 py-1"
-          >
-            {pt.displayName}
-          </Badge>
-        );
-      },
+      header: () => <PlainHeader labelKey="organization.users.column.profile_type" />,
+      cell: ({ row }) => (
+        <ProfileTypeCell displayName={row.original.profileType.displayName} />
+      ),
     },
     {
       id: "roles",
-      header: () => <span className="text-xs">Roles</span>,
-      cell: ({ row }) => {
-        const roles = row.original.profileRoles;
-        if (!roles.length) return <span className="text-xs text-muted-foreground">—</span>;
-        return (
-          <div className="flex flex-wrap gap-1">
-            {roles.slice(0, 2).map((pr) => (
-              <Badge key={pr.role.id} variant="outline" className="text-xs font-normal px-1 py-1">
-                {pr.role.displayName}
-              </Badge>
-            ))}
-            {roles.length > 2 && (
-              <span className="text-xs text-muted-foreground">+{roles.length - 2}</span>
-            )}
-          </div>
-        );
-      },
+      header: () => <PlainHeader labelKey="organization.users.column.roles" />,
+      cell: ({ row }) => <RolesCell user={row.original} />,
     },
     {
       accessorKey: "status",
-      header: () => <span className="text-xs">Status</span>,
-      cell: ({ row }) => {
-        const status = row.original.status;
-        return (
-          <Badge
-            variant="outline"
-            className={`text-xs font-normal px-1 py-1 ${STATUS_COLORS[status] || ""}`}
-          >
-            {toTitleCase(status)}
-          </Badge>
-        );
-      },
+      header: () => <PlainHeader labelKey="organization.users.column.status" />,
+      cell: ({ row }) => <StatusCell status={row.original.status} />,
     },
     {
       accessorKey: "lastLogin",
       header: ({ column }) => (
-        <button
-          className="inline-flex items-center gap-1 text-xs font-medium hover:text-foreground/80"
+        <SortHeader
+          labelKey="organization.users.column.last_login"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Last Login
-          <ArrowUpDown className="h-3 w-3" />
-        </button>
+        />
       ),
-      cell: ({ row }) => {
-        const date = row.original.lastLogin;
-        if (!date) return <span className="text-sm text-muted-foreground">Never</span>;
-        return (
-          <span className="text-sm text-muted-foreground">
-            {new Date(date).toLocaleDateString()}
-          </span>
-        );
-      },
+      cell: ({ row }) => <LastLoginCell date={row.original.lastLogin} />,
     },
     {
       accessorKey: "createdAt",
       header: ({ column }) => (
-        <button
-          className="inline-flex items-center gap-1 text-xs font-medium hover:text-foreground/80"
+        <SortHeader
+          labelKey="organization.users.column.created"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Created
-          <ArrowUpDown className="h-3 w-3" />
-        </button>
+        />
       ),
-      cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground">
-          {new Date(row.original.createdAt).toLocaleDateString()}
-        </span>
-      ),
+      cell: ({ row }) => <CreatedAtCell date={row.original.createdAt} />,
     },
     {
       id: "actions",
       cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={<Button variant="ghost" size="icon-sm" />}
-          >
-            <MoreHorizontal className="h-4 w-4" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => actions.onEdit(row.original)}>
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => actions.onToggleStatus(row.original)}>
-              {row.original.status === "SUSPENDED" ? "Activate" : "Suspend"}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="text-destructive"
-              onClick={() => actions.onDelete(row.original)}
-            >
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <ActionsCell
+          user={row.original}
+          onEdit={actions.onEdit}
+          onDelete={actions.onDelete}
+          onToggleStatus={actions.onToggleStatus}
+        />
       ),
     },
   ];

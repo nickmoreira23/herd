@@ -54,7 +54,8 @@ import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
 import { BLOCK_ICON_MAP, BLOCK_LABEL_MAP } from "@/lib/blocks/block-meta";
 import { getBlockLabel, getCategoryLabel } from "@/lib/blocks/block-labels";
-import { useLocale } from "@/lib/i18n/locale-context";
+import { useLocale, useT } from "@/lib/i18n/locale-context";
+import type { MessageKey } from "@/lib/i18n/t";
 import { getAllToolCategories } from "@/lib/tools/registry";
 import { TOOL_ICON_MAP } from "@/lib/tools/category-meta";
 import type { BlockCategory } from "@/lib/blocks/block-categories";
@@ -67,7 +68,7 @@ import {
 } from "@/lib/blocks/block-categories";
 import { ManageBlocksDialog } from "@/components/blocks/manage-blocks-dialog";
 import { ManageSectionsDialog } from "@/components/marketplace/admin/manage-sections-dialog";
-import { ManageNetworkDialog } from "@/components/network/manage-network-dialog";
+import { NetworkSubPanel } from "@/components/network/network-sub-panel";
 import { ManageKnowledgeDialog } from "@/components/knowledge/manage-knowledge-dialog";
 import {
   KNOWLEDGE_BLOCKS_SETTING_KEY,
@@ -90,18 +91,28 @@ import {
 export interface SubPanelLink {
   href: string;
   label: string;
+  /**
+   * Optional i18n key. When present, takes precedence over `label`.
+   * Type kept loose (`string`) to avoid coupling sub-panel registry to
+   * the entire MessageKey union; the renderer casts at lookup time.
+   */
+  labelKey?: string;
   icon?: LucideIcon;
 }
 
 export interface SubPanelCategory {
   id: string;
   label: string;
+  /** Optional translation key. When present, takes precedence over `label`. */
+  labelKey?: string;
   links: SubPanelLink[];
 }
 
 export interface SubPanelConfig {
   id: string;
   label: string;
+  /** Optional translation key. When present, takes precedence over `label`. */
+  labelKey?: string;
   links: SubPanelLink[];
   categories?: SubPanelCategory[];
 }
@@ -130,17 +141,19 @@ export const subPanelRegistry: Record<string, SubPanelConfig> = {
   organization: {
     id: "organization",
     label: "Organization",
+    labelKey: "organization.subpanel.title",
     links: [],
     categories: [
       {
         id: "profile",
         label: "Profile",
+        labelKey: "organization.subpanel.profile_category",
         links: [
-          { href: "/admin/organization/profile", label: "General Information", icon: Building2 },
-          { href: "/admin/organization/profile/contact", label: "Contact Information", icon: Phone },
-          { href: "/admin/organization/profile/locations", label: "Locations", icon: MapPin },
-          { href: "/admin/organization/profile/business-hours", label: "Business Hours", icon: Clock },
-          { href: "/admin/organization/profile/regional-settings", label: "Regional Settings", icon: Globe },
+          { href: "/admin/organization/profile", label: "General Information", labelKey: "organization.subpanel.general_information", icon: Building2 },
+          { href: "/admin/organization/profile/contact", label: "Contact Information", labelKey: "organization.subpanel.contact_information", icon: Phone },
+          { href: "/admin/organization/profile/locations", label: "Locations", labelKey: "organization.subpanel.locations", icon: MapPin },
+          { href: "/admin/organization/profile/business-hours", label: "Business Hours", labelKey: "organization.subpanel.business_hours", icon: Clock },
+          { href: "/admin/organization/profile/regional-settings", label: "Regional Settings", labelKey: "organization.subpanel.regional_settings", icon: Globe },
         ],
       },
       {
@@ -194,9 +207,20 @@ export const subPanelRegistry: Record<string, SubPanelConfig> = {
   ledger: {
     id: "ledger",
     label: "Ledger",
+    labelKey: "nav.sidebar.ledger",
     links: [
-      { href: "/admin/ledger", label: "Plano de Contas", icon: LayoutGrid },
-      { href: "/admin/ledger/entries", label: "Journal Entries", icon: FileText },
+      {
+        href: "/admin/ledger",
+        label: "Plano de Contas",
+        labelKey: "ledger.subpanel.chart_of_accounts",
+        icon: LayoutGrid,
+      },
+      {
+        href: "/admin/ledger/entries",
+        label: "Journal Entries",
+        labelKey: "ledger.subpanel.journal_entries",
+        icon: FileText,
+      },
     ],
   },
   handbook: {
@@ -250,6 +274,7 @@ function BlocksSubPanel() {
   const pathname = usePathname();
   const { setSubPanelCollapsed } = useUIStore();
   const locale = useLocale();
+  const t = useT();
   const [categories, setCategories] = useState<BlockCategory[]>(DEFAULT_BLOCK_CATEGORIES);
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -281,7 +306,7 @@ function BlocksSubPanel() {
         <button
           onClick={() => setSubPanelCollapsed(true)}
           className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-accent mr-4"
-          title="Collapse panel"
+          title={t("nav.subpanel.collapse")}
         >
           <PanelLeftClose className="h-4 w-4" />
         </button>
@@ -377,6 +402,7 @@ function KnowledgeSubPanel() {
   const pathname = usePathname();
   const { setSubPanelCollapsed } = useUIStore();
   const locale = useLocale();
+  const t = useT();
   const [categories, setCategories] = useState<BlockCategory[]>(DEFAULT_BLOCK_CATEGORIES);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -433,7 +459,7 @@ function KnowledgeSubPanel() {
         <button
           onClick={() => setSubPanelCollapsed(true)}
           className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-accent mr-4"
-          title="Collapse panel"
+          title={t("nav.subpanel.collapse")}
         >
           <PanelLeftClose className="h-4 w-4" />
         </button>
@@ -515,207 +541,18 @@ function KnowledgeSubPanel() {
   );
 }
 
-// ─── Network Sub-Panel (dynamic departments + channels) ────────────
-
-interface NetworkSidebarDepartment {
-  id: string;
-  slug: string;
-  name: string;
-  color: string | null;
-  icon: string | null;
-}
-
-interface NetworkSidebarChannel {
-  id: string;
-  slug: string;
-  displayName: string;
-  color: string | null;
-  icon: string | null;
-}
-
-interface NetworkSidebarData {
-  departments: NetworkSidebarDepartment[];
-  channels: NetworkSidebarChannel[];
-}
-
-function NetworkSubPanel() {
-  const pathname = usePathname();
-  const { setSubPanelCollapsed } = useUIStore();
-  const [data, setData] = useState<NetworkSidebarData>({
-    departments: [],
-    channels: [],
-  });
-  const [dialogOpen, setDialogOpen] = useState(false);
-
-  const refresh = () => {
-    fetch("/api/network/sidebar")
-      .then((r) => r.json())
-      .then((j) => {
-        if (j.data) setData(j.data as NetworkSidebarData);
-      })
-      .catch(() => {});
-  };
-
-  useEffect(() => {
-    refresh();
-    const onUpdated = () => refresh();
-    window.addEventListener("network-sidebar-updated", onUpdated);
-    return () => window.removeEventListener("network-sidebar-updated", onUpdated);
-  }, []);
-
-  const isExact = (href: string) => pathname === href;
-  const isPrefix = (href: string) => pathname.startsWith(href);
-
-  const renderTopLink = (href: string, label: string, Icon: LucideIcon) => {
-    const active = isExact(href);
-    return (
-      <Link
-        key={href}
-        href={href}
-        className={cn(
-          "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-          active
-            ? "bg-primary/10 text-primary dark:bg-brand/10 dark:text-brand"
-            : "text-muted-foreground hover:bg-accent hover:text-foreground",
-        )}
-      >
-        <Icon className="h-4 w-4 shrink-0" />
-        <span className="truncate">{label}</span>
-      </Link>
-    );
-  };
-
-  return (
-    <div
-      className="shrink-0 flex flex-col border-r border-border bg-card h-screen transition-all duration-200 ease-in-out"
-      style={{ width: SUB_PANEL_WIDTH }}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between pt-6 pb-4">
-        <h2 className="text-[16px] font-semibold truncate pl-6">Network</h2>
-        <button
-          onClick={() => setSubPanelCollapsed(true)}
-          className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-accent mr-4"
-          title="Collapse panel"
-        >
-          <PanelLeftClose className="h-4 w-4" />
-        </button>
-      </div>
-
-      {/* Links */}
-      <nav className="flex-1 pb-4 overflow-y-auto px-3">
-        {renderTopLink("/admin/network", "All Members", LayoutGrid)}
-        {renderTopLink("/admin/organization/org-chart", "Org Chart", GitBranch)}
-        {renderTopLink("/admin/organization/network-map", "Network Map", Share2)}
-
-        {/* Internal Network — departments */}
-        <div className="mt-4">
-          <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-            Internal Network
-          </p>
-          {data.departments.length === 0 ? (
-            <p className="px-3 py-1 text-xs text-muted-foreground italic">
-              No departments yet.
-            </p>
-          ) : (
-            data.departments.map((d) => {
-              const href = `/admin/network/departments/${d.slug}`;
-              const active = isPrefix(href);
-              return (
-                <Link
-                  key={d.id}
-                  href={href}
-                  className={cn(
-                    "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                    active
-                      ? "bg-primary/10 text-primary dark:bg-brand/10 dark:text-brand"
-                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                  )}
-                >
-                  <span
-                    className="size-3.5 shrink-0 rounded-full border-2"
-                    style={{
-                      borderColor: "#94a3b8",
-                      backgroundColor: hexToRgba("#94a3b8", 0.25),
-                    }}
-                  />
-                  <span className="truncate">{d.name}</span>
-                </Link>
-              );
-            })
-          )}
-        </div>
-
-        {/* External Network — channels */}
-        <div className="mt-4">
-          <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-            External Network
-          </p>
-          {data.channels.length === 0 ? (
-            <p className="px-3 py-1 text-xs text-muted-foreground italic">
-              No channels yet.
-            </p>
-          ) : (
-            data.channels.map((c) => {
-              const href = `/admin/network/channels/${c.slug}`;
-              const active = isPrefix(href);
-              const color = c.color || "#f59e0b";
-              return (
-                <Link
-                  key={c.id}
-                  href={href}
-                  className={cn(
-                    "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                    active
-                      ? ""
-                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                  )}
-                  style={
-                    active
-                      ? { backgroundColor: hexToRgba(color, 0.1), color }
-                      : undefined
-                  }
-                >
-                  <span
-                    className="size-3.5 shrink-0 rounded-full border-2"
-                    style={{
-                      borderColor: color,
-                      backgroundColor: hexToRgba(color, 0.25),
-                    }}
-                  />
-                  <span className="truncate">{c.displayName}</span>
-                </Link>
-              );
-            })
-          )}
-        </div>
-      </nav>
-
-      {/* Footer */}
-      <div className="shrink-0 border-t border-border px-3 py-2">
-        <button
-          onClick={() => setDialogOpen(true)}
-          className="flex items-center justify-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors w-full"
-        >
-          <Settings2 className="h-3.5 w-3.5 shrink-0" />
-          <span>Manage Network</span>
-        </button>
-      </div>
-
-      <ManageNetworkDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        onChange={refresh}
-      />
-    </div>
-  );
-}
+// ─── Network Sub-Panel ─────────────────────────────────────────────
+// Extracted to src/components/network/network-sub-panel.tsx in Etapa 1.5.6b-bis.
+// This pattern (extract feature-specific sub-panel to its own file) will be
+// replicated for BlocksSubPanel, KnowledgeSubPanel, MarketplaceSubPanel,
+// ToolsSubPanel, OrganizationSubPanel in 1.5.6c-e.
 
 // ─── Tools Sub-Panel (dynamic from registry) ────────────────────────
 
 function ToolsSubPanel() {
   const pathname = usePathname();
   const { setSubPanelCollapsed } = useUIStore();
+  const t = useT();
   const categories = getAllToolCategories();
 
   const isActive = (href: string) => {
@@ -734,7 +571,7 @@ function ToolsSubPanel() {
         <button
           onClick={() => setSubPanelCollapsed(true)}
           className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-accent mr-4"
-          title="Collapse panel"
+          title={t("nav.subpanel.collapse")}
         >
           <PanelLeftClose className="h-4 w-4" />
         </button>
@@ -828,6 +665,7 @@ interface MarketplaceSectionRow {
 function MarketplaceSubPanel() {
   const pathname = usePathname();
   const { setSubPanelCollapsed } = useUIStore();
+  const t = useT();
   // Hydrate state from cache on first render so we don't flash an empty
   // panel before the network responds. `loaded` differentiates "still
   // fetching for the first time" (show skeleton) from "fetched, empty"
@@ -886,7 +724,7 @@ function MarketplaceSubPanel() {
         <button
           onClick={() => setSubPanelCollapsed(true)}
           className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-accent mr-4"
-          title="Collapse panel"
+          title={t("nav.subpanel.collapse")}
         >
           <PanelLeftClose className="h-4 w-4" />
         </button>
@@ -969,6 +807,7 @@ function MarketplaceSubPanel() {
 function OrganizationSubPanel() {
   const pathname = usePathname();
   const { setSubPanelCollapsed } = useUIStore();
+  const t = useT();
   const config = subPanelRegistry.organization;
   const categories = config?.categories ?? [];
 
@@ -984,11 +823,13 @@ function OrganizationSubPanel() {
     >
       {/* Header */}
       <div className="flex items-center justify-between pt-6 pb-4">
-        <h2 className="text-[16px] font-semibold truncate pl-6">{config.label}</h2>
+        <h2 className="text-[16px] font-semibold truncate pl-6">
+          {config.labelKey ? t(config.labelKey as MessageKey) : config.label}
+        </h2>
         <button
           onClick={() => setSubPanelCollapsed(true)}
           className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-accent mr-4"
-          title="Collapse panel"
+          title={t("nav.subpanel.collapse")}
         >
           <PanelLeftClose className="h-4 w-4" />
         </button>
@@ -999,7 +840,7 @@ function OrganizationSubPanel() {
         {categories.map((cat) => (
           <div key={cat.id} className="mt-4 first:mt-0">
             <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-              {cat.label}
+              {cat.labelKey ? t(cat.labelKey as MessageKey) : cat.label}
             </p>
             {cat.links.map((link) => {
               const active = link.href === activeHref;
@@ -1015,7 +856,9 @@ function OrganizationSubPanel() {
                   )}
                 >
                   {link.icon && <link.icon className="h-4 w-4 shrink-0" />}
-                  <span className="truncate">{link.label}</span>
+                  <span className="truncate">
+                    {link.labelKey ? t(link.labelKey as MessageKey) : link.label}
+                  </span>
                 </Link>
               );
             })}
@@ -1165,6 +1008,7 @@ function HandbookSubPanel() {
 function GenericSubPanel({ config }: { config: SubPanelConfig }) {
   const pathname = usePathname();
   const { setSubPanelCollapsed } = useUIStore();
+  const t = useT();
 
   const isActive = (href: string) => {
     // First link gets exact match only (e.g. "All Users" not when on sub-pages)
@@ -1181,11 +1025,13 @@ function GenericSubPanel({ config }: { config: SubPanelConfig }) {
     >
       {/* Header */}
       <div className="flex items-center justify-between pt-6 pb-4">
-        <h2 className="text-[16px] font-semibold truncate pl-6">{config.label}</h2>
+        <h2 className="text-[16px] font-semibold truncate pl-6">
+          {config.labelKey ? t(config.labelKey as MessageKey) : config.label}
+        </h2>
         <button
           onClick={() => setSubPanelCollapsed(true)}
           className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-accent mr-4"
-          title="Collapse panel"
+          title={t("nav.subpanel.collapse")}
         >
           <PanelLeftClose className="h-4 w-4" />
         </button>
@@ -1207,7 +1053,9 @@ function GenericSubPanel({ config }: { config: SubPanelConfig }) {
               )}
             >
               {link.icon && <link.icon className="h-4 w-4 shrink-0" />}
-              <span className="truncate">{link.label}</span>
+              <span className="truncate">
+                {link.labelKey ? t(link.labelKey as MessageKey) : link.label}
+              </span>
             </Link>
           );
         })}

@@ -19,54 +19,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Loader2, Plus, X, Type } from "lucide-react";
+import { useT } from "@/lib/i18n/locale-context";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
 import {
-  Loader2,
-  Plus,
-  X,
-  Type,
-  AlignLeft,
-  Hash,
-  List,
-  ListChecks,
-  CheckSquare,
-  Calendar,
-  Link2,
-  Mail,
-  DollarSign,
-  Percent,
-  ArrowUpRight,
-  ImageIcon,
-} from "lucide-react";
-import { toast } from "sonner";
+  TABLE_FIELD_TYPE_OPTIONS,
+  TABLE_FIELD_TYPE_MAP,
+} from "./cells";
 import type { TableFieldRow, TableRow } from "./types";
 
-const FIELD_TYPE_OPTIONS = [
-  { value: "singleLineText", label: "Single Line Text", icon: Type },
-  { value: "multilineText", label: "Long Text", icon: AlignLeft },
-  { value: "number", label: "Number", icon: Hash },
-  { value: "singleSelect", label: "Single Select", icon: List },
-  { value: "multiSelect", label: "Multi Select", icon: ListChecks },
-  { value: "checkbox", label: "Checkbox", icon: CheckSquare },
-  { value: "date", label: "Date", icon: Calendar },
-  { value: "url", label: "URL", icon: Link2 },
-  { value: "email", label: "Email", icon: Mail },
-  { value: "currency", label: "Currency", icon: DollarSign },
-  { value: "percent", label: "Percent", icon: Percent },
-  { value: "linkedRecord", label: "Linked Record", icon: ArrowUpRight },
-  { value: "media", label: "Media (Image/Video)", icon: ImageIcon },
-] as const;
-
-const FIELD_TYPE_MAP = Object.fromEntries(
-  FIELD_TYPE_OPTIONS.map((opt) => [opt.value, opt])
-);
-
-const PRECISION_OPTIONS = [
-  { value: "0", label: "0 (Integer)" },
-  { value: "1", label: "1" },
-  { value: "2", label: "2" },
-  { value: "3", label: "3" },
-  { value: "4", label: "4" },
-];
+const PRECISION_OPTIONS = ["0", "1", "2", "3", "4"] as const;
 
 const CHOICE_COLORS = [
   "emerald",
@@ -96,6 +58,7 @@ export function FieldConfigModal({
   field,
   onComplete,
 }: FieldConfigModalProps) {
+  const t = useT();
   const isEdit = !!field;
 
   const [name, setName] = useState("");
@@ -208,12 +171,12 @@ export function FieldConfigModal({
 
   async function handleSubmit() {
     if (!name.trim()) {
-      toast.error("Field name is required");
+      notifyError("error.tables.field_name_required", t);
       return;
     }
 
     if (type === "linkedRecord" && !linkedTableId) {
-      toast.error("Please select a table to link to");
+      notifyError("error.tables.linked_table_required", t);
       return;
     }
 
@@ -244,25 +207,34 @@ export function FieldConfigModal({
       });
 
       if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        toast.error(err?.error || `Failed to ${isEdit ? "update" : "add"} field`);
+        notifyError(
+          isEdit
+            ? "error.tables.field_update_failed"
+            : "error.tables.field_create_failed",
+          t
+        );
         return;
       }
 
-      toast.success(isEdit ? "Field updated" : "Field added");
+      notifySuccess(
+        isEdit
+          ? "tables.feedback.field_updated"
+          : "tables.feedback.field_added",
+        t
+      );
       resetForm();
       onOpenChange(false);
       onComplete();
     } catch (e) {
       console.error("Field submit error:", e);
-      toast.error("An unexpected error occurred");
+      notifyError("error.tables.unexpected_error", t);
     } finally {
       setSubmitting(false);
     }
   }
 
-  const selectedType = FIELD_TYPE_MAP[type];
-  const SelectedIcon = selectedType?.icon || Type;
+  const selectedTypeMeta = TABLE_FIELD_TYPE_MAP[type];
+  const SelectedIcon = selectedTypeMeta?.icon || Type;
 
   const showChoices = type === "singleSelect" || type === "multiSelect";
   const showPrecision =
@@ -282,20 +254,28 @@ export function FieldConfigModal({
     >
       <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit Field" : "Add Field"}</DialogTitle>
+          <DialogTitle>
+            {isEdit
+              ? t("tables.field_config.title_edit")
+              : t("tables.field_config.title_add")}
+          </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label className="text-xs">Name</Label>
+            <Label className="text-xs">
+              {t("tables.field_config.name_label")}
+            </Label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Price, Status, Email"
+              placeholder={t("tables.field_config.name_placeholder")}
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs">Type</Label>
+            <Label className="text-xs">
+              {t("tables.field_config.type_label")}
+            </Label>
             <Select
               value={type}
               onValueChange={(val) => val && setType(val)}
@@ -304,16 +284,16 @@ export function FieldConfigModal({
               <SelectTrigger className="h-9 text-sm">
                 <SelectValue>
                   <SelectedIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                  {selectedType?.label || type}
+                  {selectedTypeMeta ? t(selectedTypeMeta.labelKey) : type}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                {FIELD_TYPE_OPTIONS.map((opt) => {
+                {TABLE_FIELD_TYPE_OPTIONS.map((opt) => {
                   const Icon = opt.icon;
                   return (
                     <SelectItem key={opt.value} value={opt.value}>
                       <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-                      {opt.label}
+                      {t(opt.labelKey)}
                     </SelectItem>
                   );
                 })}
@@ -322,11 +302,13 @@ export function FieldConfigModal({
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs">Description (optional)</Label>
+            <Label className="text-xs">
+              {t("tables.field_config.description_label")}
+            </Label>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="What does this field store?"
+              placeholder={t("tables.field_config.description_placeholder")}
               rows={2}
             />
           </div>
@@ -334,7 +316,9 @@ export function FieldConfigModal({
           {/* Type-specific options */}
           {showPrecision && (
             <div className="space-y-1.5">
-              <Label className="text-xs">Decimal Precision</Label>
+              <Label className="text-xs">
+                {t("tables.field_config.precision_label")}
+              </Label>
               <Select
                 value={precision}
                 onValueChange={(val) => val && setPrecision(val)}
@@ -343,9 +327,11 @@ export function FieldConfigModal({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {PRECISION_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
+                  {PRECISION_OPTIONS.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {value === "0"
+                        ? t("tables.field_config.precision_integer")
+                        : value}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -355,7 +341,9 @@ export function FieldConfigModal({
 
           {showCurrency && (
             <div className="space-y-1.5">
-              <Label className="text-xs">Currency Symbol</Label>
+              <Label className="text-xs">
+                {t("tables.field_config.currency_symbol_label")}
+              </Label>
               <Input
                 value={currencySymbol}
                 onChange={(e) => setCurrencySymbol(e.target.value)}
@@ -367,7 +355,9 @@ export function FieldConfigModal({
 
           {showChoices && (
             <div className="space-y-1.5">
-              <Label className="text-xs">Choices</Label>
+              <Label className="text-xs">
+                {t("tables.field_config.choices_label")}
+              </Label>
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {choices.map((choice) => (
                   <Badge
@@ -378,6 +368,7 @@ export function FieldConfigModal({
                     {choice.name}
                     <button
                       onClick={() => removeChoice(choice.id)}
+                      aria-label={t("tables.field_config.remove_choice")}
                       className="ml-1 hover:opacity-70"
                     >
                       <X className="h-2.5 w-2.5" />
@@ -389,7 +380,7 @@ export function FieldConfigModal({
                 <Input
                   value={newChoiceName}
                   onChange={(e) => setNewChoiceName(e.target.value)}
-                  placeholder="Add a choice..."
+                  placeholder={t("tables.field_config.add_choice_placeholder")}
                   className="flex-1"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
@@ -403,6 +394,7 @@ export function FieldConfigModal({
                   size="sm"
                   onClick={addChoice}
                   disabled={!newChoiceName.trim()}
+                  aria-label={t("tables.field_config.add_choice")}
                 >
                   <Plus className="h-3.5 w-3.5" />
                 </Button>
@@ -412,11 +404,12 @@ export function FieldConfigModal({
 
           {showLinkedRecord && (
             <div className="space-y-1.5">
-              <Label className="text-xs">Link to Table</Label>
+              <Label className="text-xs">
+                {t("tables.field_config.link_to_table_label")}
+              </Label>
               {availableTables.length === 0 ? (
                 <p className="text-xs text-muted-foreground">
-                  No other tables available to link to. Create another table
-                  first.
+                  {t("tables.field_config.no_tables_available")}
                 </p>
               ) : (
                 <Select
@@ -425,12 +418,16 @@ export function FieldConfigModal({
                   disabled={isEdit}
                 >
                   <SelectTrigger className="h-9 text-sm">
-                    <SelectValue placeholder="Select a table..." />
+                    <SelectValue
+                      placeholder={t(
+                        "tables.field_config.select_table_placeholder"
+                      )}
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    {availableTables.map((t) => (
-                      <SelectItem key={t.id} value={t.id}>
-                        {t.name}
+                    {availableTables.map((tbl) => (
+                      <SelectItem key={tbl.id} value={tbl.id}>
+                        {tbl.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -448,7 +445,7 @@ export function FieldConfigModal({
               className="rounded border-input"
             />
             <Label htmlFor="field-required" className="text-xs cursor-pointer">
-              Required field
+              {t("tables.field_config.required_field")}
             </Label>
           </div>
 
@@ -460,12 +457,14 @@ export function FieldConfigModal({
             {submitting ? (
               <>
                 <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                {isEdit ? "Updating..." : "Adding..."}
+                {isEdit
+                  ? t("tables.field_config.updating")
+                  : t("tables.field_config.adding")}
               </>
             ) : isEdit ? (
-              "Update Field"
+              t("tables.field_config.update_button")
             ) : (
-              "Add Field"
+              t("tables.field_config.add_button")
             )}
           </Button>
         </div>

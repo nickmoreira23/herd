@@ -1,6 +1,17 @@
+/**
+ * EXPERIMENTAL — not in production rotation.
+ *
+ * This dictionary is preserved as a template for future Spanish localization,
+ * but es-ES (or any Spanish variant) is NOT currently in SUPPORTED_LOCALES.
+ * It will not be loaded by t() or useT(). When a Spanish-speaking customer
+ * justifies the work, this becomes the starting point — but until then,
+ * keys here may drift from pt-BR/en-US without breaking anything.
+ *
+ * Do not import from this file in production code.
+ */
 import type { MessageKey } from "./pt-BR";
 
-export const messages: Record<MessageKey, string> = {
+export const messages: Partial<Record<MessageKey, string>> = {
   // Block category labels
   "categories.commerce": "Comercio",
   "categories.communication": "Comunicación",

@@ -1,15 +1,35 @@
 "use client";
 
+/**
+ * Blocks route surface for IMAGE listing.
+ *
+ * Coexists with src/components/images/image-table.tsx (or
+ * Knowledge route surface). Both share fetch + columns + handlers +
+ * stats logic but use different chrome wrappers:
+ * - This file: BlockListPage shell (unified chrome).
+ * - image-table.tsx: DataTable + inline chrome + Folders/Breadcrumbs.
+ *
+ * Architectural decision (1.5.6e): kept separate. Extracting a shared
+ * useBlockListing() hook is feasible but deferred — Surface (top-level
+ * feature post-Phase 1.5) may redefine how blocks are exposed across
+ * routes, potentially making this pattern obsolete. Revisit after
+ * Surface is built.
+ *
+ * See: docs/discovery/KNOWLEDGE_ROUTE_LAYER_AUDIT.md
+ */
+
 import { useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, FolderPlus, Image } from "lucide-react";
-import { toast } from "sonner";
+import { Plus, FolderPlus, Image as ImageIcon } from "lucide-react";
+import { useT, useLocale } from "@/lib/i18n/locale-context";
+import { notifyError, notifySuccess } from "@/lib/i18n/notify";
 import { BlockListPage } from "@/components/shared/block-list-page";
 import type { FilterDef } from "@/components/shared/block-list-page";
 import { BlockAgentPanel } from "@/components/shared/block-agent-panel";
 import { FolderNav } from "@/components/shared/knowledge-commons/folder-nav";
 import { FolderDialog } from "@/components/shared/knowledge-commons/folder-dialog";
 import { DeleteDialog } from "@/components/shared/knowledge-commons/delete-dialog";
+import { MEDIA_STATUS_OPTIONS } from "@/lib/knowledge/media-status";
 import { getImageColumns } from "./image-columns";
 import { ImageUploadModal } from "./image-upload-modal";
 import { ImageViewer } from "./image-viewer";
@@ -24,32 +44,24 @@ export function ImagesListClient({
   initialImages,
   initialFolders,
 }: ImagesListClientProps) {
-  // ── Data state ───────────────────────────────────────────────────
+  const t = useT();
+  const locale = useLocale();
   const [images, setImages] = useState<ImageRow[]>(initialImages);
   const [folders, setFolders] = useState<FolderRow[]>(initialFolders);
-
-  // ── Folder + search state ────────────────────────────────────────
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-
-  // ── Modal state ──────────────────────────────────────────────────
   const [showUpload, setShowUpload] = useState(false);
   const [showFolderDialog, setShowFolderDialog] = useState(false);
   const [editingFolder, setEditingFolder] = useState<FolderRow | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ImageRow | null>(null);
-  const [deleteFolderTarget, setDeleteFolderTarget] =
-    useState<FolderRow | null>(null);
+  const [deleteFolderTarget, setDeleteFolderTarget] = useState<FolderRow | null>(null);
   const [viewerImage, setViewerImage] = useState<ImageRow | null>(null);
 
-  // ── Display data ─────────────────────────────────────────────────
-  // When searching, pass ALL images so the search spans every folder.
-  // When not searching, filter to the current folder only.
   const displayData = useMemo(() => {
     if (search) return images;
     return images.filter((img) => img.folderId === currentFolderId);
   }, [images, search, currentFolderId]);
 
-  // ── Data refresh ─────────────────────────────────────────────────
   const refreshData = useCallback(async () => {
     const [imagesRes, foldersRes] = await Promise.all([
       fetch("/api/images"),
@@ -61,7 +73,6 @@ export function ImagesListClient({
     if (foldersJson.data) setFolders(foldersJson.data);
   }, []);
 
-  // ── Action handlers ──────────────────────────────────────────────
   const handleView = useCallback((image: ImageRow) => {
     setViewerImage(image);
   }, []);
@@ -82,10 +93,13 @@ export function ImagesListClient({
       });
       if (res.ok) {
         await refreshData();
-        toast.success(image.isActive ? "Deactivated" : "Activated");
+        notifySuccess(
+          image.isActive ? "images.feedback.deactivated" : "images.feedback.activated",
+          t,
+        );
       }
     },
-    [refreshData],
+    [refreshData, t],
   );
 
   const handleDeleteImage = useCallback(
@@ -93,13 +107,13 @@ export function ImagesListClient({
       const res = await fetch(`/api/images/${image.id}`, { method: "DELETE" });
       if (res.ok) {
         await refreshData();
-        toast.success("Image deleted");
+        notifySuccess("images.feedback.deleted", t);
       } else {
-        toast.error("Failed to delete image");
+        notifyError("error.images.delete_failed", t);
       }
       setDeleteTarget(null);
     },
-    [refreshData],
+    [refreshData, t],
   );
 
   const handleDeleteFolder = useCallback(
@@ -112,14 +126,13 @@ export function ImagesListClient({
           setCurrentFolderId(folder.parentId);
         }
         await refreshData();
-        toast.success("Folder deleted");
+        notifySuccess("images.feedback.folder_deleted", t);
       } else {
-        const err = await res.json().catch(() => null);
-        toast.error(err?.error || "Failed to delete folder");
+        notifyError("error.images.folder_delete_failed", t);
       }
       setDeleteFolderTarget(null);
     },
-    [refreshData, currentFolderId],
+    [refreshData, currentFolderId, t],
   );
 
   const handleMoveToFolder = useCallback(
@@ -131,69 +144,67 @@ export function ImagesListClient({
       });
       if (res.ok) {
         await refreshData();
-        toast.success(folderId ? "Moved to folder" : "Moved to root");
+        notifySuccess(
+          folderId ? "images.feedback.moved_to_folder" : "images.feedback.moved_to_root",
+          t,
+        );
       }
     },
-    [refreshData],
+    [refreshData, t],
   );
 
-  // ── Columns ──────────────────────────────────────────────────────
   const columns = useMemo(
     () =>
-      getImageColumns({
-        onView: handleView,
-        onDownload: handleDownload,
-        onToggleActive: handleToggleActive,
-        onDelete: (image) => setDeleteTarget(image),
-        folders,
-        onMoveToFolder: handleMoveToFolder,
-      }),
-    [handleView, handleDownload, handleToggleActive, folders, handleMoveToFolder],
+      getImageColumns(
+        {
+          onView: handleView,
+          onDownload: handleDownload,
+          onToggleActive: handleToggleActive,
+          onDelete: (image) => setDeleteTarget(image),
+          folders,
+          onMoveToFolder: handleMoveToFolder,
+        },
+        t,
+        locale,
+      ),
+    [handleView, handleDownload, handleToggleActive, folders, handleMoveToFolder, t, locale],
   );
 
-  // ── Filters ──────────────────────────────────────────────────────
   const filters: FilterDef<ImageRow>[] = useMemo(
     () => [
       {
         key: "fileType",
-        label: "All Types",
-        options: [
-          { value: "PNG", label: "PNG" },
-          { value: "JPG", label: "JPG" },
-          { value: "WEBP", label: "WEBP" },
-          { value: "GIF", label: "GIF" },
-          { value: "SVG", label: "SVG" },
-          { value: "TIFF", label: "TIFF" },
-        ],
+        label: t("images.list.filter_all_types"),
+        options: ["PNG", "JPG", "WEBP", "GIF", "SVG", "TIFF"].map((v) => ({
+          value: v,
+          label: v,
+        })),
         filterFn: (item: ImageRow, val: string) => item.fileType === val,
       },
       {
         key: "status",
-        label: "All Status",
-        options: [
-          { value: "PENDING", label: "Pending" },
-          { value: "PROCESSING", label: "Processing" },
-          { value: "READY", label: "Ready" },
-          { value: "ERROR", label: "Error" },
-        ],
+        label: t("images.list.filter_all_status"),
+        options: MEDIA_STATUS_OPTIONS.map((s) => ({
+          value: s.value,
+          label: t(s.labelKey),
+        })),
         filterFn: (item: ImageRow, val: string) => item.status === val,
       },
     ],
-    [],
+    [t],
   );
 
-  // ── Render ───────────────────────────────────────────────────────
   return (
     <BlockListPage<ImageRow>
       blockName="images"
-      title="Images"
-      description="Upload and manage images for your knowledge base."
+      title={t("images.list.title")}
+      description={t("images.list.description")}
       data={displayData}
       getId={(img) => img.id}
       columns={columns}
       search={search}
       onSearchChange={setSearch}
-      searchPlaceholder="Search by name, description, or file..."
+      searchPlaceholder={t("images.list.search_placeholder")}
       searchFn={(item, q) =>
         item.name.toLowerCase().includes(q) ||
         (item.description?.toLowerCase().includes(q) ?? false) ||
@@ -211,11 +222,11 @@ export function ImagesListClient({
             }}
           >
             <FolderPlus className="mr-1 h-3 w-3" />
-            New Folder
+            {t("images.list.new_folder_button")}
           </Button>
           <Button size="sm" onClick={() => setShowUpload(true)}>
             <Plus className="mr-1 h-3 w-3" />
-            Upload Image
+            {t("images.list.upload_button")}
           </Button>
         </>
       }
@@ -229,14 +240,14 @@ export function ImagesListClient({
             setShowFolderDialog(true);
           }}
           onDelete={(folder) => setDeleteFolderTarget(folder)}
-          rootLabel="All Images"
+          rootLabel={t("images.list.breadcrumb_root")}
           countKey="images"
           isSearching={!!search}
         />
       }
-      emptyIcon={Image}
-      emptyTitle="No images yet"
-      emptyDescription="Upload images to your knowledge base. They'll be automatically analyzed and described by AI."
+      emptyIcon={ImageIcon}
+      emptyTitle={t("images.empty.title")}
+      emptyDescription={t("images.empty.description")}
       showAgent={false}
       modals={
         <>

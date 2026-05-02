@@ -3,9 +3,11 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { ProfileClient } from "@/components/profile/profile-client";
 import { connection } from "next/server";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 export default async function ProfilePage() {
   await connection();
+  const locale = await getLocale();
   const session = await auth();
   const userId = (session?.user as { id?: string } | undefined)?.id;
 
@@ -50,6 +52,7 @@ export default async function ProfilePage() {
 
   return (
     <ProfileClient
+      locale={locale}
       user={{
         id: user.id,
         name: `${user.firstName}${user.lastName ? " " + user.lastName : ""}`.trim(),

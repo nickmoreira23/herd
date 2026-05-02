@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
+import { useT } from "@/lib/i18n/locale-context";
 import type { CellRendererProps, CellEditorProps } from "./index";
 
 interface Choice {
@@ -35,7 +36,7 @@ export function SelectCellRenderer({ value, field }: CellRendererProps) {
     const selectedIds = Array.isArray(value) ? (value as string[]) : [];
     const selected = choices.filter((c) => selectedIds.includes(c.id));
     if (selected.length === 0) {
-      return <span className="text-muted-foreground/40 text-sm">—</span>;
+      return <span className="text-muted-foreground/40 text-sm">{"—"}</span>;
     }
     return (
       <div className="flex gap-1 flex-wrap overflow-hidden">
@@ -49,7 +50,7 @@ export function SelectCellRenderer({ value, field }: CellRendererProps) {
   // Single select
   const selectedChoice = choices.find((c) => c.id === value);
   if (!selectedChoice) {
-    return <span className="text-muted-foreground/40 text-sm">—</span>;
+    return <span className="text-muted-foreground/40 text-sm">{"—"}</span>;
   }
   return <ChoiceBadge choice={selectedChoice} />;
 }
@@ -61,6 +62,7 @@ export function SelectCellEditor({
   onCommit,
   onCancel,
 }: CellEditorProps) {
+  const t = useT();
   const choices = getChoices(field);
   const isMulti = field.type === "multiSelect";
   const [selected, setSelected] = useState<string[]>(() => {
@@ -146,7 +148,7 @@ export function SelectCellEditor({
       })}
       {choices.length === 0 && (
         <div className="px-3 py-2 text-xs text-muted-foreground">
-          No choices configured
+          {t("tables.cells.select.no_choices_configured")}
         </div>
       )}
     </div>

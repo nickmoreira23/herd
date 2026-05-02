@@ -4,8 +4,13 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, BarChart3, Trash2, Calendar, TrendingUp, Users, DollarSign, Target, LayoutGrid, Table2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatCurrency, getMarginColorClass, cn } from "@/lib/utils";
-import { toast } from "sonner";
+import { getMarginColorClass, cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale-context";
+import type { Locale } from "@/lib/i18n/locales";
+import { formatNumberAsMoney } from "@/lib/money/format";
+import { formatNumber } from "@/lib/i18n/format-number";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
+import type { MessageKey } from "@/lib/i18n/messages/pt-BR";
 
 interface SavedModel {
   id: string;
@@ -16,9 +21,16 @@ interface SavedModel {
   createdAt: string;
 }
 
+interface ModelsListProps {
+  locale: Locale;
+}
+
 const DEFAULT_COLOR = "#6B7280";
 
-export function ModelsList() {
+type TFn = (key: MessageKey, params?: Record<string, string | number>) => string;
+
+export function ModelsList({ locale }: ModelsListProps) {
+  const t = useT();
   const router = useRouter();
   const [models, setModels] = useState<SavedModel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,18 +65,22 @@ export function ModelsList() {
   const handleDelete = useCallback(
     async (e: React.MouseEvent, id: string, name: string) => {
       e.stopPropagation();
-      if (!confirm(`Delete model "${name}"?`)) return;
-      await fetch(`/api/financials/${id}`, { method: "DELETE" });
-      await fetchModels();
-      toast.success("Model deleted");
+      if (!confirm(t("financials.models.confirm_delete", { name }))) return;
+      try {
+        await fetch(`/api/financials/${id}`, { method: "DELETE" });
+        await fetchModels();
+        notifySuccess("financials.models.feedback.deleted", t);
+      } catch (err) {
+        notifyError(err, t);
+      }
     },
-    [fetchModels]
+    [fetchModels, t]
   );
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground text-sm">Loading models...</p>
+        <p className="text-muted-foreground text-sm">{t("financials.models.loading")}</p>
       </div>
     );
   }
@@ -73,9 +89,9 @@ export function ModelsList() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Projections</h1>
+          <h1 className="text-2xl font-bold">{t("financials.models.title")}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Build and compare financial projection models for your operation.
+            {t("financials.models.subtitle")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -85,6 +101,7 @@ export function ModelsList() {
               <button
                 type="button"
                 onClick={() => setView("cards")}
+                aria-label={t("financials.models.view_cards")}
                 className={cn(
                   "p-1.5 rounded-l-md transition-colors",
                   view === "cards"
@@ -97,6 +114,7 @@ export function ModelsList() {
               <button
                 type="button"
                 onClick={() => setView("table")}
+                aria-label={t("financials.models.view_table")}
                 className={cn(
                   "p-1.5 rounded-r-md transition-colors",
                   view === "table"
@@ -110,22 +128,24 @@ export function ModelsList() {
           )}
           <Button onClick={() => router.push("/admin/operation/finances/projections/new")}>
             <Plus className="h-4 w-4 mr-2" />
-            Add Model
+            {t("financials.models.add_model")}
           </Button>
         </div>
       </div>
 
       {models.length === 0 ? (
-        <EmptyState onAdd={() => router.push("/admin/operation/finances/projections/new")} />
+        <EmptyState onAdd={() => router.push("/admin/operation/finances/projections/new")} t={t} />
       ) : view === "cards" ? (
         <div className="space-y-3">
           {models.map((model) => (
             <ModelCard
               key={model.id}
               model={model}
+              locale={locale}
+              t={t}
               onClick={() => router.push(`/admin/operation/finances/projections/${model.id}`)}
               onDelete={(e) =>
-                handleDelete(e, model.id, model.scenarioName || "Untitled")
+                handleDelete(e, model.id, model.scenarioName || t("financials.models.untitled"))
               }
             />
           ))}
@@ -133,6 +153,8 @@ export function ModelsList() {
       ) : (
         <ModelsTable
           models={models}
+          locale={locale}
+          t={t}
           onRowClick={(id) => router.push(`/admin/operation/finances/projections/${id}`)}
           onDelete={handleDelete}
         />
@@ -141,20 +163,19 @@ export function ModelsList() {
   );
 }
 
-function EmptyState({ onAdd }: { onAdd: () => void }) {
+function EmptyState({ onAdd, t }: { onAdd: () => void; t: TFn }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/20 py-20">
       <div className="rounded-full bg-muted p-4 mb-4">
         <BarChart3 className="h-8 w-8 text-muted-foreground" />
       </div>
-      <h3 className="text-lg font-semibold mb-1">No models yet</h3>
+      <h3 className="text-lg font-semibold mb-1">{t("financials.models.empty_title")}</h3>
       <p className="text-sm text-muted-foreground mb-6 max-w-sm text-center">
-        Create your first financial model to simulate P&L scenarios, compare
-        margins, and plan your operation.
+        {t("financials.models.empty_description")}
       </p>
       <Button onClick={onAdd}>
         <Plus className="h-4 w-4 mr-2" />
-        Add Model
+        {t("financials.models.add_model")}
       </Button>
     </div>
   );
@@ -164,10 +185,14 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
 
 function ModelsTable({
   models,
+  locale,
+  t,
   onRowClick,
   onDelete,
 }: {
   models: SavedModel[];
+  locale: Locale;
+  t: TFn;
   onRowClick: (id: string) => void;
   onDelete: (e: React.MouseEvent, id: string, name: string) => void;
 }) {
@@ -176,15 +201,15 @@ function ModelsTable({
       <table className="w-full text-sm border-collapse">
         <thead>
           <tr className="border-b bg-muted/50">
-            <th className="px-4 py-2.5 text-left font-medium text-muted-foreground text-xs">Model</th>
-            <th className="px-3 py-2.5 text-right font-medium text-muted-foreground text-xs">MRR</th>
-            <th className="px-3 py-2.5 text-right font-medium text-muted-foreground text-xs">ARR</th>
-            <th className="px-3 py-2.5 text-right font-medium text-muted-foreground text-xs">Net Margin</th>
-            <th className="px-3 py-2.5 text-right font-medium text-muted-foreground text-xs">Gross Margin</th>
-            <th className="px-3 py-2.5 text-right font-medium text-muted-foreground text-xs">New Subs/Mo</th>
-            <th className="px-3 py-2.5 text-right font-medium text-muted-foreground text-xs">LTV:CAC</th>
-            <th className="px-3 py-2.5 text-right font-medium text-muted-foreground text-xs">Breakeven</th>
-            <th className="px-3 py-2.5 text-right font-medium text-muted-foreground text-xs">Created</th>
+            <th className="px-4 py-2.5 text-left font-medium text-muted-foreground text-xs">{t("financials.models.column.model")}</th>
+            <th className="px-3 py-2.5 text-right font-medium text-muted-foreground text-xs">{t("financials.models.column.mrr")}</th>
+            <th className="px-3 py-2.5 text-right font-medium text-muted-foreground text-xs">{t("financials.models.column.arr")}</th>
+            <th className="px-3 py-2.5 text-right font-medium text-muted-foreground text-xs">{t("financials.models.column.net_margin")}</th>
+            <th className="px-3 py-2.5 text-right font-medium text-muted-foreground text-xs">{t("financials.models.column.gross_margin")}</th>
+            <th className="px-3 py-2.5 text-right font-medium text-muted-foreground text-xs">{t("financials.models.column.new_subs_per_mo")}</th>
+            <th className="px-3 py-2.5 text-right font-medium text-muted-foreground text-xs">{t("financials.models.column.ltv_cac")}</th>
+            <th className="px-3 py-2.5 text-right font-medium text-muted-foreground text-xs">{t("financials.models.column.breakeven")}</th>
+            <th className="px-3 py-2.5 text-right font-medium text-muted-foreground text-xs">{t("financials.models.column.created")}</th>
             <th className="px-3 py-2.5 w-10"></th>
           </tr>
         </thead>
@@ -214,24 +239,24 @@ function ModelsTable({
                       style={{ backgroundColor: color }}
                     />
                     <span className="font-medium truncate max-w-[200px]">
-                      {model.scenarioName || "Untitled Model"}
+                      {model.scenarioName || t("financials.models.untitled")}
                     </span>
                   </div>
                 </td>
                 <td className="px-3 py-2.5 text-right tabular-nums">
-                  {mrr !== undefined ? formatCurrency(mrr) : "—"}
+                  {mrr !== undefined ? formatNumberAsMoney(mrr, locale) : "—"}
                 </td>
                 <td className="px-3 py-2.5 text-right tabular-nums">
-                  {arr !== undefined ? formatCurrency(arr) : "—"}
+                  {arr !== undefined ? formatNumberAsMoney(arr, locale) : "—"}
                 </td>
                 <td className={cn("px-3 py-2.5 text-right tabular-nums font-medium", netMarginPct !== undefined ? getMarginColorClass(netMarginPct) : "")}>
-                  {netMarginPct !== undefined ? `${Math.round(netMarginPct)}%` : "—"}
+                  {netMarginPct !== undefined ? formatNumber(netMarginPct / 100, locale, "percent") : "—"}
                 </td>
                 <td className={cn("px-3 py-2.5 text-right tabular-nums font-medium", grossMarginPct !== undefined ? getMarginColorClass(grossMarginPct) : "")}>
-                  {grossMarginPct !== undefined ? `${Math.round(grossMarginPct)}%` : "—"}
+                  {grossMarginPct !== undefined ? formatNumber(grossMarginPct / 100, locale, "percent") : "—"}
                 </td>
                 <td className="px-3 py-2.5 text-right tabular-nums">
-                  {newSubsPerMonth !== undefined ? newSubsPerMonth.toLocaleString() : "—"}
+                  {newSubsPerMonth !== undefined ? formatNumber(newSubsPerMonth, locale, "integer") : "—"}
                 </td>
                 <td className={cn(
                   "px-3 py-2.5 text-right tabular-nums font-medium",
@@ -246,7 +271,7 @@ function ModelsTable({
                   {ltvCacRatio !== undefined
                     ? ltvCacRatio === Infinity
                       ? "∞"
-                      : `${ltvCacRatio.toFixed(1)}x`
+                      : t("financials.models.ratio_x", { value: ltvCacRatio.toFixed(1) })
                     : "—"}
                 </td>
                 <td className={cn(
@@ -261,18 +286,18 @@ function ModelsTable({
                 )}>
                   {breakeven !== undefined
                     ? breakeven === Infinity
-                      ? "Never"
-                      : `Mo ${breakeven}`
+                      ? t("financials.models.breakeven.never")
+                      : t("financials.models.breakeven.month_short", { month: breakeven })
                     : "—"}
                 </td>
                 <td className="px-3 py-2.5 text-right text-xs text-muted-foreground tabular-nums">
-                  {new Date(model.createdAt).toLocaleDateString()}
+                  {new Date(model.createdAt).toLocaleDateString(locale)}
                 </td>
                 <td className="px-3 py-2.5 text-right">
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    onClick={(e) => onDelete(e, model.id, model.scenarioName || "Untitled")}
+                    onClick={(e) => onDelete(e, model.id, model.scenarioName || t("financials.models.untitled"))}
                     className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-red-500"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -291,10 +316,14 @@ function ModelsTable({
 
 function ModelCard({
   model,
+  locale,
+  t,
   onClick,
   onDelete,
 }: {
   model: SavedModel;
+  locale: Locale;
+  t: TFn;
   onClick: () => void;
   onDelete: (e: React.MouseEvent) => void;
 }) {
@@ -329,11 +358,11 @@ function ModelCard({
                 style={{ backgroundColor: color }}
               />
               <h3 className="font-semibold text-base truncate">
-                {model.scenarioName || "Untitled Model"}
+                {model.scenarioName || t("financials.models.untitled")}
               </h3>
               <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground ml-2">
                 <Calendar className="h-3 w-3" />
-                <span>{new Date(model.createdAt).toLocaleDateString()}</span>
+                <span>{new Date(model.createdAt).toLocaleDateString(locale)}</span>
               </div>
             </div>
             <Button
@@ -351,39 +380,39 @@ function ModelCard({
             <div className="grid grid-cols-7 gap-4">
               <MetricCell
                 icon={<TrendingUp className="h-3 w-3" />}
-                label="MRR"
-                value={mrr !== undefined ? formatCurrency(mrr) : "—"}
+                label={t("financials.models.column.mrr")}
+                value={mrr !== undefined ? formatNumberAsMoney(mrr, locale) : "—"}
               />
               <MetricCell
                 icon={<TrendingUp className="h-3 w-3" />}
-                label="ARR"
-                value={arr !== undefined ? formatCurrency(arr) : "—"}
+                label={t("financials.models.column.arr")}
+                value={arr !== undefined ? formatNumberAsMoney(arr, locale) : "—"}
               />
               <MetricCell
                 icon={<DollarSign className="h-3 w-3" />}
-                label="Net Margin"
-                value={netMarginPct !== undefined ? `${Math.round(netMarginPct)}%` : "—"}
+                label={t("financials.models.column.net_margin")}
+                value={netMarginPct !== undefined ? formatNumber(netMarginPct / 100, locale, "percent") : "—"}
                 valueClass={netMarginPct !== undefined ? getMarginColorClass(netMarginPct) : undefined}
               />
               <MetricCell
                 icon={<DollarSign className="h-3 w-3" />}
-                label="Gross Margin"
-                value={grossMarginPct !== undefined ? `${Math.round(grossMarginPct)}%` : "—"}
+                label={t("financials.models.column.gross_margin")}
+                value={grossMarginPct !== undefined ? formatNumber(grossMarginPct / 100, locale, "percent") : "—"}
                 valueClass={grossMarginPct !== undefined ? getMarginColorClass(grossMarginPct) : undefined}
               />
               <MetricCell
                 icon={<Users className="h-3 w-3" />}
-                label="New Subs/Mo"
-                value={newSubsPerMonth !== undefined ? String(newSubsPerMonth) : "—"}
+                label={t("financials.models.column.new_subs_per_mo")}
+                value={newSubsPerMonth !== undefined ? formatNumber(newSubsPerMonth, locale, "integer") : "—"}
               />
               <MetricCell
                 icon={<Target className="h-3 w-3" />}
-                label="LTV:CAC"
+                label={t("financials.models.column.ltv_cac")}
                 value={
                   ltvCacRatio !== undefined
                     ? ltvCacRatio === Infinity
                       ? "∞"
-                      : `${ltvCacRatio.toFixed(1)}x`
+                      : t("financials.models.ratio_x", { value: ltvCacRatio.toFixed(1) })
                     : "—"
                 }
                 valueClass={
@@ -398,12 +427,12 @@ function ModelCard({
               />
               <MetricCell
                 icon={<BarChart3 className="h-3 w-3" />}
-                label="Breakeven"
+                label={t("financials.models.column.breakeven")}
                 value={
                   breakeven !== undefined
                     ? breakeven === Infinity
-                      ? "Never"
-                      : `Month ${breakeven}`
+                      ? t("financials.models.breakeven.never")
+                      : t("financials.models.breakeven.month_long", { month: breakeven })
                     : "—"
                 }
                 valueClass={

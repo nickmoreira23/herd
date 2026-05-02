@@ -18,6 +18,11 @@ import {
   Loader2,
   Rss,
 } from "lucide-react";
+import type { Locale } from "@/lib/i18n/locales";
+import type { MessageKey } from "@/lib/i18n/t";
+import { formatDate } from "@/lib/i18n/format-date";
+import { feedStatusLabelKey } from "@/lib/feeds/status-options";
+import { feedSyncIntervalLabelKey } from "@/lib/feeds/sync-intervals";
 import type { RSSFeedRow } from "./types";
 
 interface ColumnActions {
@@ -28,46 +33,36 @@ interface ColumnActions {
   onDelete: (feed: RSSFeedRow) => void;
 }
 
-const STATUS_CONFIG: Record<
+type TranslateFn = (
+  key: MessageKey,
+  params?: Record<string, string | number>,
+) => string;
+
+const STATUS_STYLES: Record<
   string,
-  { label: string; className: string; spinning?: boolean }
+  { className: string; spinning?: boolean }
 > = {
-  PENDING: {
-    label: "Pending",
-    className: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
-  },
+  PENDING: { className: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20" },
   PROCESSING: {
-    label: "Syncing",
     className: "bg-blue-500/10 text-blue-500 border-blue-500/20",
     spinning: true,
   },
   READY: {
-    label: "Ready",
     className: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
   },
-  ERROR: {
-    label: "Error",
-    className: "bg-red-500/10 text-red-500 border-red-500/20",
-  },
+  ERROR: { className: "bg-red-500/10 text-red-500 border-red-500/20" },
 };
 
-const FREQUENCY_CONFIG: Record<string, { label: string; className: string }> = {
-  HOURLY: {
-    label: "Hourly",
-    className: "bg-violet-500/10 text-violet-500 border-violet-500/20",
-  },
-  DAILY: {
-    label: "Daily",
-    className: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-  },
-  WEEKLY: {
-    label: "Weekly",
-    className: "bg-orange-500/10 text-orange-500 border-orange-500/20",
-  },
+const FREQUENCY_STYLES: Record<string, string> = {
+  HOURLY: "bg-violet-500/10 text-violet-500 border-violet-500/20",
+  DAILY: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+  WEEKLY: "bg-orange-500/10 text-orange-500 border-orange-500/20",
 };
 
 export function getFeedColumns(
-  actions: ColumnActions
+  actions: ColumnActions,
+  t: TranslateFn,
+  locale: Locale,
 ): ColumnDef<RSSFeedRow>[] {
   return [
     {
@@ -77,7 +72,7 @@ export function getFeedColumns(
           className="inline-flex items-center gap-1 text-xs font-medium hover:text-foreground/80"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Name
+          {t("feeds.list.columns.name")}
           <ArrowUpDown className="h-3 w-3" />
         </button>
       ),
@@ -108,15 +103,18 @@ export function getFeedColumns(
     },
     {
       accessorKey: "frequency",
-      header: () => <span className="text-xs">Frequency</span>,
+      header: () => (
+        <span className="text-xs">{t("feeds.list.columns.frequency")}</span>
+      ),
       cell: ({ row }) => {
-        const freq = FREQUENCY_CONFIG[row.original.frequency] || FREQUENCY_CONFIG.DAILY;
+        const freq = row.original.frequency;
+        const className = FREQUENCY_STYLES[freq] ?? FREQUENCY_STYLES.DAILY;
         return (
           <Badge
             variant="outline"
-            className={`text-xs font-medium ${freq.className}`}
+            className={`text-xs font-medium ${className}`}
           >
-            {freq.label}
+            {t(feedSyncIntervalLabelKey(freq))}
           </Badge>
         );
       },
@@ -128,7 +126,7 @@ export function getFeedColumns(
           className="inline-flex items-center gap-1 text-xs font-medium hover:text-foreground/80"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Articles
+          {t("feeds.list.columns.articles")}
           <ArrowUpDown className="h-3 w-3" />
         </button>
       ),
@@ -140,18 +138,21 @@ export function getFeedColumns(
     },
     {
       accessorKey: "status",
-      header: () => <span className="text-xs">Status</span>,
+      header: () => (
+        <span className="text-xs">{t("feeds.list.columns.status")}</span>
+      ),
       cell: ({ row }) => {
-        const config = STATUS_CONFIG[row.original.status] || STATUS_CONFIG.PENDING;
+        const status = row.original.status;
+        const style = STATUS_STYLES[status] ?? STATUS_STYLES.PENDING;
         return (
           <Badge
             variant="outline"
-            className={`text-xs font-medium ${config.className}`}
+            className={`text-xs font-medium ${style.className}`}
           >
-            {config.spinning && (
+            {style.spinning && (
               <Loader2 className="h-3 w-3 mr-1 animate-spin" />
             )}
-            {config.label}
+            {t(feedStatusLabelKey(status))}
           </Badge>
         );
       },
@@ -163,15 +164,15 @@ export function getFeedColumns(
           className="inline-flex items-center gap-1 text-xs font-medium hover:text-foreground/80"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Last Checked
+          {t("feeds.list.columns.last_checked")}
           <ArrowUpDown className="h-3 w-3" />
         </button>
       ),
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">
           {row.original.lastCheckedAt
-            ? new Date(row.original.lastCheckedAt).toLocaleDateString()
-            : "Never"}
+            ? formatDate(new Date(row.original.lastCheckedAt), locale, "short")
+            : t("feeds.list.last_checked_never")}
         </span>
       ),
     },
@@ -189,26 +190,28 @@ export function getFeedColumns(
               onClick={() => actions.onViewEntries(row.original)}
             >
               <Eye className="mr-2 h-3.5 w-3.5" />
-              View Articles
+              {t("feeds.list.row_actions.view_articles")}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => actions.onSync(row.original)}>
               <RefreshCw className="mr-2 h-3.5 w-3.5" />
-              Sync Now
+              {t("feeds.list.row_actions.sync_now")}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => actions.onSettings(row.original)}>
               <Settings2 className="mr-2 h-3.5 w-3.5" />
-              Settings
+              {t("feeds.list.row_actions.settings")}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => actions.onToggleActive(row.original)}
             >
-              {row.original.isActive ? "Deactivate" : "Activate"}
+              {row.original.isActive
+                ? t("feeds.list.row_actions.deactivate")
+                : t("feeds.list.row_actions.activate")}
             </DropdownMenuItem>
             <DropdownMenuItem
               className="text-destructive"
               onClick={() => actions.onDelete(row.original)}
             >
-              Delete
+              {t("feeds.list.row_actions.delete")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

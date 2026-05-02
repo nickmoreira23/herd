@@ -9,6 +9,9 @@ import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import * as React from "react"
+import { useT } from "@/lib/i18n/locale-context"
+import { notifyError } from "@/lib/i18n/notify"
+import type { MessageKey } from "@/lib/i18n/messages/pt-BR"
 
 interface RoleRow {
   id: string
@@ -20,20 +23,26 @@ interface RoleRow {
   _count: { profileRoles: number }
 }
 
+const NETWORK_TYPE_KEYS = {
+  INTERNAL: "network.type.INTERNAL",
+  EXTERNAL: "network.type.EXTERNAL",
+} as const satisfies Record<"INTERNAL" | "EXTERNAL", MessageKey>
+
 const columnHelper = createColumnHelper<RoleRow>()
 
 export function RoleTable({ data }: { data: RoleRow[] }) {
   const router = useRouter()
+  const t = useT()
   const [deleting, setDeleting] = React.useState<string | null>(null)
 
   async function handleDelete(id: string, name: string) {
-    if (!confirm(`Delete role "${name}"? This cannot be undone.`)) return
+    if (!confirm(t("network.roles.list.confirm_delete", { name }))) return
     setDeleting(id)
     try {
       const res = await fetch(`/api/network/roles/${id}`, { method: "DELETE" })
       const json = await res.json()
       if (json.error) {
-        alert(json.error)
+        notifyError("error.network.unexpected", t)
         return
       }
       router.refresh()
@@ -44,7 +53,7 @@ export function RoleTable({ data }: { data: RoleRow[] }) {
 
   const columns: ColumnDef<RoleRow, any>[] = [
     columnHelper.accessor("displayName", {
-      header: "Role",
+      header: () => t("network.roles.list.column.role"),
       cell: (info) => (
         <div className="flex items-center gap-2">
           {info.row.original.isSystem && (
@@ -60,25 +69,25 @@ export function RoleTable({ data }: { data: RoleRow[] }) {
       ),
     }),
     columnHelper.accessor("slug", {
-      header: "Slug",
+      header: () => t("network.roles.list.column.slug"),
       cell: (info) => (
         <span className="font-mono text-xs text-muted-foreground">{info.getValue()}</span>
       ),
     }),
     columnHelper.accessor("networkType", {
-      header: "Network",
+      header: () => t("network.roles.list.column.network"),
       cell: (info) => {
-        const nt = info.getValue()
-        if (!nt) return <span className="text-xs text-muted-foreground">Both</span>
+        const nt = info.getValue() as "INTERNAL" | "EXTERNAL" | null | undefined
+        if (!nt) return <span className="text-xs text-muted-foreground">{t("network.type.both")}</span>
         return (
           <Badge variant={nt === "INTERNAL" ? "secondary" : "default"}>
-            {nt}
+            {t(NETWORK_TYPE_KEYS[nt])}
           </Badge>
         )
       },
     }),
     columnHelper.accessor("parentRole", {
-      header: "Inherits From",
+      header: () => t("network.roles.list.column.inherits_from"),
       cell: (info) => {
         const parent = info.getValue()
         if (!parent) return <span className="text-xs text-muted-foreground">—</span>
@@ -93,7 +102,7 @@ export function RoleTable({ data }: { data: RoleRow[] }) {
       },
     }),
     columnHelper.accessor("_count", {
-      header: "Members",
+      header: () => t("network.roles.list.column.members"),
       cell: (info) => (
         <span className="text-sm text-muted-foreground">
           {info.getValue().profileRoles}
@@ -111,7 +120,7 @@ export function RoleTable({ data }: { data: RoleRow[] }) {
               className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
             >
               <Edit className="w-3.5 h-3.5" />
-              <span className="sr-only">Edit</span>
+              <span className="sr-only">{t("network.roles.list.action.edit")}</span>
             </Link>
             {!row.isSystem && (
               <Button
@@ -121,7 +130,7 @@ export function RoleTable({ data }: { data: RoleRow[] }) {
                 disabled={deleting === row.id}
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span className="sr-only">Delete</span>
+                <span className="sr-only">{t("network.roles.list.action.delete")}</span>
               </Button>
             )}
           </div>
@@ -135,7 +144,7 @@ export function RoleTable({ data }: { data: RoleRow[] }) {
       data={data}
       columns={columns}
       searchable
-      searchPlaceholder="Search roles..."
+      searchPlaceholder={t("network.roles.list.search_placeholder")}
     />
   )
 }

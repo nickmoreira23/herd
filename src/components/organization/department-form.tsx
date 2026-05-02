@@ -20,7 +20,9 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
+import type { MessageKey } from "@/lib/i18n/messages/pt-BR";
 
 interface DepartmentOption {
   id: string;
@@ -52,15 +54,15 @@ interface DepartmentFormProps {
 }
 
 const COLORS = [
-  { label: "Indigo", value: "#6366f1" },
-  { label: "Green", value: "#10b981" },
-  { label: "Pink", value: "#ec4899" },
-  { label: "Amber", value: "#f59e0b" },
-  { label: "Purple", value: "#8b5cf6" },
-  { label: "Cyan", value: "#06b6d4" },
-  { label: "Red", value: "#ef4444" },
-  { label: "Orange", value: "#f97316" },
-];
+  { labelKey: "organization.departments.form.color.indigo", value: "#6366f1" },
+  { labelKey: "organization.departments.form.color.green", value: "#10b981" },
+  { labelKey: "organization.departments.form.color.pink", value: "#ec4899" },
+  { labelKey: "organization.departments.form.color.amber", value: "#f59e0b" },
+  { labelKey: "organization.departments.form.color.purple", value: "#8b5cf6" },
+  { labelKey: "organization.departments.form.color.cyan", value: "#06b6d4" },
+  { labelKey: "organization.departments.form.color.red", value: "#ef4444" },
+  { labelKey: "organization.departments.form.color.orange", value: "#f97316" },
+] as const satisfies ReadonlyArray<{ labelKey: MessageKey; value: string }>;
 
 export function DepartmentForm({
   open,
@@ -70,6 +72,7 @@ export function DepartmentForm({
   profiles,
   editingDepartment,
 }: DepartmentFormProps) {
+  const t = useT();
   const [name, setName] = useState(editingDepartment?.name ?? "");
   const [description, setDescription] = useState(editingDepartment?.description ?? "");
   const [parentId, setParentId] = useState(editingDepartment?.parentId ?? "");
@@ -79,7 +82,7 @@ export function DepartmentForm({
 
   async function handleSave() {
     if (!name.trim()) {
-      toast.error("Name is required");
+      notifyError("error.organization.name_required", t);
       return;
     }
     setSaving(true);
@@ -103,11 +106,16 @@ export function DepartmentForm({
 
       const json = await res.json();
       if (json.error) {
-        toast.error(json.error);
+        notifyError("error.organization.save_failed", t);
         return;
       }
 
-      toast.success(editingDepartment ? "Department updated" : "Department created");
+      notifySuccess(
+        editingDepartment
+          ? "organization.feedback.department_updated"
+          : "organization.feedback.department_created",
+        t,
+      );
       onOpenChange(false);
       onSaved();
     } finally {
@@ -120,47 +128,53 @@ export function DepartmentForm({
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            {editingDepartment ? "Edit Department" : "Create Department"}
+            {editingDepartment
+              ? t("organization.departments.form.edit_title")
+              : t("organization.departments.form.create_title")}
           </DialogTitle>
           <DialogDescription>
             {editingDepartment
-              ? "Update this department's details."
-              : "Add a new department to your organization."}
+              ? t("organization.departments.form.edit_description")
+              : t("organization.departments.form.create_description")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>Name *</Label>
+            <Label>{t("organization.departments.form.name_label")}</Label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Engineering"
+              placeholder={t("organization.departments.form.name_placeholder")}
             />
           </div>
 
           <div className="space-y-2">
-            <Label>Description</Label>
+            <Label>{t("organization.departments.form.description_label")}</Label>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="What does this department do?"
+              placeholder={t("organization.departments.form.description_placeholder")}
               rows={2}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Parent Department</Label>
+              <Label>{t("organization.departments.form.parent_label")}</Label>
               <Select
                 value={parentId || "NONE"}
                 onValueChange={(val) => setParentId(val === "NONE" ? "" : val ?? "")}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="None (top-level)" />
+                  <SelectValue
+                    placeholder={t("organization.departments.form.parent_none_placeholder")}
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="NONE">None (top-level)</SelectItem>
+                  <SelectItem value="NONE">
+                    {t("organization.departments.form.parent_none_option")}
+                  </SelectItem>
                   {departments
                     .filter((d) => d.id !== editingDepartment?.id)
                     .map((d) => (
@@ -173,16 +187,20 @@ export function DepartmentForm({
             </div>
 
             <div className="space-y-2">
-              <Label>Department Head</Label>
+              <Label>{t("organization.departments.form.head_label")}</Label>
               <Select
                 value={headId || "NONE"}
                 onValueChange={(val) => setHeadId(val === "NONE" ? "" : val ?? "")}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="No head assigned" />
+                  <SelectValue
+                    placeholder={t("organization.departments.form.head_none_placeholder")}
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="NONE">No head assigned</SelectItem>
+                  <SelectItem value="NONE">
+                    {t("organization.departments.form.head_none_option")}
+                  </SelectItem>
                   {profiles.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.firstName} {p.lastName}
@@ -194,7 +212,7 @@ export function DepartmentForm({
           </div>
 
           <div className="space-y-2">
-            <Label>Color</Label>
+            <Label>{t("organization.departments.form.color_label")}</Label>
             <div className="flex gap-2 flex-wrap">
               {COLORS.map((c) => (
                 <button
@@ -207,7 +225,7 @@ export function DepartmentForm({
                     borderColor: color === c.value ? "white" : "transparent",
                     boxShadow: color === c.value ? `0 0 0 2px ${c.value}` : "none",
                   }}
-                  title={c.label}
+                  title={t(c.labelKey)}
                 />
               ))}
             </div>
@@ -216,7 +234,11 @@ export function DepartmentForm({
 
         <DialogFooter>
           <Button onClick={handleSave} disabled={saving}>
-            {saving ? "Saving..." : editingDepartment ? "Save Changes" : "Create Department"}
+            {saving
+              ? t("organization.departments.form.saving")
+              : editingDepartment
+                ? t("organization.departments.form.save_changes")
+                : t("organization.departments.form.create_department")}
           </Button>
         </DialogFooter>
       </DialogContent>

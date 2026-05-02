@@ -1,12 +1,10 @@
 import { messages as ptBR, type MessageKey } from "./messages/pt-BR";
-import { messages as en } from "./messages/en";
-import { messages as es } from "./messages/es";
+import { messages as enUS } from "./messages/en-US";
 import { DEFAULT_LOCALE, type Locale } from "./locales";
 
 const DICTIONARIES: Record<Locale, Record<MessageKey, string>> = {
   "pt-BR": ptBR,
-  en,
-  es,
+  "en-US": enUS,
 };
 
 export type { MessageKey };

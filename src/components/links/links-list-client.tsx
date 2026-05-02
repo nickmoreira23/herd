@@ -1,11 +1,31 @@
 "use client";
 
+/**
+ * Blocks route surface for LINK listing.
+ *
+ * Coexists with src/components/links/link-table.tsx (or
+ * Knowledge route surface). Both share fetch + columns + handlers +
+ * stats logic but use different chrome wrappers:
+ * - This file: BlockListPage shell (unified chrome).
+ * - link-table.tsx: DataTable + inline chrome.
+ *
+ * Architectural decision (1.5.6e): kept separate. Extracting a shared
+ * useBlockListing() hook is feasible but deferred — Surface (top-level
+ * feature post-Phase 1.5) may redefine how blocks are exposed across
+ * routes, potentially making this pattern obsolete. Revisit after
+ * Surface is built.
+ *
+ * See: docs/discovery/KNOWLEDGE_ROUTE_LAYER_AUDIT.md
+ */
+
 import { useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Link2 } from "lucide-react";
-import { toast } from "sonner";
+import { useT, useLocale } from "@/lib/i18n/locale-context";
+import { notifyError, notifyInfo, notifySuccess } from "@/lib/i18n/notify";
 import { BlockListPage } from "@/components/shared/block-list-page";
 import type { FilterDef, StatCard } from "@/components/shared/block-list-page";
+import { LINK_STATUSES, linkStatusLabelKey } from "@/lib/links/status-options";
 import { getLinkColumns } from "./link-columns";
 import { AddLinkModal } from "./add-link-modal";
 import { LinkDeleteDialog } from "./link-delete-dialog";
@@ -21,6 +41,8 @@ export function LinksListClient({
   initialLinks,
   initialStats,
 }: LinksListClientProps) {
+  const t = useT();
+  const locale = useLocale();
   const [links, setLinks] = useState<LinkRow[]>(initialLinks);
   const [stats, setStats] = useState<LinkStats>(initialStats);
   const [showAdd, setShowAdd] = useState(false);
@@ -45,17 +67,28 @@ export function LinksListClient({
   const handleRescrape = useCallback(
     async (link: LinkRow) => {
       const isFullSite = link.scrapeMode === "FULL_SITE";
-      toast.info(isFullSite ? "Re-crawling..." : "Re-scraping...");
+      notifyInfo(
+        isFullSite ? "links.feedback.recrawling" : "links.feedback.rescraping",
+        t,
+      );
       const endpoint = isFullSite
         ? `/api/links/${link.id}/crawl`
         : `/api/links/${link.id}/scrape`;
       const res = await fetch(endpoint, { method: "POST" });
       if (res.ok) {
         await refreshLinks();
-        toast.success(isFullSite ? "Re-crawl started" : "Re-scrape complete");
+        notifySuccess(
+          isFullSite
+            ? "links.feedback.recrawl_started"
+            : "links.feedback.rescrape_complete",
+          t,
+        );
       } else {
         await refreshLinks();
-        toast.error(isFullSite ? "Re-crawl failed" : "Re-scrape failed");
+        notifyError(
+          isFullSite ? "error.links.recrawl_failed" : "error.links.rescrape_failed",
+          t,
+        );
       }
       if (viewTarget?.id === link.id) {
         const updated = await fetch(`/api/links/${link.id}`);
@@ -63,7 +96,7 @@ export function LinksListClient({
         if (json.data) setViewTarget(json.data);
       }
     },
-    [refreshLinks, viewTarget],
+    [refreshLinks, viewTarget, t],
   );
 
   const handleToggleActive = useCallback(
@@ -75,10 +108,13 @@ export function LinksListClient({
       });
       if (res.ok) {
         await refreshLinks();
-        toast.success(link.isActive ? "Deactivated" : "Activated");
+        notifySuccess(
+          link.isActive ? "links.feedback.deactivated" : "links.feedback.activated",
+          t,
+        );
       }
     },
-    [refreshLinks],
+    [refreshLinks, t],
   );
 
   const handleDelete = useCallback(
@@ -86,26 +122,30 @@ export function LinksListClient({
       const res = await fetch(`/api/links/${link.id}`, { method: "DELETE" });
       if (res.ok) {
         await refreshLinks();
-        toast.success("Link deleted");
+        notifySuccess("links.feedback.deleted", t);
       } else {
-        toast.error("Failed to delete link");
+        notifyError("error.links.delete_failed", t);
       }
       setDeleteTarget(null);
     },
-    [refreshLinks],
+    [refreshLinks, t],
   );
 
   // ── Columns ───────────────────────────────────────────────────────
   const columns = useMemo(
     () =>
-      getLinkColumns({
-        onViewContent: (link) => setViewTarget(link),
-        onOpenUrl: handleOpenUrl,
-        onRescrape: handleRescrape,
-        onToggleActive: handleToggleActive,
-        onDelete: (link) => setDeleteTarget(link),
-      }),
-    [handleOpenUrl, handleRescrape, handleToggleActive],
+      getLinkColumns(
+        {
+          onViewContent: (link) => setViewTarget(link),
+          onOpenUrl: handleOpenUrl,
+          onRescrape: handleRescrape,
+          onToggleActive: handleToggleActive,
+          onDelete: (link) => setDeleteTarget(link),
+        },
+        t,
+        locale,
+      ),
+    [handleOpenUrl, handleRescrape, handleToggleActive, t, locale],
   );
 
   // ── Filters ───────────────────────────────────────────────────────
@@ -113,40 +153,41 @@ export function LinksListClient({
     () => [
       {
         key: "status",
-        label: "All Status",
-        options: [
-          { value: "PENDING", label: "Pending" },
-          { value: "PROCESSING", label: "Processing" },
-          { value: "READY", label: "Ready" },
-          { value: "ERROR", label: "Error" },
-        ],
+        label: t("links.list.filter_all_status"),
+        options: LINK_STATUSES.map((status) => ({
+          value: status,
+          label: t(linkStatusLabelKey(status)),
+        })),
         filterFn: (item: LinkRow, val: string) => item.status === val,
       },
     ],
-    [],
+    [t],
   );
 
   // ── Stats ─────────────────────────────────────────────────────────
   const statCards: StatCard[] = useMemo(
     () => [
-      { label: "Total", value: String(stats.total) },
-      { label: "Ready", value: String(stats.ready) },
-      { label: "Processing", value: String(stats.processing) },
-      { label: "Error", value: String(stats.error) },
+      { label: t("links.list.stats.total"), value: String(stats.total) },
+      { label: t("links.list.stats.ready"), value: String(stats.ready) },
+      {
+        label: t("links.list.stats.processing"),
+        value: String(stats.processing),
+      },
+      { label: t("links.list.stats.error"), value: String(stats.error) },
     ],
-    [stats],
+    [stats, t],
   );
 
   // ── Render ────────────────────────────────────────────────────────
   return (
     <BlockListPage<LinkRow>
       blockName="links"
-      title="Links"
-      description="Add URLs to scrape and import web content into your knowledge base."
+      title={t("links.list.title")}
+      description={t("links.list.description")}
       data={links}
       getId={(l) => l.id}
       columns={columns}
-      searchPlaceholder="Search by name, URL, or domain..."
+      searchPlaceholder={t("links.list.search_placeholder")}
       searchFn={(item, q) =>
         item.name.toLowerCase().includes(q) ||
         item.url.toLowerCase().includes(q) ||
@@ -158,16 +199,16 @@ export function LinksListClient({
       headerActions={
         <Button size="sm" onClick={() => setShowAdd(true)}>
           <Plus className="mr-1 h-3 w-3" />
-          Add Link
+          {t("links.list.add_link_button")}
         </Button>
       }
       emptyIcon={Link2}
-      emptyTitle="No links yet"
-      emptyDescription="Add URLs to automatically scrape and import web page content into your knowledge base. Keep your knowledge up to date with external sources."
+      emptyTitle={t("links.empty.title")}
+      emptyDescription={t("links.empty.description")}
       emptyAction={
         <Button variant="outline" onClick={() => setShowAdd(true)}>
           <Link2 className="mr-2 h-4 w-4" />
-          Add your first link
+          {t("links.empty.add_first")}
         </Button>
       }
       modals={

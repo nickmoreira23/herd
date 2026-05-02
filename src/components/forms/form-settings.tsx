@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -14,8 +13,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2, Save } from "lucide-react";
-import { toast } from "sonner";
 import type { FormRow } from "./types";
+import { useT } from "@/lib/i18n/locale-context";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
 
 interface FormSettingsProps {
   form: FormRow;
@@ -26,6 +26,7 @@ export function FormSettings({
   form,
   onUpdate,
 }: FormSettingsProps) {
+  const t = useT();
   const [name, setName] = useState(form.name);
   const [description, setDescription] = useState(form.description || "");
   const [thankYouMessage, setThankYouMessage] = useState(
@@ -40,7 +41,7 @@ export function FormSettings({
 
   async function handleSave() {
     if (!name.trim()) {
-      toast.error("Name is required");
+      notifyError("error.forms.name_required", t);
       return;
     }
 
@@ -69,10 +70,10 @@ export function FormSettings({
 
       if (res.ok) {
         const json = await res.json();
-        toast.success("Settings saved");
+        notifySuccess("forms.feedback.settings_saved", t);
         onUpdate({ ...form, ...json.data });
       } else {
-        toast.error("Failed to save settings");
+        notifyError("error.forms.update_failed", t);
       }
     } finally {
       setSaving(false);
@@ -82,78 +83,65 @@ export function FormSettings({
   return (
     <div className="space-y-5">
       <div className="space-y-1.5">
-        <Label className="text-xs">Form Name</Label>
+        <Label className="text-xs">{t("forms.settings.name_label")}</Label>
         <Input value={name} onChange={(e) => setName(e.target.value)} />
       </div>
 
       <div className="space-y-1.5">
-        <Label className="text-xs">Description</Label>
+        <Label className="text-xs">{t("forms.settings.description_label")}</Label>
         <Textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={2}
-          placeholder="Describe what this form is for"
+          placeholder={t("forms.settings.description_placeholder")}
         />
       </div>
 
       <div className="space-y-1.5">
-        <Label className="text-xs">Thank You Message</Label>
+        <Label className="text-xs">{t("forms.settings.thank_you_label")}</Label>
         <Textarea
           value={thankYouMessage}
           onChange={(e) => setThankYouMessage(e.target.value)}
           rows={2}
-          placeholder="Shown after the form is submitted"
+          placeholder={t("forms.settings.thank_you_placeholder")}
         />
       </div>
 
       <div className="space-y-1.5">
-        <Label className="text-xs">Access Mode</Label>
+        <Label className="text-xs">{t("forms.settings.access_mode_label")}</Label>
         <Select value={accessMode} onValueChange={(v) => setAccessMode(v ?? "PUBLIC")}>
           <SelectTrigger className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="PUBLIC">Public (anyone with the link)</SelectItem>
-            <SelectItem value="PRIVATE">Private (password required)</SelectItem>
+            <SelectItem value="PUBLIC">{t("forms.settings.access_mode.public")}</SelectItem>
+            <SelectItem value="PRIVATE">{t("forms.settings.access_mode.private")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       {accessMode === "PRIVATE" && (
         <div className="space-y-1.5">
-          <Label className="text-xs">Access Password</Label>
+          <Label className="text-xs">{t("forms.settings.access_password_label")}</Label>
           <Input
             type="password"
             value={accessPassword}
             onChange={(e) => setAccessPassword(e.target.value)}
-            placeholder="Enter a password for form access"
+            placeholder={t("forms.settings.access_password_placeholder")}
           />
         </div>
       )}
 
       <div className="space-y-1.5">
-        <Label className="text-xs">Max Responses (optional)</Label>
+        <Label className="text-xs">{t("forms.settings.max_responses_label")}</Label>
         <Input
           type="number"
           value={maxResponses}
           onChange={(e) => setMaxResponses(e.target.value)}
-          placeholder="Leave empty for unlimited"
+          placeholder={t("forms.settings.max_responses_placeholder")}
           min={1}
         />
       </div>
-
-      {form.formStatus === "ACTIVE" && (
-        <div className="rounded-lg border bg-emerald-500/5 p-3">
-          <p className="text-xs font-medium text-emerald-600 mb-1">
-            Share Link
-          </p>
-          <code className="text-xs text-muted-foreground break-all">
-            {typeof window !== "undefined"
-              ? `${window.location.origin}/f/${form.slug}`
-              : `/f/${form.slug}`}
-          </code>
-        </div>
-      )}
 
       <Button onClick={handleSave} disabled={saving} className="w-full">
         {saving ? (
@@ -161,7 +149,7 @@ export function FormSettings({
         ) : (
           <Save className="h-3.5 w-3.5 mr-1.5" />
         )}
-        Save Settings
+        {t("forms.settings.save_button")}
       </Button>
     </div>
   );

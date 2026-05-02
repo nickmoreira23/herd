@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { useWizardStore } from "@/stores/wizard-store"
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react"
+import { useT } from "@/lib/i18n/locale-context"
 
 interface StepIdentityProps {
   onNext: () => void
@@ -12,6 +13,7 @@ interface StepIdentityProps {
 }
 
 export function StepIdentity({ onNext, onBack }: StepIdentityProps) {
+  const t = useT()
   const { formData, updateFormData } = useWizardStore()
   const [emailStatus, setEmailStatus] = React.useState<
     "idle" | "checking" | "available" | "taken"
@@ -49,9 +51,9 @@ export function StepIdentity({ onNext, onBack }: StepIdentityProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold">Identity</h2>
+        <h2 className="text-xl font-semibold">{t("network.wizard.step2.title")}</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Basic information for this profile.
+          {t("network.wizard.step2.description")}
         </p>
       </div>
 
@@ -59,20 +61,24 @@ export function StepIdentity({ onNext, onBack }: StepIdentityProps) {
         {/* Name */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">First Name *</label>
+            <label className="text-sm font-medium">
+              {t("network.wizard.step2.first_name_label")}
+            </label>
             <Input
               value={formData.firstName ?? ""}
               onChange={(e) => updateFormData({ firstName: e.target.value })}
-              placeholder="Jane"
+              placeholder={t("network.wizard.step2.first_name_placeholder")}
               required
             />
           </div>
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Last Name *</label>
+            <label className="text-sm font-medium">
+              {t("network.wizard.step2.last_name_label")}
+            </label>
             <Input
               value={formData.lastName ?? ""}
               onChange={(e) => updateFormData({ lastName: e.target.value })}
-              placeholder="Doe"
+              placeholder={t("network.wizard.step2.last_name_placeholder")}
               required
             />
           </div>
@@ -80,13 +86,15 @@ export function StepIdentity({ onNext, onBack }: StepIdentityProps) {
 
         {/* Email */}
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Email Address *</label>
+          <label className="text-sm font-medium">
+            {t("network.wizard.step2.email_label")}
+          </label>
           <div className="relative">
             <Input
               type="email"
               value={formData.email ?? ""}
               onChange={(e) => handleEmailChange(e.target.value)}
-              placeholder="jane@example.com"
+              placeholder={t("network.wizard.step2.email_placeholder")}
               required
               className={cn(
                 "pr-10",
@@ -107,36 +115,42 @@ export function StepIdentity({ onNext, onBack }: StepIdentityProps) {
           </div>
           {emailStatus === "taken" && (
             <p className="text-xs text-destructive">
-              This email is already registered in the network.
+              {t("network.wizard.step2.email_taken")}
             </p>
           )}
         </div>
 
         {/* Phone */}
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Phone Number</label>
+          <label className="text-sm font-medium">
+            {t("network.wizard.step2.phone_label")}
+          </label>
           <Input
             type="tel"
             value={formData.phone ?? ""}
             onChange={(e) => updateFormData({ phone: e.target.value })}
-            placeholder="+1 (555) 000-0000"
+            placeholder={t("network.wizard.step2.phone_placeholder")}
           />
         </div>
 
         {/* Avatar */}
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Profile Photo</label>
+          <label className="text-sm font-medium">
+            {t("network.wizard.step2.avatar_label")}
+          </label>
           <div className="flex items-center gap-4">
             {formData.avatarUrl && (
               <img
                 src={formData.avatarUrl}
-                alt="Avatar preview"
+                alt=""
                 className="w-12 h-12 rounded-full object-cover border border-border"
               />
             )}
             <label className="cursor-pointer">
               <span className="inline-flex items-center px-3 py-2 rounded-md border border-border text-sm hover:bg-muted transition-colors">
-                {formData.avatarUrl ? "Change Photo" : "Upload Photo"}
+                {formData.avatarUrl
+                  ? t("network.wizard.step2.avatar_change")
+                  : t("network.wizard.step2.avatar_upload")}
               </span>
               <input
                 type="file"
@@ -159,12 +173,12 @@ export function StepIdentity({ onNext, onBack }: StepIdentityProps) {
                 onClick={() => updateFormData({ avatarUrl: undefined })}
                 className="text-xs text-destructive hover:underline"
               >
-                Remove
+                {t("network.wizard.step2.avatar_remove")}
               </button>
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            PNG, JPG up to 2MB. Stored locally for now.
+            {t("network.wizard.step2.avatar_hint")}
           </p>
         </div>
       </div>
@@ -175,7 +189,7 @@ export function StepIdentity({ onNext, onBack }: StepIdentityProps) {
           onClick={onBack}
           className="px-4 py-2 rounded-lg text-sm font-medium border border-border hover:bg-muted transition-colors"
         >
-          Back
+          {t("network.wizard.common.back")}
         </button>
         <button
           type="button"
@@ -188,7 +202,7 @@ export function StepIdentity({ onNext, onBack }: StepIdentityProps) {
               : "bg-muted text-muted-foreground cursor-not-allowed"
           )}
         >
-          Continue
+          {t("network.wizard.common.next")}
         </button>
       </div>
     </div>

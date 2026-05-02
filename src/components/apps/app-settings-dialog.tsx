@@ -19,35 +19,15 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import { notifyError, notifySuccess } from "@/lib/i18n/notify";
+import {
+  ALL_DATA_CATEGORY_CODES,
+  SYNC_FREQUENCY_VALUES,
+  dataCategoryLabelKey,
+  syncFrequencyLabelKey,
+} from "@/lib/apps/provider-catalog";
 import type { AppRow } from "./types";
-
-const SYNC_FREQUENCY_OPTIONS = [
-  { value: "15", label: "Every 15 minutes" },
-  { value: "30", label: "Every 30 minutes" },
-  { value: "60", label: "Every hour" },
-  { value: "360", label: "Every 6 hours" },
-  { value: "720", label: "Every 12 hours" },
-  { value: "1440", label: "Daily" },
-  { value: "10080", label: "Weekly" },
-] as const;
-
-const DATA_CATEGORY_LABELS: Record<string, string> = {
-  SLEEP: "Sleep",
-  ACTIVITY: "Activity",
-  RECOVERY: "Recovery",
-  HEART_RATE: "Heart Rate",
-  WORKOUT: "Workout",
-  READINESS: "Readiness",
-  BODY: "Body",
-  APP_NUTRITION: "Nutrition",
-  APP_OTHER: "Other",
-};
-
-// All possible data categories
-const ALL_DATA_CATEGORIES = [
-  "SLEEP", "ACTIVITY", "RECOVERY", "HEART_RATE", "WORKOUT", "READINESS", "BODY", "APP_NUTRITION", "APP_OTHER",
-] as const;
 
 interface AppSettingsDialogProps {
   app: AppRow | null;
@@ -62,6 +42,7 @@ export function AppSettingsDialog({
   onOpenChange,
   onSave,
 }: AppSettingsDialogProps) {
+  const t = useT();
   const [syncFrequency, setSyncFrequency] = useState("1440");
   const [enabledCategories, setEnabledCategories] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
@@ -75,9 +56,7 @@ export function AppSettingsDialog({
 
   function toggleCategory(cat: string) {
     setEnabledCategories((prev) =>
-      prev.includes(cat)
-        ? prev.filter((c) => c !== cat)
-        : [...prev, cat]
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat],
     );
   }
 
@@ -94,11 +73,11 @@ export function AppSettingsDialog({
         }),
       });
       if (res.ok) {
-        toast.success("Settings saved");
+        notifySuccess("apps.feedback.settings_saved", t);
         onOpenChange(false);
         onSave();
       } else {
-        toast.error("Failed to save settings");
+        notifyError("error.apps.save_settings_failed", t);
       }
     } finally {
       setSaving(false);
@@ -111,45 +90,52 @@ export function AppSettingsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{app.name} Settings</DialogTitle>
+          <DialogTitle>
+            {t("apps.settings_dialog.title", { name: app.name })}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-5">
           {/* Sync Frequency */}
           <div className="space-y-1.5">
-            <Label className="text-xs">Sync Frequency</Label>
-            <Select value={syncFrequency} onValueChange={(val) => setSyncFrequency(val ?? "1440")}>
+            <Label className="text-xs">
+              {t("apps.settings_dialog.frequency_label")}
+            </Label>
+            <Select
+              value={syncFrequency}
+              onValueChange={(val) => setSyncFrequency(val ?? "1440")}
+            >
               <SelectTrigger className="h-9 text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {SYNC_FREQUENCY_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
+                {SYNC_FREQUENCY_VALUES.map((freq) => (
+                  <SelectItem key={freq} value={String(freq)}>
+                    {t(syncFrequencyLabelKey(freq))}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <p className="text-[11px] text-muted-foreground">
-              How often to automatically sync data from {app.name}.
+              {t("apps.settings_dialog.frequency_help", { name: app.name })}
             </p>
           </div>
 
           {/* Data Categories */}
           <div className="space-y-2">
-            <Label className="text-xs">Data Categories</Label>
+            <Label className="text-xs">
+              {t("apps.settings_dialog.categories_label")}
+            </Label>
             <p className="text-[11px] text-muted-foreground mb-2">
-              Select which types of data to sync from this app.
+              {t("apps.settings_dialog.categories_help")}
             </p>
             <div className="space-y-2">
-              {ALL_DATA_CATEGORIES.map((cat) => (
+              {ALL_DATA_CATEGORY_CODES.map((cat) => (
                 <div
                   key={cat}
                   className="flex items-center justify-between rounded-md border px-3 py-2"
                 >
-                  <span className="text-sm">
-                    {DATA_CATEGORY_LABELS[cat] || cat}
-                  </span>
+                  <span className="text-sm">{t(dataCategoryLabelKey(cat))}</span>
                   <Switch
                     checked={enabledCategories.includes(cat)}
                     onCheckedChange={() => toggleCategory(cat)}
@@ -162,16 +148,16 @@ export function AppSettingsDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("apps.settings_dialog.cancel")}
           </Button>
           <Button onClick={handleSave} disabled={saving}>
             {saving ? (
               <>
                 <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                Saving...
+                {t("apps.settings_dialog.saving")}
               </>
             ) : (
-              "Save Settings"
+              t("apps.settings_dialog.save")
             )}
           </Button>
         </DialogFooter>

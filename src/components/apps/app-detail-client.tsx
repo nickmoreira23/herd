@@ -16,7 +16,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "sonner";
 import {
   ArrowLeft,
   Plug,
@@ -34,7 +33,22 @@ import {
   MoreHorizontal,
   Zap,
   ExternalLink,
+  type LucideIcon,
 } from "lucide-react";
+import { toast } from "sonner";
+import { useT, useLocale } from "@/lib/i18n/locale-context";
+import { notifyError, notifySuccess } from "@/lib/i18n/notify";
+import { formatDate } from "@/lib/i18n/format-date";
+import { formatRelativeTime } from "@/lib/i18n/format-relative-time";
+import {
+  appCategoryLabelKey,
+  appDataPointStatusLabelKey,
+  appStatusLabelKey,
+  dataCategoryDescriptionKey,
+  dataCategoryLabelKey,
+  syncFrequencyLabelKey,
+  SYNC_FREQUENCY_VALUES,
+} from "@/lib/apps/provider-catalog";
 import { AppAuthModal } from "./app-auth-modal";
 import type {
   AppDetail,
@@ -44,40 +58,30 @@ import type {
 
 // ─── Constants ────────────────────────────────────────────────────
 
-const STATUS_STYLES: Record<string, { label: string; className: string }> = {
-  PENDING: { label: "Not Connected", className: "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400" },
-  PROCESSING: { label: "Syncing", className: "bg-blue-500/10 text-blue-600 dark:text-blue-400" },
-  READY: { label: "Connected", className: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
-  ERROR: { label: "Error", className: "bg-red-500/10 text-red-600 dark:text-red-400" },
+const STATUS_CLASSNAMES: Record<string, string> = {
+  PENDING: "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400",
+  PROCESSING: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+  READY: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+  ERROR: "bg-red-500/10 text-red-600 dark:text-red-400",
 };
 
-const DATA_CATEGORY_INFO: Record<string, { label: string; description: string; icon: typeof Moon }> = {
-  SLEEP: { label: "Sleep", description: "Sleep duration, stages (deep, REM, light), efficiency, bedtime/wake time, and restfulness metrics.", icon: Moon },
-  ACTIVITY: { label: "Activity", description: "Daily steps, calories burned, active minutes, movement distance, and intensity breakdown.", icon: Activity },
-  RECOVERY: { label: "Recovery", description: "Recovery score, HRV (heart rate variability), resting heart rate, SpO2, and skin temperature.", icon: Heart },
-  HEART_RATE: { label: "Heart Rate", description: "Continuous heart rate readings, resting/average/max HR, and heart rate zones.", icon: HeartPulse },
-  WORKOUT: { label: "Workout", description: "Exercise sessions with type, duration, strain/intensity, calories, and HR during activity.", icon: Dumbbell },
-  READINESS: { label: "Readiness", description: "Daily readiness score based on sleep quality, recovery, activity balance, and body temperature.", icon: Gauge },
-  BODY: { label: "Body", description: "Body measurements including weight, height, BMI, body fat percentage, and max heart rate.", icon: User },
-  APP_NUTRITION: { label: "Nutrition", description: "Calorie intake, macronutrients (protein, carbs, fat), fiber, sugar, and hydration.", icon: Apple },
-  APP_OTHER: { label: "Other", description: "Additional health metrics and data from connected devices.", icon: MoreHorizontal },
+const DATA_POINT_STATUS_CLASSNAMES: Record<string, string> = {
+  PENDING: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
+  PROCESSING: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+  READY: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+  ERROR: "bg-red-500/10 text-red-500 border-red-500/20",
 };
 
-const SYNC_FREQUENCY_OPTIONS = [
-  { value: "15", label: "Every 15 minutes" },
-  { value: "30", label: "Every 30 minutes" },
-  { value: "60", label: "Every hour" },
-  { value: "360", label: "Every 6 hours" },
-  { value: "720", label: "Every 12 hours" },
-  { value: "1440", label: "Daily" },
-  { value: "10080", label: "Weekly" },
-] as const;
-
-const DATA_POINT_STATUS: Record<string, { label: string; className: string }> = {
-  PENDING: { label: "Pending", className: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20" },
-  PROCESSING: { label: "Processing", className: "bg-blue-500/10 text-blue-500 border-blue-500/20" },
-  READY: { label: "Ready", className: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" },
-  ERROR: { label: "Error", className: "bg-red-500/10 text-red-500 border-red-500/20" },
+const DATA_CATEGORY_ICONS: Record<string, LucideIcon> = {
+  SLEEP: Moon,
+  ACTIVITY: Activity,
+  RECOVERY: Heart,
+  HEART_RATE: HeartPulse,
+  WORKOUT: Dumbbell,
+  READINESS: Gauge,
+  BODY: User,
+  APP_NUTRITION: Apple,
+  APP_OTHER: MoreHorizontal,
 };
 
 // ─── Component ────────────────────────────────────────────────────
@@ -87,6 +91,8 @@ interface AppDetailClientProps {
 }
 
 export function AppDetailClient({ app: initial }: AppDetailClientProps) {
+  const t = useT();
+  const locale = useLocale();
   const router = useRouter();
   const [app, setApp] = useState(initial);
   const [syncing, setSyncing] = useState(false);
@@ -102,14 +108,17 @@ export function AppDetailClient({ app: initial }: AppDetailClientProps) {
 
   // Settings tab state
   const [syncFrequency, setSyncFrequency] = useState(String(app.syncFrequencyMin));
-  const [enabledCategories, setEnabledCategories] = useState<string[]>([...app.dataCategories]);
+  const [enabledCategories, setEnabledCategories] = useState<string[]>([
+    ...app.dataCategories,
+  ]);
   const [savingSettings, setSavingSettings] = useState(false);
 
   // Logs tab state
   const [logs, setLogs] = useState<AppSyncLogRow[]>(app.syncLogs);
 
   const isConnected = app.status === "READY" || app.status === "ERROR";
-  const statusStyle = STATUS_STYLES[app.status] || STATUS_STYLES.PENDING;
+  const statusClass =
+    STATUS_CLASSNAMES[app.status] ?? STATUS_CLASSNAMES.PENDING;
 
   const refresh = useCallback(() => {
     router.refresh();
@@ -142,13 +151,13 @@ export function AppDetailClient({ app: initial }: AppDetailClientProps) {
     try {
       const res = await fetch(`/api/apps/${app.id}/connect`, { method: "DELETE" });
       if (res.ok) {
-        toast.success("Disconnected");
+        notifySuccess("apps.feedback.disconnected", t);
         refresh();
       } else {
-        toast.error("Failed to disconnect");
+        notifyError("error.apps.disconnect_failed", t);
       }
     } catch {
-      toast.error("Network error");
+      notifyError("error.apps.network", t);
     } finally {
       setDisconnecting(false);
     }
@@ -160,13 +169,22 @@ export function AppDetailClient({ app: initial }: AppDetailClientProps) {
       const res = await fetch(`/api/apps/${app.id}/test`, { method: "POST" });
       const json = await res.json();
       if (res.ok) {
-        toast.success(json.data?.details || "Connection test passed");
+        // Server-supplied details (if any) are surfaced raw for now.
+        if (json.data?.details) {
+          toast.success(json.data.details);
+        } else {
+          notifySuccess("apps.feedback.test_passed", t);
+        }
       } else {
-        toast.error(json.error || "Connection test failed");
+        if (json.error) {
+          toast.error(json.error);
+        } else {
+          notifyError("error.apps.test_failed", t);
+        }
       }
       refresh();
     } catch {
-      toast.error("Network error");
+      notifyError("error.apps.network", t);
     } finally {
       setTesting(false);
     }
@@ -178,14 +196,22 @@ export function AppDetailClient({ app: initial }: AppDetailClientProps) {
       const res = await fetch(`/api/apps/${app.id}/sync`, { method: "POST" });
       const json = await res.json();
       if (res.ok) {
-        toast.success(json.data?.details || "Sync completed");
+        if (json.data?.details) {
+          toast.success(json.data.details);
+        } else {
+          notifySuccess("apps.feedback.sync_completed", t);
+        }
       } else {
-        toast.error(json.error || "Sync failed");
+        if (json.error) {
+          toast.error(json.error);
+        } else {
+          notifyError("error.apps.sync_failed", t);
+        }
       }
       refresh();
       fetchDataPoints();
     } catch {
-      toast.error("Network error");
+      notifyError("error.apps.network", t);
     } finally {
       setSyncing(false);
     }
@@ -203,13 +229,13 @@ export function AppDetailClient({ app: initial }: AppDetailClientProps) {
         }),
       });
       if (res.ok) {
-        toast.success("Settings saved");
+        notifySuccess("apps.feedback.settings_saved", t);
         refresh();
       } else {
-        toast.error("Failed to save settings");
+        notifyError("error.apps.save_settings_failed", t);
       }
     } catch {
-      toast.error("Network error");
+      notifyError("error.apps.network", t);
     } finally {
       setSavingSettings(false);
     }
@@ -243,22 +269,8 @@ export function AppDetailClient({ app: initial }: AppDetailClientProps) {
 
   function toggleCategory(cat: string) {
     setEnabledCategories((prev) =>
-      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat],
     );
-  }
-
-  function formatRelativeTime(dateStr: string): string {
-    const now = Date.now();
-    const date = new Date(dateStr).getTime();
-    const diffMs = now - date;
-    const diffMin = Math.floor(diffMs / 60000);
-    if (diffMin < 1) return "just now";
-    if (diffMin < 60) return `${diffMin}m ago`;
-    const diffHr = Math.floor(diffMin / 60);
-    if (diffHr < 24) return `${diffHr}h ago`;
-    const diffDays = Math.floor(diffHr / 24);
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return new Date(dateStr).toLocaleDateString();
   }
 
   // ── Render ──
@@ -272,7 +284,7 @@ export function AppDetailClient({ app: initial }: AppDetailClientProps) {
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Apps
+          {t("apps.detail.back")}
         </Link>
 
         <div className="flex items-start justify-between">
@@ -289,7 +301,9 @@ export function AppDetailClient({ app: initial }: AppDetailClientProps) {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-bold">{app.name}</h1>
-                <Badge className={statusStyle.className}>{statusStyle.label}</Badge>
+                <Badge className={statusClass}>
+                  {t(appStatusLabelKey(app.status))}
+                </Badge>
               </div>
               {app.description && (
                 <p className="text-sm text-muted-foreground mt-1">{app.description}</p>
@@ -302,21 +316,21 @@ export function AppDetailClient({ app: initial }: AppDetailClientProps) {
               <>
                 <Button variant="outline" size="sm" onClick={handleTest} disabled={testing}>
                   {testing ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Zap className="h-3.5 w-3.5 mr-1.5" />}
-                  Test
+                  {t("apps.detail.actions.test")}
                 </Button>
                 <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing}>
                   {syncing ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-1.5" />}
-                  Sync Now
+                  {t("apps.detail.actions.sync_now")}
                 </Button>
                 <Button variant="outline" size="sm" onClick={handleDisconnect} disabled={disconnecting} className="text-destructive hover:text-destructive">
                   {disconnecting ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Unplug className="h-3.5 w-3.5 mr-1.5" />}
-                  Disconnect
+                  {t("apps.detail.actions.disconnect")}
                 </Button>
               </>
             ) : (
               <Button size="sm" onClick={handleConnect}>
                 <Plug className="h-3.5 w-3.5 mr-1.5" />
-                Connect
+                {t("apps.detail.actions.connect")}
               </Button>
             )}
           </div>
@@ -326,10 +340,10 @@ export function AppDetailClient({ app: initial }: AppDetailClientProps) {
       {/* Tabs */}
       <Tabs defaultValue="overview">
         <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="data">Data</TabsTrigger>
-          <TabsTrigger value="logs">Logs</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="overview">{t("apps.detail.tabs.overview")}</TabsTrigger>
+          <TabsTrigger value="data">{t("apps.detail.tabs.data")}</TabsTrigger>
+          <TabsTrigger value="logs">{t("apps.detail.tabs.logs")}</TabsTrigger>
+          <TabsTrigger value="settings">{t("apps.detail.tabs.settings")}</TabsTrigger>
         </TabsList>
 
         {/* ── Overview Tab ── */}
@@ -337,25 +351,29 @@ export function AppDetailClient({ app: initial }: AppDetailClientProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* About */}
             <Card>
-              <CardHeader><CardTitle className="text-sm">About</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle className="text-sm">{t("apps.detail.about.title")}</CardTitle>
+              </CardHeader>
               <CardContent className="space-y-3 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Category</span>
-                  <Badge variant="outline" className="bg-violet-500/10 text-violet-500 border-violet-500/20">{app.category}</Badge>
+                  <span className="text-muted-foreground">{t("apps.detail.about.category")}</span>
+                  <Badge variant="outline" className="bg-violet-500/10 text-violet-500 border-violet-500/20">
+                    {t(appCategoryLabelKey(app.category))}
+                  </Badge>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Auth Type</span>
+                  <span className="text-muted-foreground">{t("apps.detail.about.auth_type")}</span>
                   <span>{app.authType}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Created</span>
-                  <span>{new Date(app.createdAt).toLocaleDateString()}</span>
+                  <span className="text-muted-foreground">{t("apps.detail.about.created")}</span>
+                  <span>{formatDate(new Date(app.createdAt), locale, "short")}</span>
                 </div>
                 {app.websiteUrl && (
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Website</span>
+                    <span className="text-muted-foreground">{t("apps.detail.about.website")}</span>
                     <a href={app.websiteUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-violet-500 hover:underline">
-                      Visit <ExternalLink className="h-3 w-3" />
+                      {t("apps.detail.about.visit")} <ExternalLink className="h-3 w-3" />
                     </a>
                   </div>
                 )}
@@ -364,19 +382,31 @@ export function AppDetailClient({ app: initial }: AppDetailClientProps) {
 
             {/* Connection Status */}
             <Card>
-              <CardHeader><CardTitle className="text-sm">Connection</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle className="text-sm">{t("apps.detail.connection.title")}</CardTitle>
+              </CardHeader>
               <CardContent className="space-y-3 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Status</span>
-                  <Badge className={statusStyle.className}>{statusStyle.label}</Badge>
+                  <span className="text-muted-foreground">{t("apps.detail.connection.status")}</span>
+                  <Badge className={statusClass}>
+                    {t(appStatusLabelKey(app.status))}
+                  </Badge>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Connected Since</span>
-                  <span>{app.connectedAt ? new Date(app.connectedAt).toLocaleDateString() : "—"}</span>
+                  <span className="text-muted-foreground">{t("apps.detail.connection.connected_since")}</span>
+                  <span>
+                    {app.connectedAt
+                      ? formatDate(new Date(app.connectedAt), locale, "short")
+                      : t("apps.detail.connection.dash")}
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Last Sync</span>
-                  <span>{app.lastSyncAt ? formatRelativeTime(app.lastSyncAt) : "Never"}</span>
+                  <span className="text-muted-foreground">{t("apps.detail.connection.last_sync")}</span>
+                  <span>
+                    {app.lastSyncAt
+                      ? formatRelativeTime(new Date(app.lastSyncAt), locale)
+                      : t("apps.detail.connection.never")}
+                  </span>
                 </div>
                 {app.errorMessage && (
                   <div className="rounded-md bg-red-500/10 px-3 py-2 text-xs text-red-500">
@@ -389,26 +419,28 @@ export function AppDetailClient({ app: initial }: AppDetailClientProps) {
 
           {/* Quick Stats */}
           <Card>
-            <CardHeader><CardTitle className="text-sm">Data Points</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-sm">{t("apps.detail.stats.title")}</CardTitle>
+            </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="rounded-lg border px-4 py-3 text-center">
                   <p className="text-2xl font-bold tabular-nums">{app.dataPointCount}</p>
-                  <p className="text-xs text-muted-foreground">Total</p>
+                  <p className="text-xs text-muted-foreground">{t("apps.detail.stats.total")}</p>
                 </div>
                 <div className="rounded-lg border px-4 py-3 text-center">
                   <p className="text-2xl font-bold tabular-nums text-emerald-500">{app.readyDataPointCount}</p>
-                  <p className="text-xs text-muted-foreground">Ready</p>
+                  <p className="text-xs text-muted-foreground">{t("apps.detail.stats.ready")}</p>
                 </div>
                 <div className="rounded-lg border px-4 py-3 text-center">
                   <p className="text-2xl font-bold tabular-nums text-yellow-500">
                     {app.dataPointCount - app.readyDataPointCount}
                   </p>
-                  <p className="text-xs text-muted-foreground">Pending</p>
+                  <p className="text-xs text-muted-foreground">{t("apps.detail.stats.pending")}</p>
                 </div>
                 <div className="rounded-lg border px-4 py-3 text-center">
                   <p className="text-2xl font-bold tabular-nums">{logs.length}</p>
-                  <p className="text-xs text-muted-foreground">Sync Logs</p>
+                  <p className="text-xs text-muted-foreground">{t("apps.detail.stats.sync_logs")}</p>
                 </div>
               </div>
             </CardContent>
@@ -416,21 +448,24 @@ export function AppDetailClient({ app: initial }: AppDetailClientProps) {
 
           {/* Supported Data Categories */}
           <Card>
-            <CardHeader><CardTitle className="text-sm">Supported Data Categories</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-sm">{t("apps.detail.categories.title")}</CardTitle>
+            </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {app.dataCategories.map((cat) => {
-                  const info = DATA_CATEGORY_INFO[cat];
-                  if (!info) return null;
-                  const Icon = info.icon;
+                  const Icon = DATA_CATEGORY_ICONS[cat];
+                  if (!Icon) return null;
                   return (
                     <div key={cat} className="flex items-start gap-3 rounded-lg border p-3">
                       <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-500/10 shrink-0">
                         <Icon className="h-4.5 w-4.5 text-violet-500" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium">{info.label}</p>
-                        <p className="text-xs text-muted-foreground">{info.description}</p>
+                        <p className="text-sm font-medium">{t(dataCategoryLabelKey(cat))}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {t(dataCategoryDescriptionKey(cat))}
+                        </p>
                       </div>
                     </div>
                   );
@@ -449,10 +484,10 @@ export function AppDetailClient({ app: initial }: AppDetailClientProps) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">All Categories</SelectItem>
+                <SelectItem value="ALL">{t("apps.detail.data.filter_all")}</SelectItem>
                 {app.dataCategories.map((cat) => (
                   <SelectItem key={cat} value={cat}>
-                    {DATA_CATEGORY_INFO[cat]?.label || cat}
+                    {t(dataCategoryLabelKey(cat))}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -471,11 +506,11 @@ export function AppDetailClient({ app: initial }: AppDetailClientProps) {
             )}
             {!dataLoading && dataPoints.length === 0 && (
               <div className="flex flex-col items-center justify-center h-48 text-center">
-                <p className="text-sm text-muted-foreground">No data points synced yet.</p>
+                <p className="text-sm text-muted-foreground">{t("apps.detail.data.empty")}</p>
                 {isConnected && (
                   <Button variant="outline" size="sm" className="mt-3" onClick={handleSync} disabled={syncing}>
                     <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-                    Sync Now
+                    {t("apps.detail.data.sync_now")}
                   </Button>
                 )}
               </div>
@@ -483,7 +518,9 @@ export function AppDetailClient({ app: initial }: AppDetailClientProps) {
             {!dataLoading && dataPoints.length > 0 && (
               <div className="divide-y">
                 {dataPoints.map((dp) => {
-                  const dpStatus = DATA_POINT_STATUS[dp.status] || DATA_POINT_STATUS.PENDING;
+                  const dpStatusClass =
+                    DATA_POINT_STATUS_CLASSNAMES[dp.status] ??
+                    DATA_POINT_STATUS_CLASSNAMES.PENDING;
                   const isExpanded = expandedDataId === dp.id;
                   return (
                     <div key={dp.id} className="px-4 py-3">
@@ -492,17 +529,19 @@ export function AppDetailClient({ app: initial }: AppDetailClientProps) {
                         onClick={() => setExpandedDataId(isExpanded ? null : dp.id)}
                       >
                         <span className="text-sm font-medium tabular-nums min-w-[90px]">
-                          {new Date(dp.date).toLocaleDateString()}
+                          {formatDate(new Date(dp.date), locale, "short")}
                         </span>
                         <Badge variant="outline" className="text-[10px] bg-violet-500/5 text-violet-500 border-violet-500/20">
-                          {DATA_CATEGORY_INFO[dp.category]?.label || dp.category}
+                          {t(dataCategoryLabelKey(dp.category))}
                         </Badge>
-                        <Badge variant="outline" className={`text-[10px] ${dpStatus.className}`}>
-                          {dpStatus.label}
+                        <Badge variant="outline" className={`text-[10px] ${dpStatusClass}`}>
+                          {t(appDataPointStatusLabelKey(dp.status))}
                         </Badge>
                         <span className="flex-1" />
                         <span className="text-xs text-muted-foreground">
-                          {isExpanded ? "Collapse" : "Expand"}
+                          {isExpanded
+                            ? t("apps.detail.data.collapse")
+                            : t("apps.detail.data.expand")}
                         </span>
                       </button>
                       {isExpanded && (
@@ -512,9 +551,13 @@ export function AppDetailClient({ app: initial }: AppDetailClientProps) {
                               {dp.textContent}
                             </pre>
                           ) : dp.status === "ERROR" ? (
-                            <p className="text-sm text-destructive">{dp.errorMessage || "Processing failed."}</p>
+                            <p className="text-sm text-destructive">
+                              {dp.errorMessage || t("apps.detail.data.processing_failed")}
+                            </p>
                           ) : (
-                            <p className="text-sm text-muted-foreground italic">Not yet processed.</p>
+                            <p className="text-sm text-muted-foreground italic">
+                              {t("apps.detail.data.not_processed")}
+                            </p>
                           )}
                         </div>
                       )}
@@ -531,14 +574,14 @@ export function AppDetailClient({ app: initial }: AppDetailClientProps) {
           <div className="rounded-lg border">
             {logs.length === 0 ? (
               <div className="flex items-center justify-center h-32 text-sm text-muted-foreground">
-                No sync logs yet.
+                {t("apps.detail.logs.empty")}
               </div>
             ) : (
               <div className="divide-y">
                 {logs.map((log) => (
                   <div key={log.id} className="px-4 py-3 flex items-start gap-4 text-sm">
                     <span className="tabular-nums text-muted-foreground min-w-[140px] shrink-0">
-                      {new Date(log.createdAt).toLocaleString()}
+                      {formatDate(new Date(log.createdAt), locale, "dateTime")}
                     </span>
                     <Badge
                       variant="outline"
@@ -550,6 +593,7 @@ export function AppDetailClient({ app: initial }: AppDetailClientProps) {
                         "bg-muted text-muted-foreground"
                       }`}
                     >
+                      {/* TODO 1.5.7 Capstone: localize sync log action labels (raw enum string for now). */}
                       {log.action}
                     </Badge>
                     <Badge
@@ -560,14 +604,15 @@ export function AppDetailClient({ app: initial }: AppDetailClientProps) {
                           : "bg-red-500/10 text-red-500 border-red-500/20"
                       }`}
                     >
+                      {/* TODO 1.5.7 Capstone: localize sync log status (raw string for now). */}
                       {log.status}
                     </Badge>
                     <span className="text-muted-foreground flex-1 line-clamp-2">
-                      {log.details || "—"}
+                      {log.details || t("apps.detail.logs.no_details")}
                     </span>
                     {log.recordsProcessed > 0 && (
                       <span className="tabular-nums text-muted-foreground shrink-0">
-                        {log.recordsProcessed} records
+                        {t("apps.detail.logs.records", { count: log.recordsProcessed })}
                       </span>
                     )}
                   </div>
@@ -580,41 +625,47 @@ export function AppDetailClient({ app: initial }: AppDetailClientProps) {
         {/* ── Settings Tab ── */}
         <TabsContent value="settings" className="space-y-6 mt-6">
           <Card>
-            <CardHeader><CardTitle className="text-sm">Sync Configuration</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-sm">{t("apps.detail.settings.title")}</CardTitle>
+            </CardHeader>
             <CardContent className="space-y-5">
               {/* Sync Frequency */}
               <div className="space-y-1.5">
-                <Label className="text-xs">Sync Frequency</Label>
+                <Label className="text-xs">{t("apps.detail.settings.frequency_label")}</Label>
                 <Select value={syncFrequency} onValueChange={(val) => setSyncFrequency(val ?? "1440")}>
                   <SelectTrigger className="h-9 text-sm max-w-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {SYNC_FREQUENCY_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    {SYNC_FREQUENCY_VALUES.map((freq) => (
+                      <SelectItem key={freq} value={String(freq)}>
+                        {t(syncFrequencyLabelKey(freq))}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 <p className="text-[11px] text-muted-foreground">
-                  How often to automatically sync data from {app.name}.
+                  {t("apps.detail.settings.frequency_help", { name: app.name })}
                 </p>
               </div>
 
               {/* Data Categories */}
               <div className="space-y-2">
-                <Label className="text-xs">Enabled Data Categories</Label>
+                <Label className="text-xs">{t("apps.detail.settings.categories_label")}</Label>
                 <p className="text-[11px] text-muted-foreground mb-2">
-                  Select which types of data to sync from this app.
+                  {t("apps.detail.settings.categories_help")}
                 </p>
                 <div className="space-y-2">
                   {app.dataCategories.map((cat) => {
-                    const info = DATA_CATEGORY_INFO[cat];
-                    if (!info) return null;
+                    const Icon = DATA_CATEGORY_ICONS[cat];
+                    if (!Icon) return null;
                     return (
                       <div key={cat} className="flex items-center justify-between rounded-md border px-3 py-2">
                         <div>
-                          <span className="text-sm">{info.label}</span>
-                          <p className="text-[11px] text-muted-foreground">{info.description}</p>
+                          <span className="text-sm">{t(dataCategoryLabelKey(cat))}</span>
+                          <p className="text-[11px] text-muted-foreground">
+                            {t(dataCategoryDescriptionKey(cat))}
+                          </p>
                         </div>
                         <Switch
                           checked={enabledCategories.includes(cat)}
@@ -630,10 +681,10 @@ export function AppDetailClient({ app: initial }: AppDetailClientProps) {
                 {savingSettings ? (
                   <>
                     <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                    Saving...
+                    {t("apps.detail.settings.saving")}
                   </>
                 ) : (
-                  "Save Settings"
+                  t("apps.detail.settings.save")
                 )}
               </Button>
             </CardContent>
@@ -647,7 +698,7 @@ export function AppDetailClient({ app: initial }: AppDetailClientProps) {
         appSlug={app.slug}
         appId={app.id}
         onSuccess={() => {
-          toast.success(`${app.name} connected!`);
+          notifySuccess("apps.feedback.connected", t, { name: app.name });
           refresh();
         }}
       />

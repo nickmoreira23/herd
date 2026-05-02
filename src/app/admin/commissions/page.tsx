@@ -2,9 +2,12 @@ import { prisma } from "@/lib/prisma";
 import { CommissionPageClient } from "@/components/commissions/commission-page-client";
 import { toNumber } from "@/lib/utils";
 import { connection } from "next/server";
+import { getLocale } from "@/lib/i18n/get-locale";
+import { t } from "@/lib/i18n/t";
 
 export default async function CommissionsPage() {
   await connection();
+  const locale = await getLocale();
   const [structures, tiers] = await Promise.all([
     prisma.commissionStructure.findMany({
       orderBy: { createdAt: "desc" },
@@ -53,14 +56,17 @@ export default async function CommissionsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Commission Structures</h1>
+        <h1 className="text-2xl font-bold">
+          {t("commissions.page.title", locale)}
+        </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Define how the D2D sales team gets paid and see the margin impact.
+          {t("commissions.page.description", locale)}
         </p>
       </div>
       <CommissionPageClient
         initialStructures={serializedStructures as never}
         tiers={serializedTiers as never}
+        locale={locale}
       />
     </div>
   );

@@ -9,7 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { DollarSign } from "lucide-react";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
+import type { MessageKey } from "@/lib/i18n/messages/pt-BR";
 
 interface PlanData {
   id: string;
@@ -32,9 +34,14 @@ interface CommissionPlanEditorProps {
 }
 
 const ROLES = ["REP", "TEAM_LEAD", "REGIONAL_LEADER"] as const;
-const ROLE_LABELS: Record<string, string> = { REP: "Rep", TEAM_LEAD: "Team Lead", REGIONAL_LEADER: "Regional Leader" };
+const ROLE_LABEL_KEYS: Record<string, MessageKey> = {
+  REP: "network.promoters.plan.editor.role.rep",
+  TEAM_LEAD: "network.promoters.plan.editor.role.team_lead",
+  REGIONAL_LEADER: "network.promoters.plan.editor.role.regional_leader",
+};
 
 export function CommissionPlanEditor({ plan, tiers, open, onOpenChange, onSaved }: CommissionPlanEditorProps) {
+  const t = useT();
   const [form, setForm] = useState({ name: "", isActive: false, residualPercent: "", effectiveFrom: "", effectiveTo: "", notes: "" });
   const [rates, setRates] = useState<Record<string, { upfrontBonus: string; residualPercent: string }>>({});
   const [saving, setSaving] = useState(false);
@@ -77,7 +84,7 @@ export function CommissionPlanEditor({ plan, tiers, open, onOpenChange, onSaved 
       const url = plan ? `/api/commission-plans/${plan.id}` : "/api/commission-plans";
       const method = plan ? "PATCH" : "POST";
       const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(planData) });
-      if (!res.ok) { toast.error("Failed to save plan"); return; }
+      if (!res.ok) { notifyError("error.network.promoters.plan.save_failed", t); return; }
       const json = await res.json();
       const planId = plan?.id || json.data.id;
 
@@ -97,7 +104,12 @@ export function CommissionPlanEditor({ plan, tiers, open, onOpenChange, onSaved 
         });
       }
 
-      toast.success(plan ? "Plan updated" : "Plan created");
+      notifySuccess(
+        plan
+          ? "network.promoters.plan.editor.feedback.updated"
+          : "network.promoters.plan.editor.feedback.created",
+        t,
+      );
       onSaved();
       onOpenChange(false);
     } finally {
@@ -114,50 +126,50 @@ export function CommissionPlanEditor({ plan, tiers, open, onOpenChange, onSaved 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{plan ? `Edit ${plan.name} v${plan.version}` : "New Commission Plan"}</DialogTitle>
+          <DialogTitle>{plan ? t("network.promoters.plan.editor.title.edit", { name: plan.name, version: plan.version }) : t("network.promoters.plan.editor.title.new")}</DialogTitle>
           <p className="text-sm text-muted-foreground">
-            Define upfront bonuses and residual rates by subscription tier and role.
+            {t("network.promoters.plan.editor.description")}
           </p>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid grid-cols-[1fr_auto] gap-4 items-end">
             <div>
-              <Label className="text-xs">Plan Name</Label>
-              <Input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder='e.g. "Launch 2026"' className="mt-1" />
+              <Label className="text-xs">{t("network.promoters.plan.editor.field.name.label")}</Label>
+              <Input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder={t("network.promoters.plan.editor.field.name.placeholder")} className="mt-1" />
             </div>
             <label className="flex items-center gap-2 text-sm h-9 px-3 rounded-lg border bg-muted/30">
               <Switch checked={form.isActive} onCheckedChange={val => setForm({ ...form, isActive: val })} />
-              <span className="text-xs font-medium">Active</span>
+              <span className="text-xs font-medium">{t("network.promoters.plan.editor.field.active.label")}</span>
             </label>
           </div>
 
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <Label className="text-xs">Base Residual (%)</Label>
+              <Label className="text-xs">{t("network.promoters.plan.editor.field.base_residual.label")}</Label>
               <Input type="number" step="0.1" required value={form.residualPercent} onChange={e => setForm({ ...form, residualPercent: e.target.value })} placeholder="6" className="mt-1" />
             </div>
             <div>
-              <Label className="text-xs">Effective From</Label>
+              <Label className="text-xs">{t("network.promoters.plan.editor.field.effective_from.label")}</Label>
               <Input type="date" value={form.effectiveFrom} onChange={e => setForm({ ...form, effectiveFrom: e.target.value })} className="mt-1" />
             </div>
             <div>
-              <Label className="text-xs">Effective To</Label>
+              <Label className="text-xs">{t("network.promoters.plan.editor.field.effective_to.label")}</Label>
               <Input type="date" value={form.effectiveTo} onChange={e => setForm({ ...form, effectiveTo: e.target.value })} className="mt-1" />
             </div>
           </div>
 
           <div>
-            <Label className="text-xs">Notes</Label>
-            <Textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} placeholder="Internal notes..." className="mt-1" />
+            <Label className="text-xs">{t("network.promoters.plan.editor.field.notes.label")}</Label>
+            <Textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} placeholder={t("network.promoters.plan.editor.field.notes.placeholder")} className="mt-1" />
           </div>
 
           <div className="rounded-xl border bg-muted/20 p-4 space-y-3">
             <div className="flex items-center gap-2 mb-1">
               <DollarSign className="h-4 w-4 text-muted-foreground" />
               <div>
-                <span className="text-xs font-semibold uppercase tracking-wider">Rates by Tier & Role</span>
-                <p className="text-[11px] text-muted-foreground">Upfront bonus ($) and residual (%) for each role at each subscription tier.</p>
+                <span className="text-xs font-semibold uppercase tracking-wider">{t("network.promoters.plan.editor.rates.title")}</span>
+                <p className="text-[11px] text-muted-foreground">{t("network.promoters.plan.editor.rates.description")}</p>
               </div>
             </div>
 
@@ -165,17 +177,17 @@ export function CommissionPlanEditor({ plan, tiers, open, onOpenChange, onSaved 
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left py-2 pr-2 font-medium text-muted-foreground w-20">Tier</th>
+                    <th className="text-left py-2 pr-2 font-medium text-muted-foreground w-20">{t("network.promoters.plan.editor.rates.col.tier")}</th>
                     {ROLES.map(role => (
-                      <th key={role} colSpan={2} className="text-center py-2 px-1 font-medium text-muted-foreground">{ROLE_LABELS[role]}</th>
+                      <th key={role} colSpan={2} className="text-center py-2 px-1 font-medium text-muted-foreground">{t(ROLE_LABEL_KEYS[role])}</th>
                     ))}
                   </tr>
                   <tr className="border-b text-[10px] text-muted-foreground">
                     <th></th>
                     {ROLES.map(role => (
                       <Fragment key={role}>
-                        <th className="py-1 px-1 font-normal">Bonus $</th>
-                        <th className="py-1 px-1 font-normal">Resid %</th>
+                        <th className="py-1 px-1 font-normal">{t("network.promoters.plan.editor.rates.col.bonus")}</th>
+                        <th className="py-1 px-1 font-normal">{t("network.promoters.plan.editor.rates.col.residual")}</th>
                       </Fragment>
                     ))}
                   </tr>
@@ -205,8 +217,8 @@ export function CommissionPlanEditor({ plan, tiers, open, onOpenChange, onSaved 
           </div>
 
           <DialogFooter className="gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" disabled={saving}>{saving ? "Saving..." : plan ? "Save Changes" : "Create Plan"}</Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t("common.actions.cancel")}</Button>
+            <Button type="submit" disabled={saving}>{saving ? t("network.promoters.plan.editor.submit.saving") : plan ? t("network.promoters.plan.editor.submit.save") : t("network.promoters.plan.editor.submit.create")}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

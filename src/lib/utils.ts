@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import type { Locale } from "@/lib/i18n/locales";
 // Prisma Decimal type - use number | { toNumber(): number } for flexibility
 type DecimalLike = { toNumber(): number } | number;
 
@@ -7,9 +8,26 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatCurrency(amount: number | DecimalLike): string {
+/**
+ * @deprecated Since etapa 1.5.6a-bis. Use `formatMoney` from
+ * `@/lib/money/format` for currency, or `formatNumber` from
+ * `@/lib/i18n/format-number` for non-currency numbers. Both accept
+ * `locale: Locale` as required parameter and integrate with the i18n
+ * system properly.
+ *
+ * This function is retained for backward compatibility with features not
+ * yet migrated. New code should not use it. ESLint rule
+ * `no-restricted-imports` flags new usages.
+ *
+ * Will be deleted in Etapa 1.5.7 (Capstone) after confirming zero
+ * references across the codebase.
+ */
+export function formatCurrency(
+  amount: number | DecimalLike,
+  locale: Locale = "en-US",
+): string {
   const num = typeof amount === "number" ? amount : Number(amount);
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency: "USD",
     minimumFractionDigits: 2,
@@ -17,13 +35,37 @@ export function formatCurrency(amount: number | DecimalLike): string {
   }).format(num);
 }
 
-export function formatPercent(value: number | DecimalLike, decimals = 1): string {
+/**
+ * @deprecated Since etapa 1.5.6a-bis. Use `formatNumber` from
+ * `@/lib/i18n/format-number` with the `"percent"` preset (note: that
+ * preset expects a 0-1 ratio, this helper takes 0-100 percent values).
+ *
+ * Retained for back-compat with features not yet migrated. ESLint rule
+ * `no-restricted-imports` flags new usages. Deleted in 1.5.7 Capstone.
+ */
+export function formatPercent(
+  value: number | DecimalLike,
+  decimals = 1,
+  locale: Locale = "en-US",
+): string {
   const num = typeof value === "number" ? value : Number(value);
-  return `${num.toFixed(decimals)}%`;
+  const formatted = new Intl.NumberFormat(locale, {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(num);
+  return `${formatted}%`;
 }
 
-export function formatNumber(value: number): string {
-  return new Intl.NumberFormat("en-US").format(value);
+/**
+ * @deprecated Since etapa 1.5.6a-bis. Use `formatNumber` from
+ * `@/lib/i18n/format-number` (different module, same name) which provides
+ * presets (`integer`, `decimal`, `percent`, `compact`) and required locale
+ * parameter.
+ *
+ * Retained for back-compat. Deleted in 1.5.7 Capstone.
+ */
+export function formatNumber(value: number, locale: Locale = "en-US"): string {
+  return new Intl.NumberFormat(locale).format(value);
 }
 
 export function toNumber(value: number | DecimalLike): number {

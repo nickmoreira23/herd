@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, Shield } from "lucide-react";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
 
 interface AgreementData {
   id: string;
@@ -34,6 +35,7 @@ interface AgreementEditorProps {
 }
 
 export function AgreementEditor({ agreement, partners, plans, open, onOpenChange, onSaved }: AgreementEditorProps) {
+  const t = useT();
   const [form, setForm] = useState({
     name: "", d2dPartnerId: "", commissionPlanId: "", status: "DRAFT",
     payoutCadence: "MONTHLY", holdPeriodDays: "30", effectiveFrom: "", effectiveTo: "", notes: "",
@@ -76,7 +78,7 @@ export function AgreementEditor({ agreement, partners, plans, open, onOpenChange
       const url = agreement ? `/api/partner-agreements/${agreement.id}` : "/api/partner-agreements";
       const method = agreement ? "PATCH" : "POST";
       const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-      if (!res.ok) { toast.error("Failed to save agreement"); return; }
+      if (!res.ok) { notifyError("error.network.promoters.agreement.save_failed", t); return; }
       const json = await res.json();
       const agId = agreement?.id || json.data.id;
 
@@ -90,7 +92,12 @@ export function AgreementEditor({ agreement, partners, plans, open, onOpenChange
         });
       }
 
-      toast.success(agreement ? "Agreement updated" : "Agreement created");
+      notifySuccess(
+        agreement
+          ? "network.promoters.agreement.editor.feedback.updated"
+          : "network.promoters.agreement.editor.feedback.created",
+        t,
+      );
       onSaved();
       onOpenChange(false);
     } finally {
@@ -102,29 +109,29 @@ export function AgreementEditor({ agreement, partners, plans, open, onOpenChange
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{agreement ? "Edit Agreement" : "New Partner Agreement"}</DialogTitle>
-          <p className="text-sm text-muted-foreground">Bundle a commission plan with payout terms and clawback rules.</p>
+          <DialogTitle>{agreement ? t("network.promoters.agreement.editor.title.edit") : t("network.promoters.agreement.editor.title.new")}</DialogTitle>
+          <p className="text-sm text-muted-foreground">{t("network.promoters.agreement.editor.description")}</p>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label className="text-xs">Agreement Name</Label>
-            <Input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder='e.g. "Apex — Launch 2026"' className="mt-1" />
+            <Label className="text-xs">{t("network.promoters.agreement.editor.field.name.label")}</Label>
+            <Input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder={t("network.promoters.agreement.editor.field.name.placeholder")} className="mt-1" />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-xs">D2D Partner</Label>
+              <Label className="text-xs">{t("network.promoters.agreement.editor.field.partner.label")}</Label>
               <Select value={form.d2dPartnerId} onValueChange={val => setForm({ ...form, d2dPartnerId: val ?? "" })}>
-                <SelectTrigger className="mt-1"><SelectValue placeholder="Select partner" /></SelectTrigger>
+                <SelectTrigger className="mt-1"><SelectValue placeholder={t("network.promoters.agreement.editor.field.partner.placeholder")} /></SelectTrigger>
                 <SelectContent>
                   {partners.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label className="text-xs">Commission Plan</Label>
+              <Label className="text-xs">{t("network.promoters.agreement.editor.field.plan.label")}</Label>
               <Select value={form.commissionPlanId} onValueChange={val => setForm({ ...form, commissionPlanId: val ?? "" })}>
-                <SelectTrigger className="mt-1"><SelectValue placeholder="Select plan" /></SelectTrigger>
+                <SelectTrigger className="mt-1"><SelectValue placeholder={t("network.promoters.agreement.editor.field.plan.placeholder")} /></SelectTrigger>
                 <SelectContent>
                   {plans.map(p => <SelectItem key={p.id} value={p.id}>{p.name} v{p.version}</SelectItem>)}
                 </SelectContent>
@@ -134,34 +141,34 @@ export function AgreementEditor({ agreement, partners, plans, open, onOpenChange
 
           <div className="grid grid-cols-4 gap-3">
             <div>
-              <Label className="text-xs">Status</Label>
+              <Label className="text-xs">{t("network.promoters.agreement.editor.field.status.label")}</Label>
               <Select value={form.status} onValueChange={val => setForm({ ...form, status: val ?? "DRAFT" })}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="DRAFT">Draft</SelectItem>
-                  <SelectItem value="ACTIVE">Active</SelectItem>
-                  <SelectItem value="SUSPENDED">Suspended</SelectItem>
-                  <SelectItem value="TERMINATED">Terminated</SelectItem>
+                  <SelectItem value="DRAFT">{t("network.promoters.agreement.editor.status.draft")}</SelectItem>
+                  <SelectItem value="ACTIVE">{t("network.promoters.agreement.editor.status.active")}</SelectItem>
+                  <SelectItem value="SUSPENDED">{t("network.promoters.agreement.editor.status.suspended")}</SelectItem>
+                  <SelectItem value="TERMINATED">{t("network.promoters.agreement.editor.status.terminated")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label className="text-xs">Payout Cadence</Label>
+              <Label className="text-xs">{t("network.promoters.agreement.editor.field.cadence.label")}</Label>
               <Select value={form.payoutCadence} onValueChange={val => setForm({ ...form, payoutCadence: val ?? "MONTHLY" })}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="WEEKLY">Weekly</SelectItem>
-                  <SelectItem value="BIWEEKLY">Biweekly</SelectItem>
-                  <SelectItem value="MONTHLY">Monthly</SelectItem>
+                  <SelectItem value="WEEKLY">{t("network.promoters.agreement.editor.cadence.weekly")}</SelectItem>
+                  <SelectItem value="BIWEEKLY">{t("network.promoters.agreement.editor.cadence.biweekly")}</SelectItem>
+                  <SelectItem value="MONTHLY">{t("network.promoters.agreement.editor.cadence.monthly")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label className="text-xs">Hold Period (days)</Label>
+              <Label className="text-xs">{t("network.promoters.agreement.editor.field.hold.label")}</Label>
               <Input type="number" value={form.holdPeriodDays} onChange={e => setForm({ ...form, holdPeriodDays: e.target.value })} className="mt-1" />
             </div>
             <div>
-              <Label className="text-xs">Effective From</Label>
+              <Label className="text-xs">{t("network.promoters.agreement.editor.field.effective_from.label")}</Label>
               <Input type="date" value={form.effectiveFrom} onChange={e => setForm({ ...form, effectiveFrom: e.target.value })} className="mt-1" />
             </div>
           </div>
@@ -171,31 +178,31 @@ export function AgreementEditor({ agreement, partners, plans, open, onOpenChange
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Shield className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs font-semibold uppercase tracking-wider">Clawback Rules</span>
+                <span className="text-xs font-semibold uppercase tracking-wider">{t("network.promoters.agreement.editor.clawback.title")}</span>
               </div>
               <Button type="button" variant="outline" size="xs" onClick={() => setClawbackRules([...clawbackRules, { windowDays: "", clawbackPercent: "" }])}>
-                <Plus className="h-3 w-3 mr-1" />Add
+                <Plus className="h-3 w-3 mr-1" />{t("network.promoters.agreement.editor.clawback.add")}
               </Button>
             </div>
-            <p className="text-[11px] text-muted-foreground">If a customer cancels within the window, this % of the upfront bonus is clawed back.</p>
+            <p className="text-[11px] text-muted-foreground">{t("network.promoters.agreement.editor.clawback.description")}</p>
             {clawbackRules.map((rule, idx) => (
               <div key={idx} className="flex gap-2 items-center">
                 <div className="flex-1">
-                  <Input type="number" placeholder="Days" value={rule.windowDays} onChange={e => {
+                  <Input type="number" placeholder={t("network.promoters.agreement.editor.clawback.days_placeholder")} value={rule.windowDays} onChange={e => {
                     const updated = [...clawbackRules];
                     updated[idx] = { ...updated[idx], windowDays: e.target.value };
                     setClawbackRules(updated);
                   }} className="h-7 text-xs" />
                 </div>
-                <span className="text-xs text-muted-foreground">days =</span>
+                <span className="text-xs text-muted-foreground">{t("network.promoters.agreement.editor.clawback.days_suffix")}</span>
                 <div className="flex-1">
-                  <Input type="number" placeholder="%" value={rule.clawbackPercent} onChange={e => {
+                  <Input type="number" placeholder={t("network.promoters.agreement.editor.clawback.percent_placeholder")} value={rule.clawbackPercent} onChange={e => {
                     const updated = [...clawbackRules];
                     updated[idx] = { ...updated[idx], clawbackPercent: e.target.value };
                     setClawbackRules(updated);
                   }} className="h-7 text-xs" />
                 </div>
-                <span className="text-xs text-muted-foreground">% clawback</span>
+                <span className="text-xs text-muted-foreground">{t("network.promoters.agreement.editor.clawback.percent_suffix")}</span>
                 <Button type="button" variant="ghost" size="icon-sm" onClick={() => setClawbackRules(clawbackRules.filter((_, i) => i !== idx))}>
                   <Trash2 className="h-3 w-3" />
                 </Button>
@@ -204,13 +211,13 @@ export function AgreementEditor({ agreement, partners, plans, open, onOpenChange
           </div>
 
           <div>
-            <Label className="text-xs">Notes</Label>
+            <Label className="text-xs">{t("network.promoters.agreement.editor.field.notes.label")}</Label>
             <Textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} className="mt-1" />
           </div>
 
           <DialogFooter className="gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" disabled={saving}>{saving ? "Saving..." : agreement ? "Save Changes" : "Create Agreement"}</Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t("common.actions.cancel")}</Button>
+            <Button type="submit" disabled={saving}>{saving ? t("network.promoters.agreement.editor.submit.saving") : agreement ? t("network.promoters.agreement.editor.submit.save") : t("network.promoters.agreement.editor.submit.create")}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

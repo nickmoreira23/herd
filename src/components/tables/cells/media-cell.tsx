@@ -2,7 +2,6 @@
 
 import { useState, useRef, useCallback } from "react";
 import {
-  ImageIcon,
   Film,
   Upload,
   Loader2,
@@ -12,7 +11,8 @@ import {
   ChevronRight,
   Plus,
 } from "lucide-react";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import { notifyError } from "@/lib/i18n/notify";
 import type { CellRendererProps, CellEditorProps } from "./index";
 
 // ─── Types ─────────────────────────────────────────────────────
@@ -58,6 +58,7 @@ function MediaGalleryModal({
   initialIndex: number;
   onClose: () => void;
 }) {
+  const t = useT();
   const [index, setIndex] = useState(initialIndex);
   const current = items[index];
   if (!current) return null;
@@ -92,6 +93,7 @@ function MediaGalleryModal({
         {/* Close button */}
         <button
           onClick={onClose}
+          aria-label={t("common.actions.close")}
           className="absolute -top-10 right-0 text-white hover:text-white/80 transition-colors z-10"
         >
           <X className="h-6 w-6" />
@@ -101,6 +103,7 @@ function MediaGalleryModal({
         {items.length > 1 && hasPrev && (
           <button
             onClick={goPrev}
+            aria-label={t("tables.cells.media.previous")}
             className="absolute left-[-48px] top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition-colors"
           >
             <ChevronLeft className="h-8 w-8" />
@@ -109,6 +112,7 @@ function MediaGalleryModal({
         {items.length > 1 && hasNext && (
           <button
             onClick={goNext}
+            aria-label={t("tables.cells.media.next")}
             className="absolute right-[-48px] top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition-colors"
           >
             <ChevronRight className="h-8 w-8" />
@@ -134,10 +138,15 @@ function MediaGalleryModal({
 
         {/* Footer info */}
         <div className="mt-3 text-center text-white/70 text-xs">
-          {current.filename} &middot; {formatSize(current.size)}
+          {current.filename}
+          {" · "}
+          {formatSize(current.size)}
           {items.length > 1 && (
             <span className="ml-2 text-white/50">
-              {index + 1} / {items.length}
+              {t("tables.cells.media.gallery_position", {
+                current: index + 1,
+                total: items.length,
+              })}
             </span>
           )}
         </div>
@@ -152,6 +161,9 @@ function MediaGalleryModal({
                   e.stopPropagation();
                   setIndex(i);
                 }}
+                aria-label={t("tables.cells.media.thumbnail_aria", {
+                  index: i + 1,
+                })}
                 className={`w-10 h-10 rounded overflow-hidden border-2 transition-colors flex-shrink-0 ${
                   i === index
                     ? "border-white"
@@ -181,13 +193,14 @@ function MediaGalleryModal({
 // ─── Renderer ──────────────────────────────────────────────────
 
 export function MediaCellRenderer({ value }: CellRendererProps) {
+  const t = useT();
   const [galleryIndex, setGalleryIndex] = useState<number | null>(null);
   const items = toMediaArray(value);
 
   if (items.length === 0) {
     return (
       <span className="text-muted-foreground/50 text-xs italic">
-        No media
+        {t("tables.cells.media.empty_state")}
       </span>
     );
   }
@@ -230,7 +243,9 @@ export function MediaCellRenderer({ value }: CellRendererProps) {
               setGalleryIndex(3);
             }}
           >
-            +{items.length - 3}
+            {t("tables.cells.media.overflow_count", {
+              count: items.length - 3,
+            })}
           </div>
         )}
         {/* Single item: show filename */}
@@ -242,7 +257,7 @@ export function MediaCellRenderer({ value }: CellRendererProps) {
         {/* Multiple items: show count */}
         {items.length > 1 && items.length <= 3 && (
           <span className="text-[10px] text-muted-foreground ml-0.5">
-            {items.length} files
+            {t("tables.cells.media.files_count", { count: items.length })}
           </span>
         )}
       </div>
@@ -267,6 +282,7 @@ export function MediaCellEditor({
   onCommit,
   onCancel,
 }: CellEditorProps) {
+  const t = useT();
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -285,8 +301,7 @@ export function MediaCellEditor({
         );
 
         if (!res.ok) {
-          const err = await res.json().catch(() => null);
-          toast.error(err?.error || "Upload failed");
+          notifyError("error.tables.upload_failed", t);
           return;
         }
 
@@ -297,12 +312,12 @@ export function MediaCellEditor({
           onCommit();
         }
       } catch {
-        toast.error("Upload failed");
+        notifyError("error.tables.upload_failed", t);
       } finally {
         setUploading(false);
       }
     },
-    [field.tableId, items, onChange, onCommit]
+    [field.tableId, items, onChange, onCommit, t]
   );
 
   const uploadFiles = useCallback(
@@ -362,7 +377,9 @@ export function MediaCellEditor({
     return (
       <div className="flex items-center gap-2 p-2">
         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-        <span className="text-xs text-muted-foreground">Uploading...</span>
+        <span className="text-xs text-muted-foreground">
+          {t("tables.cells.media.uploading")}
+        </span>
       </div>
     );
   }
@@ -390,6 +407,7 @@ export function MediaCellEditor({
               )}
               <button
                 onClick={(e) => handleRemove(i, e)}
+                aria-label={t("tables.cells.media.remove")}
                 className="absolute top-0 right-0 bg-black/60 rounded-bl p-0.5 opacity-0 group-hover/thumb:opacity-100 transition-opacity"
               >
                 <X className="h-2.5 w-2.5 text-white" />
@@ -420,7 +438,9 @@ export function MediaCellEditor({
           <Upload className="h-3.5 w-3.5 text-muted-foreground" />
         )}
         <span className="text-[10px] text-muted-foreground">
-          {items.length > 0 ? "Add more" : "Drop files or click"}
+          {items.length > 0
+            ? t("tables.cells.media.add_more")
+            : t("tables.cells.media.drop_or_click")}
         </span>
         <input
           ref={fileInputRef}
@@ -429,6 +449,7 @@ export function MediaCellEditor({
           multiple
           className="hidden"
           onChange={handleFileSelect}
+          aria-label={t("tables.cells.media.file_input_label")}
         />
       </div>
     </div>

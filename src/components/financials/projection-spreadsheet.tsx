@@ -1,10 +1,14 @@
 "use client";
 
 import { useFinancialStore } from "@/stores/financial-store";
-import { formatCurrency, formatPercent, cn } from "@/lib/utils";
-
+import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale-context";
+import type { Locale } from "@/lib/i18n/locales";
+import { formatNumberAsMoney } from "@/lib/money/format";
+import { formatNumber } from "@/lib/i18n/format-number";
 interface ProjectionSpreadsheetProps {
   months?: number;
+  locale: Locale;
 }
 
 type RowType = "currency" | "number" | "percent";
@@ -17,6 +21,8 @@ interface RowDef {
   values: number[];
   bold?: boolean;
   colorBySign?: boolean;
+  /** Stable identifier to anchor color logic (label is i18n now). */
+  id?: string;
 }
 
 interface SectionDef {
@@ -24,14 +30,14 @@ interface SectionDef {
   rows: RowDef[];
 }
 
-function formatCell(value: number, type: RowType): string {
+function formatCell(value: number, type: RowType, locale: Locale): string {
   switch (type) {
     case "currency":
-      return formatCurrency(value);
+      return formatNumberAsMoney(value, locale);
     case "percent":
-      return formatPercent(value);
+      return formatNumber(value / 100, locale, "percent");
     case "number":
-      return Math.round(value).toLocaleString("en-US");
+      return formatNumber(Math.round(value), locale, "integer");
   }
 }
 
@@ -47,14 +53,15 @@ function computeTotal(values: number[], mode: TotalMode): number {
   }
 }
 
-export function ProjectionSpreadsheet({ months = 12 }: ProjectionSpreadsheetProps) {
+export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreadsheetProps) {
+  const t = useT();
   const results = useFinancialStore((s) => s.results);
   const inputs = useFinancialStore((s) => s.inputs);
 
   if (!results) {
     return (
       <div className="flex items-center justify-center py-16 text-muted-foreground">
-        <p className="text-sm font-medium">No results yet</p>
+        <p className="text-sm font-medium">{t("financials.projection.empty")}</p>
       </div>
     );
   }
@@ -63,7 +70,7 @@ export function ProjectionSpreadsheet({ months = 12 }: ProjectionSpreadsheetProp
   const costPerSub = results.costPerSubscriber;
 
   // Collect unique tier IDs for per-tier breakdown
-  const tierIds = projection[0]?.newSubsByTier?.map((t) => t.tierId) ?? inputs?.tiers?.map((t) => t.tierId) ?? [];
+  const tierIds = projection[0]?.newSubsByTier?.map((tier) => tier.tierId) ?? inputs?.tiers?.map((tier) => tier.tierId) ?? [];
 
   // Build row data for each month
   const grossNewSales: number[] = [];
@@ -133,7 +140,7 @@ export function ProjectionSpreadsheet({ months = 12 }: ProjectionSpreadsheetProp
         np > 0 ? np * (party.percent / 100) : 0
       );
       profitSplitRows.push({
-        label: `${party.name} (${party.percent}%)`,
+        label: t("financials.pl.party_label", { name: party.name, percent: party.percent }),
         type: "currency",
         totalMode: "sum",
         values: partyValues,
@@ -144,11 +151,11 @@ export function ProjectionSpreadsheet({ months = 12 }: ProjectionSpreadsheetProp
 
   // Per-tier breakdown of new sales
   const perTierNewSalesRows: RowDef[] = tierIds.length > 1 ? tierIds.map((tierId) => ({
-    label: `  └ ${tierId}`,
+    label: t("financials.projection.tier_indent", { tier: tierId }),
     type: "number" as const,
     totalMode: "sum" as const,
-    values: projection.map((m) => {
-      const entry = m.newSubsByTier?.find((t) => t.tierId === tierId);
+    values: projection.map((mo) => {
+      const entry = mo.newSubsByTier?.find((tier) => tier.tierId === tierId);
       return entry?.count ?? 0;
     }),
   })) : [];
@@ -156,67 +163,67 @@ export function ProjectionSpreadsheet({ months = 12 }: ProjectionSpreadsheetProp
   // Per-billing-cycle revenue breakdown
   const hasBillingBreakdown = projection[0]?.revenueByBillingCycle != null;
   const billingCycleRows: RowDef[] = hasBillingBreakdown ? [
-    { label: "  └ Monthly Billing", type: "currency" as const, totalMode: "sum" as const, values: projection.map((m) => m.revenueByBillingCycle?.monthly ?? 0) },
-    { label: "  └ Quarterly Billing", type: "currency" as const, totalMode: "sum" as const, values: projection.map((m) => m.revenueByBillingCycle?.quarterly ?? 0) },
-    { label: "  └ Annual Billing", type: "currency" as const, totalMode: "sum" as const, values: projection.map((m) => m.revenueByBillingCycle?.annual ?? 0) },
+    { label: t("financials.projection.row.monthly_billing"), type: "currency" as const, totalMode: "sum" as const, values: projection.map((mo) => mo.revenueByBillingCycle?.monthly ?? 0) },
+    { label: t("financials.projection.row.quarterly_billing"), type: "currency" as const, totalMode: "sum" as const, values: projection.map((mo) => mo.revenueByBillingCycle?.quarterly ?? 0) },
+    { label: t("financials.projection.row.annual_billing"), type: "currency" as const, totalMode: "sum" as const, values: projection.map((mo) => mo.revenueByBillingCycle?.annual ?? 0) },
   ] : [];
 
   const sections: SectionDef[] = [
     {
-      header: "Subscribers",
+      header: t("financials.projection.section.subscribers"),
       rows: [
-        { label: "Gross New Sales", type: "number", totalMode: "sum", values: grossNewSales },
+        { label: t("financials.projection.row.gross_new_sales"), type: "number", totalMode: "sum", values: grossNewSales },
         ...perTierNewSalesRows,
         ...(chargebacks.some((v) => v > 0) ? [
-          { label: "Chargebacks", type: "number" as const, totalMode: "sum" as const, values: chargebacks, colorBySign: false },
+          { label: t("financials.projection.row.chargebacks"), type: "number" as const, totalMode: "sum" as const, values: chargebacks, colorBySign: false },
         ] : []),
-        { label: "Net New Subs", type: "number", totalMode: "sum", values: newSubs, bold: true },
-        { label: "Lost to Churn", type: "number", totalMode: "sum", values: churned },
-        { label: "Total Active", type: "number", totalMode: "latest", values: totalActive, bold: true },
+        { label: t("financials.projection.row.net_new_subs"), type: "number", totalMode: "sum", values: newSubs, bold: true },
+        { label: t("financials.projection.row.lost_to_churn"), type: "number", totalMode: "sum", values: churned },
+        { label: t("financials.projection.row.total_active"), type: "number", totalMode: "latest", values: totalActive, bold: true },
       ],
     },
     {
-      header: "Revenue",
+      header: t("financials.projection.section.revenue"),
       rows: [
-        { label: "Subscription Revenue", type: "currency", totalMode: "sum", values: subscriptionRevenue },
+        { label: t("financials.projection.row.subscription_revenue"), type: "currency", totalMode: "sum", values: subscriptionRevenue },
         ...billingCycleRows,
       ],
     },
     {
-      header: "Cost of Goods",
+      header: t("financials.projection.section.cogs"),
       rows: [
-        { label: "Product & Fulfillment", type: "currency", totalMode: "sum", values: productFulfillment },
-        { label: "Gross Profit", type: "currency", totalMode: "sum", values: grossProfit, bold: true, colorBySign: true },
-        { label: "Gross Margin %", type: "percent", totalMode: "average", values: grossMarginPct },
+        { label: t("financials.projection.row.product_fulfillment"), type: "currency", totalMode: "sum", values: productFulfillment },
+        { label: t("financials.projection.row.gross_profit"), type: "currency", totalMode: "sum", values: grossProfit, bold: true, colorBySign: true },
+        { label: t("financials.projection.row.gross_margin_pct"), type: "percent", totalMode: "average", values: grossMarginPct },
       ],
     },
     {
-      header: "Operating Expenses",
+      header: t("financials.projection.section.opex"),
       rows: [
-        { label: "Commissions", type: "currency", totalMode: "sum", values: commissions },
-        { label: "Overhead", type: "currency", totalMode: "sum", values: overhead },
-        { label: "Total OpEx", type: "currency", totalMode: "sum", values: totalOpEx, bold: true },
+        { label: t("financials.projection.row.commissions"), type: "currency", totalMode: "sum", values: commissions },
+        { label: t("financials.projection.row.overhead"), type: "currency", totalMode: "sum", values: overhead },
+        { label: t("financials.projection.row.total_opex"), type: "currency", totalMode: "sum", values: totalOpEx, bold: true },
       ],
     },
     {
-      header: "Bottom Line",
+      header: t("financials.projection.section.bottom_line"),
       rows: [
-        { label: "Net Profit", type: "currency", totalMode: "sum", values: netProfit, bold: true, colorBySign: true },
-        { label: "Cumulative Profit", type: "currency", totalMode: "latest", values: cumulativeProfit, colorBySign: true },
-        { label: "Net Margin %", type: "percent", totalMode: "average", values: netMarginPct },
+        { label: t("financials.projection.row.net_profit"), type: "currency", totalMode: "sum", values: netProfit, bold: true, colorBySign: true },
+        { label: t("financials.projection.row.cumulative_profit"), type: "currency", totalMode: "latest", values: cumulativeProfit, colorBySign: true, id: "cumulative_profit" },
+        { label: t("financials.projection.row.net_margin_pct"), type: "percent", totalMode: "average", values: netMarginPct },
       ],
     },
     ...(profitSplitRows.length > 0
       ? [
           {
-            header: "Profit Split",
+            header: t("financials.projection.section.profit_split"),
             rows: profitSplitRows,
           },
         ]
       : []),
   ];
 
-  const monthLabels = projection.map((_, i) => `M${i + 1}`);
+  const monthLabels = projection.map((_, i) => t("financials.charts.month_label", { month: i + 1 }));
 
   return (
     <div className="overflow-x-auto border rounded-lg">
@@ -235,13 +242,13 @@ export function ProjectionSpreadsheet({ months = 12 }: ProjectionSpreadsheetProp
               </th>
             ))}
             <th className="w-[100px] min-w-[100px] px-2 py-2 text-right font-medium border-l">
-              Total/Avg
+              {t("financials.projection.column.total_avg")}
             </th>
           </tr>
         </thead>
         <tbody>
           {sections.map((section) => (
-            <SectionGroup key={section.header} section={section} months={months} />
+            <SectionGroup key={section.header} section={section} months={months} locale={locale} />
           ))}
         </tbody>
       </table>
@@ -249,7 +256,7 @@ export function ProjectionSpreadsheet({ months = 12 }: ProjectionSpreadsheetProp
   );
 }
 
-function SectionGroup({ section, months }: { section: SectionDef; months: number }) {
+function SectionGroup({ section, months, locale }: { section: SectionDef; months: number; locale: Locale }) {
   return (
     <>
       {/* Section header row */}
@@ -263,14 +270,15 @@ function SectionGroup({ section, months }: { section: SectionDef; months: number
       </tr>
       {/* Data rows */}
       {section.rows.map((row) => (
-        <DataRow key={row.label} row={row} />
+        <DataRow key={row.label} row={row} locale={locale} />
       ))}
     </>
   );
 }
 
-function DataRow({ row }: { row: RowDef }) {
+function DataRow({ row, locale }: { row: RowDef; locale: Locale }) {
   const total = computeTotal(row.values, row.totalMode);
+  const isCumulativeProfit = row.id === "cumulative_profit";
 
   return (
     <tr className="border-b border-border/50 hover:bg-muted/10">
@@ -291,12 +299,12 @@ function DataRow({ row }: { row: RowDef }) {
             "px-2 py-1.5 text-right tabular-nums font-mono",
             row.bold && "font-semibold",
             row.colorBySign && value < 0 && "text-red-500",
-            row.colorBySign && value > 0 && row.label === "Cumulative Profit" && "text-green-600",
-            row.colorBySign && value < 0 && row.label === "Cumulative Profit" && "text-red-500",
+            row.colorBySign && value > 0 && isCumulativeProfit && "text-green-600",
+            row.colorBySign && value < 0 && isCumulativeProfit && "text-red-500",
             value < 0 && !row.colorBySign && row.type === "currency" && "text-red-500"
           )}
         >
-          {formatCell(value, row.type)}
+          {formatCell(value, row.type, locale)}
         </td>
       ))}
       {/* Total/Avg column */}
@@ -305,13 +313,14 @@ function DataRow({ row }: { row: RowDef }) {
           "px-2 py-1.5 text-right tabular-nums font-mono border-l",
           row.bold && "font-semibold",
           row.colorBySign && total < 0 && "text-red-500",
-          row.colorBySign && total > 0 && row.label === "Cumulative Profit" && "text-green-600",
-          row.colorBySign && total < 0 && row.label === "Cumulative Profit" && "text-red-500",
+          row.colorBySign && total > 0 && isCumulativeProfit && "text-green-600",
+          row.colorBySign && total < 0 && isCumulativeProfit && "text-red-500",
           total < 0 && !row.colorBySign && row.type === "currency" && "text-red-500"
         )}
       >
-        {formatCell(total, row.type)}
+        {formatCell(total, row.type, locale)}
       </td>
     </tr>
   );
 }
+

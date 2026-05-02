@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { ImageTable } from "@/components/images/image-table";
-import { KnowledgeImagesEmpty } from "@/components/knowledge/images/knowledge-images-empty";
+import { ImagesEmpty } from "@/components/images/images-empty";
 import { connection } from "next/server";
 
 export default async function KnowledgeImagesPage() {
@@ -32,7 +32,7 @@ export default async function KnowledgeImagesPage() {
   }));
 
   if (images.length === 0 && folders.length === 0) {
-    return <KnowledgeImagesEmpty />;
+    return <ImagesEmpty />;
   }
 
   return (

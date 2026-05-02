@@ -28,7 +28,10 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
+import { useT } from "@/lib/i18n/locale-context";
+import type { Locale } from "@/lib/i18n/locales";
+import type { MessageKey } from "@/lib/i18n/t";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
 import { PageHeader } from "@/components/layout/page-header";
 import {
   Plus,
@@ -57,13 +60,22 @@ interface Location {
   notes: string | null;
 }
 
-const LOCATION_TYPES = [
-  { value: "headquarters", label: "Headquarters" },
-  { value: "office", label: "Office" },
-  { value: "store", label: "Store / Retail" },
-  { value: "warehouse", label: "Warehouse" },
-  { value: "other", label: "Other" },
-];
+const LOCATION_TYPE_VALUES = [
+  "headquarters",
+  "office",
+  "store",
+  "warehouse",
+  "other",
+] as const;
+type LocationTypeValue = (typeof LOCATION_TYPE_VALUES)[number];
+
+const LOCATION_TYPE_KEYS = {
+  headquarters: "organization.locations.type.headquarters",
+  office: "organization.locations.type.office",
+  store: "organization.locations.type.store",
+  warehouse: "organization.locations.type.warehouse",
+  other: "organization.locations.type.other",
+} as const satisfies Record<LocationTypeValue, MessageKey>;
 
 const EMPTY_FORM: Omit<Location, "id" | "isActive"> = {
   name: "",
@@ -93,15 +105,20 @@ function getTypeIcon(type: string) {
   }
 }
 
-function formatAddress(loc: Location): string {
+function formatAddress(loc: Location, fallback: string): string {
   const parts = [loc.street, loc.street2, loc.city, loc.state, loc.zip].filter(
     Boolean
   );
   if (loc.country) parts.push(loc.country);
-  return parts.join(", ") || "No address provided";
+  return parts.join(", ") || fallback;
 }
 
-export function LocationsForm() {
+interface LocationsFormProps {
+  locale: Locale;
+}
+
+export function LocationsForm({ locale: _locale }: LocationsFormProps) {
+  const t = useT();
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -117,11 +134,11 @@ export function LocationsForm() {
         setLocations(json.data?.locations || []);
       }
     } catch {
-      toast.error("Failed to load locations");
+      notifyError("error.organization.locations_load_failed", t);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchLocations();
@@ -161,7 +178,7 @@ export function LocationsForm() {
 
   const handleSave = async () => {
     if (!form.name.trim()) {
-      toast.error("Location name is required");
+      notifyError("error.organization.location_name_required", t);
       return;
     }
 
@@ -183,12 +200,16 @@ export function LocationsForm() {
           });
 
       if (!res.ok) {
-        const json = await res.json();
-        toast.error(json.error || "Failed to save location");
+        notifyError("error.organization.location_save_failed", t);
         return;
       }
 
-      toast.success(editingId ? "Location updated" : "Location added");
+      notifySuccess(
+        editingId
+          ? "organization.feedback.location_updated"
+          : "organization.feedback.location_added",
+        t,
+      );
       setDialogOpen(false);
       fetchLocations();
     } finally {
@@ -200,13 +221,13 @@ export function LocationsForm() {
     try {
       const res = await fetch(`/api/locations/${id}`, { method: "DELETE" });
       if (!res.ok) {
-        toast.error("Failed to delete location");
+        notifyError("error.organization.location_delete_failed", t);
         return;
       }
-      toast.success("Location deleted");
+      notifySuccess("organization.feedback.location_deleted", t);
       fetchLocations();
     } catch {
-      toast.error("Failed to delete location");
+      notifyError("error.organization.location_delete_failed", t);
     }
   };
 
@@ -216,12 +237,12 @@ export function LocationsForm() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Locations"
-        description="Manage your organization's stores, offices, and other physical locations."
+        title={t("organization.locations.title")}
+        description={t("organization.locations.description")}
         action={
           <Button onClick={openCreate}>
             <Plus className="h-4 w-4 mr-1.5" />
-            Add Location
+            {t("organization.locations.add")}
           </Button>
         }
       />
@@ -240,14 +261,15 @@ export function LocationsForm() {
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-16">
               <MapPin className="h-10 w-10 text-muted-foreground mb-3" />
-              <h3 className="text-lg font-semibold">No locations yet</h3>
+              <h3 className="text-lg font-semibold">
+                {t("organization.locations.empty_title")}
+              </h3>
               <p className="text-sm text-muted-foreground mt-1 mb-4 text-center max-w-sm">
-                Add your headquarters, stores, and other locations so your team
-                and partners know where you operate.
+                {t("organization.locations.empty_description")}
               </p>
               <Button onClick={openCreate}>
                 <Plus className="h-4 w-4 mr-1.5" />
-                Add Your First Location
+                {t("organization.locations.add_first")}
               </Button>
             </CardContent>
           </Card>
@@ -257,9 +279,11 @@ export function LocationsForm() {
             {headquarters.length > 0 && (
               <Card>
                 <CardHeader className="border-b">
-                  <CardTitle>Headquarters</CardTitle>
+                  <CardTitle>
+                    {t("organization.locations.headquarters_title")}
+                  </CardTitle>
                   <CardDescription>
-                    Your organization&apos;s primary location.
+                    {t("organization.locations.headquarters_description")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="divide-y divide-border">
@@ -279,16 +303,18 @@ export function LocationsForm() {
             <Card>
               <CardHeader className="border-b">
                 <CardTitle>
-                  {headquarters.length > 0 ? "Other Locations" : "All Locations"}
+                  {headquarters.length > 0
+                    ? t("organization.locations.other_title")
+                    : t("organization.locations.all_title")}
                 </CardTitle>
                 <CardDescription>
-                  Stores, offices, warehouses, and other physical locations.
+                  {t("organization.locations.other_description")}
                 </CardDescription>
               </CardHeader>
               {otherLocations.length === 0 ? (
                 <CardContent>
                   <p className="text-sm text-muted-foreground py-4 text-center">
-                    No additional locations added yet.
+                    {t("organization.locations.other_empty")}
                   </p>
                 </CardContent>
               ) : (
@@ -313,27 +339,31 @@ export function LocationsForm() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              {editingId ? "Edit Location" : "Add Location"}
+              {editingId
+                ? t("organization.locations.dialog.edit_title")
+                : t("organization.locations.dialog.add_title")}
             </DialogTitle>
             <DialogDescription>
               {editingId
-                ? "Update this location's details."
-                : "Add a new store, office, or warehouse to your organization."}
+                ? t("organization.locations.dialog.edit_description")
+                : t("organization.locations.dialog.add_description")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Location Name</Label>
+                <Label>{t("organization.locations.field.name")}</Label>
                 <Input
                   value={form.name}
                   onChange={(e) => setField("name", e.target.value)}
-                  placeholder="e.g. Downtown Store"
+                  placeholder={t(
+                    "organization.locations.field.name_placeholder",
+                  )}
                   className="mt-2"
                 />
               </div>
               <div>
-                <Label>Type</Label>
+                <Label>{t("organization.locations.field.type")}</Label>
                 <Select
                   value={form.type}
                   onValueChange={(val) => setField("type", val ?? "office")}
@@ -342,9 +372,9 @@ export function LocationsForm() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {LOCATION_TYPES.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>
-                        {t.label}
+                    {LOCATION_TYPE_VALUES.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {t(LOCATION_TYPE_KEYS[value])}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -360,93 +390,111 @@ export function LocationsForm() {
                 }
               />
               <Label className="font-normal">
-                This is the headquarters location
+                {t("organization.locations.field.is_headquarters")}
               </Label>
             </div>
 
             <div>
-              <Label>Street Address</Label>
+              <Label>{t("organization.locations.field.street")}</Label>
               <Input
                 value={form.street || ""}
                 onChange={(e) => setField("street", e.target.value)}
-                placeholder="123 Main Street"
+                placeholder={t(
+                  "organization.locations.field.street_placeholder",
+                )}
                 className="mt-1"
               />
             </div>
             <div>
-              <Label>Street Address Line 2</Label>
+              <Label>{t("organization.locations.field.street2")}</Label>
               <Input
                 value={form.street2 || ""}
                 onChange={(e) => setField("street2", e.target.value)}
-                placeholder="Suite 100"
+                placeholder={t(
+                  "organization.locations.field.street2_placeholder",
+                )}
                 className="mt-1"
               />
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label>City</Label>
+                <Label>{t("organization.locations.field.city")}</Label>
                 <Input
                   value={form.city || ""}
                   onChange={(e) => setField("city", e.target.value)}
-                  placeholder="City"
+                  placeholder={t(
+                    "organization.locations.field.city_placeholder",
+                  )}
                   className="mt-2"
                 />
               </div>
               <div>
-                <Label>State</Label>
+                <Label>{t("organization.locations.field.state")}</Label>
                 <Input
                   value={form.state || ""}
                   onChange={(e) => setField("state", e.target.value)}
-                  placeholder="State"
+                  placeholder={t(
+                    "organization.locations.field.state_placeholder",
+                  )}
                   className="mt-2"
                 />
               </div>
               <div>
-                <Label>ZIP</Label>
+                <Label>{t("organization.locations.field.zip")}</Label>
                 <Input
                   value={form.zip || ""}
                   onChange={(e) => setField("zip", e.target.value)}
-                  placeholder="ZIP"
+                  placeholder={t(
+                    "organization.locations.field.zip_placeholder",
+                  )}
                   className="mt-2"
                 />
               </div>
             </div>
             <div>
-              <Label>Country</Label>
+              <Label>{t("organization.locations.field.country")}</Label>
               <Input
                 value={form.country || ""}
                 onChange={(e) => setField("country", e.target.value)}
-                placeholder="United States"
+                placeholder={t(
+                  "organization.locations.field.country_placeholder",
+                )}
                 className="mt-1"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Phone</Label>
+                <Label>{t("organization.locations.field.phone")}</Label>
                 <Input
                   value={form.phone || ""}
                   onChange={(e) => setField("phone", e.target.value)}
-                  placeholder="+1 (555) 000-0000"
+                  placeholder={t(
+                    "organization.locations.field.phone_placeholder",
+                  )}
                   className="mt-2"
                 />
               </div>
               <div>
-                <Label>Email</Label>
+                <Label>{t("organization.locations.field.email")}</Label>
                 <Input
                   type="email"
                   value={form.email || ""}
                   onChange={(e) => setField("email", e.target.value)}
-                  placeholder="location@company.com"
+                  placeholder={t(
+                    "organization.locations.field.email_placeholder",
+                  )}
                   className="mt-2"
                 />
               </div>
             </div>
             <div>
-              <Label>Notes</Label>
+              <Label>{t("organization.locations.field.notes")}</Label>
               <Textarea
                 value={form.notes || ""}
                 onChange={(e) => setField("notes", e.target.value)}
-                placeholder="Any additional details about this location..."
+                placeholder={t(
+                  "organization.locations.field.notes_placeholder",
+                )}
                 rows={2}
                 className="mt-1"
               />
@@ -456,10 +504,14 @@ export function LocationsForm() {
                 variant="outline"
                 onClick={() => setDialogOpen(false)}
               >
-                Cancel
+                {t("common.actions.cancel")}
               </Button>
               <Button onClick={handleSave} disabled={saving}>
-                {saving ? "Saving..." : editingId ? "Update" : "Add Location"}
+                {saving
+                  ? t("common.states.saving")
+                  : editingId
+                    ? t("organization.locations.action.update")
+                    : t("organization.locations.action.add")}
               </Button>
             </div>
           </div>
@@ -480,10 +532,10 @@ function LocationRow({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const t = useT();
   const Icon = getTypeIcon(location.type);
-  const typeLabel =
-    LOCATION_TYPES.find((t) => t.value === location.type)?.label ||
-    location.type;
+  const typeKey = (LOCATION_TYPE_KEYS as Record<string, MessageKey>)[location.type];
+  const typeLabel = typeKey ? t(typeKey) : location.type;
 
   return (
     <div className="flex items-start gap-4 py-4 first:pt-0 last:pb-0">
@@ -497,11 +549,13 @@ function LocationRow({
             {typeLabel}
           </Badge>
           {location.isHeadquarters && (
-            <Badge className="text-[10px]">HQ</Badge>
+            <Badge className="text-[10px]">
+              {t("organization.locations.hq_badge")}
+            </Badge>
           )}
         </div>
         <p className="text-xs text-muted-foreground mt-0.5">
-          {formatAddress(location)}
+          {formatAddress(location, t("organization.locations.no_address"))}
         </p>
         {location.phone && (
           <p className="text-xs text-muted-foreground">{location.phone}</p>

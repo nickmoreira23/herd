@@ -18,10 +18,19 @@ import {
   ExternalLink,
   BarChart3,
 } from "lucide-react";
-import { formatCurrency, formatPercent, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/locale-context";
+import type { Locale } from "@/lib/i18n/locales";
+import { formatNumberAsMoney } from "@/lib/money/format";
+import { formatNumber } from "@/lib/i18n/format-number";
 import Link from "next/link";
 
-export function ExecutiveSummary() {
+interface ExecutiveSummaryProps {
+  locale: Locale;
+}
+
+export function ExecutiveSummary({ locale }: ExecutiveSummaryProps) {
+  const t = useT();
   const results = useFinancialStore((s) => s.results);
   const inputs = useFinancialStore((s) => s.inputs);
 
@@ -30,9 +39,9 @@ export function ExecutiveSummary() {
       <Card>
         <CardContent className="py-12 text-center">
           <BarChart3 className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
-          <p className="font-medium">No results yet</p>
+          <p className="font-medium">{t("financials.summary.empty_title")}</p>
           <p className="text-sm text-muted-foreground mt-1">
-            Configure the scenario inputs to see the executive summary.
+            {t("financials.summary.empty_description")}
           </p>
         </CardContent>
       </Card>
@@ -43,30 +52,64 @@ export function ExecutiveSummary() {
   const ltvCacRatio = results.ltvCac.ltvCacRatio;
   const breakevenMonth = results.operationBreakevenMonth;
 
+  const getMarginInterpretation = (margin: number): string => {
+    if (margin >= 25) return t("financials.summary.margin.interpretation.strong");
+    if (margin >= 15) return t("financials.summary.margin.interpretation.healthy");
+    if (margin >= 5) return t("financials.summary.margin.interpretation.thin");
+    if (margin >= 0) return t("financials.summary.margin.interpretation.breakeven");
+    return t("financials.summary.margin.interpretation.negative");
+  };
+
+  const getLTVCACInterpretation = (ratio: number): string => {
+    if (ratio === Infinity) return t("financials.summary.ltvcac.interpretation.infinite");
+    if (ratio >= 5) return t("financials.summary.ltvcac.interpretation.excellent");
+    if (ratio >= 3) return t("financials.summary.ltvcac.interpretation.healthy");
+    if (ratio >= 1.5) return t("financials.summary.ltvcac.interpretation.cautious");
+    if (ratio >= 1) return t("financials.summary.ltvcac.interpretation.barely_positive");
+    return t("financials.summary.ltvcac.interpretation.negative");
+  };
+
+  const getBreakevenInterpretation = (month: number): string => {
+    if (month === Infinity) return t("financials.summary.breakeven.interpretation.never");
+    if (month <= 6) return t("financials.summary.breakeven.interpretation.fast");
+    if (month <= 12) return t("financials.summary.breakeven.interpretation.solid");
+    if (month <= 18) return t("financials.summary.breakeven.interpretation.moderate");
+    return t("financials.summary.breakeven.interpretation.long");
+  };
+
   return (
     <div className="space-y-4">
       {/* Verdict Cards */}
       <div className="grid grid-cols-3 gap-3">
         <VerdictCard
-          label="Net Margin"
-          value={formatPercent(netMarginPercent)}
-          subvalue={`${formatCurrency(results.netMarginDollars)}/mo`}
+          label={t("financials.summary.verdict.net_margin")}
+          value={formatNumber(netMarginPercent / 100, locale, "percent")}
+          subvalue={t("financials.summary.verdict.net_margin_sub", { value: formatNumberAsMoney(results.netMarginDollars, locale) })}
           rating={getMarginRating(netMarginPercent)}
           interpretation={getMarginInterpretation(netMarginPercent)}
           icon={netMarginPercent >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
         />
         <VerdictCard
-          label="LTV:CAC Ratio"
+          label={t("financials.summary.verdict.ltv_cac")}
           value={ltvCacRatio === Infinity ? "∞" : `${ltvCacRatio.toFixed(1)}x`}
-          subvalue={`LTV ${results.ltvCac.blendedLTV === Infinity ? "∞" : formatCurrency(results.ltvCac.blendedLTV)} / CAC ${formatCurrency(results.ltvCac.blendedCAC)}`}
+          subvalue={t("financials.summary.verdict.ltv_cac_sub", {
+            ltv: results.ltvCac.blendedLTV === Infinity ? "∞" : formatNumberAsMoney(results.ltvCac.blendedLTV, locale),
+            cac: formatNumberAsMoney(results.ltvCac.blendedCAC, locale),
+          })}
           rating={getLTVCACRating(ltvCacRatio)}
           interpretation={getLTVCACInterpretation(ltvCacRatio)}
           icon={<Target className="h-4 w-4" />}
         />
         <VerdictCard
-          label="Breakeven"
-          value={breakevenMonth === Infinity ? "Never" : `Month ${breakevenMonth}`}
-          subvalue={breakevenMonth !== Infinity ? `${breakevenMonth <= 12 ? "Within Year 1" : "Year 2"}` : "Cumulative profit stays negative"}
+          label={t("financials.summary.verdict.breakeven")}
+          value={breakevenMonth === Infinity ? t("common.time.never") : t("financials.summary.verdict.breakeven_month", { month: breakevenMonth })}
+          subvalue={
+            breakevenMonth !== Infinity
+              ? breakevenMonth <= 12
+                ? t("financials.summary.verdict.breakeven_year1")
+                : t("financials.summary.verdict.breakeven_year2")
+              : t("financials.summary.verdict.breakeven_negative")
+          }
           rating={getBreakevenRating(breakevenMonth)}
           interpretation={getBreakevenInterpretation(breakevenMonth)}
           icon={<Clock className="h-4 w-4" />}
@@ -77,17 +120,17 @@ export function ExecutiveSummary() {
       <Card size="sm">
         <CardContent>
           <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-            Key Metrics
+            {t("financials.summary.key_metrics.title")}
           </h4>
           <div className="grid grid-cols-2 gap-x-6 gap-y-2">
-            <MetricRow label="MRR" value={formatCurrency(results.mrr)} />
-            <MetricRow label="ARR" value={formatCurrency(results.arr)} />
-            <MetricRow label="Gross Margin" value={formatPercent(results.grossMarginPercent)} color={results.grossMarginPercent >= 50} />
-            <MetricRow label="New Subs/Mo" value={results.newSubscribersPerMonth.toLocaleString()} />
-            <MetricRow label="Commission % of Revenue" value={formatPercent(results.commissionPercentOfRevenue)} />
-            <MetricRow label="Cost/Subscriber" value={formatCurrency(results.costPerSubscriber)} />
-            <MetricRow label="Payback Period" value={results.ltvCac.monthsToPayback === Infinity ? "∞" : `${results.ltvCac.monthsToPayback.toFixed(1)} months`} />
-            <MetricRow label="Mo 24 Subscribers" value={results.cohortProjection[23]?.subscribers.toLocaleString() ?? "—"} />
+            <MetricRow label={t("financials.summary.key_metrics.mrr")} value={formatNumberAsMoney(results.mrr, locale)} />
+            <MetricRow label={t("financials.summary.key_metrics.arr")} value={formatNumberAsMoney(results.arr, locale)} />
+            <MetricRow label={t("financials.summary.key_metrics.gross_margin")} value={formatNumber(results.grossMarginPercent / 100, locale, "percent")} color={results.grossMarginPercent >= 50} />
+            <MetricRow label={t("financials.summary.key_metrics.new_subs_per_mo")} value={formatNumber(results.newSubscribersPerMonth, locale, "integer")} />
+            <MetricRow label={t("financials.summary.key_metrics.commission_pct_revenue")} value={formatNumber(results.commissionPercentOfRevenue / 100, locale, "percent")} />
+            <MetricRow label={t("financials.summary.key_metrics.cost_per_sub")} value={formatNumberAsMoney(results.costPerSubscriber, locale)} />
+            <MetricRow label={t("financials.summary.key_metrics.payback_period")} value={results.ltvCac.monthsToPayback === Infinity ? "∞" : t("financials.summary.key_metrics.months_value", { months: results.ltvCac.monthsToPayback.toFixed(1) })} />
+            <MetricRow label={t("financials.summary.key_metrics.mo24_subscribers")} value={results.cohortProjection[23]?.subscribers !== undefined ? formatNumber(results.cohortProjection[23].subscribers, locale, "integer") : "—"} />
           </div>
         </CardContent>
       </Card>
@@ -96,45 +139,51 @@ export function ExecutiveSummary() {
       <Card size="sm">
         <CardContent>
           <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-            Assumption Sources
+            {t("financials.summary.provenance.title")}
           </h4>
           <div className="space-y-2">
             <ProvenanceRow
               icon={<Layers className="h-3.5 w-3.5" />}
-              label="Tier Pricing"
-              detail={`${inputs.tiers.length} tiers configured`}
+              label={t("financials.summary.provenance.tier_pricing")}
+              detail={t("financials.summary.provenance.tiers_configured", { count: inputs.tiers.length })}
               href="/admin/blocks/subscriptions"
-              source="Plans page"
+              source={t("financials.summary.provenance.source_plans")}
             />
             <ProvenanceRow
               icon={<DollarSign className="h-3.5 w-3.5" />}
-              label="Commissions"
-              detail={`$${inputs.commissionStructure.flatBonusPerSale} bonus + ${inputs.commissionStructure.residualPercent}% residual`}
+              label={t("financials.summary.provenance.commissions")}
+              detail={t("financials.summary.provenance.commissions_detail", {
+                bonus: inputs.commissionStructure.flatBonusPerSale,
+                residual: inputs.commissionStructure.residualPercent,
+              })}
               href="/admin/network/channels/promoters"
-              source="Promoters page"
+              source={t("financials.summary.provenance.source_promoters")}
             />
             <ProvenanceRow
               icon={<Building2 className="h-3.5 w-3.5" />}
-              label="OPEX"
+              label={t("financials.summary.provenance.opex")}
               detail={inputs.operationalOverhead.mode === "milestone-scaled"
-                ? `Auto-scaled from ${inputs.operationalOverhead.opexData?.length ?? 0} categories`
-                : `Fixed at ${formatCurrency(inputs.operationalOverhead.fixedMonthly)}/mo`}
+                ? t("financials.summary.provenance.opex_scaled", { count: inputs.operationalOverhead.opexData?.length ?? 0 })
+                : t("financials.summary.provenance.opex_fixed", { value: formatNumberAsMoney(inputs.operationalOverhead.fixedMonthly, locale) })}
               href="/admin/operation"
-              source={inputs.operationalOverhead.mode === "milestone-scaled" ? "Operations page (live)" : "Manual override"}
+              source={inputs.operationalOverhead.mode === "milestone-scaled" ? t("financials.summary.provenance.source_operations_live") : t("financials.summary.provenance.source_manual_override")}
               isLive={inputs.operationalOverhead.mode === "milestone-scaled"}
             />
             <ProvenanceRow
               icon={<Users className="h-3.5 w-3.5" />}
-              label="Sales Rep Channel"
-              detail={`${inputs.salesRepChannel.startingReps} reps, ${inputs.salesRepChannel.salesPerRepPerMonth} sales/rep/mo`}
-              source="Manual input"
+              label={t("financials.summary.provenance.sales_rep_channel")}
+              detail={t("financials.summary.provenance.sales_rep_detail", {
+                reps: inputs.salesRepChannel.startingReps,
+                sales: inputs.salesRepChannel.salesPerRepPerMonth,
+              })}
+              source={t("financials.summary.provenance.source_manual_input")}
             />
             <ProvenanceRow
               icon={<Handshake className="h-3.5 w-3.5" />}
-              label="Partner Kickbacks"
-              detail={`${inputs.partnerKickbacks.length} active partners`}
+              label={t("financials.summary.provenance.partner_kickbacks")}
+              detail={t("financials.summary.provenance.partners_count", { count: inputs.partnerKickbacks.length })}
               href="/admin/blocks/partners"
-              source="Brands page"
+              source={t("financials.summary.provenance.source_brands")}
             />
           </div>
         </CardContent>
@@ -144,7 +193,7 @@ export function ExecutiveSummary() {
       <Card size="sm">
         <CardContent>
           <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-            24-Month Trajectory
+            {t("financials.summary.trajectory.title")}
           </h4>
           <div className="space-y-2">
             {[1, 6, 12, 24].map((month) => {
@@ -152,14 +201,14 @@ export function ExecutiveSummary() {
               if (!mo) return null;
               return (
                 <div key={month} className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground font-medium w-16">Mo {month}</span>
-                  <span className="tabular-nums text-muted-foreground">{mo.subscribers.toLocaleString()} subs</span>
-                  <span className="tabular-nums">{formatCurrency(mo.revenue)}</span>
+                  <span className="text-muted-foreground font-medium w-16">{t("financials.summary.trajectory.month_label", { month })}</span>
+                  <span className="tabular-nums text-muted-foreground">{t("financials.summary.trajectory.subs_label", { count: formatNumber(mo.subscribers, locale, "integer") })}</span>
+                  <span className="tabular-nums">{formatNumberAsMoney(mo.revenue, locale)}</span>
                   <span className={cn("tabular-nums font-medium", mo.netProfit >= 0 ? "text-green-600" : "text-red-500")}>
-                    {formatCurrency(mo.netProfit)}
+                    {formatNumberAsMoney(mo.netProfit, locale)}
                   </span>
                   <span className={cn("tabular-nums text-xs", mo.cumulativeProfit >= 0 ? "text-green-600" : "text-red-500")}>
-                    Cum: {formatCurrency(mo.cumulativeProfit)}
+                    {t("financials.summary.trajectory.cum_label", { value: formatNumberAsMoney(mo.cumulativeProfit, locale) })}
                   </span>
                 </div>
               );
@@ -255,6 +304,7 @@ function ProvenanceRow({
   source: string;
   isLive?: boolean;
 }) {
+  const t = useT();
   return (
     <div className="flex items-start gap-2.5 py-1.5">
       <span className="text-muted-foreground shrink-0 mt-0.5">{icon}</span>
@@ -263,7 +313,7 @@ function ProvenanceRow({
           <span className="text-xs font-semibold">{label}</span>
           {isLive && (
             <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400 font-semibold uppercase tracking-wider">
-              Live
+              {t("financials.summary.provenance.live_badge")}
             </span>
           )}
         </div>
@@ -293,6 +343,7 @@ function ValidationPlaceholder({
   inputs: ReturnType<typeof useFinancialStore.getState>["inputs"];
   results: NonNullable<ReturnType<typeof useFinancialStore.getState>["results"]>;
 }) {
+  const t = useT();
   // Basic sanity checks — full validation engine comes in Phase 2
   const warnings: string[] = [];
 
@@ -301,31 +352,31 @@ function ValidationPlaceholder({
     inputs.billingCycleDistribution.quarterly +
     inputs.billingCycleDistribution.annual;
   if (Math.abs(billingSum - 100) > 0.1) {
-    warnings.push(`Billing distribution sums to ${billingSum}%, not 100%`);
+    warnings.push(t("financials.summary.validation.billing_distribution", { value: billingSum }));
   }
 
-  const tierSum = inputs.tiers.reduce((s, t) => s + t.subscriberPercent, 0);
+  const tierSum = inputs.tiers.reduce((s, tt) => s + tt.subscriberPercent, 0);
   if (inputs.tiers.length > 0 && Math.abs(tierSum - 100) > 0.1) {
-    warnings.push(`Tier subscriber distribution sums to ${tierSum}%, not 100%`);
+    warnings.push(t("financials.summary.validation.tier_distribution", { value: tierSum }));
   }
 
   if (results.netMarginPercent < -50) {
-    warnings.push("Net margin is deeply negative — review cost assumptions");
+    warnings.push(t("financials.summary.validation.deeply_negative"));
   }
 
   const profitSplitTotal = inputs.profitSplitParties?.reduce((s, p) => s + p.percent, 0) ?? 0;
   if (inputs.profitSplitParties?.length > 0 && Math.abs(profitSplitTotal - 100) > 0.1) {
-    warnings.push(`Profit split percentages total ${profitSplitTotal}%, not 100%`);
+    warnings.push(t("financials.summary.validation.profit_split_total", { value: profitSplitTotal }));
   }
 
   const avgChurn = inputs.tiers.length > 0
-    ? inputs.tiers.reduce((s, t) => s + t.churnRateMonthly, 0) / inputs.tiers.length
+    ? inputs.tiers.reduce((s, tt) => s + tt.churnRateMonthly, 0) / inputs.tiers.length
     : 0;
   if (avgChurn < 2) {
-    warnings.push("Average churn below 2% is very optimistic for a subscription business");
+    warnings.push(t("financials.summary.validation.churn_optimistic"));
   }
   if (avgChurn > 15) {
-    warnings.push("Average churn above 15% is very high — retention strategy needed");
+    warnings.push(t("financials.summary.validation.churn_high"));
   }
 
   if (warnings.length === 0) return null;
@@ -335,7 +386,7 @@ function ValidationPlaceholder({
       <CardContent>
         <h4 className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-2 flex items-center gap-1.5">
           <AlertTriangle className="h-3.5 w-3.5" />
-          Validation Notes
+          {t("financials.summary.validation.title")}
         </h4>
         <div className="space-y-1">
           {warnings.map((w, i) => (
@@ -358,39 +409,14 @@ function getMarginRating(margin: number): Rating {
   return "red";
 }
 
-function getMarginInterpretation(margin: number): string {
-  if (margin >= 25) return "Strong unit economics — supports aggressive scaling";
-  if (margin >= 15) return "Healthy margins — room to invest in growth";
-  if (margin >= 5) return "Thin margins — monitor costs closely";
-  if (margin >= 0) return "Breaking even — optimize before scaling";
-  return "Negative margins — restructure costs before scaling";
-}
-
 function getLTVCACRating(ratio: number): Rating {
   if (ratio === Infinity || ratio >= 3) return "green";
   if (ratio >= 1.5) return "amber";
   return "red";
 }
 
-function getLTVCACInterpretation(ratio: number): string {
-  if (ratio === Infinity) return "Infinite — zero churn means customers never leave";
-  if (ratio >= 5) return "Excellent — every dollar spent acquires 5x+ in lifetime value";
-  if (ratio >= 3) return "Healthy — unit economics support scaling";
-  if (ratio >= 1.5) return "Cautious — positive but low margin for error";
-  if (ratio >= 1) return "Barely positive — acquisition cost nearly equals lifetime value";
-  return "Negative — you lose money on every customer acquired";
-}
-
 function getBreakevenRating(month: number): Rating {
   if (month <= 12) return "green";
   if (month <= 18) return "amber";
   return "red";
-}
-
-function getBreakevenInterpretation(month: number): string {
-  if (month === Infinity) return "Does not break even within 24 months";
-  if (month <= 6) return "Fast payback — capital efficient model";
-  if (month <= 12) return "Solid — profitability within Year 1";
-  if (month <= 18) return "Moderate runway — plan for 18 months of funding";
-  return "Long runway needed — 2+ years to profitability";
 }

@@ -407,3 +407,95 @@ debugging based on stale docs is enormous.
   `src/lib/validations/`, `src/app/api/`, etc. continues to import from `"zod"`
   (which is Zod 3). Migration of the existing 75 files to Zod 4 is a separate,
   future etapa with its own scope.
+
+# Internationalization (i18n)
+
+The system supports `pt-BR` (default) and `en-US` as production locales.
+`es-ES` is preserved as a template but not in production rotation.
+
+## Adding a new locale
+
+1. Add the tag to `SUPPORTED_LOCALES` in `src/lib/i18n/locales.ts`.
+2. Create `src/lib/i18n/messages/{tag}.ts` mirroring `pt-BR.ts`.
+3. Create a Prisma migration that drops and recreates the
+   `chk_network_profile_locale_supported` constraint with the new locale.
+4. Update `normalizeLocale()` if input mapping needs adjustment.
+5. Add formatter tests for the new locale.
+
+## Translation keys
+
+All user-facing strings must use `useT()` (in client components) or `t()`
+(in server code). Literal strings in JSX are flagged by ESLint in strict
+paths (`src/lib/i18n/**`, `src/lib/ledger/**` today; more added per etapa).
+Key naming convention: `{domain}.{feature}.{context}.{snake_case}`. The
+`pt-BR.ts` dictionary is the source of truth for the `MessageKey` type.
+
+## Localized formatting helpers
+
+For locale-aware values, use the helpers in `src/lib/i18n/`:
+
+- `formatDate(date, locale, preset)` — short, long, dateTime, time
+- `formatNumber(value, locale, preset)` — integer, decimal, percent, compact
+- `formatRelativeTime(date, locale, now?)` — "2 hours ago" / "há 2 horas"
+- `pluralize(count, locale, forms)` — picks the right plural form
+- `compareCollation(locale, options?)` — sort comparator respecting locale
+- `formatMoney(money, locale)` — currency display in user's locale
+
+Never use `Intl.*` APIs or `toLocaleString` directly. Always go through
+the helpers — they centralize locale handling and avoid drift.
+
+## Locale persistence
+
+User locale choice is persisted twice:
+
+- Cookie `locale` for immediate effect (1-year expiry).
+- `NetworkProfile.locale` for cross-device stickiness (when authenticated).
+
+The server action `setLocaleCookie(locale)` writes both. The hook
+`useSetLocale()` invokes it from client components and refreshes the
+route to apply the change.
+
+## CI gate
+
+`npm run check:i18n` validates that every translation key used in the
+codebase via `t()` or derivative calls exists in `pt-BR.ts`. Running this
+in CI prevents regressions where a key is referenced but forgotten in the
+dictionary.
+
+
+## i18n implementation pattern
+
+When internationalizing UI strings of a feature, follow the canonical pattern
+documented in `docs/discovery/I18N_PATTERN.md`. Key points:
+
+- Server Components read locale via `getLocale()` and pass as prop.
+- Client Components use `useT()` for translation keys; receive `locale` as
+  prop for formatters.
+- Utility components (`<Money>`, `<DateLabel>`, etc.) accept `locale` as prop.
+- Error classes carry a `code: string`; UI consumes via `translateError` /
+  `translateErrorWithT` from `src/lib/i18n/translate-error.ts`.
+- Enum-to-key mapping uses `as const satisfies Record<Enum, MessageKey>`.
+
+The Ledger (Phase 1.5.4) is the reference implementation. Mirror its structure.
+
+### Common namespace
+
+Strings reused across ≥3 features live in `common.*` (subnamespaces:
+`actions`, `states`, `placeholders`, `confirmations`, `feedback`, `time`,
+`units`). Strings used in 1-2 features stay in the feature's namespace.
+
+The structure was established in Etapa 1.5.5 (Admin Shell) and should be
+extended only when new shared concepts emerge across multiple features.
+
+### Toast notifications
+
+Use the helpers in `src/lib/i18n/notify.ts` instead of `toast.*` directly:
+
+- `notifySuccess(key, t, params?)` — green success toast.
+- `notifyError(errorOrKey, t, params?)` — red error toast. Accepts either
+  an Error object (looks up by error code) or a translation key (string).
+- `notifyInfo(key, t, params?)` — neutral info toast.
+- `notifyWarning(key, t, params?)` — yellow warning toast.
+
+These are required for all user-facing notifications in migrated features.
+They centralize translation handling and make the i18n contract explicit.
