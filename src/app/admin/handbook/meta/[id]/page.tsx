@@ -27,7 +27,6 @@ export default async function MetaEntryPage({
   return (
     <HandbookBilingualView
       crumbs={[
-        { labelPtBR: "Handbook", labelEnUS: "Handbook", href: "/admin/handbook" },
         { labelPtBR: "Meta", labelEnUS: "Meta" },
         { labelPtBR: indexEntry.title_pt_BR, labelEnUS: indexEntry.title_en_US },
       ]}

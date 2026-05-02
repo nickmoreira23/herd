@@ -36,7 +36,6 @@ export default async function CategoryOverviewPage({
   return (
     <HandbookBilingualView
       crumbs={[
-        { labelPtBR: "Handbook", labelEnUS: "Handbook", href: "/admin/handbook" },
         {
           labelPtBR: layerEntry.title_pt_BR,
           labelEnUS: layerEntry.title_en_US,

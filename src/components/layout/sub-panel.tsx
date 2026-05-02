@@ -974,7 +974,7 @@ function HandbookSubPanel() {
 
         {/* Meta entries (about the handbook itself) */}
         {metaEntries.length > 0 && (
-          <div className="mt-6 pt-3 border-t border-border">
+          <div className="mt-4">
             <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
               Meta
             </p>

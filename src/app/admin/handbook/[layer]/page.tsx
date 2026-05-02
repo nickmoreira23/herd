@@ -33,7 +33,6 @@ export default async function LayerOverviewPage({
   return (
     <HandbookBilingualView
       crumbs={[
-        { labelPtBR: "Handbook", labelEnUS: "Handbook", href: "/admin/handbook" },
         { labelPtBR: indexEntry.title_pt_BR, labelEnUS: indexEntry.title_en_US },
       ]}
       entry={{
