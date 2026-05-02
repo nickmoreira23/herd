@@ -1,0 +1,35 @@
+id: mcp
+uid: herd.meta.mcp
+level: meta
+technical_category: foundation
+title:
+  pt-BR: Servidor MCP
+  en-US: MCP Server
+description:
+  pt-BR: Servidor Model Context Protocol que expõe o Handbook como recurso
+    navegável para AI assistants via stdio (clientes locais) e HTTP (clientes
+    remotos).
+  en-US: Model Context Protocol server that exposes the Handbook as a navigable
+    resource for AI assistants via stdio (local clients) and HTTP (remote
+    clients).
+status: active
+owners:
+  - "@nick"
+since: 2026-05-02
+updated: 2026-05-02
+parent: null
+children: []
+consumes: []
+consumed_by: []
+related: []
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

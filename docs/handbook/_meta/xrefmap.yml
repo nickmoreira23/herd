@@ -113,6 +113,13 @@ references:
     title:
       pt-BR: Handbook
       en-US: Handbook
+  herd.meta.mcp:
+    level: meta
+    id: mcp
+    path: docs/handbook/_meta/mcp
+    title:
+      pt-BR: Servidor MCP
+      en-US: MCP Server
   herd.tool.financial.ledger:
     level: tool
     id: ledger

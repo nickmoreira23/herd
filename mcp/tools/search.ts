@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { join } from "node:path";
 import { searchEntries } from "../../src/lib/handbook/search";
 import type { IndexEntry } from "../../src/lib/handbook/search-index";
 
@@ -7,7 +7,11 @@ let cachedIndex: IndexEntry[] | null = null;
 
 function loadIndex(): IndexEntry[] {
   if (cachedIndex) return cachedIndex;
-  const path = resolve(__dirname, "../generated/search-index.json");
+  // Use cwd-relative path so resolution works from both the stdio
+  // entrypoint (cwd = repo root) and the Next.js HTTP route (cwd = repo root).
+  // __dirname inside a Next.js bundle resolves to .next/dev/server/... which
+  // doesn't reach mcp/generated/.
+  const path = join(process.cwd(), "mcp/generated/search-index.json");
   const data = JSON.parse(readFileSync(path, "utf-8")) as {
     version: number;
     entries: IndexEntry[];

@@ -24,6 +24,12 @@ Write strategy where existing records are never modified or deleted; correction 
 
 Immutable chronological history of all changes, used for audit and state reconstruction.
 
+### Bearer token
+
+**From [MCP Server](/admin/handbook/meta/mcp):**
+
+Auth scheme where the client sends `Authorization: Bearer <token>` in the header. Day-1 of the HTTP transport uses a static token configured via env var.
+
 ### Compensating entry
 
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
@@ -54,6 +60,18 @@ Atomic unit of financial movement — one entry groups 2+ lines that balance per
 
 Individual component of an entry — binds an account, direction (D/C), amount, and currency.
 
+### JSON-RPC
+
+**From [MCP Server](/admin/handbook/meta/mcp):**
+
+JSON-based RPC protocol used by MCP. Requests carry `{jsonrpc, id, method, params}`; responses carry `{jsonrpc, id, result}` or `{jsonrpc, id, error}`.
+
+### MCP
+
+**From [MCP Server](/admin/handbook/meta/mcp):**
+
+Model Context Protocol — open spec defining how AI assistants consult external resources (tools, resources, prompts) in a uniform way.
+
 ### Money tuple
 
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
@@ -83,5 +101,29 @@ Compensating entry with directions flipped that neutralizes the effect of an ori
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
 
 Polymorphic reference linking an entry back to the business event that produced it (charge, commission, etc.).
+
+### Stateless mode
+
+**From [MCP Server](/admin/handbook/meta/mcp):**
+
+Mode of the Streamable HTTP transport where no session ID is maintained between requests; every request is fully independent.
+
+### Stdio transport
+
+**From [MCP Server](/admin/handbook/meta/mcp):**
+
+MCP transport where the server is a Node process spawned by the client; communication over stdin/stdout.
+
+### Streamable HTTP
+
+**From [MCP Server](/admin/handbook/meta/mcp):**
+
+HTTP-based MCP transport supporting both SSE and direct request/response. Implemented by the SDK in `WebStandardStreamableHTTPServerTransport`.
+
+### Tool
+
+**From [MCP Server](/admin/handbook/meta/mcp):**
+
+Client-invokable function in MCP. Each tool has a name, description, input schema (JSON Schema), and implementation.
 
 <!-- END_GENERATED_GLOSSARY -->

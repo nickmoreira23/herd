@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { join } from "node:path";
 
 interface IndexEntry {
   uid: string;
@@ -17,7 +17,8 @@ let cachedIndex: IndexEntry[] | null = null;
 
 function loadIndex(): IndexEntry[] {
   if (cachedIndex) return cachedIndex;
-  const path = resolve(__dirname, "../generated/search-index.json");
+  // cwd-relative for compatibility with both stdio and Next.js HTTP entrypoints.
+  const path = join(process.cwd(), "mcp/generated/search-index.json");
   const data = JSON.parse(readFileSync(path, "utf-8")) as {
     version: number;
     entries: IndexEntry[];
