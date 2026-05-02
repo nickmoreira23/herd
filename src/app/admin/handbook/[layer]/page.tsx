@@ -57,7 +57,7 @@ export default async function LayerOverviewPage({
       status={indexEntry.status}
       userDefaultLocale={userDefaultLocale}
       selfUrl={`/admin/handbook/${layer}`}
-      children={toChildItems(categories, (c) => `/admin/handbook/${layer}/${c.id}`)}
+      childItems={toChildItems(categories, (c) => `/admin/handbook/${layer}/${c.id}`)}
       childrenHeadingPtBR={categories.length > 0 ? "Categorias" : undefined}
       childrenHeadingEnUS={categories.length > 0 ? "Categories" : undefined}
     />

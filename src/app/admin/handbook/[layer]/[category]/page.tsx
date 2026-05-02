@@ -65,7 +65,7 @@ export default async function CategoryOverviewPage({
       status={indexEntry.status}
       userDefaultLocale={userDefaultLocale}
       selfUrl={`/admin/handbook/${layer}/${category}`}
-      children={toChildItems(features, (f) => `/admin/handbook/${layer}/${category}/${f.id}`)}
+      childItems={toChildItems(features, (f) => `/admin/handbook/${layer}/${category}/${f.id}`)}
       childrenHeadingPtBR={features.length > 0 ? "Features" : undefined}
       childrenHeadingEnUS={features.length > 0 ? "Features" : undefined}
     />

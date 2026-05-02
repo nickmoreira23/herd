@@ -38,7 +38,7 @@ interface Props {
   status: string;
   userDefaultLocale: HandbookLocale;
   selfUrl: string;
-  children?: ChildItem[];
+  childItems?: ChildItem[];
   childrenHeadingPtBR?: string;
   childrenHeadingEnUS?: string;
 }
@@ -53,7 +53,7 @@ export function HandbookBilingualView({
   status,
   userDefaultLocale,
   selfUrl,
-  children,
+  childItems,
   childrenHeadingPtBR,
   childrenHeadingEnUS,
 }: Props) {
@@ -92,9 +92,9 @@ export function HandbookBilingualView({
 
       <HandbookCrossReferences crossRefs={crossRefs} locale={locale} />
 
-      {children && children.length > 0 && (
+      {childItems && childItems.length > 0 && (
         <HandbookChildrenList
-          items={children}
+          items={childItems}
           locale={locale}
           heading={
             locale === "pt-BR" ? childrenHeadingPtBR : childrenHeadingEnUS
