@@ -1,11 +1,11 @@
 import type { BlockManifest } from "../manifest";
 
 export const pagesBlock: BlockManifest = {
+  kind: "block",
   name: "pages",
   displayName: "Pages",
   description:
     "Landing page builder — create, edit, and publish marketing and informational pages with a visual editor. Supports sections, components, versioning, SEO settings, custom styles, and publishing workflow (draft → published → archived).",
-  domain: "operations",
   types: ["landing-page"],
   capabilities: ["read", "create", "update", "delete"],
   models: ["LandingPage", "LandingPageVersion", "LandingPageSection"],

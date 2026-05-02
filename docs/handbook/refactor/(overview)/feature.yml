@@ -1,0 +1,36 @@
+id: refactor
+uid: herd.layer.refactor
+level: layer
+technical_category: foundation
+
+title:
+  pt-BR: "Refator"
+  en-US: "Refactor"
+description:
+  pt-BR: "Etapas do refator estrutural pré-1.5.6f que alinham código com a arquitetura canônica."
+  en-US: "Pre-1.5.6f structural refactor stages aligning code with the canonical architecture."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-02
+updated: 2026-05-02
+
+parent: null
+children:
+  - herd.category.refactor.r0-manifest-registry
+consumes: []
+consumed_by: []
+related:
+  - herd.meta.handbook
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - changelog

@@ -1,11 +1,11 @@
 import type { BlockManifest } from "../manifest";
 
 export const videosBlock: BlockManifest = {
+  kind: "block",
   name: "videos",
   displayName: "Videos",
   description:
     "Manage MP4, MOV, WEBM, and AVI video files. Videos are transcribed with speaker labels and have thumbnails extracted. Supports folder organization, duration tracking, and AI-searchable transcripts.",
-  domain: "knowledge",
   types: ["video"],
   capabilities: ["read", "create", "update", "delete", "process", "transcribe"],
   models: ["KnowledgeVideo"],

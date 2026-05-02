@@ -1,11 +1,11 @@
 import type { BlockManifest } from "../manifest";
 
 export const productsBlock: BlockManifest = {
+  kind: "block",
   name: "products",
   displayName: "Products",
   description:
     "Product catalog management — supplements, apparel, and accessories available to members. Supports full CRUD, bulk operations (activate, deactivate, delete, price adjust), URL scraping for auto-import, CSV import, and search.",
-  domain: "foundation",
   types: ["product"],
   capabilities: ["read", "create", "update", "delete", "bulk", "scrape", "import"],
   models: ["Product", "ProductImage"],

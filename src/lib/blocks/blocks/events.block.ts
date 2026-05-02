@@ -1,11 +1,11 @@
 import type { BlockManifest } from "../manifest";
 
 export const eventsBlock: BlockManifest = {
+  kind: "block",
   name: "events",
   displayName: "Events",
   description:
     "Calendar event management — syncs events from Google Calendar and Microsoft Outlook into HERD. Supports listing, filtering by date range and calendar, calendar sync triggers, and calendar connection management. Events are read from external calendars via incremental sync.",
-  domain: "operations",
   types: ["event"],
   capabilities: ["read", "sync"],
   models: ["CalendarEvent", "CalendarEventAttendee", "CalendarEventSync"],

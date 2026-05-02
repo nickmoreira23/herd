@@ -5,8 +5,10 @@ import { HandbookEntryHeader } from "./handbook-entry-header";
 import { HandbookReader } from "./handbook-reader";
 import { HandbookChildrenList, type ChildItem } from "./handbook-children-list";
 import { HandbookCrossReferences } from "./handbook-cross-references";
+import { HandbookCanonicalNote } from "./handbook-canonical-note";
 import { githubEditUrl, type HandbookLocale } from "@/lib/handbook/config";
 import { transformMarkdown } from "@/lib/handbook/transform-markdown";
+import { extractCanonicalNote } from "@/lib/handbook/extract-canonical-note";
 import type { BilingualCrossRefs } from "@/lib/handbook/cross-refs";
 
 interface LocaleData {
@@ -66,6 +68,7 @@ export function HandbookBilingualView({
   const data = locale === "pt-BR" ? entry.ptBR : entry.enUS;
   const githubUrl = githubEditUrl(data.relativePath);
   const transformedBody = transformMarkdown(data.body);
+  const canonicalNote = extractCanonicalNote(data.body);
 
   return (
     <div className="p-8 max-w-5xl mx-auto">
@@ -101,6 +104,8 @@ export function HandbookBilingualView({
           }
         />
       )}
+
+      {canonicalNote && <HandbookCanonicalNote note={canonicalNote} />}
     </div>
   );
 }

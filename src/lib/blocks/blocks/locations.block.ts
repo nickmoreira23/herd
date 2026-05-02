@@ -1,11 +1,11 @@
 import type { BlockManifest } from "../manifest";
 
 export const locationsBlock: BlockManifest = {
+  kind: "block",
   name: "locations",
   displayName: "Localizações",
   description:
     "Physical locations of the organization — headquarters, offices, stores, warehouses. Each location holds a structured address (street, city, state, zip, country), contact (phone, email), type, and a notes field. The `isHeadquarters` flag is unique: setting it on one location automatically clears it from all others. Locations are referenceable from other blocks (Organization profile today; Contacts, Events, Companies in future) via a foreign key on the consumer side.",
-  domain: "operations",
   types: ["location"],
   capabilities: ["read", "create", "update", "delete"],
   models: ["Location"],

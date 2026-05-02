@@ -1,11 +1,11 @@
 import type { BlockManifest } from "../manifest";
 
 export const perksBlock: BlockManifest = {
+  kind: "block",
   name: "perks",
   displayName: "Perks",
   description:
     "Subscription tier perks — defines benefits and perks included in each subscription tier. Supports configurable sub-options (e.g., a perk that lets the member choose a variant). Full CRUD, bulk operations, import/export, and tier assignments.",
-  domain: "foundation",
   types: ["perk"],
   capabilities: ["read", "create", "update", "delete", "bulk", "import", "export"],
   models: ["Perk", "PerkTierAssignment"],

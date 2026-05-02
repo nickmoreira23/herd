@@ -1,0 +1,43 @@
+id: r0-manifest-registry
+uid: herd.category.refactor.r0-manifest-registry
+level: category
+technical_category: foundation
+
+title:
+  pt-BR: "R0 — Manifest Registry Foundation"
+  en-US: "R0 — Manifest Registry Foundation"
+description:
+  pt-BR: "Foundation do refator: limpeza pré-refator, reforma de conteúdo arquitetural no Handbook, e introdução do kind discriminator no manifest registry."
+  en-US: "Refactor foundation: pre-refactor cleanup, architectural content reform in the Handbook, and introduction of the kind discriminator in the manifest registry."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-02
+updated: 2026-05-02
+
+parent: herd.layer.refactor
+children: []
+consumes: []
+consumed_by: []
+related:
+  - herd.meta.handbook
+
+source_paths:
+  - "src/lib/blocks/manifest.ts"
+  - "src/lib/blocks/blocks/"
+  - "src/lib/marketplace/registry.ts"
+  - "src/lib/marketplace/types.ts"
+  - "schemas/feature.zod.ts"
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

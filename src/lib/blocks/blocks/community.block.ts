@@ -1,11 +1,11 @@
 import type { BlockManifest } from "../manifest";
 
 export const communityBlock: BlockManifest = {
+  kind: "block",
   name: "community",
   displayName: "Community Benefits",
   description:
     "Community benefit management — defines community access benefits (Discord servers, Slack groups, Facebook groups, etc.) that are included in subscription tiers. Supports CRUD, bulk operations, import/export, and tier assignments.",
-  domain: "foundation",
   types: ["community_benefit"],
   capabilities: ["read", "create", "update", "delete", "bulk", "import", "export"],
   models: ["CommunityBenefit", "CommunityBenefitTierAssignment"],

@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
+import { Fragment } from "react";
 import { Badge } from "@/components/ui/badge";
-import { HandbookBreadcrumbs, type Crumb } from "./handbook-breadcrumbs";
-import { HandbookLanguageToggle } from "./handbook-language-toggle";
+import { type Crumb } from "./handbook-breadcrumbs";
 import { HandbookEntryActions } from "./handbook-entry-actions";
 import type { HandbookLocale } from "@/lib/handbook/config";
 
@@ -10,6 +11,8 @@ interface Props {
   crumbs: Crumb[];
   title: string;
   description: string;
+  /** Owners are intentionally NOT rendered (the `@nick` chip was noisy). Kept
+   * in the type for API compatibility with callers that still pass it. */
   owners: string[];
   updated: string;
   status: string;
@@ -26,7 +29,6 @@ export function HandbookEntryHeader({
   crumbs,
   title,
   description,
-  owners,
   updated,
   status,
   locale,
@@ -39,37 +41,60 @@ export function HandbookEntryHeader({
 }: Props) {
   return (
     <header className="mb-8">
-      <HandbookBreadcrumbs crumbs={crumbs} />
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-3xl font-semibold text-foreground">{title}</h1>
-            <Badge variant={status === "active" ? "default" : "secondary"}>{status}</Badge>
-            {owners.map((o) => (
-              <Badge key={o} variant="outline" className="font-mono text-xs">
-                {o}
-              </Badge>
-            ))}
-          </div>
-          <p className="text-muted-foreground mt-2">{description}</p>
-          <p className="text-xs text-muted-foreground mt-1" title={updated}>
-            {locale === "pt-BR" ? "Atualizado " : "Updated "}{formatRelative(updated, locale)}
+          {/* Breadcrumb-as-title: ancestors are muted links, the title is the
+              last (bold, dark) crumb. Status pill sits inline on the right. */}
+          <nav
+            aria-label="Breadcrumb"
+            className="flex items-center gap-2 flex-wrap"
+          >
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              {crumbs.map((c, idx) => (
+                <Fragment key={idx}>
+                  {idx > 0 && <span className="select-none">/</span>}
+                  {c.href ? (
+                    <Link
+                      href={c.href}
+                      className="hover:text-foreground transition-colors"
+                    >
+                      {c.label}
+                    </Link>
+                  ) : (
+                    <span>{c.label}</span>
+                  )}
+                </Fragment>
+              ))}
+              {crumbs.length > 0 && <span className="select-none">/</span>}
+            </div>
+            <h1 className="text-base font-semibold text-foreground m-0">
+              {title}
+            </h1>
+            <Badge variant={status === "active" ? "default" : "secondary"}>
+              {status}
+            </Badge>
+          </nav>
+
+          <p className="text-sm text-muted-foreground mt-2">{description}</p>
+
+          <p
+            className="text-xs text-muted-foreground/70 mt-1"
+            title={updated}
+          >
+            {locale === "pt-BR" ? "Atualizado " : "Updated "}
+            {formatRelative(updated, locale)}
           </p>
         </div>
-        <div
-          data-handbook-toolbar
-          className="flex items-center gap-1 shrink-0"
-        >
-          <HandbookLanguageToggle
-            locale={locale}
-            setOverride={setOverride}
-            clearOverride={clearOverride}
-            hasOverride={hasOverride}
-          />
+
+        <div data-handbook-toolbar className="shrink-0">
           <HandbookEntryActions
             markdown={markdownRaw}
             githubEditUrl={githubEditUrl}
             selfUrl={selfUrl}
+            locale={locale}
+            setOverride={setOverride}
+            clearOverride={clearOverride}
+            hasOverride={hasOverride}
           />
         </div>
       </div>

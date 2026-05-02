@@ -4,11 +4,11 @@ const TRIGGER_ENUM = ["MANUAL", "SCHEDULE", "EVENT"];
 const STATUS_ENUM = ["DRAFT", "ACTIVE", "PAUSED", "ARCHIVED"];
 
 export const routinesBlock: BlockManifest = {
+  kind: "block",
   name: "routines",
   displayName: "Routines",
   description:
     "Automations executed by agents. Each routine binds an agent to a trigger (MANUAL, SCHEDULE via cron expression, or EVENT from another block) plus a prompt template and inputs. The system records every execution as a RoutineRun (QUEUED → RUNNING → SUCCESS|FAILED|CANCELLED) with full input/output/error/usage. Lives in the Automation category and depends on the Agents block.",
-  domain: "operations",
   types: ["routine"],
   capabilities: ["read", "create", "update", "delete"],
   models: ["Routine", "RoutineRun"],

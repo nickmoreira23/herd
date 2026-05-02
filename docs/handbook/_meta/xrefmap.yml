@@ -57,6 +57,13 @@ references:
     title:
       pt-BR: Rede de Mercado
       en-US: Market Network
+  herd.category.refactor.r0-manifest-registry:
+    level: category
+    id: r0-manifest-registry
+    path: docs/handbook/refactor/r0-manifest-registry/(overview)
+    title:
+      pt-BR: R0 — Manifest Registry Foundation
+      en-US: R0 — Manifest Registry Foundation
   herd.category.tools.financial:
     level: category
     id: financial
@@ -92,6 +99,13 @@ references:
     title:
       pt-BR: Redes
       en-US: Networks
+  herd.layer.refactor:
+    level: layer
+    id: refactor
+    path: docs/handbook/refactor/(overview)
+    title:
+      pt-BR: Refator
+      en-US: Refactor
   herd.layer.solutions:
     level: layer
     id: solutions

@@ -1,11 +1,11 @@
 import type { BlockManifest } from "../manifest";
 
 export const documentsBlock: BlockManifest = {
+  kind: "block",
   name: "documents",
   displayName: "Documents",
   description:
     "Manage PDF, DOCX, TXT, MD, and CSV files. Documents are uploaded, processed for text extraction, and chunked for AI retrieval. Supports folder organization and status tracking (PENDING → PROCESSING → READY → ERROR).",
-  domain: "knowledge",
   types: ["document"],
   capabilities: ["read", "create", "update", "delete", "process"],
   models: ["KnowledgeDocument"],

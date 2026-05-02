@@ -36,6 +36,12 @@ Immutable chronological history of all changes, used for audit and state reconst
 
 Auth scheme where the client sends `Authorization: Bearer <token>` in the header. Day-1 of the HTTP transport uses a static token configured via env var.
 
+### BlockGroupSpec
+
+**From [R0 — Manifest Registry Foundation](/admin/handbook/refactor/r0-manifest-registry):**
+
+nested specification for block groups (e.g., packages as a group of products). Lives inside the parent block's `groups?` field. R3 will exercise this.
+
 ### Compensating entry
 
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
@@ -53,6 +59,12 @@ An immutable record that something significant happened in a bounded context. Pa
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
 
 Accounting model where every movement is recorded simultaneously as a debit and a credit in different accounts, summing to zero.
+
+### EntityManifest
+
+**From [R0 — Manifest Registry Foundation](/admin/handbook/refactor/r0-manifest-registry):**
+
+discriminated union of `BlockManifest | ToolManifest | FeatureManifest`. Replaces the monolithic `BlockManifest` of pre-R0.
 
 ### Exhaustion
 
@@ -93,6 +105,12 @@ Individual component of an entry — binds an account, direction (D/C), amount, 
 **From [MCP Server](/admin/handbook/meta/mcp):**
 
 JSON-based RPC protocol used by MCP. Requests carry `{jsonrpc, id, method, params}`; responses carry `{jsonrpc, id, result}` or `{jsonrpc, id, error}`.
+
+### kind
+
+**From [R0 — Manifest Registry Foundation](/admin/handbook/refactor/r0-manifest-registry):**
+
+discriminator field on `EntityManifest`. Values: `"block" | "tool" | "top_level_feature"`. Determines structural shape and where the manifest physically lives.
 
 ### llms.txt
 
@@ -171,6 +189,12 @@ HTTP-based MCP transport supporting both SSE and direct request/response. Implem
 **From [MCP Server](/admin/handbook/meta/mcp):**
 
 Client-invokable function in MCP. Each tool has a name, description, input schema (JSON Schema), and implementation.
+
+### type guard
+
+**From [R0 — Manifest Registry Foundation](/admin/handbook/refactor/r0-manifest-registry):**
+
+TypeScript narrowing function (`isBlockManifest`, etc.) that confirms the `kind` of an `EntityManifest` at runtime, allowing the compiler to access kind-specific fields safely.
 
 ### Worker
 

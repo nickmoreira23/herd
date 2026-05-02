@@ -4,11 +4,11 @@ const STATUS_ENUM = ["DRAFT", "ACTIVE", "ARCHIVED"];
 const VISIBILITY_ENUM = ["PUBLIC", "PRIVATE", "INVITE_ONLY"];
 
 export const subscriptionsBlock: BlockManifest = {
+  kind: "block",
   name: "subscriptions",
   displayName: "Subscriptions",
   description:
     "Subscription plans (tiers) the organization offers — the catalog of recurring memberships customers can subscribe to. Each plan has pricing across billing cycles (monthly/quarterly/annual), monthly credits, included perks, agent access, partner discounts, status & visibility controls, lifecycle policies (trials, pauses, cancellations), and a set of benefit blocks attached to it. The block also owns the discount redemption rules (Members Store / Members Rate) that govern product pricing for plan members. Lives in the Commerce category.",
-  domain: "commerce",
   types: ["subscription_tier", "redemption_rule"],
   capabilities: ["read", "create", "update", "delete"],
   models: ["SubscriptionTier", "SubscriptionRedemptionRule"],

@@ -1,11 +1,11 @@
 import type { BlockManifest } from "../manifest";
 
 export const meetingsBlock: BlockManifest = {
+  kind: "block",
   name: "meetings",
   displayName: "Meetings",
   description:
     "Meeting recording, transcription, and AI-powered insights. Supports virtual and in-person meetings with automatic transcription via Deepgram, AI summarization via Claude, action item extraction, and knowledge base integration. Integrates with Recall.ai for bot-based recording.",
-  domain: "operations",
   types: ["meeting"],
   capabilities: ["read", "create", "update", "delete", "process", "summarize"],
   models: ["Meeting", "MeetingParticipant", "MeetingAgentConfig"],

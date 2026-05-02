@@ -1,11 +1,11 @@
 import type { BlockManifest } from "../manifest";
 
 export const companiesBlock: BlockManifest = {
+  kind: "block",
   name: "companies",
   displayName: "Empresas",
   description:
     "B2B companies the organization interacts with — clients, prospects, partners. Distinct from PartnerBrand (affiliate program brands) and NetworkProfile (program participants). Each company has identity (name, legalName, taxId, website, domain, logoUrl), segmentation (industry, size enum SMALL/MEDIUM/LARGE/ENTERPRISE), corporate contact (email, phone, social), inline address, and a one-to-many relationship with Contacts. Deleting a company sets contacts.companyId to null (no cascade).",
-  domain: "operations",
   types: ["company"],
   capabilities: ["read", "create", "update", "delete"],
   models: ["Company"],

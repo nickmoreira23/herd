@@ -1,11 +1,11 @@
 import type { BlockManifest } from "../manifest";
 
 export const linksBlock: BlockManifest = {
+  kind: "block",
   name: "links",
   displayName: "Links",
   description:
     "Web link scraping with two modes: SINGLE page scrape or FULL_SITE crawl. Crawls respect depth limits and max pages (1-1000). Scraped content is chunked for AI retrieval. Tracks discovered, scraped, and errored page counts. Supports sitemap parsing and link extraction.",
-  domain: "knowledge",
   types: ["link"],
   capabilities: ["read", "create", "update", "delete", "scrape", "crawl"],
   models: ["KnowledgeLink", "KnowledgeLinkPage"],

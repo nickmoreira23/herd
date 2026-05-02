@@ -1,11 +1,11 @@
 import type { BlockManifest } from "../manifest";
 
 export const servicesBlock: BlockManifest = {
+  kind: "block",
   name: "services",
   displayName: "Serviços",
   description:
     "Catalog of services offered by the company — consulting, training, support, mentoring, etc. Each service has a unique slug `key` (for tier/package referencing), a short `description`, rich-text long content (TipTap), category, duration, price + pricingType (FIXED/HOURLY/DAILY/MONTHLY/CUSTOM), icon, status (DRAFT/ACTIVE/ARCHIVED), sortOrder, and tags. Follows the same structural pattern as Perks/CommunityBenefits to be referenceable from SubscriptionTiers and Packages in the future via a join table (e.g., ServiceTierAssignment).",
-  domain: "foundation",
   types: ["service"],
   capabilities: ["read", "create", "update", "delete"],
   models: ["Service"],

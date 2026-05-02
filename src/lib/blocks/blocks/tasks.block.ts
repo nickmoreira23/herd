@@ -1,11 +1,11 @@
 import type { BlockManifest } from "../manifest";
 
 export const tasksBlock: BlockManifest = {
+  kind: "block",
   name: "tasks",
   displayName: "Tarefas",
   description:
     "Task management — create, list, update, and delete tasks with status (BACKLOG/TODO/IN_PROGRESS/IN_REVIEW/DONE/CANCELLED), priority, due date, assignee, project, and labels. Tasks can originate locally or be synced from external project management tools (Linear, Asana, ClickUp, Trello, etc.) via integrations using sourceIntegration/sourceId. Tasks with a sourceIntegration reflect external state and may be overwritten on the next sync.",
-  domain: "operations",
   types: ["task"],
   capabilities: ["read", "create", "update", "delete", "sync"],
   models: ["Task"],
