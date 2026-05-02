@@ -68,6 +68,12 @@ Componente individual de uma entry — vincula uma account, direção (D/C), amo
 
 Protocolo de RPC baseado em JSON usado pelo MCP. Requests têm `{jsonrpc, id, method, params}`; responses têm `{jsonrpc, id, result}` ou `{jsonrpc, id, error}`.
 
+### llms.txt
+
+**From [llms.txt](/admin/handbook/meta/llms-txt):**
+
+arquivo Markdown em `/llms.txt` que orienta LLMs sobre o produto. Convenção definida em llmstxt.org.
+
 ### MCP
 
 **From [Servidor MCP](/admin/handbook/meta/mcp):**
@@ -97,6 +103,12 @@ Ação de gravar uma entry no ledger via `postJournalEntry`; único write path a
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
 
 Compensating entry com direções invertidas que neutraliza o efeito de uma entry original.
+
+### robots.txt
+
+**From [llms.txt](/admin/handbook/meta/llms-txt):**
+
+análogo histórico — arquivo que orienta search engine crawlers. `llms.txt` segue o mesmo princípio mas para AI assistants.
 
 ### Source kind/id
 

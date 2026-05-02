@@ -113,6 +113,13 @@ references:
     title:
       pt-BR: Handbook
       en-US: Handbook
+  herd.meta.llms-txt:
+    level: meta
+    id: llms-txt
+    path: docs/handbook/_meta/llms-txt
+    title:
+      pt-BR: llms.txt
+      en-US: llms.txt
   herd.meta.mcp:
     level: meta
     id: mcp

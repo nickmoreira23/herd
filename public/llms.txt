@@ -1,0 +1,35 @@
+# HERD
+
+> HERD is an AI-native B2B platform for marketing networks.
+> Currently 19 documented entries across 5 layers (Networks, Solutions, Tools, Blocks, Integrations) plus a meta namespace.
+
+## Documentation
+
+- [Handbook home](https://herd.app/admin/handbook): Overview of the entire system, organized by layer.
+
+## Layers
+
+- [Networks](https://herd.app/admin/handbook/networks): Layer that organizes the different types of networks HERD supports: corporate, market, and multi-market.
+- [Solutions](https://herd.app/admin/handbook/solutions): Layer that organizes feature packages focused on business value: by market, by department, by segment.
+- [Tools](https://herd.app/admin/handbook/tools): Layer that organizes tools by functional nature: financial, legal, marketing, sales.
+- [Blocks](https://herd.app/admin/handbook/blocks): Layer that organizes data blocks by nature: identity, media, time, commercial, financial.
+- [Integrations](https://herd.app/admin/handbook/integrations): Layer that organizes integrations with external systems by purpose: payment, calendar, communication.
+
+## Categories
+
+- [Corporate Network](https://herd.app/admin/handbook/networks/corporate-network): A company's internal network: organization, channels, profiles, departments, permissions.
+- [Market Network](https://herd.app/admin/handbook/networks/market-network): The external network connecting multiple companies in the same market.
+- [Financial Tools](https://herd.app/admin/handbook/tools/financial): Tools that organize, process, and audit financial flows of the product, from internal accounting to integration with payment and billing systems.
+- [Financial Blocks](https://herd.app/admin/handbook/blocks/financial): Financial data primitives — records, flows, immutable events — that serve as the foundation for tools and product flows.
+- [Miscellaneous](https://herd.app/admin/handbook/blocks/miscellaneous): Blocks not yet classified into a specific category. Temporary accommodation — debt to resolve during backfill.
+
+## Meta
+
+- [Glossary](https://herd.app/admin/handbook/meta/glossary): Global glossary aggregated from terms defined across all Handbook entries.
+- [Handbook](https://herd.app/admin/handbook/meta/handbook): HERD's documentation system: architecture, conventions, and operations.
+- [llms.txt](https://herd.app/admin/handbook/meta/llms-txt): Public file at /llms.txt following the llmstxt.org convention — guides LLMs about what HERD is, where to find canonical content, and how to access it programmatically.
+- [MCP Server](https://herd.app/admin/handbook/meta/mcp): Model Context Protocol server that exposes the Handbook as a navigable resource for AI assistants via stdio (local clients) and HTTP (remote clients).
+
+## Programmatic access
+
+The Handbook is also available via Model Context Protocol (MCP) server. See [MCP Server](https://herd.app/admin/handbook/meta/mcp) for stdio and HTTP transport details.

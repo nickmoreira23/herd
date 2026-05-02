@@ -66,6 +66,12 @@ Individual component of an entry — binds an account, direction (D/C), amount, 
 
 JSON-based RPC protocol used by MCP. Requests carry `{jsonrpc, id, method, params}`; responses carry `{jsonrpc, id, result}` or `{jsonrpc, id, error}`.
 
+### llms.txt
+
+**From [llms.txt](/admin/handbook/meta/llms-txt):**
+
+Markdown file at `/llms.txt` that guides LLMs about the product. Convention defined at llmstxt.org.
+
 ### MCP
 
 **From [MCP Server](/admin/handbook/meta/mcp):**
@@ -95,6 +101,12 @@ Action of recording an entry into the ledger via `postJournalEntry`; the only au
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
 
 Compensating entry with directions flipped that neutralizes the effect of an original entry.
+
+### robots.txt
+
+**From [llms.txt](/admin/handbook/meta/llms-txt):**
+
+Historical analog — a file that guides search engine crawlers. `llms.txt` follows the same principle but for AI assistants.
 
 ### Source kind/id
 
