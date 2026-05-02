@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 
 export const overrideRuleSchema = z.object({
   roleType: z.enum(["REGIONAL_LEADER", "TEAM_LEAD", "REP"]),

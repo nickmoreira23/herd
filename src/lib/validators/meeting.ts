@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 
 const MEETING_TYPES = ["VIRTUAL", "IN_PERSON"] as const;
 const MEETING_STATUSES = ["SCHEDULED", "RECORDING", "PROCESSING", "READY", "ERROR"] as const;

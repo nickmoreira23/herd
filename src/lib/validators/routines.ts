@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 import { isValidCron } from "@/lib/routines/cron";
 
 export const ROUTINE_TRIGGER_TYPES = ["MANUAL", "SCHEDULE", "EVENT"] as const;

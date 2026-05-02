@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 
 export const createKnowledgeLinkSchema = z.object({
   url: z.string().url("Must be a valid URL"),

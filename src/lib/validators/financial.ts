@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 
 export const saveSnapshotSchema = z.object({
   scenarioName: z.string().min(1, "Model name is required"),

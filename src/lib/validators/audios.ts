@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 
 export const knowledgeAudioFileTypes = ["MP3", "WAV", "OGG", "FLAC", "AAC", "M4A"] as const;
 

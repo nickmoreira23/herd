@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 
 export const knowledgeImageFileTypes = ["PNG", "JPG", "WEBP", "GIF", "SVG", "TIFF"] as const;
 

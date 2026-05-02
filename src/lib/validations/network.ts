@@ -1,4 +1,4 @@
-import { z } from "zod"
+import { z } from "zod/v4"
 
 // These will be replaced by @prisma/client imports after `prisma generate`
 const NetworkType = { INTERNAL: "INTERNAL" as const, EXTERNAL: "EXTERNAL" as const }

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 
 export const knowledgeVideoFileTypes = ["MP4", "MOV", "WEBM", "AVI"] as const;
 
