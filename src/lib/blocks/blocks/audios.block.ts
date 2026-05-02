@@ -1,11 +1,11 @@
 import type { BlockManifest } from "../manifest";
 
 export const audiosBlock: BlockManifest = {
+  kind: "block",
   name: "audios",
   displayName: "Audios",
   description:
     "Manage MP3, WAV, OGG, FLAC, AAC, and M4A audio files. Audio is transcribed via Deepgram with speaker labels. Supports Plaud recorder integration (auto-import with summaries and mind maps), folder organization, and AI-searchable transcripts.",
-  domain: "knowledge",
   types: ["audio"],
   capabilities: ["read", "create", "update", "delete", "process", "transcribe"],
   models: ["KnowledgeAudio"],

@@ -10,11 +10,11 @@ const STAGE_ENUM = [
 ];
 
 export const dealsBlock: BlockManifest = {
+  kind: "block",
   name: "deals",
   displayName: "Oportunidades",
   description:
     "Sales pipeline opportunities (deals). Each deal has a title, stage (LEAD/QUALIFIED/PROPOSAL/NEGOTIATION/WON/LOST), amount with currency, probability (0-100), expected close date, optional links to a Contact and/or Company, owner, source, tags, and rich content. Deleting a linked Contact or Company sets the link to null (no cascade). Closing to WON/LOST auto-stamps closedAt unless provided explicitly.",
-  domain: "sales",
   types: ["deal"],
   capabilities: ["read", "create", "update", "delete"],
   models: ["Deal"],

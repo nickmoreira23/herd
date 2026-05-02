@@ -1,11 +1,11 @@
 import type { BlockManifest } from "../manifest";
 
 export const voiceBlock: BlockManifest = {
+  kind: "block",
   name: "voice",
   displayName: "Voice",
   description:
     "Centralized voice service for speech-to-text transcription, text-to-speech synthesis, and real-time voice conversations. Supports multiple providers (Deepgram, ElevenLabs, Sesame) with automatic fallback.",
-  domain: "foundation",
   types: ["voice_job"],
   capabilities: ["transcribe", "synthesize", "voice_mode"],
   models: ["VoiceJob", "FoundationServiceConfig"],

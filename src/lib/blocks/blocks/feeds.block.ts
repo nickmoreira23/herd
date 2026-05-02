@@ -1,11 +1,11 @@
 import type { BlockManifest } from "../manifest";
 
 export const feedsBlock: BlockManifest = {
+  kind: "block",
   name: "feeds",
   displayName: "Feeds",
   description:
     "RSS feed subscription with auto-sync scheduling (HOURLY, DAILY, WEEKLY). Supports keyword filtering (include/exclude), max entries per sync, and entry management. Feed entries are chunked for AI retrieval. Tracks sync history and error logs.",
-  domain: "knowledge",
   types: ["rss"],
   capabilities: ["read", "create", "update", "delete", "sync"],
   models: ["KnowledgeRSSFeed", "KnowledgeRSSEntry", "KnowledgeRSSSyncLog"],

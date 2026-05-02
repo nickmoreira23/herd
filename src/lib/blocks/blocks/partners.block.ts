@@ -1,11 +1,11 @@
 import type { BlockManifest } from "../manifest";
 
 export const partnersBlock: BlockManifest = {
+  kind: "block",
   name: "partners",
   displayName: "Partner Brands",
   description:
     "Partner brand management — manages affiliate and partner brands that offer discounts or kickbacks to members. Tracks commission rates, affiliate links, discount descriptions, and tier-level access. Supports CRUD, bulk operations, status transitions, tier assignments, and import/export.",
-  domain: "foundation",
   types: ["partner_brand"],
   capabilities: ["read", "create", "update", "delete", "bulk", "import", "export"],
   models: ["PartnerBrand", "PartnerBrandTierAssignment"],

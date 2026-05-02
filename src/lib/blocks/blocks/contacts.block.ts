@@ -1,11 +1,11 @@
 import type { BlockManifest } from "../manifest";
 
 export const contactsBlock: BlockManifest = {
+  kind: "block",
   name: "contacts",
   displayName: "Contatos",
   description:
     "CRM contacts — leads, prospects, customers, and other people the company interacts with. Distinct from NetworkProfile (which is dedicated to the partner program). Each contact has identity (firstName, lastName, email, phone), professional info (jobTitle, department), polymorphic links (companyId → companies block, ownerId → user/profile), origin source, address, and social fields (birthday, linkedinUrl, twitterHandle). Contacts use tags for lifecycle classification (lead/prospect/customer) instead of a status enum — formal pipeline lives in the deals block.",
-  domain: "operations",
   types: ["contact"],
   capabilities: ["read", "create", "update", "delete"],
   models: ["Contact"],

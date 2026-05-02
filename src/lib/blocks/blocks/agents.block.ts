@@ -1,11 +1,11 @@
 import type { BlockManifest } from "../manifest";
 
 export const agentsBlock: BlockManifest = {
+  kind: "block",
   name: "agents",
   displayName: "AI Agents",
   description:
     "AI agent configuration and management — define LLM-powered agents with custom system prompts, model settings, skills, tools, and knowledge items. Agents are linked to subscription tiers for access control. Supports CRUD, bulk operations, import/export, and sub-resource management for skills, tools, and knowledge.",
-  domain: "foundation",
   types: ["agent"],
   capabilities: ["read", "create", "update", "delete", "bulk", "import", "export"],
   models: ["Agent", "AgentSkill", "AgentTool", "AgentKnowledgeItem", "AgentTierAccess"],

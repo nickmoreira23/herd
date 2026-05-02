@@ -1,11 +1,11 @@
 import type { BlockManifest } from "../manifest";
 
 export const notesBlock: BlockManifest = {
+  kind: "block",
   name: "notes",
   displayName: "Anotações",
   description:
     "Free-form notes with rich-text content (TipTap JSON), tags, pin/archive flags, and optional polymorphic linking to other entities (entityType + entityId). Notes can be standalone (general thoughts, briefings) or attached to a specific contact, deal, meeting, task, etc. The plain-text projection (contentText) powers search and AI retrieval.",
-  domain: "knowledge",
   types: ["note"],
   capabilities: ["read", "create", "update", "delete"],
   models: ["Note"],

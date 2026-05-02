@@ -12,7 +12,6 @@ export function getEligibleBlocks(): EligibleBlock[] {
     .map((b) => ({
       name: b.name,
       displayName: b.displayName,
-      domain: b.domain,
       primaryType: b.types[0],
     }));
 }

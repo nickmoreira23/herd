@@ -1,11 +1,11 @@
 import type { BlockManifest } from "../manifest";
 
 export const imagesBlock: BlockManifest = {
+  kind: "block",
   name: "images",
   displayName: "Images",
   description:
     "Manage PNG, JPG, WEBP, GIF, SVG, and TIFF images. Images are processed with AI vision for automatic descriptions and OCR text extraction. Supports folder organization, dimension tracking, and status lifecycle.",
-  domain: "knowledge",
   types: ["image"],
   capabilities: ["read", "create", "update", "delete", "process"],
   models: ["KnowledgeImage"],

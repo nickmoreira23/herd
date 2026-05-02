@@ -1,11 +1,11 @@
 import type { BlockManifest } from "../manifest";
 
 export const tablesBlock: BlockManifest = {
+  kind: "block",
   name: "tables",
   displayName: "Tables",
   description:
     "Airtable-like structured data tables with 20+ field types (text, number, date, select, multiSelect, checkbox, url, email, phone, linkedRecord, formula, etc.). Supports CSV/Excel import, Airtable import, field reordering, and record management. Tables are processed and chunked for AI retrieval.",
-  domain: "knowledge",
   types: ["table"],
   capabilities: ["read", "create", "update", "delete", "process", "import"],
   models: ["KnowledgeTable", "KnowledgeTableField", "KnowledgeTableRecord"],

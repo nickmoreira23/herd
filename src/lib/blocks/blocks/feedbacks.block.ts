@@ -1,11 +1,11 @@
 import type { BlockManifest } from "../manifest";
 
 export const feedbacksBlock: BlockManifest = {
+  kind: "block",
   name: "feedbacks",
   displayName: "Feedbacks",
   description:
     "Centralized product feedback — suggestions, bugs, complaints, praise, questions, ideas. Each feedback has a type, status (NEW → TRIAGED → PLANNED → IN_PROGRESS → DONE/DECLINED), priority, vote count, optional submitter (name + email), optional source channel, tags, and rich-text content (TipTap JSON). Supports polymorphic linking to other entities (entityType + entityId). Setting status to DONE or DECLINED automatically populates resolvedAt.",
-  domain: "knowledge",
   types: ["feedback"],
   capabilities: ["read", "create", "update", "delete", "upvote"],
   models: ["Feedback"],

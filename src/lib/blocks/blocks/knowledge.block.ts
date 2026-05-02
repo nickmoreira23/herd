@@ -11,11 +11,11 @@ import type { BlockManifest } from "../manifest";
  *   - Origin tracking via `sourceFeature: "knowledge"` on composed items
  */
 export const knowledgeBlock: BlockManifest = {
+  kind: "block",
   name: "knowledge",
   displayName: "Knowledge Base",
   description:
     "Meta-feature that composes first-class blocks (documents, images, videos, audios, tables, forms, links, feeds, apps) into a unified knowledge base. Provides folder organization, block composition settings, and origin tracking. Individual blocks own their data and API routes.",
-  domain: "meta",
   types: [], // owns no types — delegates to composed blocks
   capabilities: ["compose"],
   models: ["KnowledgeFolder"],

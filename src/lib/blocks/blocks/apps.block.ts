@@ -1,11 +1,11 @@
 import type { BlockManifest } from "../manifest";
 
 export const appsBlock: BlockManifest = {
+  kind: "block",
   name: "apps",
   displayName: "Apps",
   description:
     "External app integrations for health wearables (Oura, Whoop, Garmin, Apple Health via Terra.co) and productivity tools (Airtable, Gmail). Supports OAuth2 and API key authentication, configurable sync frequency, and 9 data categories (SLEEP, ACTIVITY, RECOVERY, HEART_RATE, WORKOUT, READINESS, BODY, NUTRITION, OTHER). Data points are chunked for AI retrieval.",
-  domain: "knowledge",
   types: ["app_data"],
   capabilities: ["read", "create", "update", "delete", "sync", "process"],
   models: ["KnowledgeApp", "KnowledgeAppDataPoint", "KnowledgeAppSyncLog"],

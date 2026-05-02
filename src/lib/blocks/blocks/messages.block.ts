@@ -1,11 +1,11 @@
 import type { BlockManifest } from "../manifest";
 
 export const messagesBlock: BlockManifest = {
+  kind: "block",
   name: "messages",
   displayName: "Messages",
   description:
     "Centralized messaging hub — aggregates conversations from WhatsApp, email, SMS, Instagram, Slack, Intercom, and internal agent chats into unified threads. Supports inbound/outbound messaging, contact resolution, thread assignment, and priority management. Message history is searchable for AI retrieval.",
-  domain: "operations",
   types: ["message_thread", "message"],
   capabilities: ["read", "create", "update", "delete", "sync", "send"],
   models: ["MessageChannel", "MessageThread", "Message"],

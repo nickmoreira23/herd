@@ -12,11 +12,11 @@ const STATUS_ENUM = [
 ];
 
 export const experiencesBlock: BlockManifest = {
+  kind: "block",
   name: "experiences",
   displayName: "Experiences",
   description:
     "Curated experiences offered by the organization — workshops, retreats, immersive events, classes. Each experience has a format (IN_PERSON/ONLINE/HYBRID/SELF_PACED), a lifecycle status (DRAFT/SCHEDULED/OPEN/SOLD_OUT/IN_PROGRESS/COMPLETED/CANCELLED), schedule (startDate/endDate/durationMin), logistics (locationName/locationUrl/capacity), pricing (price/currency), a cover image, an optional host, and rich content. Sits in the Commerce category alongside Products and Services.",
-  domain: "commerce",
   types: ["experience"],
   capabilities: ["read", "create", "update", "delete"],
   models: ["Experience"],

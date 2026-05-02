@@ -34,11 +34,11 @@ const OBJECTIVE_ENUM = [
 ];
 
 export const campaignsBlock: BlockManifest = {
+  kind: "block",
   name: "campaigns",
   displayName: "Campanhas",
   description:
     "Marketing campaigns running across one or more channels (EMAIL, SOCIAL, ADS, EVENT, CONTENT, WEBINAR, REFERRAL, DIRECT_MAIL, SMS, PARTNER, OTHER). Each campaign has a status (DRAFT/SCHEDULED/ACTIVE/PAUSED/COMPLETED/ARCHIVED), an optional objective (AWARENESS/ACQUISITION/ACTIVATION/RETENTION/REVENUE/REFERRAL/OTHER), schedule (startDate, endDate), budget vs spent in a currency, audience description, owner, free-form metrics JSON, and tags. Deals can be attributed to a campaign via Deal.campaignId; deleting a campaign sets that link to null.",
-  domain: "marketing",
   types: ["campaign"],
   capabilities: ["read", "create", "update", "delete"],
   models: ["Campaign"],
