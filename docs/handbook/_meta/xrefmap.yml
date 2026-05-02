@@ -71,6 +71,13 @@ references:
     title:
       pt-BR: Ferramentas
       en-US: Tools
+  herd.meta.glossary:
+    level: meta
+    id: glossary
+    path: docs/handbook/_meta/glossary
+    title:
+      pt-BR: Glossário
+      en-US: Glossary
   herd.meta.handbook:
     level: meta
     id: handbook

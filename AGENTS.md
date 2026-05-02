@@ -275,6 +275,33 @@ The migration is mechanical and tracked as a future backfill etapa. The
 sub-etapa that introduces CI gates also adds `name`/`description` fields to
 the two non-conformant frontmatters and renames the supabase-postgres folder.
 
+## House vocabulary
+
+When writing the `## Glossary` section of any Handbook entry, define
+terms as a bullet list, one per line:
+
+    ## Glossary
+
+    - **MQL**: Marketing Qualified Lead. A contact who has shown intent…
+    - **Lifecycle stage**: The current state of a contact in the funnel…
+
+The format is parsed by `npm run gen:glossary` to build the global
+glossary at `herd.meta.glossary` (rendered at
+`/admin/handbook/meta/glossary`). The regex is
+`/^-\s+\*\*(.+?)\*\*\s*:\s*(.+)$/gm` — multi-line definitions are not
+supported; keep each definition to a single line.
+
+Terms are case-insensitive when grouping across entries. If the same
+term is defined in multiple entries (e.g., "Network" in the Networks
+layer overview AND in a feature), all definitions appear in the global
+glossary, ordered by hierarchy (layer → category → feature). Terms
+defined in only one locale appear in the other locale with a
+"Translation pending" note.
+
+`npm run gen:glossary` is part of `npm run gen:all` and produces a
+deterministic output (the "Last updated" line is derived from the
+`updated:` field of contributing entries, never from `Date.now()`).
+
 ## Boundaries
 
 - Never edit `mcp/generated/`, `schemas/feature.schema.json`,
