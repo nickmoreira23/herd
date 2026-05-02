@@ -26,6 +26,7 @@
     "gen:search-index": "tsx scripts/build-search-index.ts",
     "gen:xrefmap": "tsx scripts/build-xrefmap.ts",
     "gen:llms-txt": "tsx scripts/build-llms-txt.ts",
+    "gen:feature": "tsx .agents/skills/new-feature/scripts/run.ts",
     "gen:all": "npm run gen:schemas && npm run gen:mcp && npm run gen:search-index && npm run gen:xrefmap && npm run gen:llms-txt",
     "validate:feature-yml": "tsx scripts/validate-feature-yml.ts",
     "validate:handbook-graph": "tsx scripts/validate-handbook-graph.ts",
@@ -95,6 +96,7 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@inquirer/prompts": "^7.10.1",
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",
     "@types/fluent-ffmpeg": "^2.1.28",
