@@ -5,6 +5,12 @@
       "uid": "herd.block.contacts",
       "id": "contacts",
       "level": "block",
+      "status": "active",
+      "owners": [
+        "@nick"
+      ],
+      "since": "2026-05-01",
+      "updated": "2026-05-01",
       "title_pt_BR": "Contatos",
       "title_en_US": "Contacts",
       "description_pt_BR": "Single source of truth para pessoas no HERD: leads, clientes, parceiros, funcionários.",
@@ -16,6 +22,12 @@
       "uid": "herd.block.meetings",
       "id": "meetings",
       "level": "block",
+      "status": "active",
+      "owners": [
+        "@nick"
+      ],
+      "since": "2026-05-01",
+      "updated": "2026-05-01",
       "title_pt_BR": "Reuniões",
       "title_en_US": "Meetings",
       "description_pt_BR": "Reuniões de cliente: discovery, demos, suporte. Sincroniza com calendários externos.",
@@ -27,6 +39,12 @@
       "uid": "herd.foundation.handbook",
       "id": "handbook",
       "level": "foundation",
+      "status": "active",
+      "owners": [
+        "@nick"
+      ],
+      "since": "2026-05-01",
+      "updated": "2026-05-01",
       "title_pt_BR": "Handbook",
       "title_en_US": "Handbook",
       "description_pt_BR": "Sistema de documentação do HERD: 4 artefatos, 6 níveis, doc-first.",

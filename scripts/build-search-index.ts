@@ -9,6 +9,10 @@ interface IndexEntry {
   uid: string;
   id: string;
   level: string;
+  status: string;
+  owners: string[];
+  since: string;
+  updated: string;
   title_pt_BR: string;
   title_en_US: string;
   description_pt_BR: string;
@@ -41,6 +45,10 @@ async function main() {
       uid: data.uid,
       id: data.id,
       level: data.level,
+      status: data.status,
+      owners: data.owners,
+      since: data.since,
+      updated: data.updated,
       title_pt_BR: data.title["pt-BR"],
       title_en_US: data.title["en-US"],
       description_pt_BR: data.description["pt-BR"],
