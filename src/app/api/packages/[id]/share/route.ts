@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-utils";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 const createShareSchema = z.object({
   permission: z.enum(["view", "edit"]),

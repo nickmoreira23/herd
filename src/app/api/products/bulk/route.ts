@@ -5,7 +5,7 @@ import {
   bulkActionSchema,
   bulkImportRowSchema,
 } from "@/lib/validators/product";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 // POST: Bulk CSV import
 export async function POST(request: Request) {

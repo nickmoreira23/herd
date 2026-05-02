@@ -278,7 +278,7 @@ export async function DELETE(
 
 write(
   join(root, "src/lib/validators", `${name}.ts`),
-  `import { z } from "zod";
+  `import { z } from "zod/v4";
 
 export const create${pascal}Schema = z.object({
   name: z.string().min(1, "Name is required"),

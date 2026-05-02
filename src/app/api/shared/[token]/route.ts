@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-utils";
 import { toNumber } from "@/lib/utils";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 // GET /api/shared/:token — resolve share link and return package data
 export async function GET(
