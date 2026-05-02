@@ -72,14 +72,14 @@ async function main() {
 
   const wantsSkill = await confirm({
     message: "Generate SKILL.md?",
-    default: ["block", "tool", "foundation"].includes(level),
+    default: ["block", "tool"].includes(level),
   });
 
   const defaultPerspectives = (() => {
     if (level === "integration") {
       return ["business", "architecture", "operations", "changelog"];
     }
-    if (["block", "tool", "foundation"].includes(level)) {
+    if (["block", "tool"].includes(level)) {
       return Perspective.options.slice();
     }
     return ["business", "product", "architecture"];
@@ -99,7 +99,6 @@ async function main() {
     | undefined = (() => {
     if (level === "block") return "block";
     if (level === "tool") return "tool";
-    if (level === "foundation") return "foundation";
     return undefined;
   })();
 

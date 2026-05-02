@@ -2,7 +2,7 @@
 title: Reuniões
 description: Reuniões de cliente — discovery, demos, suporte. Sincroniza com calendários externos.
 locale: pt-BR
-uid: herd.block.meetings
+uid: herd.block.miscellaneous.meetings
 ---
 
 > **Para agentes de IA:** Este arquivo Markdown é a forma canônica desta entry. Use `Accept: text/markdown` ou adicione `.md` à URL para evitar renderização HTML.

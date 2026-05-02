@@ -2,7 +2,7 @@
 title: Handbook
 description: HERD's documentation system — 4 artifacts, 6 levels, doc-first.
 locale: en-US
-uid: herd.foundation.handbook
+uid: herd.meta.handbook
 ---
 
 > **For AI agents:** This Markdown file is the canonical form of this entry. Use `Accept: text/markdown` or append `.md` to the URL to avoid HTML rendering.

@@ -1,0 +1,35 @@
+id: miscellaneous
+uid: herd.category.blocks.miscellaneous
+level: category
+technical_category: foundation
+
+title:
+  pt-BR: "Diversos"
+  en-US: "Miscellaneous"
+description:
+  pt-BR: "Blocks que ainda não foram classificados em uma category específica. Acomodação temporária — débito a resolver durante o backfill."
+  en-US: "Blocks not yet classified into a specific category. Temporary accommodation — debt to resolve during backfill."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-02
+updated: 2026-05-02
+
+parent: herd.layer.blocks
+children: []
+consumes: []
+consumed_by: []
+related: []
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

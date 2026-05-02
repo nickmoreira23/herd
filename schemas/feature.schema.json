@@ -8,16 +8,18 @@
     },
     "uid": {
       "type": "string",
-      "pattern": "^herd\\.[a-z-]+\\.[a-z][a-z0-9-]*$"
+      "pattern": "^herd\\.[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+$"
     },
     "level": {
       "type": "string",
       "enum": [
-        "corporate-network",
+        "layer",
+        "category",
+        "meta",
+        "network",
         "solution",
         "tool",
         "block",
-        "foundation",
         "integration"
       ]
     },
@@ -94,15 +96,22 @@
       "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
     },
     "parent": {
-      "type": "string",
-      "pattern": "^[a-z][a-z0-9-]*$"
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^herd\\.[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+$"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "children": {
       "default": [],
       "type": "array",
       "items": {
         "type": "string",
-        "pattern": "^[a-z][a-z0-9-]*$"
+        "pattern": "^herd\\.[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+$"
       }
     },
     "consumes": {
@@ -110,7 +119,7 @@
       "type": "array",
       "items": {
         "type": "string",
-        "pattern": "^[a-z][a-z0-9-]*$"
+        "pattern": "^herd\\.[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+$"
       }
     },
     "consumed_by": {
@@ -118,7 +127,7 @@
       "type": "array",
       "items": {
         "type": "string",
-        "pattern": "^[a-z][a-z0-9-]*$"
+        "pattern": "^herd\\.[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+$"
       }
     },
     "related": {
@@ -126,7 +135,7 @@
       "type": "array",
       "items": {
         "type": "string",
-        "pattern": "^[a-z][a-z0-9-]*$"
+        "pattern": "^herd\\.[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+$"
       }
     },
     "block_groups": {

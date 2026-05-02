@@ -1,0 +1,35 @@
+id: corporate-network
+uid: herd.category.networks.corporate-network
+level: category
+technical_category: foundation
+
+title:
+  pt-BR: "Rede Corporativa"
+  en-US: "Corporate Network"
+description:
+  pt-BR: "A network interna de uma empresa: organização, channels, profiles, departamentos, permissões."
+  en-US: "A company's internal network: organization, channels, profiles, departments, permissions."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-02
+updated: 2026-05-02
+
+parent: herd.layer.networks
+children: []
+consumes: []
+consumed_by: []
+related: []
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

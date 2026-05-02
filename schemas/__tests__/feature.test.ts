@@ -18,7 +18,7 @@ describe("FeatureYmlSchema", () => {
   });
 
   it("rejects invalid level", () => {
-    expect(FeatureYmlSchema.safeParse({ ...validBase, level: "category" }).success).toBe(false);
+    expect(FeatureYmlSchema.safeParse({ ...validBase, level: "foundation" }).success).toBe(false);
   });
 
   it("rejects invalid uid format", () => {

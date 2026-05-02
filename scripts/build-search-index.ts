@@ -9,6 +9,7 @@ interface IndexEntry {
   uid: string;
   id: string;
   level: string;
+  parent: string | null;
   status: string;
   owners: string[];
   since: string;
@@ -45,6 +46,7 @@ async function main() {
       uid: data.uid,
       id: data.id,
       level: data.level,
+      parent: data.parent ?? null,
       status: data.status,
       owners: data.owners,
       since: data.since,

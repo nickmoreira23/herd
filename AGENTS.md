@@ -148,25 +148,73 @@ the script is defense-in-depth.
 
 ## Handbook (doc-first)
 
-HERD uses a 4-artifact doc system. Before writing code that creates, modifies,
-or deprecates a feature at any of the 6 levels, check the change-type matrix
-in `docs/handbook/foundation/handbook/en-US.md` (Operations perspective) for
-required artifacts.
+HERD uses a 4-artifact doc system organized into a 3-level hierarchy. Before
+writing code that creates, modifies, or deprecates a feature, check the
+change-type matrix in `docs/handbook/_meta/handbook/en-US.md` (Operations
+perspective) for required artifacts.
 
-The 6 levels and code mapping:
+The hierarchy:
+
+1. **Layers** (5 fixed): `networks`, `solutions`, `tools`, `blocks`, `integrations`.
+2. **Categories**: introduced per layer as needed (e.g., `marketing` under `tools`).
+3. **Features individuais**: concrete features inside a category.
+
+Plus a separate `_meta` namespace for documentation about the documentation
+system itself (e.g., `herd.meta.handbook`).
+
+### Semantic distinction between layers
+
+- **Networks** organize relational contexts (Corporate, Market, Multi-Market).
+- **Solutions** are organized by *business value* — by market, by department,
+  by segment. ("Healthcare Solutions", "Sales Department Solutions".)
+- **Tools** are organized by *functional nature* — what kind of tool it is.
+  ("Marketing Tools", "Finance Tools", "Legal Tools".)
+- **Blocks** are organized by *data nature*. ("Identity", "Media", "Time".)
+- **Integrations** are organized by *purpose*. ("Payment", "Calendar",
+  "Communication".)
+
+The same Tool may participate in multiple Solutions; the same Solution may
+compose Tools across multiple categories.
+
+### UID structure
+
+- Layer: `herd.layer.{layer-name}` (parent: `null`)
+- Category: `herd.category.{layer-name}.{category-id}` (parent: `herd.layer.{layer-name}`)
+- Feature individual: `herd.{level}.{category-id}.{feature-id}` where
+  `level` ∈ {`network`, `solution`, `tool`, `block`, `integration`}
+  (parent: `herd.category.{layer-name}.{category-id}`)
+- Meta: `herd.meta.{id}` (parent: `null`)
+
+Cross-references in `consumes`/`consumed_by`/`children`/`related`/`parent` use
+**full UIDs** (with dots), not short ids — disambiguates across categories.
+
+### Filesystem layout
+
+| Level | Path |
+|---|---|
+| Layer | `docs/handbook/{layer-name}/(overview)/` |
+| Category | `docs/handbook/{layer-name}/{category-id}/(overview)/` |
+| Feature | `docs/handbook/{layer-name}/{category-id}/{feature-id}/` |
+| Meta | `docs/handbook/_meta/{id}/` |
+
+The `(overview)` folder name (literal, with parentheses) holds the entry that
+documents a layer or category as a whole. Sibling folders inside the same
+parent are individual features.
+
+### Code mapping for feature levels
 
 | Level | Code root | Manifest |
 |---|---|---|
 | `block` | `src/components/{name}/`, `src/app/admin/blocks/{name}/` | `src/lib/blocks/blocks/{name}.block.ts` |
 | `tool` | `src/components/tools/{name}/` (planned), `src/app/admin/tools/{name}/` | `src/lib/tools/tools/{name}.tool.ts` (planned) |
-| `foundation` | `src/components/{name}/`, `src/app/admin/{name}/`, `src/lib/{name}/` | varies |
 | `integration` | `src/lib/integrations/{name}/` | varies |
-| `solution` | composition only — no code root (deferred) | n/a |
-| `corporate-network` | composition only — no code root | n/a |
+| `solution` | composition only — no code root | n/a |
+| `network` | composition only — no code root | n/a |
 
-Note: `category` (Finances, Legal, Marketing, Sales, Operations) is a runtime
-grouping, not a Handbook level. Categories live in
-`.agents/tools/{category}/AGENT.md` and `src/lib/tools/categories/`.
+Note: tool runtime categories (Finances, Legal, Marketing, Sales, Operations)
+in `.agents/tools/{category}/AGENT.md` and `src/lib/tools/categories/` are a
+runtime grouping concept distinct from the Handbook `category` level — though
+the two often align by name.
 
 Note: `block-group` is intra-block (e.g., packages inside products). Documented
 inside the parent block's `feature.yml` under `block_groups`, not as a separate
@@ -174,7 +222,7 @@ entry.
 
 The 4 artifacts per feature:
 
-1. Handbook entry — `docs/handbook/{level}/{id}/{pt-BR.md, en-US.md}`. Bilingual.
+1. Handbook entry — `{path}/{pt-BR.md, en-US.md}`. Bilingual.
 2. `feature.yml` — canonical metadata. Same directory.
 3. `SKILL.md` — `.agents/skills/feature-{level}-{id}/SKILL.md`. Optional.
 4. MCP tool — registered in `mcp/generated/manifest.json`. Optional.
@@ -193,12 +241,14 @@ This invokes the `/new-feature` meta-skill at `.agents/skills/new-feature/`
 CI gates that will fail your PR (full enforcement lands in a later sub-etapa):
 
 1. `feature.yml` schema validation (Zod 4 → JSON Schema → Ajv).
-2. Folder path must match `feature.yml.level`.
-3. `feature.yml.uid` must equal `herd.<level>.<id>`.
-4. Cross-references in `consumes`/`consumed_by`/`parent`/`children`/`related`
-   must resolve, or be allowlisted in
+2. Folder path must match the layout for the declared `level` (see table above).
+3. `feature.yml.uid` must follow the UID structure for its level.
+4. `feature.yml.parent` must point to a feature at the correct upstream level
+   (category for features, layer for categories, `null` for layers and meta).
+5. Cross-references in `consumes`/`consumed_by`/`children`/`related` must
+   resolve to a known UID, or be allowlisted in
    `docs/handbook/_meta/.legacy-allowlist.txt`.
-5. Generated artifacts (`mcp/generated/`, `docs/handbook/_meta/xrefmap.yml`,
+6. Generated artifacts (`mcp/generated/`, `docs/handbook/_meta/xrefmap.yml`,
    `schemas/feature.schema.json`) must be regenerated and committed when source
    changes (CI runs `npm run gen:all` and fails on diff).
 
@@ -217,8 +267,8 @@ Skills layout convention:
 
 Existing skills awaiting full layout migration (mechanical work, deferred):
 
-- `.agents/skills/domain-events/` → eventually `feature-foundation-domain-events`
-- `.agents/skills/ledger/` → eventually `feature-foundation-ledger`
+- `.agents/skills/domain-events/` → unclassified; final layout decided in backfill
+- `.agents/skills/ledger/` → unclassified; final layout decided in backfill
 - `.agents/skills/supabase-postgres-best-practices/` → eventually `practice-supabase-postgres`
 
 The migration is mechanical and tracked as a future backfill etapa. The
@@ -239,9 +289,9 @@ the two non-conformant frontmatters and renames the supabase-postgres folder.
 - Never add a new path to the legacy lint debt overrides in
   `eslint.config.mjs`. New code is held to the strict ruleset.
 
-- Never invent a new `level` value. The six levels are defined in
-  `schemas/feature.zod.ts` and mirrored in
-  `docs/handbook/foundation/handbook/en-US.md`. To add or change a level,
+- Never invent a new `level` value. The levels are defined in
+  `schemas/feature.zod.ts` and described in
+  `docs/handbook/_meta/handbook/en-US.md`. To add or change a level,
   open a discussion before touching the schema.
 
 - Never edit a Handbook entry's `uid` after creation. UIDs are stable

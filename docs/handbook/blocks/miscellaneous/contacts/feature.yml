@@ -1,5 +1,5 @@
 id: contacts
-uid: herd.block.contacts
+uid: herd.block.miscellaneous.contacts
 level: block
 technical_category: block
 
@@ -13,12 +13,13 @@ description:
 status: active
 owners: ["@nick"]
 since: 2026-05-01
-updated: 2026-05-01
+updated: 2026-05-02
 
+parent: herd.category.blocks.miscellaneous
 children: []
 consumes: []
 consumed_by:
-  - meetings
+  - herd.block.miscellaneous.meetings
 related: []
 
 block_groups:

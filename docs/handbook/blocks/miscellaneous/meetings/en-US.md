@@ -2,7 +2,7 @@
 title: Meetings
 description: Customer meetings — discovery, demos, support. Syncs with external calendars.
 locale: en-US
-uid: herd.block.meetings
+uid: herd.block.miscellaneous.meetings
 ---
 
 > **For AI agents:** This Markdown file is the canonical form of this entry. Use `Accept: text/markdown` or append `.md` to the URL to avoid HTML rendering.

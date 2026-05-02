@@ -1025,7 +1025,7 @@ function OrganizationSubPanel() {
   );
 }
 
-// ─── Handbook Sub-Panel (grouped by level, from search-index) ───────
+// ─── Handbook Sub-Panel (5 layers + meta, from search-index) ────────
 
 interface HandbookIndexEntry {
   uid: string;
@@ -1035,31 +1035,26 @@ interface HandbookIndexEntry {
   title_en_US: string;
 }
 
-const HANDBOOK_LEVELS: { id: string; label: string }[] = [
-  { id: "foundation", label: "Foundation" },
-  { id: "block", label: "Block" },
-  { id: "tool", label: "Tool" },
-  { id: "integration", label: "Integration" },
-  { id: "solution", label: "Solution" },
-];
+// Display order for the 5 fixed layers.
+const LAYER_ORDER = ["networks", "solutions", "tools", "blocks", "integrations"];
 
 function HandbookSubPanel() {
   const pathname = usePathname();
   const { setSubPanelCollapsed } = useUIStore();
 
-  const entriesByLevel = useMemo(() => {
+  const { layers, metaEntries } = useMemo(() => {
     const all = (searchIndex as { entries: HandbookIndexEntry[] }).entries;
-    const grouped: Record<string, HandbookIndexEntry[]> = {};
-    for (const lvl of HANDBOOK_LEVELS) grouped[lvl.id] = [];
+    const layerMap = new Map<string, HandbookIndexEntry>();
+    const meta: HandbookIndexEntry[] = [];
     for (const e of all) {
-      if (grouped[e.level]) grouped[e.level].push(e);
+      if (e.level === "layer") layerMap.set(e.id, e);
+      else if (e.level === "meta") meta.push(e);
     }
-    for (const lvl of HANDBOOK_LEVELS) {
-      grouped[lvl.id].sort((a, b) =>
-        a.title_pt_BR.localeCompare(b.title_pt_BR),
-      );
-    }
-    return grouped;
+    const layers = LAYER_ORDER
+      .map((id) => layerMap.get(id))
+      .filter((e): e is HandbookIndexEntry => Boolean(e));
+    meta.sort((a, b) => a.title_pt_BR.localeCompare(b.title_pt_BR));
+    return { layers, metaEntries: meta };
   }, []);
 
   const isActive = (href: string) => {
@@ -1085,7 +1080,7 @@ function HandbookSubPanel() {
       </div>
 
       {/* Links */}
-      <nav className="flex-1 pb-4 overflow-y-auto px-3">
+      <nav className="flex-1 pb-4 overflow-y-auto px-3 space-y-0.5">
         {/* Overview link */}
         <Link
           href="/admin/handbook"
@@ -1100,44 +1095,52 @@ function HandbookSubPanel() {
           <span className="truncate">Overview</span>
         </Link>
 
-        {/* Level groups */}
-        {HANDBOOK_LEVELS.map((lvl) => {
-          const items = entriesByLevel[lvl.id] ?? [];
+        {/* 5 layers */}
+        {layers.map((entry) => {
+          const href = `/admin/handbook/${entry.id}`;
+          const active = isActive(href);
           return (
-            <div key={lvl.id} className="mt-4">
-              <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 flex items-center justify-between">
-                <span>{lvl.label}</span>
-                <span className="text-muted-foreground/50 normal-case tracking-normal">
-                  {items.length}
-                </span>
-              </p>
-              {items.length === 0 ? (
-                <p className="px-3 py-1 text-xs text-muted-foreground italic">
-                  Nenhum item.
-                </p>
-              ) : (
-                items.map((entry) => {
-                  const href = `/admin/handbook/${entry.level}/${entry.id}`;
-                  const active = isActive(href);
-                  return (
-                    <Link
-                      key={entry.uid}
-                      href={href}
-                      className={cn(
-                        "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                        active
-                          ? "bg-primary/10 text-primary dark:bg-brand/10 dark:text-brand"
-                          : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                      )}
-                    >
-                      <span className="truncate">{entry.title_pt_BR}</span>
-                    </Link>
-                  );
-                })
+            <Link
+              key={entry.uid}
+              href={href}
+              className={cn(
+                "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                active
+                  ? "bg-primary/10 text-primary dark:bg-brand/10 dark:text-brand"
+                  : "text-muted-foreground hover:bg-accent hover:text-foreground",
               )}
-            </div>
+            >
+              <span className="truncate">{entry.title_pt_BR}</span>
+            </Link>
           );
         })}
+
+        {/* Meta entries (about the handbook itself) */}
+        {metaEntries.length > 0 && (
+          <div className="mt-6 pt-3 border-t border-border">
+            <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+              Meta
+            </p>
+            {metaEntries.map((entry) => {
+              const href = `/admin/handbook/_meta/${entry.id}`;
+              const active = isActive(href);
+              return (
+                <Link
+                  key={entry.uid}
+                  href={href}
+                  className={cn(
+                    "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                    active
+                      ? "bg-primary/10 text-primary dark:bg-brand/10 dark:text-brand"
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                  )}
+                >
+                  <span className="truncate">{entry.title_pt_BR}</span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </nav>
     </div>
   );

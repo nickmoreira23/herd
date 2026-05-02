@@ -1,24 +1,80 @@
 # Auto-generated. Do not edit by hand. Regenerate via npm run gen:xrefmap.
 version: 1
 references:
-  herd.block.contacts:
+  herd.block.miscellaneous.contacts:
     level: block
     id: contacts
-    path: docs/handbook/block/contacts
+    path: docs/handbook/blocks/miscellaneous/contacts
     title:
       pt-BR: Contatos
       en-US: Contacts
-  herd.block.meetings:
+  herd.block.miscellaneous.meetings:
     level: block
     id: meetings
-    path: docs/handbook/block/meetings
+    path: docs/handbook/blocks/miscellaneous/meetings
     title:
       pt-BR: Reuniões
       en-US: Meetings
-  herd.foundation.handbook:
-    level: foundation
+  herd.category.blocks.miscellaneous:
+    level: category
+    id: miscellaneous
+    path: docs/handbook/blocks/miscellaneous/(overview)
+    title:
+      pt-BR: Diversos
+      en-US: Miscellaneous
+  herd.category.networks.corporate-network:
+    level: category
+    id: corporate-network
+    path: docs/handbook/networks/corporate-network/(overview)
+    title:
+      pt-BR: Rede Corporativa
+      en-US: Corporate Network
+  herd.category.networks.market-network:
+    level: category
+    id: market-network
+    path: docs/handbook/networks/market-network/(overview)
+    title:
+      pt-BR: Rede de Mercado
+      en-US: Market Network
+  herd.layer.blocks:
+    level: layer
+    id: blocks
+    path: docs/handbook/blocks/(overview)
+    title:
+      pt-BR: Blocos
+      en-US: Blocks
+  herd.layer.integrations:
+    level: layer
+    id: integrations
+    path: docs/handbook/integrations/(overview)
+    title:
+      pt-BR: Integrações
+      en-US: Integrations
+  herd.layer.networks:
+    level: layer
+    id: networks
+    path: docs/handbook/networks/(overview)
+    title:
+      pt-BR: Redes
+      en-US: Networks
+  herd.layer.solutions:
+    level: layer
+    id: solutions
+    path: docs/handbook/solutions/(overview)
+    title:
+      pt-BR: Soluções
+      en-US: Solutions
+  herd.layer.tools:
+    level: layer
+    id: tools
+    path: docs/handbook/tools/(overview)
+    title:
+      pt-BR: Ferramentas
+      en-US: Tools
+  herd.meta.handbook:
+    level: meta
     id: handbook
-    path: docs/handbook/foundation/handbook
+    path: docs/handbook/_meta/handbook
     title:
       pt-BR: Handbook
       en-US: Handbook

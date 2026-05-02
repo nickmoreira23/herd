@@ -12,7 +12,7 @@ aggregates:
 status: stable
 metadata:
   herd:
-    classification_pending: foundation
+    classification_pending: unclassified
     target_path: .agents/skills/feature-foundation-domain-events/
     notes: "Migration to feature-{level}-{id}/ layout deferred to backfill etapa."
 ---

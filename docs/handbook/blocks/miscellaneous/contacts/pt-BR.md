@@ -2,7 +2,7 @@
 title: Contatos
 description: Single source of truth para pessoas no HERD — leads, clientes, parceiros, funcionários.
 locale: pt-BR
-uid: herd.block.contacts
+uid: herd.block.miscellaneous.contacts
 ---
 
 > **Para agentes de IA:** Este arquivo Markdown é a forma canônica desta entry. Use `Accept: text/markdown` ou adicione `.md` à URL para evitar renderização HTML.

@@ -1,6 +1,6 @@
 ---
 name: new-feature
-description: Scaffolds the 4-artifact Handbook contract for a new HERD feature (feature.yml + bilingual Markdown stubs + optional SKILL.md). Use this skill ALWAYS when the user says "new block", "new tool", "new integration", "new foundation", "new solution", "create handbook entry", "scaffold feature", or implies starting any new named feature at any of HERD's 6 levels (corporate-network, solution, tool, block, foundation, integration). Do NOT use for editing existing features (open the existing entry directly), code-only changes that don't introduce a new feature, or refactors of existing code without an associated new entry. Run `npm run gen:feature` to invoke.
+description: Scaffolds the 4-artifact Handbook contract for a new HERD feature (feature.yml + bilingual Markdown stubs + optional SKILL.md). Use this skill ALWAYS when the user says "new block", "new tool", "new integration", "new solution", "new network", "create handbook entry", "scaffold feature", or implies starting any new named feature at one of HERD's feature levels (network, solution, tool, block, integration). Do NOT use for editing existing features (open the existing entry directly), code-only changes that don't introduce a new feature, or refactors of existing code without an associated new entry. Run `npm run gen:feature` to invoke. NOTE: the scaffolder is being redesigned for the layer/category/feature hierarchy introduced in Sub-etapa 1.5; until that redesign ships, prefer creating new feature.yml + markdown files manually following the conventions in AGENTS.md.
 license: Apache-2.0
 metadata:
   herd:
@@ -14,7 +14,16 @@ metadata:
 
 Scaffolds the 4-artifact Handbook contract for a new HERD feature. This is a
 meta-skill: it creates the artifacts that other skills, blocks, tools, and
-foundations will be documented through.
+features at any level will be documented through.
+
+> **Note (2026-05-02):** Sub-etapa 1.5 introduced a 3-level hierarchy
+> (Layer → Category → Feature) and renamed levels (`foundation` removed,
+> `layer`, `category`, `meta`, `network` added). The scaffolder script
+> (`scripts/run.ts`) is currently aligned with the old flat layout and
+> will be redesigned in a follow-up etapa. In the interim, create new
+> feature.yml + bilingual markdown files manually, following the
+> conventions in `AGENTS.md` and the patterns in
+> `docs/handbook/blocks/miscellaneous/contacts/`.
 
 ## When to use
 
@@ -22,7 +31,7 @@ Triggers (any of these in user input):
 
 - "new block X"
 - "new tool Y"
-- "new foundation Z"
+- "new network Z"
 - "new integration W"
 - "create handbook entry"
 - "scaffold feature"
@@ -70,6 +79,6 @@ The script prints next steps but does NOT run them automatically:
 
 ## See also
 
-- `docs/handbook/foundation/handbook/en-US.md` — what the 6 levels mean,
+- `docs/handbook/_meta/handbook/en-US.md` — what the levels mean,
   how the 4 artifacts fit together, the change-type matrix.
 - `schemas/feature.zod.ts` — the canonical schema (Zod 4 via `zod/v4` subpath).

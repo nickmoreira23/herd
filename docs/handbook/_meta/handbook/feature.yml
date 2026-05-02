@@ -1,20 +1,21 @@
 id: handbook
-uid: herd.foundation.handbook
-level: foundation
+uid: herd.meta.handbook
+level: meta
 technical_category: foundation
 
 title:
   pt-BR: "Handbook"
   en-US: "Handbook"
 description:
-  pt-BR: "Sistema de documentação do HERD: 4 artefatos, 6 níveis, doc-first."
-  en-US: "HERD's documentation system: 4 artifacts, 6 levels, doc-first."
+  pt-BR: "Sistema de documentação do HERD: arquitetura, conventions e operação."
+  en-US: "HERD's documentation system: architecture, conventions, and operations."
 
 status: active
 owners: ["@nick"]
 since: 2026-05-01
-updated: 2026-05-01
+updated: 2026-05-02
 
+parent: null
 children: []
 consumes: []
 consumed_by: []

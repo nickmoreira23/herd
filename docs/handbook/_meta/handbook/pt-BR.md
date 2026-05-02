@@ -2,7 +2,7 @@
 title: Handbook
 description: Sistema de documentação do HERD — 4 artefatos, 6 níveis, doc-first.
 locale: pt-BR
-uid: herd.foundation.handbook
+uid: herd.meta.handbook
 ---
 
 > **Para agentes de IA:** Este arquivo Markdown é a forma canônica desta entry. Use `Accept: text/markdown` ou adicione `.md` à URL para evitar renderização HTML.

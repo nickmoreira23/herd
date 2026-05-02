@@ -2,7 +2,7 @@
 title: Contacts
 description: Single source of truth for people in HERD — leads, customers, partners, employees.
 locale: en-US
-uid: herd.block.contacts
+uid: herd.block.miscellaneous.contacts
 ---
 
 > **For AI agents:** This Markdown file is the canonical form of this entry. Use `Accept: text/markdown` or append `.md` to the URL to avoid HTML rendering.

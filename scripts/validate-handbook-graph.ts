@@ -19,18 +19,50 @@ async function main() {
   }
 
   const files = await fastGlob("**/feature.yml", { cwd: handbookRoot, absolute: true });
+  // Map by UID — cross-references are full UIDs across the new hierarchy.
   const features = new Map<string, FeatureYml>();
   for (const file of files) {
     const data = FeatureYmlSchema.parse(parse(readFileSync(file, "utf-8")));
-    features.set(data.id, data);
+    features.set(data.uid, data);
   }
 
   const errors: string[] = [];
   const warnings: string[] = [];
 
-  for (const [id, feature] of features) {
+  for (const [uid, feature] of features) {
+    // Hierarchical parent rules.
+    const lvl = feature.level;
+    if (lvl === "layer" || lvl === "meta") {
+      if (feature.parent != null) {
+        errors.push(`${uid}: level=${lvl} must have parent=null, got "${feature.parent}"`);
+      }
+    } else if (lvl === "category") {
+      if (!feature.parent) {
+        errors.push(`${uid}: level=category must declare parent`);
+      } else {
+        const p = features.get(feature.parent);
+        if (!p) {
+          errors.push(`${uid}.parent → ${feature.parent} (no such feature.yml)`);
+        } else if (p.level !== "layer") {
+          errors.push(`${uid}: parent must be a layer, got level=${p.level}`);
+        }
+      }
+    } else {
+      // feature levels: network, solution, tool, block, integration
+      if (!feature.parent) {
+        errors.push(`${uid}: level=${lvl} must declare parent`);
+      } else {
+        const p = features.get(feature.parent);
+        if (!p) {
+          errors.push(`${uid}.parent → ${feature.parent} (no such feature.yml)`);
+        } else if (p.level !== "category") {
+          errors.push(`${uid}: parent must be a category, got level=${p.level}`);
+        }
+      }
+    }
+
+    // Cross-reference resolution (children/consumes/consumed_by/related).
     const refs: Array<[string, string]> = [];
-    if (feature.parent) refs.push(["parent", feature.parent]);
     for (const c of feature.children) refs.push(["children", c]);
     for (const c of feature.consumes) refs.push(["consumes", c]);
     for (const c of feature.consumed_by) refs.push(["consumed_by", c]);
@@ -38,11 +70,11 @@ async function main() {
 
     for (const [field, ref] of refs) {
       if (!features.has(ref)) {
-        const key = `${id}:${field}:${ref}`;
+        const key = `${uid}:${field}:${ref}`;
         if (allowlist.has(key)) {
-          warnings.push(`${id}.${field} → ${ref} (allowlisted)`);
+          warnings.push(`${uid}.${field} → ${ref} (allowlisted)`);
         } else {
-          errors.push(`${id}.${field} → ${ref} (no such feature.yml)`);
+          errors.push(`${uid}.${field} → ${ref} (no such feature.yml)`);
         }
       }
     }
@@ -53,7 +85,7 @@ async function main() {
     for (const w of warnings) console.warn("  - " + w);
   }
   if (errors.length > 0) {
-    console.error(`✗ ${errors.length} unresolved cross-reference(s):`);
+    console.error(`✗ ${errors.length} graph error(s):`);
     for (const e of errors) console.error("  - " + e);
     process.exit(1);
   }
