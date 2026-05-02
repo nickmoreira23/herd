@@ -30,7 +30,7 @@
     "gen:glossary": "tsx scripts/build-glossary.ts",
     "gen:feature": "tsx .agents/skills/new-feature/scripts/run.ts",
     "mcp:dev": "tsx mcp/index.ts",
-    "gen:all": "npm run gen:schemas && npm run gen:mcp && npm run gen:search-index && npm run gen:xrefmap && npm run gen:glossary && npm run gen:llms-txt",
+    "gen:all": "npm run gen:schemas && npm run gen:mcp && npm run gen:xrefmap && npm run gen:glossary && npm run gen:search-index && npm run gen:llms-txt",
     "validate:feature-yml": "tsx scripts/validate-feature-yml.ts",
     "validate:handbook-graph": "tsx scripts/validate-handbook-graph.ts",
     "validate:handbook": "npm run gen:all && git diff --exit-code schemas/ mcp/generated/ docs/handbook/_meta/xrefmap.yml && npm run validate:feature-yml && npm run validate:handbook-graph",
