@@ -4,7 +4,7 @@ import { MeetingsListClient } from "@/components/meetings/meetings-list-client";
 import type { MeetingRow } from "@/components/meetings/types";
 import MeetingsLoading from "./loading";
 import { connection } from "next/server";
-import { ViewHandbookButtonByUid } from "@/components/handbook/view-handbook-button-by-uid";
+import { ViewHandbookButtonAutoServer } from "@/components/handbook/view-handbook-button-auto-server";
 
 async function MeetingsContent() {
   await connection();
@@ -31,9 +31,7 @@ async function MeetingsContent() {
   return (
     <MeetingsListClient
       initialMeetings={serialized}
-      extraHeaderActions={
-        <ViewHandbookButtonByUid entryUid="herd.block.miscellaneous.meetings" />
-      }
+      extraHeaderActions={<ViewHandbookButtonAutoServer />}
     />
   );
 }

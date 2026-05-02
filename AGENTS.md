@@ -326,6 +326,28 @@ entry exists (search `docs/handbook/**/feature.yml` for matching
 - **Entry doesn't exist, feature is internal/experimental:** add the
   path to a future backfill backlog (not blocking).
 
+### `source_paths` vs `admin_paths`
+
+Two related but distinct fields in `feature.yml`:
+
+- **`source_paths`** — filesystem paths (e.g. `src/lib/ledger`,
+  `src/components/contacts/`). Used by Danger.js for the doc-first
+  nudge ("you touched `src/lib/X` but didn't touch the matching
+  Handbook entry"), and by humans/agents grep'ing for "where in code
+  does this feature live?".
+
+- **`admin_paths`** — URL paths under `/admin` (e.g.
+  `/admin/blocks/contacts`). Used by the "View Handbook" button
+  auto-lookup: when the user is on a page covered by the entry's
+  admin_paths, the button auto-resolves and links to the Handbook
+  entry. When populating a feature, prefer including the parent
+  admin path (e.g. `/admin/blocks/contacts`) over individual
+  sub-paths — `pathname.startsWith(adminPath + "/")` matches all
+  descendants.
+
+A feature can have both, only one, or neither. Filling both is
+ideal for substantive admin-facing features.
+
 ### Specs that include substantive work
 
 Specs produced via the chat-code-handoff protocol that crave

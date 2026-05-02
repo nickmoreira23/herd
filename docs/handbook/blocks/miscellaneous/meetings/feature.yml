@@ -36,6 +36,8 @@ source_paths:
   - "src/components/meetings/"
   - "src/app/admin/blocks/meetings/"
   - "src/app/api/meetings/"
+admin_paths:
+  - "/admin/blocks/meetings"
 manifest_path: "src/lib/blocks/blocks/meetings.block.ts"
 
 artifacts:

@@ -62,6 +62,7 @@ export const FeatureYmlSchema = z.object({
     description: z.object({ "pt-BR": z.string(), "en-US": z.string() }),
   })).optional(),
   source_paths: z.array(z.string()).default([]),
+  admin_paths: z.array(z.string()).default([]),
   manifest_path: z.string().optional(),
   artifacts: z.object({
     handbook: z.boolean().default(true),

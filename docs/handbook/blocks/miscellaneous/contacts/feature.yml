@@ -35,6 +35,8 @@ source_paths:
   - "src/components/contacts/"
   - "src/app/admin/blocks/contacts/"
   - "src/app/api/contacts/"
+admin_paths:
+  - "/admin/blocks/contacts"
 manifest_path: "src/lib/blocks/blocks/contacts.block.ts"
 
 artifacts:

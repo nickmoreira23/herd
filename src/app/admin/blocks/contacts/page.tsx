@@ -4,7 +4,7 @@ import { ContactsClient } from "@/components/contacts/contacts-client";
 import type { ContactRow } from "@/components/contacts/types";
 import ContactsLoading from "./loading";
 import { connection } from "next/server";
-import { ViewHandbookButtonByUid } from "@/components/handbook/view-handbook-button-by-uid";
+import { ViewHandbookButtonAutoServer } from "@/components/handbook/view-handbook-button-auto-server";
 
 async function ContactsContent() {
   await connection();
@@ -24,9 +24,7 @@ async function ContactsContent() {
   return (
     <ContactsClient
       initialContacts={serialized}
-      headerActions={
-        <ViewHandbookButtonByUid entryUid="herd.block.miscellaneous.contacts" />
-      }
+      headerActions={<ViewHandbookButtonAutoServer />}
     />
   );
 }

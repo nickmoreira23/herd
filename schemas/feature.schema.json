@@ -195,6 +195,13 @@
         "type": "string"
       }
     },
+    "admin_paths": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "manifest_path": {
       "type": "string"
     },
@@ -268,6 +275,7 @@
     "consumed_by",
     "related",
     "source_paths",
+    "admin_paths",
     "artifacts",
     "perspectives"
   ],
