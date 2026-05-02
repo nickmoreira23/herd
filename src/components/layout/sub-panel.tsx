@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import searchIndex from "../../../mcp/generated/search-index.json";
+import { adminLocaleToHandbookLocale } from "@/lib/handbook/config";
 import {
   PanelLeftClose,
   Settings2,
@@ -1041,6 +1042,10 @@ const LAYER_ORDER = ["networks", "solutions", "tools", "blocks", "integrations"]
 function HandbookSubPanel() {
   const pathname = usePathname();
   const { setSubPanelCollapsed } = useUIStore();
+  const adminLocale = useLocale();
+  const handbookLocale = adminLocaleToHandbookLocale(adminLocale);
+  const titleOf = (e: HandbookIndexEntry) =>
+    handbookLocale === "pt-BR" ? e.title_pt_BR : e.title_en_US;
 
   const { layers, metaEntries } = useMemo(() => {
     const all = (searchIndex as { entries: HandbookIndexEntry[] }).entries;
@@ -1053,9 +1058,13 @@ function HandbookSubPanel() {
     const layers = LAYER_ORDER
       .map((id) => layerMap.get(id))
       .filter((e): e is HandbookIndexEntry => Boolean(e));
-    meta.sort((a, b) => a.title_pt_BR.localeCompare(b.title_pt_BR));
+    meta.sort((a, b) =>
+      handbookLocale === "pt-BR"
+        ? a.title_pt_BR.localeCompare(b.title_pt_BR)
+        : a.title_en_US.localeCompare(b.title_en_US),
+    );
     return { layers, metaEntries: meta };
-  }, []);
+  }, [handbookLocale]);
 
   const isActive = (href: string) => {
     if (href === "/admin/handbook") return pathname === "/admin/handbook";
@@ -1095,25 +1104,30 @@ function HandbookSubPanel() {
           <span className="truncate">Overview</span>
         </Link>
 
-        {/* 5 layers */}
-        {layers.map((entry) => {
-          const href = `/admin/handbook/${entry.id}`;
-          const active = isActive(href);
-          return (
-            <Link
-              key={entry.uid}
-              href={href}
-              className={cn(
-                "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                active
-                  ? "bg-primary/10 text-primary dark:bg-brand/10 dark:text-brand"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground",
-              )}
-            >
-              <span className="truncate">{entry.title_pt_BR}</span>
-            </Link>
-          );
-        })}
+        {/* Layers section */}
+        <div className="mt-4">
+          <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+            Layers
+          </p>
+          {layers.map((entry) => {
+            const href = `/admin/handbook/${entry.id}`;
+            const active = isActive(href);
+            return (
+              <Link
+                key={entry.uid}
+                href={href}
+                className={cn(
+                  "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  active
+                    ? "bg-primary/10 text-primary dark:bg-brand/10 dark:text-brand"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                )}
+              >
+                <span className="truncate">{titleOf(entry)}</span>
+              </Link>
+            );
+          })}
+        </div>
 
         {/* Meta entries (about the handbook itself) */}
         {metaEntries.length > 0 && (
@@ -1135,7 +1149,7 @@ function HandbookSubPanel() {
                       : "text-muted-foreground hover:bg-accent hover:text-foreground",
                   )}
                 >
-                  <span className="truncate">{entry.title_pt_BR}</span>
+                  <span className="truncate">{titleOf(entry)}</span>
                 </Link>
               );
             })}

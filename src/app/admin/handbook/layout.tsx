@@ -10,9 +10,9 @@ export default async function HandbookLayout({
   const adminLocale = await getLocale();
   const userDefaultLocale = adminLocaleToHandbookLocale(adminLocale);
   return (
-    <>
+    <div className="h-full overflow-y-auto overscroll-contain">
       {children}
       <HandbookSearchDialog userDefaultLocale={userDefaultLocale} />
-    </>
+    </div>
   );
 }
