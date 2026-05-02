@@ -128,11 +128,13 @@ Phase 1:
 - `.agents/skills/ledger/SKILL.md` — invariants and conventions for the
   double-entry ledger (accounts, journal_entries, journal_lines).
 - `.agents/skills/domain-events/SKILL.md` — invariants and conventions for
-  the domain events outbox pattern.
+  the domain events outbox pattern. Canonical source has migrated to the
+  Handbook (`docs/handbook/tools/infrastructure/domain-events/`); the SKILL
+  file is preserved as a backward-compat shim.
 
-Read the relevant SKILL before making any change that touches the
-corresponding subsystem. The SKILLs are versioned (semver) and have a
-"how to update" section explaining the procedure.
+Read the relevant SKILL (or its Handbook equivalent) before making any
+change that touches the corresponding subsystem. The SKILLs are versioned
+(semver) and have a "how to update" section explaining the procedure.
 
 # Invariant audit
 
@@ -267,7 +269,7 @@ Skills layout convention:
 
 Existing skills awaiting full layout migration (mechanical work, deferred):
 
-- `.agents/skills/domain-events/` → unclassified; final layout decided in backfill
+- `.agents/skills/domain-events/` → migrated to Handbook (`docs/handbook/tools/infrastructure/domain-events/`); SKILL retained as shim
 - `.agents/skills/ledger/` → unclassified; final layout decided in backfill
 - `.agents/skills/supabase-postgres-best-practices/` → eventually `practice-supabase-postgres`
 

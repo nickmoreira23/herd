@@ -1,6 +1,6 @@
 ---
 title: Handbook
-description: Sistema de documentação do HERD — 4 artefatos, 6 níveis, doc-first.
+description: Sistema de documentação do HERD — 4 artefatos, hierarquia comercial plural, doc-first.
 locale: pt-BR
 uid: herd.meta.handbook
 ---
@@ -9,13 +9,13 @@ uid: herd.meta.handbook
 
 # Handbook
 
-O Handbook é o sistema de documentação do HERD. Toda feature da plataforma — block, tool, foundation ou integration — é descrita aqui usando um template consistente, para que humanos, agentes de IA internos (Claude Code) e agentes de IA externos (ChatGPT, Claude Desktop via MCP) consigam construir um modelo mental correto do HERD sem precisar ler código-fonte.
+O Handbook é o sistema de documentação do HERD. Toda feature da plataforma — block, tool, top-level-feature, integration ou solution — é descrita aqui usando um template consistente, para que humanos, agentes de IA internos (Claude Code) e agentes de IA externos (ChatGPT, Claude Desktop via MCP) consigam construir um modelo mental correto do HERD sem precisar ler código-fonte.
 
-Esta entry documenta o próprio Handbook: o que cada level significa, como o `feature.yml` funciona, como ler ou escrever uma entry do Handbook, e como o sistema se mantém consistente sob mudança.
+Esta entry documenta o próprio Handbook: o que cada nível comercial significa, quais são as categorias técnicas canônicas, como o `feature.yml` funciona, como ler ou escrever uma entry do Handbook, e como o sistema se mantém consistente sob mudança.
 
 ## Business
 
-O Handbook existe porque a superfície de produto do HERD é grande e está em crescimento. Conforme blocks, tools, foundations e integrations se multiplicam, saber o que cada um é, por que existe, a quem serve, e como se relaciona com os outros vira o gargalo central de onboarding — tanto para humanos entrando no time quanto para agentes pedidos a fazer trabalho no codebase.
+O Handbook existe porque a superfície de produto do HERD é grande e está em crescimento. Conforme blocks, tools, top-level features e integrations se multiplicam, saber o que cada um é, por que existe, a quem serve, e como se relaciona com os outros vira o gargalo central de onboarding — tanto para humanos entrando no time quanto para agentes pedidos a fazer trabalho no codebase.
 
 O custo de documentação ruim em um codebase colaborado por IA é materialmente mais alto que em um tradicional. Quando um agente não sabe o que uma feature é, ele não pergunta — ele chuta. Chutes produzem código que compila, roda, e silenciosamente faz a coisa errada. O Handbook elimina as condições sob as quais um agente chuta, fornecendo uma descrição única, canônica, e legível por máquina de toda feature que ele possa tocar.
 
@@ -27,9 +27,9 @@ O Handbook também é o substrato para o posicionamento do HERD como Market Netw
 
 O Handbook aparece em três lugares.
 
-Para humanos no time, vive em `/admin/handbook` dentro do próprio HERD, com uma sidebar à esquerda agrupando entries por level (Foundations, Blocks, Tools, Solutions, Integrations, Corporate Network), e um sumário pegajoso em cada entry mostrando as seis perspectives. A renderização da UI é entregue em uma etapa posterior; o que existe hoje é a fonte no filesystem.
+Para humanos no time, vive em `/admin/handbook` dentro do próprio HERD, com uma sidebar à esquerda agrupando entries por layer (Networks, Solutions, Tools, Blocks, Integrations) e um sumário pegajoso em cada entry mostrando as seis perspectives.
 
-Para o Claude Code trabalhando no repo, vive em `docs/handbook/{level}/{feature-id}/{pt-BR,en-US}.md` — lido diretamente do filesystem, pareado com os pacotes `SKILL.md` relevantes em `.agents/skills/`.
+Para o Claude Code trabalhando no repo, vive em `docs/handbook/{layer}/{category}/{feature-id}/{pt-BR,en-US}.md` — lido diretamente do filesystem, pareado com os pacotes `SKILL.md` relevantes em `.agents/skills/`.
 
 Para agentes externos (ChatGPT, Claude Desktop) conectando via MCP, aparece através de duas tools: `search(query)` retorna UIDs de features que casam; `fetch(id)` retorna o conteúdo Markdown completo de uma entry junto com seu graph de metadata (consumes, consumed_by, related).
 
@@ -37,83 +37,219 @@ Um usuário lendo o Handbook no admin do HERD vê: o título da entry, badge de 
 
 ## Architecture
 
-### The 6 commercial levels
+### A hierarquia comercial — 5 níveis plural
 
-O produto do HERD é organizado como uma pirâmide de seis commercial levels. Toda feature documentável no HERD pertence a exatamente um level. Os levels, do topo para a base, são:
+O sistema é organizado em 5 níveis monetizáveis independentemente. Cada nível é uma categoria de produto que pode ser vendida por si só.
+
+#### Networks (categoria top-of-pyramid)
+
+Categoria que agrupa os tipos de redes vendidas. Não é entidade — é um nome coletivo para os subtipos:
+
+- **Corporate Network** (presente): uma empresa inteira. O tier que destrava todos os top-level features e potencialmente todas as solutions. Audiência: organizações grandes com complexidade multi-unidade, multi-país, ou holding com várias empresas.
+- **Market Network** (futuro): redes de empresas dentro de um mercado.
+- **Multi-market Network** (futuro distante): redes de mercados interconectadas.
+
+Networks contêm Solutions, Tools, Blocks, e Integrations.
+
+#### Solutions
+
+Pacote curado de tools para um propósito macro (suporte, vendas, marketing). Solution é coleção de tools relacionadas que resolvem juntas um problema de negócio amplo.
+
+Exemplo de monetização: pacote vendido por solução completa. R$99,90/mês para "Suporte Completo" com 7 tools relacionadas.
+
+#### Tools
+
+Composição cross-block para objetivo de negócio específico. Não é dado; é workflow / orchestração. Combina referências a múltiplos blocks (e/ou top-level features). Tem objetivo de negócio claro.
+
+Exemplo de monetização: produto composto vendido por valor de negócio. R$19,90/mês para gerador de contratos que combina products+services+pricing.
+
+Exemplos canônicos: subscription-offering (vender acesso recorrente), campaigns (executar campanhas de marketing), marketplace (vender em superfície pública).
+
+#### Blocks
+
+Single source of truth de um tipo de dado. Possui models Prisma próprios, tem CRUD, tem lifecycle. O dado existe independente de qualquer composição.
+
+Exemplo de monetização: banco de dados estruturado vendido como serviço. R$9,90/mês para organizar suas ligações em um single source of truth.
+
+#### Integrations
+
+Conexão com sistema externo (Google Calendar, OpenAI, Slack, Microsoft Teams, Stripe). Não tem dado próprio; alimenta dado em blocks.
+
+Exemplo de monetização: API centralizada com taxinha de intermediação. Audiência: desenvolvedores.
+
+#### Diagrama
+
+```mermaid
+graph TB
+    N["Networks (categoria)"]
+    N --> CN["Corporate Network<br/>presente"]
+    N --> MN["Market Network<br/>futuro"]
+    N --> MMN["Multi-market Network<br/>futuro distante"]
+
+    CN --> S["Solutions<br/>pacotes curados"]
+    S --> T["Tools<br/>composições cross-block"]
+    T --> B["Blocks<br/>single sources of truth"]
+    B --> I["Integrations<br/>conexões externas"]
+
+    style N fill:#1e293b,color:#fff
+    style I fill:#0f172a,color:#94a3b8
+```
+
+### As 4 categorias técnicas
+
+Atravessam a hierarquia comercial. Definidas no campo `technical_category` do `feature.yml`. As 4 são canônicas; o campo aceita também dimensões temáticas (`foundation`, `financial`, `infrastructure`, `sales`, `marketing`, `support`, `commerce`) quando aplicável a uma feature.
+
+#### Block
+
+**Definição**: single source of truth de um tipo de dado.
+
+**Critério decisivo**: o sistema responde univocamente "que dado é este?" e o dado tem CRUD próprio com lifecycle independente.
+
+**Características**:
+- Possui models Prisma próprios (e.g., Product, Contact, Meeting).
+- Ciclo de vida do dado: criar, ler, atualizar, arquivar.
+- Existe independente de qualquer composição.
+- Pode ser referenciado por outros blocks, tools, top-level features.
+
+**Path layout**: `src/components/{name}/`, `src/app/admin/blocks/{name}/`, manifest em `src/lib/blocks/blocks/{name}.block.ts`.
+
+**Exemplos canônicos** (pós-refactor): contacts, companies, deals, partners, products, services, perks, experiences, locations, events, tasks, meetings, messages, notes, feedbacks.
+
+**Anti-exemplos**: packages → block-group; subscriptions (oferta) → tool; campaigns → tool.
+
+#### Block Group
+
+**Definição**: agrupamento intra-block. Mesmo tipo de dado, organizado em coleção curada com metadata leve.
+
+**Critério decisivo**: o agrupamento só faz sentido com referência a um block hospedeiro, e a metadata extra é só identificação/preço/exposição.
+
+**Características**:
+- Não cria tipo novo de dado — referência a IDs do block hospedeiro.
+- Metadata leve própria (nome do bundle, preço bundled, descrição).
+- Não tem CRUD independente. Exclui o block hospedeiro, o group some.
+
+**Path layout**: `src/components/{parent}/groups/{name}/`, declarado dentro do `{parent}.block.ts` (campo `groups`).
+
+**Exemplos**: packages como group de products.
+
+#### Tool
+
+**Definição**: composição cross-block para objetivo de negócio específico.
+
+**Critério decisivo**: combina dados de múltiplos blocks com propósito claro de gerar valor de negócio (vender, engajar, automatizar).
+
+**Características**:
+- Combina referências a múltiplos blocks (e/ou top-level features).
+- Objetivo de negócio claro.
+- Pode gerar dado próprio leve (registro da execução), mas conteúdo é composição.
+
+**Path layout**: `src/components/tools/{name}/`, `src/app/admin/tools/{name}/`, manifest em `src/lib/tools/tools/{name}.tool.ts`.
+
+**Exemplos**: subscription-offering, campaigns, marketplace.
+
+**Distinção sutil — tool vs block-with-relations**: relations não fazem block virar tool. Critério é objetivo de negócio. Subscription real (registro de quem assinou) é block; subscription offering (composição vendável) é tool.
+
+#### Top-Level Feature
+
+**Definição**: infraestrutura compartilhada com profundidade rica que múltiplas tools/blocks consomem.
+
+**Critério decisivo**: consumida cross-area, complexidade interna que justifica sub-mundo próprio (sub-routes, sub-features, configurações).
+
+**Características**:
+- Sidebar item próprio.
+- Consome blocks, tools, solutions, integrations, outras features.
+- Pode ter models Prisma próprios.
+
+**Path layout**: `src/components/{name}/`, `src/app/admin/{name}/` (sem prefixo), manifest em `src/lib/features/{name}.feature.ts`.
+
+**Exemplos canônicos** (pós-refactor):
+- Knowledge (implementado, meta-feature compõe blocks)
+- Organization (a criar — split do Network atual)
+- Directory (a criar — split do Network atual)
+- Blocks (implementado, meta-feature)
+- Routines (a promover — deferido nesta fase)
+- Agents (a promover)
+- Handbook (implementado)
+- Surface (futuro)
+- Flows (futuro)
+
+#### Notas adicionais
+
+`category` (Finances, Legal, Marketing, Sales, Operations) **não** é um nível e **não** é uma technical category. Categories são agrupamentos de runtime que o orchestrator usa para rotear chamadas de tool. Têm agentes em `.agents/tools/{category}/AGENT.md` mas não têm entries de Handbook próprias — o papel comercial que elas teriam é assumido por Solution.
+
+### Decision tree: classificando uma nova feature
+
+Ao introduzir uma nova feature no HERD, percorra a árvore abaixo para classificá-la.
 
 ```mermaid
 flowchart TD
-  CN[Corporate Network] --> SOL[Solution]
-  SOL --> TOOL[Tool]
-  TOOL --> BLOCK[Block]
-  BLOCK --> FDN[Foundation]
-  FDN --> INT[Integration]
+    Start[A coisa tem dado próprio<br/>com lifecycle independente?]
+    Start -->|NÃO| Workflow[É workflow / composição?]
+    Start -->|SIM| IndepCheck[Dado existe<br/>independente de<br/>composição?]
 
-  style CN fill:#1e40af,color:#fff
-  style SOL fill:#3b82f6,color:#fff
-  style TOOL fill:#60a5fa,color:#000
-  style BLOCK fill:#93c5fd,color:#000
-  style FDN fill:#bfdbfe,color:#000
-  style INT fill:#dbeafe,color:#000
+    Workflow -->|SIM| Goal[Tem único objetivo<br/>de negócio claro?]
+    Workflow -->|NÃO| Reconsider1[Reconsiderar<br/>provavelmente helper UI]
+
+    Goal -->|SIM| Tool[technical_category: tool]
+    Goal -->|NÃO| TLF[technical_category: top-level-feature<br/>infraestrutura]
+
+    IndepCheck -->|SIM| RichCheck[Complexidade interna<br/>rica + cross-area?]
+    IndepCheck -->|NÃO| AgrCheck[Só faz sentido como<br/>agrupamento de outro block?]
+
+    RichCheck -->|SIM| TLFData[technical_category: top-level-feature<br/>com dado próprio]
+    RichCheck -->|NÃO| Block[technical_category: block]
+
+    AgrCheck -->|SIM| BlockGroup[technical_category: block-group]
+    AgrCheck -->|NÃO| Reconsider2[Reconsiderar<br/>provavelmente tool]
+
+    style Tool fill:#1e40af,color:#fff
+    style Block fill:#15803d,color:#fff
+    style BlockGroup fill:#65a30d,color:#fff
+    style TLF fill:#7c3aed,color:#fff
+    style TLFData fill:#7c3aed,color:#fff
 ```
 
-- **Corporate Network** — a plataforma HERD inteira como aparece para uma única empresa cliente. O topo. (Quando a camada Market Network chegar, ela vai sentar acima deste.)
-- **Solution** — um bundle curado de tools vendido ou enquadrado para um resultado de negócio específico. Exemplos: Support, Pre-sales, Sales, Marketing. *Atualmente deferred — o schema aceita o level mas nenhuma entry existe no day-1; volta quando a camada Solution for desenhada.*
-- **Tool** — uma composição cross-block com um objetivo de negócio específico. Uma tool lê e escreve em múltiplos blocks, aplica lógica de negócio, e expõe uma capacidade focada para usuário ou agente. Exemplo: `subscription-offering` (consome contacts + deals + products para gerenciar receita recorrente).
-- **Block** — uma fonte única da verdade para um tipo de dado. Um block tem seus próprios Prisma models, endpoints CRUD, ciclo de vida, políticas de RLS, e (geralmente) um manifest em `src/lib/blocks/blocks/{name}.block.ts`. Exemplos: `contacts`, `meetings`, `deals`, `products`.
-- **Foundation** — infraestrutura compartilhada que dá suporte aos levels acima. Foundations não têm unidade comercial por si só; são pré-condições necessárias para blocks, tools, e solutions funcionarem. Exemplos: `i18n`, `domain-events`, `auth`, `permissions`, `audit`, `ledger`, `handbook` (esta entry), `knowledge`, `agents`, `routines`.
-- **Integration** — uma conexão a um sistema externo. Integrations não têm dado próprio; são pontes. Exemplos: `google-calendar`, `slack`, `stripe`.
+### Implicações de classificação no código
 
-### The 3 technical categories
+| technical_category | Components | Pages | Manifest |
+|---|---|---|---|
+| Block | `src/components/{name}/` | `src/app/admin/blocks/{name}/` | `src/lib/blocks/blocks/{name}.block.ts` |
+| Block group | `src/components/{parent}/groups/{name}/` | `src/app/admin/blocks/{parent}/groups/{name}/` | dentro do `{parent}.block.ts` (campo `groups`) |
+| Tool | `src/components/tools/{name}/` | `src/app/admin/tools/{name}/` | `src/lib/tools/tools/{name}.tool.ts` |
+| Top-level feature | `src/components/{name}/` | `src/app/admin/{name}/` | `src/lib/features/{name}.feature.ts` |
 
-Cortando os commercial levels, o código do HERD se divide em três technical categories usadas no campo `feature.yml.technical_category`:
+### Re-classifications planejadas (refator R3-R7)
 
-- `block` — possui seu próprio dado (Prisma models, CRUD).
-- `tool` — compõe dado possuído por blocks.
-- `foundation` — infraestrutura compartilhada consumida por todos.
+| Hoje (technical_category) | Vira (technical_category) | Etapa |
+|---|---|---|
+| `packages` (block) | block-group de products | R3 |
+| `campaigns` (block) | tool | R4 |
+| `subscriptions` oferta (block) | `subscription-offering` (tool) | R5 |
+| `subscriptions` real (block) | block residual | R5 |
+| `marketplace` UI atual | tool | R5 |
+| `routines` (block) | top-level-feature | (deferido) |
+| `agents` (block) | top-level-feature | R7 |
+| Network atual | Organization + Directory (2× top-level-feature) | R2.5 |
 
-Nota: `block-group` **não** é um level e **não** é uma technical category. Block-groups são agrupamentos intra-block — por exemplo, "packages" como um grupo curado de products dentro do block products, ou um conjunto curado de meetings filtrado por algum critério. São documentados dentro da Architecture perspective do block pai (no campo `block_groups` do `feature.yml` do pai), não como entries separadas.
+Cada re-classification tem motivação documentada na entry de refactor própria (`docs/handbook/refactor/r{X}-{name}/`).
 
-Nota: `category` (Finances, Legal, Marketing, Sales, Operations) **não** é um level. Categories são agrupamentos de runtime que o orchestrator usa para rotear chamadas de tool. Têm agentes em `.agents/tools/{category}/AGENT.md` mas não têm entries de Handbook — o papel comercial que elas teriam é assumido por Solution.
+### level vs technical_category
 
-### Decision tree: classifying a new feature
+São duas dimensões ortogonais cravadas no frontmatter de cada `feature.yml`.
 
-Ao introduzir uma nova feature no HERD, percorra a árvore abaixo para classificá-la. O level determina o caminho do diretório, os artifacts requeridos, e a audiência que vai consumir a entry.
+**`level`** define **onde a entry vive na estrutura de navegação do Handbook**. Valores: `layer` (top do menu — networks, blocks, tools, solutions, integrations), `category` (sub-organização dentro de um layer), `meta` (entries meta-organizacionais — handbook, glossary), `block` (entry-folha de bloco), `tool` (entry-folha de tool). Refletem a árvore de docs, não a classificação técnica.
 
-```mermaid
-flowchart TD
-  start{Does it own its own<br/>Prisma data?}
-  start -->|yes| block[level: block]
-  start -->|no| owns_external{Does it connect<br/>to an external<br/>system?}
-  owns_external -->|yes| integration[level: integration]
-  owns_external -->|no| user_facing{Is it user-<br/>facing as a<br/>capability?}
-  user_facing -->|yes| tool_or_solution{Does it bundle<br/>multiple tools?}
-  tool_or_solution -->|yes| solution[level: solution]
-  tool_or_solution -->|no| tool[level: tool]
-  user_facing -->|no| foundation[level: foundation]
+**`technical_category`** define **o que a coisa é arquiteturalmente**, independente de onde mora na navegação. Valores: `block`, `block-group`, `tool`, `top-level-feature` (4 categorias arquiteturais canônicas) + dimensions temáticas adicionais quando aplicável (`foundation`, `financial`, `infrastructure`, `sales`, `marketing`, `support`, `commerce`).
 
-  style block fill:#93c5fd
-  style tool fill:#60a5fa,color:#fff
-  style solution fill:#3b82f6,color:#fff
-  style foundation fill:#bfdbfe
-  style integration fill:#dbeafe
-```
+As dimensões podem coincidir (uma feature de bloco vive em `level: block` na estrutura de docs e tem `technical_category: block` arquiteturalmente) ou divergir (handbook entry meta-organizacional pode ter `level: meta` e descrever um `technical_category: tool`).
 
-### Examples and anti-examples
-
-- **`contacts`** é um `block`. Possui seu Prisma model `Contact`, tem CRUD, e é consumido por tools como `subscription-offering` e `lead-qualification`.
-- **`subscription-offering`** é uma `tool`. Compõe contacts + deals + products para gerenciar receita recorrente. Sem dado próprio.
-- **`packages`** **não** é uma entry. É um block-group dentro de `products` (uma coleção curada de products com pricing ou marketing compartilhado). Documentado em `products/feature.yml` sob `block_groups`.
-- **`i18n`** é uma `foundation`. Usada por toda surface de UI mas sem unidade comercial por si só.
-- **`google-calendar`** é uma `integration`. Sem dado próprio, apenas uma ponte para a API de calendário do Google.
-- **`finances`** (a category em `.agents/tools/finances/AGENT.md`) **não** é uma entry. É um agrupamento de runtime. O papel comercial vive no level `solution` quando desenhado.
-- **`Support Solution`** seria uma `solution` (quando a camada estiver ativa) — fazendo bundle de tools orientadas a suporte para uma experiência de cliente coerente. Hoje só existiria como um futuro `feature.yml` com `status: deferred`.
+Exemplo: `domain-events` tem `level: tool` (entry-folha de tool na navegação) + `technical_category: foundation` (área temática). Ledger tem `level: tool` + `technical_category: financial` (tool, área financial).
 
 ### The 4 artifacts per feature
 
 Toda feature no HERD é descrita por até quatro artifacts, ligados pelo `id` e pelo `uid`:
 
-1. **Handbook entry** em `docs/handbook/{level}/{id}/{pt-BR.md, en-US.md}` — prosa bilíngue para humanos.
+1. **Handbook entry** em `docs/handbook/{layer}/{category}/{id}/{pt-BR.md, en-US.md}` — prosa bilíngue para humanos.
 2. **`feature.yml`** no mesmo diretório — metadata canônico, a join key.
 3. **`SKILL.md`** em `.agents/skills/feature-{level}-{id}/SKILL.md` — guia operacional voltado para agentes. Opcional; obrigatório quando `artifacts.skill: true` no `feature.yml`.
 4. **MCP tool** registrada em `mcp/generated/manifest.json` — exposta a agentes externos. Opcional; obrigatória quando `artifacts.mcp: true`.
@@ -126,7 +262,7 @@ O schema do `feature.yml` é definido em TypeScript Zod 4 em `schemas/feature.zo
 
 ### CI gates
 
-Três gates hard-fail bloqueiam merges de PR (introduzidos progressivamente ao longo desta etapa, com enforcement total na Sub-etapa 6):
+Três gates hard-fail bloqueiam merges de PR:
 
 - **Schema + path consistency.** O `feature.yml` parseia contra o schema Zod; o `level` casa com o diretório; o `uid` casa com `herd.<level>.<id>`.
 - **Cross-reference resolution.** Todos os IDs em `consumes`, `consumed_by`, `parent`, `children`, `related` resolvem para `feature.yml` existentes. Refs danglings conhecidas (durante backfill) são listadas explicitamente em `docs/handbook/_meta/.legacy-allowlist.txt`, que o Danger.js impede de crescer.
@@ -140,17 +276,63 @@ Três warnings soft (comentários do Danger.js, não bloqueiam merge):
 
 ## Operations
 
-Esta entry é **operacional** — agentes devem tratá-la como autoritativa. Cinco instruções para qualquer agente (Claude Code, ChatGPT via MCP, Claude Desktop via MCP) usando documentação do HERD:
+Esta entry é **operacional** — agentes devem tratá-la como autoritativa.
 
-1. **Antes de escrever código que cria, modifica, ou deprecia uma feature, localize seu `feature.yml`.** Se nenhum existe e você está criando algo novo, rode `npm run gen:feature` (a meta-skill `/new-feature`, introduzida na Sub-etapa 3) primeiro. Não improvise os quatro artifacts à mão.
+### 5 instruções de doc-discipline
 
-2. **O campo `level` é canônico.** Quando em dúvida sobre se algo é uma tool ou uma foundation, percorra a decision tree na Architecture perspective desta entry. Se ainda estiver incerto, pergunte ao usuário antes de classificar.
+1. **Antes de escrever código que cria, modifica, ou deprecia uma feature, localize seu `feature.yml`.** Se nenhum existe e você está criando algo novo, rode `npm run gen:feature` (a meta-skill `/new-feature`) primeiro. Não improvise os quatro artifacts à mão.
+
+2. **O campo `level` é canônico para navegação.** Quando em dúvida sobre onde uma entry vive na estrutura, percorra a decision tree na Architecture perspective desta entry. Se ainda estiver incerto, pergunte ao usuário antes de classificar.
 
 3. **Cross-references usam UIDs (`herd.<level>.<id>`), não paths.** UIDs sobrevivem a renomeações; paths quebram. O xrefmap em `docs/handbook/_meta/xrefmap.yml` é a tabela canônica de tradução UID → path.
 
 4. **Não edite `mcp/generated/`, `schemas/feature.schema.json`, `docs/handbook/_meta/xrefmap.yml`, ou `public/llms.txt` à mão.** São gerados. Rode o script `npm run gen:*` correspondente, ou `npm run gen:all` para regenerar tudo de uma vez.
 
 5. **O contrato bilíngue é simétrico.** Quando você muda `pt-BR.md`, mude `en-US.md` no mesmo PR (e vice-versa). Se uma tradução está pendente, commite um bloco `<!-- TRANSLATION_PENDING -->` no locale que está atrasado e marque o PR com a tag `i18n-followup`.
+
+### 5 instruções de classification-discipline
+
+1. **Classifique antes de propor**. Para cada parte tocada, identifique a technical_category atual. Se está classificada erroneamente, **pause e reporte** antes de tocar. Não improvisar re-classificação durante outro trabalho.
+
+2. **Ao criar coisa nova, justifique a technical_category com referência à árvore de decisão**. Não basta dizer "é um block" — diga "é block porque tem model Prisma com lifecycle independente, dado existe sem composição, e não tem complexidade rica cross-area que justificaria top-level-feature."
+
+3. **Ao re-classificar coisa existente, documente o porquê no commit message e atualize manifest**. Mudança de classificação tem custo (paths, manifests, references) — só vale com justificativa clara.
+
+4. **Quando estiver na dúvida, traga ao diálogo**. Decisão arquitetural não é tomada solo. Agente identifica e propõe; humano valida ou ajusta.
+
+5. **Não invente nova categoria sem necessidade real**. Se uma coisa não cabe nas 4 categorias canônicas (block / block-group / tool / top-level-feature), primeiro tente forçar nas 4. Se não der, **pause e reporte** — pode ser necessidade nova, mas é decisão arquitetural duradoura.
+
+### Pattern: SKILL → Handbook migration
+
+SKILLs no projeto se dividem em duas categorias funcionais:
+
+#### SKILLs de infrastructure de produto
+
+Documentam invariantes/práticas de partes do produto. Exemplos:
+- `ledger` (invariantes do double-entry bookkeeping)
+- `domain-events` (outbox pattern, idempotency)
+
+**Pattern de migração**: estes migram para Handbook como entry com `technical_category: tool` + dimension temática apropriada (`foundation`, `financial`, etc.). SKILL file vira **shim** com:
+- Frontmatter aponta para path canônico no Handbook (`metadata.herd.target_path`)
+- Conteúdo preservado intacto (backward-compat para callers existentes)
+- Nota top-of-file indicando Handbook como fonte canônica
+
+Quando todos callers apontarem para Handbook, SKILL file pode ser removido.
+
+#### SKILLs de meta-tooling do dev workflow
+
+Documentam protocolos de trabalho, não features de produto. Exemplos:
+- `chat-code-handoff` (protocolo Claude.ai ↔ Claude Code)
+- `new-feature` (template de criação de feature no Handbook)
+
+**Pattern**: permanecem como SKILLs puras. Não migram para Handbook — não são features documentáveis no schema do Handbook (Business / Product / Architecture / Operations / Glossary / Changelog não fazem sentido para um protocolo de trabalho).
+
+#### Decisão de categoria
+
+Pergunta: **isto documenta uma parte do produto, ou um protocolo de trabalho?**
+
+- Parte do produto → Handbook (com SKILL shim para backward-compat).
+- Protocolo de trabalho → SKILL puro.
 
 ### Print mode
 
@@ -162,23 +344,28 @@ Limitação: diagramas Mermaid são lazy-rendered na abertura da seção. Diagra
 
 | Term (en-US) | Termo (pt-BR) | Significado |
 |---|---|---|
-| block | bloco | Fonte única da verdade para um tipo de dado. Possui Prisma models. |
-| block-group | grupo de bloco | Coleção curada intra-block (ex: packages dentro de products). Não é entry própria. |
-| corporate-network | rede corporativa | A plataforma HERD inteira por cliente. Topo da pirâmide. |
+| block | bloco | Single source of truth para um tipo de dado. Possui Prisma models. technical_category canônica. |
+| block-group | grupo de bloco | Coleção curada intra-block (ex: packages dentro de products). technical_category canônica; sem CRUD independente. |
+| corporate-network | rede corporativa | Subtipo de Network — uma empresa inteira como tenant do HERD. |
 | feature.yml | feature.yml | Arquivo de metadata canônico por feature. A join key entre os quatro artifacts. |
-| foundation | fundação | Infraestrutura compartilhada consumida por outros levels (i18n, auth, ledger, etc.). |
+| foundation | fundação | Dimensão temática do `technical_category` para infraestrutura compartilhada (i18n, auth, ledger). |
 | Handbook | Handbook | Sistema de documentação do HERD. Esta entry documenta ele. |
-| integration | integração | Conexão com um sistema externo. Sem dado próprio. |
-| level | nível | Um dos seis valores: corporate-network, solution, tool, block, foundation, integration. |
+| integration | integração | Conexão com um sistema externo. Sem dado próprio. Camada de navegação. |
+| level | nível | Posição estrutural na navegação do Handbook. Valores: `layer`, `category`, `meta`, `block`, `tool` (hoje). |
+| market-network | rede de mercado | Subtipo de Network futuro — redes de empresas dentro de um mercado. |
 | MCP | MCP | Model Context Protocol. Como agentes externos (ChatGPT, Claude Desktop) consomem docs do HERD. |
+| multi-market-network | rede multi-mercado | Subtipo de Network futuro distante — redes de mercados interconectadas. |
+| network | rede | Categoria top-of-pyramid agrupando os subtipos vendidos (Corporate, Market, Multi-market). |
 | perspective | perspectiva | Uma das seis seções de uma entry de Handbook: Business, Product, Architecture, Operations, Glossary, Changelog. |
 | SKILL.md | SKILL.md | Guia operacional voltado para agentes. Formato definido por agentskills.io. |
-| solution | solução | Bundle curado de tools para um resultado de negócio. Atualmente deferred. |
-| technical_category | categoria técnica | Uma de três: block, tool, foundation. Corta os commercial levels. |
-| tool | ferramenta | Composição cross-block com um objetivo de negócio. |
+| solution | solução | Pacote curado de tools para um propósito macro. Atualmente deferred. |
+| technical_category | categoria técnica | Classificação arquitetural. 4 canônicas (block, block-group, tool, top-level-feature) + dimensions temáticas (foundation, financial, infrastructure, sales, marketing, support, commerce). |
+| tool | ferramenta | Composição cross-block com um objetivo de negócio. technical_category canônica. |
+| top-level-feature | top-level feature | technical_category canônica para infraestrutura rica consumida cross-area (Knowledge, Organization, Directory, Blocks, Handbook). |
 | uid | uid | Identificador estável no formato `herd.<level>.<id>`. |
 | xrefmap | xrefmap | Tabela gerada de tradução UID → path. Lookup canônico para cross-references. |
 
 ## Changelog
 
-- **2026-05-01** — Publicação inicial. Etapa Handbook foundation + first entries. Estabelece 6 commercial levels (corporate-network, solution, tool, block, foundation, integration), 3 technical categories (block, tool, foundation), 4 artifacts por feature (Handbook, feature.yml, SKILL.md, MCP), Zod 4 (via subpath `zod/v4`) como schema source-of-truth, doc-first como workflow, e CI gates (3 hard-fail + 3 soft warning).
+- **2026-05-02** — R0.1 Handbook content reform. Substitui pyramid de 6 níveis singular por hierarquia plural (Networks/Solutions/Tools/Blocks/Integrations) com Networks como categoria com sub-tipos. Adiciona `block-group` e `top-level-feature` como `technical_category` canônicos (era 3 valores, vira 11: 4 arquiteturais + 7 temáticos). Adiciona path-mapping, re-classifications planejadas, classification-discipline guide, e distinção `level` vs `technical_category`. Schema Zod bumpado.
+- **2026-05-01** — Publicação inicial. Etapa Handbook foundation + first entries. Estabelece níveis comerciais, technical categories, 4 artifacts por feature, Zod 4 (via subpath `zod/v4`) como schema source-of-truth, doc-first como workflow, e CI gates (3 hard-fail + 3 soft warning).

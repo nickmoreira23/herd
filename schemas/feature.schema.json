@@ -27,8 +27,16 @@
       "type": "string",
       "enum": [
         "block",
+        "block-group",
         "tool",
-        "foundation"
+        "top-level-feature",
+        "foundation",
+        "financial",
+        "infrastructure",
+        "sales",
+        "marketing",
+        "support",
+        "commerce"
       ]
     },
     "title": {
