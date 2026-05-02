@@ -65,6 +65,7 @@ export default async function FeaturePage({
           relativePath: bilingual.enUS.relativePath,
         },
       }}
+      uid={indexEntry.uid}
       crossRefs={resolveBilingualCrossRefs(indexEntry)}
       owners={indexEntry.owners}
       updated={indexEntry.updated}

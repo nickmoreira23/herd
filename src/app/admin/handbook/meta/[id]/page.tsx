@@ -45,6 +45,7 @@ export default async function MetaEntryPage({
           relativePath: bilingual.enUS.relativePath,
         },
       }}
+      uid={indexEntry.uid}
       crossRefs={resolveBilingualCrossRefs(indexEntry)}
       owners={indexEntry.owners}
       updated={indexEntry.updated}

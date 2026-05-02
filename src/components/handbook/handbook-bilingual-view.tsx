@@ -30,6 +30,8 @@ interface BilingualCrumb {
 interface Props {
   crumbs: BilingualCrumb[];
   entry: BilingualEntry;
+  /** UID of the entry — used to scope per-entry localStorage state. */
+  uid: string;
   crossRefs: BilingualCrossRefs;
   owners: string[];
   updated: string;
@@ -44,6 +46,7 @@ interface Props {
 export function HandbookBilingualView({
   crumbs,
   entry,
+  uid,
   crossRefs,
   owners,
   updated,
@@ -81,7 +84,7 @@ export function HandbookBilingualView({
         selfUrl={selfUrl}
       />
 
-      <HandbookReader body={transformedBody} locale={locale} />
+      <HandbookReader body={transformedBody} locale={locale} uid={uid} />
 
       <HandbookCrossReferences crossRefs={crossRefs} locale={locale} />
 

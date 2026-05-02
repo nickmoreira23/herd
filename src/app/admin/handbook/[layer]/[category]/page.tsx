@@ -58,6 +58,7 @@ export default async function CategoryOverviewPage({
           relativePath: bilingual.enUS.relativePath,
         },
       }}
+      uid={indexEntry.uid}
       crossRefs={resolveBilingualCrossRefs(indexEntry)}
       owners={indexEntry.owners}
       updated={indexEntry.updated}

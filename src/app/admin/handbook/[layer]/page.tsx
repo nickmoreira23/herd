@@ -50,6 +50,7 @@ export default async function LayerOverviewPage({
           relativePath: bilingual.enUS.relativePath,
         },
       }}
+      uid={indexEntry.uid}
       crossRefs={resolveBilingualCrossRefs(indexEntry)}
       owners={indexEntry.owners}
       updated={indexEntry.updated}
