@@ -145,3 +145,112 @@ Use as operational audit (post-restore, periodic, after major schema
 changes). Not wired into CI because CI does not provision a database.
 The constraints from Etapas 1.2 and 1.6 should make violations impossible —
 the script is defense-in-depth.
+
+## Handbook (doc-first)
+
+HERD uses a 4-artifact doc system. Before writing code that creates, modifies,
+or deprecates a feature at any of the 6 levels, check the change-type matrix
+in `docs/handbook/foundation/handbook/en-US.md` (Operations perspective) for
+required artifacts.
+
+The 6 levels and code mapping:
+
+| Level | Code root | Manifest |
+|---|---|---|
+| `block` | `src/components/{name}/`, `src/app/admin/blocks/{name}/` | `src/lib/blocks/blocks/{name}.block.ts` |
+| `tool` | `src/components/tools/{name}/` (planned), `src/app/admin/tools/{name}/` | `src/lib/tools/tools/{name}.tool.ts` (planned) |
+| `foundation` | `src/components/{name}/`, `src/app/admin/{name}/`, `src/lib/{name}/` | varies |
+| `integration` | `src/lib/integrations/{name}/` | varies |
+| `solution` | composition only — no code root (deferred) | n/a |
+| `corporate-network` | composition only — no code root | n/a |
+
+Note: `category` (Finances, Legal, Marketing, Sales, Operations) is a runtime
+grouping, not a Handbook level. Categories live in
+`.agents/tools/{category}/AGENT.md` and `src/lib/tools/categories/`.
+
+Note: `block-group` is intra-block (e.g., packages inside products). Documented
+inside the parent block's `feature.yml` under `block_groups`, not as a separate
+entry.
+
+The 4 artifacts per feature:
+
+1. Handbook entry — `docs/handbook/{level}/{id}/{pt-BR.md, en-US.md}`. Bilingual.
+2. `feature.yml` — canonical metadata. Same directory.
+3. `SKILL.md` — `.agents/skills/feature-{level}-{id}/SKILL.md`. Optional.
+4. MCP tool — registered in `mcp/generated/manifest.json`. Optional.
+
+The schema source-of-truth lives in `schemas/feature.zod.ts` (Zod 4 via the
+`zod/v4` subpath). JSON Schema is generated and committed at
+`schemas/feature.schema.json`. Run `npm run gen:schemas` after schema changes.
+
+To scaffold a new feature's 4 artifacts, run:
+
+    npm run gen:feature
+
+This invokes the `/new-feature` meta-skill at `.agents/skills/new-feature/`
+(introduced in a separate sub-etapa).
+
+CI gates that will fail your PR (full enforcement lands in a later sub-etapa):
+
+1. `feature.yml` schema validation (Zod 4 → JSON Schema → Ajv).
+2. Folder path must match `feature.yml.level`.
+3. `feature.yml.uid` must equal `herd.<level>.<id>`.
+4. Cross-references in `consumes`/`consumed_by`/`parent`/`children`/`related`
+   must resolve, or be allowlisted in
+   `docs/handbook/_meta/.legacy-allowlist.txt`.
+5. Generated artifacts (`mcp/generated/`, `docs/handbook/_meta/xrefmap.yml`,
+   `schemas/feature.schema.json`) must be regenerated and committed when source
+   changes (CI runs `npm run gen:all` and fails on diff).
+
+CI soft warnings (Danger.js, comments only):
+
+6. Bilingual co-change: `pt-BR.md` edited without `en-US.md` (or vice versa).
+7. Doc-first nudge: source code under `src/` changed without `docs/handbook/`
+   change.
+8. Perspective coverage: H2 headers in `.md` don't match
+   `feature.yml.perspectives`.
+
+Skills layout convention:
+
+- Feature-bound: `.agents/skills/feature-{level}-{id}/SKILL.md`.
+- Practice (cross-cutting engineering, no specific feature): `.agents/skills/practice-{name}/SKILL.md`.
+
+Existing skills awaiting full layout migration (mechanical work, deferred):
+
+- `.agents/skills/domain-events/` → eventually `feature-foundation-domain-events`
+- `.agents/skills/ledger/` → eventually `feature-foundation-ledger`
+- `.agents/skills/supabase-postgres-best-practices/` → eventually `practice-supabase-postgres`
+
+The migration is mechanical and tracked as a future backfill etapa. The
+sub-etapa that introduces CI gates also adds `name`/`description` fields to
+the two non-conformant frontmatters and renames the supabase-postgres folder.
+
+## Boundaries
+
+- Never edit `mcp/generated/`, `schemas/feature.schema.json`,
+  `docs/handbook/_meta/xrefmap.yml`, or `public/llms.txt` by hand. They are
+  generated. Run the corresponding `npm run gen:*` script, or `npm run gen:all`
+  to regenerate everything at once.
+
+- Never bypass the bilingual co-change rule by editing one locale only. If
+  the translation isn't ready, add a `<!-- TRANSLATION_PENDING -->` block in
+  the missing-locale file and tag the PR `i18n-followup`.
+
+- Never add a new path to the legacy lint debt overrides in
+  `eslint.config.mjs`. New code is held to the strict ruleset.
+
+- Never invent a new `level` value. The six levels are defined in
+  `schemas/feature.zod.ts` and mirrored in
+  `docs/handbook/foundation/handbook/en-US.md`. To add or change a level,
+  open a discussion before touching the schema.
+
+- Never edit a Handbook entry's `uid` after creation. UIDs are stable
+  identifiers; renames go through deprecation (set `status: deprecated`,
+  add a successor entry, link via `related`).
+
+- Never mix Zod 3 and Zod 4 imports in the same file. Code under `schemas/`,
+  `scripts/build-*.ts`, and any new code that consumes the feature.yml schema
+  imports from `"zod/v4"`. Existing code under `src/lib/validators/`,
+  `src/lib/validations/`, `src/app/api/`, etc. continues to import from `"zod"`
+  (which is Zod 3). Migration of the existing 75 files to Zod 4 is a separate,
+  future etapa with its own scope.

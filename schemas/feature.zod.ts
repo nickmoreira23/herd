@@ -1,0 +1,66 @@
+import * as z from "zod/v4";
+
+const Slug = z.string().regex(/^[a-z][a-z0-9-]*$/, "kebab-case, must start with letter");
+
+export const Level = z.enum([
+  "corporate-network",
+  "solution",
+  "tool",
+  "block",
+  "foundation",
+  "integration",
+]);
+
+export const TechnicalCategory = z.enum(["block", "tool", "foundation"]);
+
+export const Perspective = z.enum([
+  "business",
+  "product",
+  "architecture",
+  "operations",
+  "glossary",
+  "changelog",
+]);
+
+const FeatureRef = Slug;
+
+export const FeatureYmlSchema = z.object({
+  id: Slug,
+  uid: z.string().regex(/^herd\.[a-z-]+\.[a-z][a-z0-9-]*$/, "must be 'herd.<level>.<id>'"),
+  level: Level,
+  technical_category: TechnicalCategory.optional(),
+  title: z.object({
+    "pt-BR": z.string().min(1),
+    "en-US": z.string().min(1),
+  }),
+  description: z.object({
+    "pt-BR": z.string().min(1).max(280),
+    "en-US": z.string().min(1).max(280),
+  }),
+  status: z.enum(["draft", "active", "deprecated", "archived", "deferred"]).default("active"),
+  owners: z.array(z.string()).min(1),
+  since: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  updated: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  parent: FeatureRef.optional(),
+  children: z.array(FeatureRef).default([]),
+  consumes: z.array(FeatureRef).default([]),
+  consumed_by: z.array(FeatureRef).default([]),
+  related: z.array(FeatureRef).default([]),
+  block_groups: z.array(z.object({
+    id: Slug,
+    title: z.object({ "pt-BR": z.string(), "en-US": z.string() }),
+    description: z.object({ "pt-BR": z.string(), "en-US": z.string() }),
+  })).optional(),
+  source_paths: z.array(z.string()).default([]),
+  manifest_path: z.string().optional(),
+  artifacts: z.object({
+    handbook: z.boolean().default(true),
+    skill: z.boolean().default(false),
+    mcp: z.boolean().default(false),
+  }).default({ handbook: true, skill: false, mcp: false }),
+  perspectives: z.array(Perspective).default(["business", "product", "architecture"]),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+}).strict();
+
+export type FeatureYml = z.infer<typeof FeatureYmlSchema>;
+export type LevelValue = z.infer<typeof Level>;

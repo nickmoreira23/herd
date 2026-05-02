@@ -1,0 +1,266 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "uid": {
+      "type": "string",
+      "pattern": "^herd\\.[a-z-]+\\.[a-z][a-z0-9-]*$"
+    },
+    "level": {
+      "type": "string",
+      "enum": [
+        "corporate-network",
+        "solution",
+        "tool",
+        "block",
+        "foundation",
+        "integration"
+      ]
+    },
+    "technical_category": {
+      "type": "string",
+      "enum": [
+        "block",
+        "tool",
+        "foundation"
+      ]
+    },
+    "title": {
+      "type": "object",
+      "properties": {
+        "pt-BR": {
+          "type": "string",
+          "minLength": 1
+        },
+        "en-US": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "pt-BR",
+        "en-US"
+      ],
+      "additionalProperties": false
+    },
+    "description": {
+      "type": "object",
+      "properties": {
+        "pt-BR": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 280
+        },
+        "en-US": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 280
+        }
+      },
+      "required": [
+        "pt-BR",
+        "en-US"
+      ],
+      "additionalProperties": false
+    },
+    "status": {
+      "default": "active",
+      "type": "string",
+      "enum": [
+        "draft",
+        "active",
+        "deprecated",
+        "archived",
+        "deferred"
+      ]
+    },
+    "owners": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "since": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "updated": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "parent": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "children": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*$"
+      }
+    },
+    "consumes": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*$"
+      }
+    },
+    "consumed_by": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*$"
+      }
+    },
+    "related": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*$"
+      }
+    },
+    "block_groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "title": {
+            "type": "object",
+            "properties": {
+              "pt-BR": {
+                "type": "string"
+              },
+              "en-US": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "pt-BR",
+              "en-US"
+            ],
+            "additionalProperties": false
+          },
+          "description": {
+            "type": "object",
+            "properties": {
+              "pt-BR": {
+                "type": "string"
+              },
+              "en-US": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "pt-BR",
+              "en-US"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "source_paths": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "manifest_path": {
+      "type": "string"
+    },
+    "artifacts": {
+      "default": {
+        "handbook": true,
+        "skill": false,
+        "mcp": false
+      },
+      "type": "object",
+      "properties": {
+        "handbook": {
+          "default": true,
+          "type": "boolean"
+        },
+        "skill": {
+          "default": false,
+          "type": "boolean"
+        },
+        "mcp": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "handbook",
+        "skill",
+        "mcp"
+      ],
+      "additionalProperties": false
+    },
+    "perspectives": {
+      "default": [
+        "business",
+        "product",
+        "architecture"
+      ],
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "business",
+          "product",
+          "architecture",
+          "operations",
+          "glossary",
+          "changelog"
+        ]
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {}
+    }
+  },
+  "required": [
+    "id",
+    "uid",
+    "level",
+    "title",
+    "description",
+    "status",
+    "owners",
+    "since",
+    "updated",
+    "children",
+    "consumes",
+    "consumed_by",
+    "related",
+    "source_paths",
+    "artifacts",
+    "perspectives"
+  ],
+  "additionalProperties": false
+}

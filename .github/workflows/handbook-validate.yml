@@ -1,0 +1,38 @@
+name: Handbook Validate
+
+on:
+  pull_request:
+    paths:
+      - 'docs/handbook/**'
+      - 'schemas/**'
+      - 'scripts/build-schemas.ts'
+      - 'scripts/validate-feature-yml.ts'
+      - 'scripts/validate-handbook-graph.ts'
+      - '.agents/skills/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Regenerate JSON Schema
+        run: npm run gen:schemas
+
+      - name: Fail if schemas drift
+        run: |
+          if [ -n "$(git status --porcelain schemas/)" ]; then
+            echo "::error::schemas/ out of date. Run 'npm run gen:schemas' and commit."
+            git diff schemas/
+            exit 1
+          fi
+
+      - run: npm run validate:feature-yml
+      - run: npm run validate:handbook-graph

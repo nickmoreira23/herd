@@ -7,13 +7,13 @@ export default defineConfig({
   test: {
     environment: "node",
     globals: false,
-    include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    include: ["src/**/*.{test,spec}.{ts,tsx}", "schemas/**/*.{test,spec}.{ts,tsx}"],
     exclude: ["node_modules", ".next", "dist", "src/**/*.integration.test.{ts,tsx}"],
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
-      include: ["src/**/*.{ts,tsx}"],
-      exclude: ["src/**/*.{test,spec}.{ts,tsx}", "src/generated/**"],
+      include: ["src/**/*.{ts,tsx}", "schemas/**/*.{ts,tsx}"],
+      exclude: ["src/**/*.{test,spec}.{ts,tsx}", "schemas/**/*.{test,spec}.{ts,tsx}", "src/generated/**"],
     },
   },
   resolve: {
