@@ -1,0 +1,4 @@
+# Format: <feature-id>:<field>:<dangling-ref>
+# This file MUST only shrink. Danger.js (Sub-etapa 6) enforces non-growth.
+# Each line documents a known cross-reference that doesn't yet have a
+# corresponding feature.yml. Used to introduce strangler-fig backfill.
