@@ -152,6 +152,12 @@ Esta entry é **operacional** — agentes devem tratá-la como autoritativa. Cin
 
 5. **O contrato bilíngue é simétrico.** Quando você muda `pt-BR.md`, mude `en-US.md` no mesmo PR (e vice-versa). Se uma tradução está pendente, commite um bloco `<!-- TRANSLATION_PENDING -->` no locale que está atrasado e marque o PR com a tag `i18n-followup`.
 
+### Print mode
+
+Entries do Handbook são imprimíveis. A regra `@media print` em `src/app/admin/handbook/handbook-print.css` força toda seção Collapsible aberta e esconde chrome interativo (toolbar, breadcrumbs, chevrons). Use Cmd+P / Ctrl+P em qualquer entry — todas as seções H2 aparecem expandidas, independentemente do estado da UI.
+
+Limitação: diagramas Mermaid são lazy-rendered na abertura da seção. Diagramas em seções que nunca foram abertas no ciclo de vida da página atual não aparecerão na impressão. Workaround: abra a seção uma vez antes de disparar o print.
+
 ## Glossary
 
 | Term (en-US) | Termo (pt-BR) | Significado |

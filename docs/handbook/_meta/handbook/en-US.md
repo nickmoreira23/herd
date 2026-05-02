@@ -152,6 +152,12 @@ This entry is **operational** — agents should treat it as authoritative. Five 
 
 5. **The bilingual contract is symmetric.** When you change `pt-BR.md`, change `en-US.md` in the same PR (and vice versa). If a translation is pending, commit a `<!-- TRANSLATION_PENDING -->` block in the locale that lags and tag the PR `i18n-followup`.
 
+### Print mode
+
+Handbook entries are printable. The `@media print` rule in `src/app/admin/handbook/handbook-print.css` forces every Collapsible section open and hides interactive chrome (toolbar, breadcrumbs, chevrons). Use Cmd+P / Ctrl+P from any entry — all H2 sections appear expanded regardless of UI state.
+
+Limitation: Mermaid diagrams are lazy-rendered on section open. Diagrams in sections that were never opened in the current page lifetime will not appear in print. Workaround: open the section once (or use "Expand all" if available) before triggering print.
+
 ## Glossary
 
 | Term (en-US) | Termo (pt-BR) | Meaning |

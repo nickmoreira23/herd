@@ -56,7 +56,10 @@ export function HandbookEntryHeader({
             {locale === "pt-BR" ? "Atualizado " : "Updated "}{formatRelative(updated, locale)}
           </p>
         </div>
-        <div className="flex items-center gap-1 shrink-0">
+        <div
+          data-handbook-toolbar
+          className="flex items-center gap-1 shrink-0"
+        >
           <HandbookLanguageToggle
             locale={locale}
             setOverride={setOverride}
