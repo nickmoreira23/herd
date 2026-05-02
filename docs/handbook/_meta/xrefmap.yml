@@ -1,6 +1,20 @@
 # Auto-generated. Do not edit by hand. Regenerate via npm run gen:xrefmap.
 version: 1
 references:
+  herd.block.contacts:
+    level: block
+    id: contacts
+    path: docs/handbook/block/contacts
+    title:
+      pt-BR: Contatos
+      en-US: Contacts
+  herd.block.meetings:
+    level: block
+    id: meetings
+    path: docs/handbook/block/meetings
+    title:
+      pt-BR: Reuniões
+      en-US: Meetings
   herd.foundation.handbook:
     level: foundation
     id: handbook

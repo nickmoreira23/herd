@@ -1,0 +1,51 @@
+id: meetings
+uid: herd.block.meetings
+level: block
+technical_category: block
+
+title:
+  pt-BR: "Reuniões"
+  en-US: "Meetings"
+description:
+  pt-BR: "Reuniões de cliente: discovery, demos, suporte. Sincroniza com calendários externos."
+  en-US: "Customer meetings: discovery, demos, support. Syncs with external calendars."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-01
+updated: 2026-05-01
+
+children: []
+consumes:
+  - contacts
+  - google-calendar
+consumed_by: []
+related: []
+
+block_groups:
+  - id: discovery-calls
+    title:
+      pt-BR: "Discovery Calls"
+      en-US: "Discovery Calls"
+    description:
+      pt-BR: "Subset de reuniões focadas em primeira conversa com prospect, antes de proposta formal."
+      en-US: "Subset of meetings focused on first prospect conversation, before formal proposal."
+
+source_paths:
+  - "src/components/meetings/"
+  - "src/app/admin/blocks/meetings/"
+  - "src/app/api/meetings/"
+manifest_path: "src/lib/blocks/blocks/meetings.block.ts"
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

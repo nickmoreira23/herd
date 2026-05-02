@@ -28,6 +28,7 @@ async function main() {
     cwd: handbookRoot,
     absolute: true,
   });
+  files.sort();
   const entries: IndexEntry[] = [];
 
   for (const file of files) {
