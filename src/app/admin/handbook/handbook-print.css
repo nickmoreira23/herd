@@ -20,8 +20,7 @@
 
   /* Hide interactive chrome that has no place on paper. */
   [data-handbook-toolbar],
-  [data-handbook-language-toggle],
-  [data-handbook-actions],
+  [data-handbook-canonical-note],
   nav[aria-label="Breadcrumb"] {
     display: none !important;
   }

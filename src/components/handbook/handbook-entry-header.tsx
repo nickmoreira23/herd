@@ -2,7 +2,6 @@
 
 import { Badge } from "@/components/ui/badge";
 import { HandbookBreadcrumbs, type Crumb } from "./handbook-breadcrumbs";
-import { HandbookLanguageToggle } from "./handbook-language-toggle";
 import { HandbookEntryActions } from "./handbook-entry-actions";
 import type { HandbookLocale } from "@/lib/handbook/config";
 
@@ -60,16 +59,14 @@ export function HandbookEntryHeader({
           data-handbook-toolbar
           className="flex items-center gap-1 shrink-0"
         >
-          <HandbookLanguageToggle
-            locale={locale}
-            setOverride={setOverride}
-            clearOverride={clearOverride}
-            hasOverride={hasOverride}
-          />
           <HandbookEntryActions
             markdown={markdownRaw}
             githubEditUrl={githubEditUrl}
             selfUrl={selfUrl}
+            locale={locale}
+            setOverride={setOverride}
+            clearOverride={clearOverride}
+            hasOverride={hasOverride}
           />
         </div>
       </div>

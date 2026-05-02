@@ -56,9 +56,16 @@ function makeMarkdownComponents(locale: HandbookLocale) {
 }
 
 export function HandbookReader({ body, locale, uid }: Props) {
-  const { intro, sections } = splitByH2(body);
+  const { sections } = splitByH2(body);
   const { isOpen, toggle } = useSectionState(uid);
   const components = makeMarkdownComponents(locale);
+
+  // Note: the body's intro (everything before the first H2) is intentionally
+  // dropped here. By convention every entry opens with a "canonical /
+  // for AI agents" blockquote followed by `# Title` + a description
+  // paragraph — all three already exist in the page chrome (footer note +
+  // HandbookEntryHeader title/description), so re-rendering them here
+  // would duplicate the header.
 
   // Degenerate case: no H2 sections — render flat.
   if (sections.length === 0) {
@@ -77,18 +84,6 @@ export function HandbookReader({ body, locale, uid }: Props) {
 
   return (
     <article>
-      {intro && (
-        <div className="prose prose-neutral dark:prose-invert max-w-none mb-6">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeRaw]}
-            components={components}
-          >
-            {intro}
-          </ReactMarkdown>
-        </div>
-      )}
-
       <div>
         {sections.map((section) => (
           <HandbookCollapsibleSection

@@ -5,48 +5,92 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Copy, Link as LinkIcon, ExternalLink } from "lucide-react";
+import { ChevronDown, Copy, Link as LinkIcon, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+import type { HandbookLocale } from "@/lib/handbook/config";
 
 interface Props {
   markdown: string;
   githubEditUrl: string;
   selfUrl: string;
+  locale: HandbookLocale;
+  setOverride: (locale: HandbookLocale) => void;
+  clearOverride: () => void;
+  hasOverride: boolean;
 }
 
-export function HandbookEntryActions({ markdown, githubEditUrl, selfUrl }: Props) {
+export function HandbookEntryActions({
+  markdown,
+  githubEditUrl,
+  selfUrl,
+  locale,
+  setOverride,
+  clearOverride,
+  hasOverride,
+}: Props) {
+  const triggerLabel = locale === "pt-BR" ? "Opções" : "Options";
+  const t = (pt: string, en: string) => (locale === "pt-BR" ? pt : en);
+
   function copyMarkdown() {
     navigator.clipboard.writeText(markdown);
-    toast.success("Markdown copiado");
+    toast.success(t("Markdown copiado", "Markdown copied"));
   }
 
   function copyLink() {
     const fullUrl = `${window.location.origin}${selfUrl}`;
     navigator.clipboard.writeText(fullUrl);
-    toast.success("Link copiado");
+    toast.success(t("Link copiado", "Link copied"));
   }
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="ghost" size="sm" />}>
-        <MoreHorizontal className="h-4 w-4" />
+      <DropdownMenuTrigger render={<Button variant="outline" size="sm" />}>
+        {triggerLabel}
+        <ChevronDown className="h-4 w-4 ml-1" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={copyMarkdown}>
           <Copy className="h-4 w-4 mr-2" />
-          Copiar markdown
+          {t("Copiar markdown", "Copy markdown")}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={copyLink}>
           <LinkIcon className="h-4 w-4 mr-2" />
-          Copiar link
+          {t("Copiar link", "Copy link")}
         </DropdownMenuItem>
+
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => window.open(githubEditUrl, "_blank", "noopener,noreferrer")}>
+
+        <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+          {t("Idioma", "Language")}
+        </DropdownMenuLabel>
+        <DropdownMenuRadioGroup
+          value={locale}
+          onValueChange={(v) => setOverride(v as HandbookLocale)}
+        >
+          <DropdownMenuRadioItem value="pt-BR">Português</DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="en-US">English</DropdownMenuRadioItem>
+        </DropdownMenuRadioGroup>
+        {hasOverride && (
+          <DropdownMenuItem onClick={clearOverride}>
+            {t("Usar idioma do admin", "Reset to admin language")}
+          </DropdownMenuItem>
+        )}
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem
+          onClick={() =>
+            window.open(githubEditUrl, "_blank", "noopener,noreferrer")
+          }
+        >
           <ExternalLink className="h-4 w-4 mr-2" />
-          Editar no GitHub
+          {t("Editar no GitHub", "Edit on GitHub")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
