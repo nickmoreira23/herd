@@ -17,6 +17,7 @@ interface IndexEntry {
   consumes: string[];
   consumed_by: string[];
   related: string[];
+  source_paths: string[];
   title_pt_BR: string;
   title_en_US: string;
   description_pt_BR: string;
@@ -57,6 +58,7 @@ async function main() {
       consumes: data.consumes,
       consumed_by: data.consumed_by,
       related: data.related,
+      source_paths: data.source_paths,
       title_pt_BR: data.title["pt-BR"],
       title_en_US: data.title["en-US"],
       description_pt_BR: data.description["pt-BR"],

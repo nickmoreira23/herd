@@ -23,6 +23,7 @@ export interface IndexEntry {
   consumes: string[];
   consumed_by: string[];
   related: string[];
+  source_paths: string[];
   title_pt_BR: string;
   title_en_US: string;
   description_pt_BR: string;

@@ -1,29 +1,19 @@
 ---
 name: new-feature
-description: Scaffolds the 4-artifact Handbook contract for a new HERD feature (feature.yml + bilingual Markdown stubs + optional SKILL.md). Use this skill ALWAYS when the user says "new block", "new tool", "new integration", "new solution", "new network", "create handbook entry", "scaffold feature", or implies starting any new named feature at one of HERD's feature levels (network, solution, tool, block, integration). Do NOT use for editing existing features (open the existing entry directly), code-only changes that don't introduce a new feature, or refactors of existing code without an associated new entry. Run `npm run gen:feature` to invoke. NOTE: the scaffolder is being redesigned for the layer/category/feature hierarchy introduced in Sub-etapa 1.5; until that redesign ships, prefer creating new feature.yml + markdown files manually following the conventions in AGENTS.md.
+description: Scaffolds the 4-artifact Handbook contract for a new HERD entry (feature.yml + bilingual Markdown stubs) at the layer/category/feature hierarchy. Use this skill ALWAYS when the user says "new block", "new tool", "new integration", "new solution", "new network", "new category", "new meta entry", "create handbook entry", or "scaffold feature". Run `npm run gen:feature` to invoke. The script asks interactively which type of entry (feature individual / category overview / meta), then layer/category/id/metadata, validates against the Zod schema, and writes the files. It does NOT run gen:all automatically — you review first.
 license: Apache-2.0
 metadata:
   herd:
     is_meta: true
     invokes_script: scripts/run.ts
-    version: "1.0"
+    version: "2.0"
     classification: meta-skill
 ---
 
 # /new-feature
 
-Scaffolds the 4-artifact Handbook contract for a new HERD feature. This is a
-meta-skill: it creates the artifacts that other skills, blocks, tools, and
-features at any level will be documented through.
-
-> **Note (2026-05-02):** Sub-etapa 1.5 introduced a 3-level hierarchy
-> (Layer → Category → Feature) and renamed levels (`foundation` removed,
-> `layer`, `category`, `meta`, `network` added). The scaffolder script
-> (`scripts/run.ts`) is currently aligned with the old flat layout and
-> will be redesigned in a follow-up etapa. In the interim, create new
-> feature.yml + bilingual markdown files manually, following the
-> conventions in `AGENTS.md` and the patterns in
-> `docs/handbook/blocks/miscellaneous/contacts/`.
+Scaffolds Handbook entries at the correct path in the 3-level hierarchy
+(Layer → Category → Feature) introduced in Sub-etapa 1.5.
 
 ## When to use
 
@@ -31,54 +21,88 @@ Triggers (any of these in user input):
 
 - "new block X"
 - "new tool Y"
-- "new network Z"
 - "new integration W"
-- "create handbook entry"
+- "new solution Z"
+- "new network N"
+- "new category C in layer L"
+- "new meta entry M"
 - "scaffold feature"
-- "let's add a new <anything-named> to HERD"
+- "create handbook entry"
 
 Do NOT use for:
 
-- Modifying an existing feature (open the existing entry directly).
-- Refactoring code without introducing a new named feature.
+- Modifying an existing entry (open it directly).
+- Refactoring code without introducing a new named entry.
 - Bug fixes.
 - Documentation-only updates to existing entries.
 
 ## How it works
 
-The skill invokes `npm run gen:feature` which runs `scripts/run.ts`. The script
-asks the user a sequence of questions via `@inquirer/prompts`, validates the
-answers against the Zod schema in `schemas/feature.zod.ts` (same schema CI
-uses, same source of truth), generates the four artifacts, and prints next
-steps.
+`npm run gen:feature` invokes `scripts/run.ts`, which uses
+`@inquirer/prompts` to ask:
+
+1. **Type of entry**: feature individual, category overview, or meta entry.
+2. If **feature**:
+   - **Layer**: networks / solutions / tools / blocks / integrations.
+   - **Category**: pick existing or create new.
+     - If new, optionally scaffold the category overview now.
+   - **Feature id** (kebab-case).
+   - **Title** (pt-BR + en-US).
+   - **Description** (pt-BR + en-US, ≤280 chars each).
+   - **Owners** (comma-separated GitHub handles).
+   - **Consumes** (comma-separated full UIDs, optional).
+3. If **category**: layer + id + bilingual title/description.
+4. If **meta**: id + bilingual title/description.
+
+Each `feature.yml` is validated against the Zod schema in
+`schemas/feature.zod.ts` before being written to disk.
 
 ## Files generated
 
-For a feature `<id>` at level `<level>`:
+For a feature at `<layer>/<category>/<id>`:
 
-    docs/handbook/<level>/<id>/feature.yml          # canonical metadata
-    docs/handbook/<level>/<id>/pt-BR.md             # stub with selected perspectives
-    docs/handbook/<level>/<id>/en-US.md             # mirror of pt-BR (structure)
-    .agents/skills/feature-<level>-<id>/SKILL.md    # iff artifacts.skill = true
+    docs/handbook/<layer>/<category>/<id>/feature.yml
+    docs/handbook/<layer>/<category>/<id>/pt-BR.md
+    docs/handbook/<layer>/<category>/<id>/en-US.md
+
+For a category overview:
+
+    docs/handbook/<layer>/<category>/(overview)/feature.yml
+    docs/handbook/<layer>/<category>/(overview)/pt-BR.md
+    docs/handbook/<layer>/<category>/(overview)/en-US.md
+
+For a meta entry:
+
+    docs/handbook/_meta/<id>/feature.yml
+    docs/handbook/_meta/<id>/pt-BR.md
+    docs/handbook/_meta/<id>/en-US.md
+
+The 5 fixed layer overviews (`networks/(overview)`, etc.) are NOT
+scaffolded by this tool — they are seeded once and edited in place.
 
 ## Post-generation
 
 The script prints next steps but does NOT run them automatically:
 
-1. Edit `docs/handbook/<level>/<id>/{pt-BR,en-US}.md` to fill in TODO markers.
-2. Run `npm run validate:handbook` to verify schema + graph.
-3. Run `npm run gen:all` to regenerate derived artifacts.
-4. Stage and commit when ready.
+1. Review the generated files.
+2. Fill in TODO markers in the .md files (Business, Product, Architecture,
+   Operations, Glossary, Changelog perspectives).
+3. Run `npm run gen:all` to regenerate derived artifacts
+   (search-index.json, manifest.json, xrefmap.yml).
+4. Run `npm run validate:handbook` to verify schema + graph rules.
+5. Stage and commit when ready.
 
 ## Failure modes
 
-- Duplicate id → script aborts; user picks a different id.
-- Schema validation fails → script prints Zod issues; user corrects input.
-- File system error (permission, disk full) → script aborts; user fixes
-  environment.
+- Duplicate path → script aborts; user picks a different id.
+- Schema validation fails on the generated YAML → script prints Zod issues
+  and exits without writing.
+- Filesystem error → script aborts; user fixes environment.
 
 ## See also
 
 - `docs/handbook/_meta/handbook/en-US.md` — what the levels mean,
-  how the 4 artifacts fit together, the change-type matrix.
-- `schemas/feature.zod.ts` — the canonical schema (Zod 4 via `zod/v4` subpath).
+  the 4-artifact contract, the change-type matrix.
+- `schemas/feature.zod.ts` — canonical schema (Zod 4 via `zod/v4`).
+- `AGENTS.md` (Handbook section) — UID conventions, filesystem layout,
+  semantic distinction between layers.
