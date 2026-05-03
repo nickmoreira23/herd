@@ -19,9 +19,12 @@ export function MermaidDiagram({ chart, id }: Props) {
     async function render() {
       try {
         const mermaid = (await import("mermaid")).default;
+        const isDark =
+          typeof document !== "undefined" &&
+          document.documentElement.classList.contains("dark");
         mermaid.initialize({
           startOnLoad: false,
-          theme: "neutral",
+          theme: isDark ? "dark" : "neutral",
           securityLevel: "loose",
           fontFamily: "inherit",
         });

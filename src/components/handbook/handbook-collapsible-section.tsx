@@ -48,9 +48,10 @@ export function HandbookCollapsibleSection({
         )}
       </CollapsibleTrigger>
       <CollapsibleContent className="pt-2 pb-6">
-        <div className="prose prose-neutral dark:prose-invert max-w-none">
-          {children}
-        </div>
+        {/* Prose styling is applied by HandbookReader per-section so that
+            custom renderers (glossary table, changelog timeline) can opt
+            out of typography defaults via `not-prose`. */}
+        {children}
       </CollapsibleContent>
     </Collapsible>
   );
