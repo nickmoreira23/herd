@@ -28,13 +28,23 @@ export function HandbookChangelogTimeline({ content }: Props) {
   }
 
   return (
-    <ol className="not-prose relative mt-2 ml-2 border-l border-border space-y-6">
+    <ol className="not-prose relative mt-2 ml-2 space-y-6">
       {entries.map((e, idx) => (
         <li key={idx} className="pl-6 relative">
+          {/* Connector line — only drawn between items, never after the last
+              one (so a single-entry timeline shows just the dot). The line
+              starts at the dot and extends through the gap to the next
+              dot's vertical position. */}
+          {idx < entries.length - 1 && (
+            <span
+              aria-hidden
+              className="absolute left-0 top-2 -bottom-6 w-px bg-border"
+            />
+          )}
           {/* Dot marker */}
           <span
             aria-hidden
-            className="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full bg-foreground ring-4 ring-background"
+            className="absolute -left-[3px] top-1.5 h-2 w-2 rounded-full bg-foreground ring-4 ring-background"
           />
           <div className="text-xs font-mono text-muted-foreground tracking-wide">
             {e.date}

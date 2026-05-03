@@ -32,7 +32,7 @@ export function HandbookCollapsibleSection({
       onOpenChange={onOpenChange}
       className="border-t border-border first:border-t-0"
     >
-      <CollapsibleTrigger className="flex items-center w-full py-3 text-left group">
+      <CollapsibleTrigger className="flex items-center w-full py-3 text-left group outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0">
         <ChevronRight
           className={`h-4 w-4 mr-2 text-muted-foreground transition-transform ${
             open ? "rotate-90" : ""

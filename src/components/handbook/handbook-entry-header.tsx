@@ -50,7 +50,7 @@ export function HandbookEntryHeader({
   return (
     <header className="flex items-start justify-between gap-4">
       <div className="flex-1 min-w-0">
-        <div className="flex items-baseline gap-3 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap">
           <h1
             aria-label={title}
             className="m-0 text-2xl flex items-baseline gap-2 flex-wrap"
@@ -81,7 +81,10 @@ export function HandbookEntryHeader({
             )}
             <span className="font-bold text-foreground">{title}</span>
           </h1>
-          <Badge variant={status === "active" ? "default" : "secondary"}>
+          <Badge
+            variant={status === "active" ? "default" : "secondary"}
+            className="capitalize"
+          >
             {status}
           </Badge>
         </div>

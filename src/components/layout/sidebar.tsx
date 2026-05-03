@@ -367,7 +367,7 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 pt-0 pb-2 overflow-y-auto scrollbar-thin space-y-1.5 px-3">
+      <nav className="flex-1 pt-0 pb-2 overflow-y-auto overscroll-contain scrollbar-thin space-y-1.5 px-3">
         {navItems.map((item) =>
           item.type === "group" ? renderGroup(item) : renderLink(item)
         )}

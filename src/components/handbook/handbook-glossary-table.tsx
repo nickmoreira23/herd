@@ -52,10 +52,13 @@ export function HandbookGlossaryTable({ content, locale }: Props) {
               key={idx}
               className="border-b border-border last:border-0 align-top"
             >
-              <td className="px-4 py-2 font-medium text-foreground">
+              {/* `h-14` on a <td> behaves as a min-height — cells stay at
+                  least two body-text lines tall even when the term/def is
+                  short, so single-line and multi-line rows look uniform. */}
+              <td className="px-4 py-3 font-medium text-foreground h-14">
                 {e.term}
               </td>
-              <td className="px-4 py-2 text-muted-foreground">
+              <td className="px-4 py-3 text-muted-foreground h-14">
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   components={{

@@ -313,7 +313,7 @@ function BlocksSubPanel() {
       </div>
 
       {/* Links */}
-      <nav className="flex-1 pb-4 overflow-y-auto px-3">
+      <nav className="flex-1 pb-4 overflow-y-auto overscroll-contain px-3">
         {/* All Blocks link */}
         <Link
           href="/admin/blocks"
@@ -466,7 +466,7 @@ function KnowledgeSubPanel() {
       </div>
 
       {/* Links */}
-      <nav className="flex-1 pb-4 overflow-y-auto px-3">
+      <nav className="flex-1 pb-4 overflow-y-auto overscroll-contain px-3">
         {/* All Sources link */}
         <Link
           href="/admin/organization/knowledge"
@@ -578,7 +578,7 @@ function ToolsSubPanel() {
       </div>
 
       {/* Links */}
-      <nav className="flex-1 pb-4 overflow-y-auto px-3">
+      <nav className="flex-1 pb-4 overflow-y-auto overscroll-contain px-3">
         {/* All Tools link */}
         <Link
           href="/admin/tools"
@@ -731,7 +731,7 @@ function MarketplaceSubPanel() {
       </div>
 
       {/* Links — sections directly under the title */}
-      <nav className="flex-1 pb-4 overflow-y-auto px-3 space-y-0.5">
+      <nav className="flex-1 pb-4 overflow-y-auto overscroll-contain px-3 space-y-0.5">
         {sections.length === 0 && !loaded && (
           // First-time load with no cache — show 3 skeleton rows so we
           // don't flash a misleading "No sections yet".
@@ -836,7 +836,7 @@ function OrganizationSubPanel() {
       </div>
 
       {/* Categories */}
-      <nav className="flex-1 pb-4 overflow-y-auto px-3">
+      <nav className="flex-1 pb-4 overflow-y-auto overscroll-contain px-3">
         {categories.map((cat) => (
           <div key={cat.id} className="mt-4 first:mt-0">
             <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
@@ -932,7 +932,7 @@ function HandbookSubPanel() {
       </div>
 
       {/* Links */}
-      <nav className="flex-1 pb-4 overflow-y-auto px-3 space-y-0.5">
+      <nav className="flex-1 pb-4 overflow-y-auto overscroll-contain px-3 space-y-0.5">
         {/* Overview link */}
         <Link
           href="/admin/handbook"

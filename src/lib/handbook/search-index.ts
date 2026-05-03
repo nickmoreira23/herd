@@ -94,6 +94,7 @@ export function toChildItems(
 ): Array<{
   uid: string;
   href: string;
+  level: string;
   title_pt_BR: string;
   title_en_US: string;
   description_pt_BR: string;
@@ -102,6 +103,7 @@ export function toChildItems(
   return entries.map((e) => ({
     uid: e.uid,
     href: hrefFor(e),
+    level: e.level,
     title_pt_BR: e.title_pt_BR,
     title_en_US: e.title_en_US,
     description_pt_BR: e.description_pt_BR,
