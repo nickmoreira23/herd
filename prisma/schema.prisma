@@ -1807,7 +1807,7 @@ model Integration {
 // Members connect via OAuth flow and their personal tokens are stored here
 model MemberConnection {
   id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId       String?   @map("tenant_id") @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
   profileId      String    @db.Uuid
   integrationId  String    @db.Uuid
   status         String    @default("ACTIVE") // ACTIVE, EXPIRED, REVOKED
@@ -1825,9 +1825,11 @@ model MemberConnection {
 
   profile     NetworkProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
   integration Integration    @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  tenant      Organization   @relation("MemberConnectionTenant", fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([profileId, integrationId])
   @@index([integrationId])
+  @@index([tenantId])
   @@map("member_connections")
 }
 
@@ -1845,8 +1847,10 @@ model IntegrationTierMapping {
 
   integration      Integration      @relation(fields: [integrationId], references: [id], onDelete: Cascade)
   subscriptionTier SubscriptionTier @relation(fields: [subscriptionTierId], references: [id], onDelete: Cascade)
+  tenant           Organization?    @relation("IntegrationTierMappingTenant", fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([integrationId, externalPlanId])
+  @@index([tenantId])
 }
 
 model IntegrationWebhookEvent {
@@ -1859,10 +1863,12 @@ model IntegrationWebhookEvent {
   error         String?
   createdAt     DateTime  @default(now())
 
-  integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  integration Integration   @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  tenant      Organization? @relation("IntegrationWebhookEventTenant", fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([integrationId])
   @@index([eventType])
+  @@index([tenantId])
 }
 
 model IntegrationSyncLog {
@@ -1875,9 +1881,11 @@ model IntegrationSyncLog {
   recordsProcessed Int      @default(0)
   createdAt        DateTime @default(now())
 
-  integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  integration Integration   @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  tenant      Organization? @relation("IntegrationSyncLogTenant", fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([integrationId])
+  @@index([tenantId])
 }
 
 // ========================
@@ -2202,6 +2210,11 @@ model Organization {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   owner NetworkProfile @relation("OrganizationOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  memberConnections        MemberConnection[]        @relation("MemberConnectionTenant")
+  integrationTierMappings  IntegrationTierMapping[]  @relation("IntegrationTierMappingTenant")
+  integrationWebhookEvents IntegrationWebhookEvent[] @relation("IntegrationWebhookEventTenant")
+  integrationSyncLogs      IntegrationSyncLog[]      @relation("IntegrationSyncLogTenant")
 
   @@map("organizations")
 }

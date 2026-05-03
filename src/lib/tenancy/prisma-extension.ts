@@ -3,9 +3,17 @@ import { getTenantId } from "./context";
 
 /**
  * Models cujas queries devem ser auto-filtradas por tenantId quando há contexto ativo.
- * Vazia em produção até Sub-etapa 3. Tests passam lista explícita via createTenantScopingExtension.
+ * Extension é no-op fora de withTenant, então rotas legadas sem session ainda funcionam
+ * pra os 3 modelos cuja coluna tenant_id permanece nullable (X1 — Integration permanece
+ * single-tenant; ITM/IWE/ISL ficam nullable até auth de admin API + tenant resolution
+ * em webhooks chegarem em sub-etapas posteriores).
  */
-export const TENANT_SCOPED_MODELS = [] as const satisfies readonly string[];
+export const TENANT_SCOPED_MODELS = [
+  "MemberConnection",
+  "IntegrationTierMapping",
+  "IntegrationWebhookEvent",
+  "IntegrationSyncLog",
+] as const satisfies readonly string[];
 
 const READ_OPS = new Set([
   "findFirst",

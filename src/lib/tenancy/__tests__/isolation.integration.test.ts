@@ -9,11 +9,16 @@ if (!connectionString) throw new Error("DATABASE_URL or DIRECT_URL required");
 
 const baseClient = new PrismaClient({ adapter: new PrismaPg(connectionString) });
 
-// Test-only Prisma client with IntegrationSyncLog scoped via the extension.
-// Production singleton uses the empty-list (no-op) extension; this isolated
-// instance proves the mechanism works without polluting prod scope.
+// Test-only Prisma client scoped over all 4 tenant-scoped models. Mirrors
+// production TENANT_SCOPED_MODELS but stays isolated to this suite so changes
+// to the prod list don't bleed into existing seed/cleanup expectations.
 const scopedPrisma = baseClient.$extends(
-  createTenantScopingExtension(["IntegrationSyncLog"]),
+  createTenantScopingExtension([
+    "MemberConnection",
+    "IntegrationTierMapping",
+    "IntegrationWebhookEvent",
+    "IntegrationSyncLog",
+  ]),
 );
 
 const TEST_PREFIX = `test-tenancy-${Date.now()}`;
@@ -222,5 +227,105 @@ describe("Tenant scoping isolation (integration)", () => {
       ),
     );
     expect(logs.every((l) => l.tenantId === seeded.orgB.id)).toBe(true);
+  });
+
+  // Smoke coverage for the other 3 tenant-scoped tables. The extension behavior
+  // is identical to IntegrationSyncLog (already exhaustively tested above) —
+  // these confirm the model name matching works for each table name.
+
+  it("scopes IntegrationWebhookEvent reads to current tenant", async () => {
+    const eventA = await baseClient.integrationWebhookEvent.create({
+      data: {
+        tenantId: seeded.orgA.id,
+        integrationId: seeded.integration.id,
+        eventType: `${TEST_PREFIX}-evt`,
+        payload: "{}",
+      },
+    });
+    const eventB = await baseClient.integrationWebhookEvent.create({
+      data: {
+        tenantId: seeded.orgB.id,
+        integrationId: seeded.integration.id,
+        eventType: `${TEST_PREFIX}-evt`,
+        payload: "{}",
+      },
+    });
+
+    const seenByA = await withTenant(seeded.orgA.id, () =>
+      scopedPrisma.integrationWebhookEvent.findMany({
+        where: { eventType: `${TEST_PREFIX}-evt` },
+      }),
+    );
+    expect(seenByA.map((e) => e.id)).toEqual([eventA.id]);
+
+    await baseClient.integrationWebhookEvent.deleteMany({
+      where: { id: { in: [eventA.id, eventB.id] } },
+    });
+  });
+
+  it("scopes IntegrationTierMapping reads to current tenant", async () => {
+    // Reuse an existing SubscriptionTier (creating one requires ~10 Decimal
+    // fields irrelevant to this assertion).
+    const tier = await baseClient.subscriptionTier.findFirst({ select: { id: true } });
+    if (!tier) {
+      throw new Error("Test requires at least one SubscriptionTier seeded");
+    }
+    const mappingA = await baseClient.integrationTierMapping.create({
+      data: {
+        tenantId: seeded.orgA.id,
+        integrationId: seeded.integration.id,
+        externalPlanId: `${TEST_PREFIX}-plan-a`,
+        subscriptionTierId: tier.id,
+      },
+    });
+    const mappingB = await baseClient.integrationTierMapping.create({
+      data: {
+        tenantId: seeded.orgB.id,
+        integrationId: seeded.integration.id,
+        externalPlanId: `${TEST_PREFIX}-plan-b`,
+        subscriptionTierId: tier.id,
+      },
+    });
+
+    const seenByA = await withTenant(seeded.orgA.id, () =>
+      scopedPrisma.integrationTierMapping.findMany({
+        where: { integrationId: seeded.integration.id },
+      }),
+    );
+    expect(seenByA.map((m) => m.id)).toEqual([mappingA.id]);
+
+    await baseClient.integrationTierMapping.deleteMany({
+      where: { id: { in: [mappingA.id, mappingB.id] } },
+    });
+  });
+
+  it("scopes MemberConnection reads to current tenant", async () => {
+    const connA = await baseClient.memberConnection.create({
+      data: {
+        tenantId: seeded.orgA.id,
+        profileId: seeded.profileA.id,
+        integrationId: seeded.integration.id,
+        externalUserId: `${TEST_PREFIX}-ext-a`,
+      },
+    });
+    const connB = await baseClient.memberConnection.create({
+      data: {
+        tenantId: seeded.orgB.id,
+        profileId: seeded.profileB.id,
+        integrationId: seeded.integration.id,
+        externalUserId: `${TEST_PREFIX}-ext-b`,
+      },
+    });
+
+    const seenByA = await withTenant(seeded.orgA.id, () =>
+      scopedPrisma.memberConnection.findMany({
+        where: { integrationId: seeded.integration.id },
+      }),
+    );
+    expect(seenByA.map((c) => c.id)).toEqual([connA.id]);
+
+    await baseClient.memberConnection.deleteMany({
+      where: { id: { in: [connA.id, connB.id] } },
+    });
   });
 });
