@@ -65,7 +65,7 @@ export function HandbookGlossaryTable({ content, locale }: Props) {
                   components={{
                     p: ({ children }) => <span>{children}</span>,
                     code: ({ children }) => (
-                      <code className="bg-foreground text-background px-1.5 py-0.5 rounded text-xs font-mono">
+                      <code className="bg-primary/15 text-primary px-1.5 py-0.5 rounded text-xs font-mono">
                         {children}
                       </code>
                     ),

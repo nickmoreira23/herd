@@ -11,10 +11,16 @@ export default async function HandbookLayout({
 }) {
   const adminLocale = await getLocale();
   const userDefaultLocale = adminLocaleToHandbookLocale(adminLocale);
+  // No overflow / height styling on this wrapper — the admin shell's
+  // <main> already owns the page scroll. Nesting a second
+  // `overflow-y-auto h-full` inside it created a trapped scroll
+  // container: once the inner reached its edge, `overscroll-contain`
+  // blocked the wheel from reaching the outer scroller, so the page
+  // appeared frozen at viewport extremes.
   return (
-    <div className="h-full overflow-y-auto overscroll-contain">
+    <>
       {children}
       <HandbookSearchDialog userDefaultLocale={userDefaultLocale} />
-    </div>
+    </>
   );
 }

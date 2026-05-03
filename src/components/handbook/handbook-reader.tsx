@@ -78,9 +78,11 @@ const PROSE_CODE_THEME =
   "prose-pre:bg-muted prose-pre:text-foreground " +
   "prose-pre:border prose-pre:border-border prose-pre:rounded-md " +
   "prose-pre:shadow-none " +
-  // Inline code uses an inverted pill so identifiers and paths stand out
-  // from prose. Foreground/background tokens flip cleanly in dark mode.
-  "prose-code:bg-foreground prose-code:text-background " +
+  // Inline code uses a tinted pill in the brand primary color (with low
+  // opacity background + full-color text) so identifiers and paths stand
+  // out from prose without becoming visually heavy. Theme-aware: the
+  // primary token follows the client's brand color.
+  "prose-code:bg-primary/15 prose-code:text-primary " +
   "prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded " +
   "prose-code:font-normal prose-code:text-[0.85em] " +
   "prose-code:before:hidden prose-code:after:hidden " +
