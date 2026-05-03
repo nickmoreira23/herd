@@ -73,7 +73,7 @@ export const financesCategory: ToolCategoryManifest = {
       ],
       area: "workflow",
       paths: {
-        page: "src/app/admin/tools/finances/projections/",
+        page: "src/app/admin/tools/projections/",
         components: "src/components/financials/",
       },
     },
@@ -97,7 +97,7 @@ export const financesCategory: ToolCategoryManifest = {
       actions: [],
       area: "workflow",
       paths: {
-        page: "src/app/admin/tools/finances/payments/",
+        page: "src/app/admin/tools/payments/",
         components: "src/components/network/promoters/tabs/",
       },
     },
@@ -126,7 +126,7 @@ export const financesCategory: ToolCategoryManifest = {
       ],
       area: "workflow",
       paths: {
-        page: "src/app/admin/tools/finances/expenses/",
+        page: "src/app/admin/tools/expenses/",
         components: "src/components/operations/",
       },
     },

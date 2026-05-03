@@ -34,7 +34,7 @@ export const salesCategory: ToolCategoryManifest = {
       actions: [],
       area: "transaction",
       paths: {
-        page: "src/app/admin/tools/sales/packages/",
+        page: "src/app/admin/tools/packages/",
       },
     },
     {
@@ -62,7 +62,7 @@ export const salesCategory: ToolCategoryManifest = {
       actions: [],
       area: "workflow",
       paths: {
-        page: "src/app/admin/tools/sales/pipeline/",
+        page: "src/app/admin/tools/pipeline/",
       },
     },
     {
@@ -79,7 +79,7 @@ export const salesCategory: ToolCategoryManifest = {
       actions: [],
       area: "workflow",
       paths: {
-        page: "src/app/admin/tools/sales/targets/",
+        page: "src/app/admin/tools/targets/",
       },
     },
     {
@@ -96,7 +96,7 @@ export const salesCategory: ToolCategoryManifest = {
       actions: [],
       area: "workflow",
       paths: {
-        page: "src/app/admin/tools/sales/performance/",
+        page: "src/app/admin/tools/performance/",
       },
     },
   ],

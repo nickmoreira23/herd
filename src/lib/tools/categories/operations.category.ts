@@ -35,7 +35,7 @@ export const operationsCategory: ToolCategoryManifest = {
       actions: [],
       area: "workflow",
       paths: {
-        page: "src/app/admin/tools/operations/milestones/",
+        page: "src/app/admin/tools/milestones/",
       },
     },
   ],

@@ -83,7 +83,7 @@ export function PackageCreateSheet({
 
       toast.success("Package created");
       onCreated();
-      router.push(`/admin/tools/sales/packages/${json.data.id}`);
+      router.push(`/admin/tools/packages/${json.data.id}`);
     } catch {
       toast.error("Failed to create package");
     } finally {

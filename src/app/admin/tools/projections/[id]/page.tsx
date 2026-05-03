@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { FinancialPageClient } from "@/components/financials/financial-page-client";
-import { getFinancialDefaults } from "../../data";
+import { getFinancialDefaults } from "@/app/admin/financials/data";
 import type { FinancialInputs } from "@/lib/financial-engine";
 import { connection } from "next/server";
 import { getLocale } from "@/lib/i18n/get-locale";
