@@ -95,9 +95,9 @@ graph TB
     style I fill:#0f172a,color:#94a3b8
 ```
 
-### As 4 categorias técnicas
+### As 5 categorias técnicas
 
-Atravessam a hierarquia comercial. Definidas no campo `technical_category` do `feature.yml`. As 4 são canônicas; o campo aceita também dimensões temáticas (`foundation`, `financial`, `infrastructure`, `sales`, `marketing`, `support`, `commerce`) quando aplicável a uma feature.
+Atravessam a hierarquia comercial. Definidas no campo `technical_category` do `feature.yml`. As 5 são canônicas; o campo aceita também dimensões temáticas (`foundation`, `financial`, `infrastructure`, `sales`, `marketing`, `support`, `commerce`) quando aplicável a uma feature.
 
 #### Block
 
@@ -149,6 +149,26 @@ Atravessam a hierarquia comercial. Definidas no campo `technical_category` do `f
 
 **Distinção sutil — tool vs block-with-relations**: relations não fazem block virar tool. Critério é objetivo de negócio. Subscription real (registro de quem assinou) é block; subscription offering (composição vendável) é tool.
 
+#### Tool Category
+
+**Definição**: agrupamento de tools por área de negócio.
+
+**Critério decisivo**: tool-category não tem dado próprio — é container declarativo que agrupa tools relacionadas semanticamente. Diferente de Solutions (bundles comerciais para outcomes específicos), Categories são taxonomia estrutural.
+
+**Características**:
+- Possui `ToolCategoryManifest` com tools embedded como array.
+- Metadata: name, displayName, description, icon, color, capabilities, sortOrder.
+- Não tem CRUD próprio — é declarativa.
+- Aparece em `/admin/tools/{category}` como landing page.
+
+**Path layout**: `src/lib/tools/categories/{category}.category.ts`.
+
+**Exemplos canônicos** (5 implementadas): Finances, Legal, Marketing, Sales, Operations.
+
+**Distinção sutil — Category vs Solution**:
+- **Category** (existe): agrupamento estrutural por área de negócio. Permanente.
+- **Solution** (deferida): bundle curado de tools para outcome específico (ex: "Suporte Completo"). Comercial, ofertável.
+
 #### Top-Level Feature
 
 **Definição**: infraestrutura compartilhada com profundidade rica que múltiplas tools/blocks consomem.
@@ -188,10 +208,13 @@ flowchart TD
     Start -->|SIM| IndepCheck[Dado existe<br/>independente de<br/>composição?]
 
     Workflow -->|SIM| Goal[Tem único objetivo<br/>de negócio claro?]
-    Workflow -->|NÃO| Reconsider1[Reconsiderar<br/>provavelmente helper UI]
+    Workflow -->|NÃO| AggregatorCheck[É agrupamento<br/>declarativo de tools?]
+
+    AggregatorCheck -->|SIM| ToolCategory[technical_category: tool-category]
+    AggregatorCheck -->|NÃO| TLF[technical_category: top-level-feature<br/>infraestrutura]
 
     Goal -->|SIM| Tool[technical_category: tool]
-    Goal -->|NÃO| TLF[technical_category: top-level-feature<br/>infraestrutura]
+    Goal -->|NÃO| TLF
 
     IndepCheck -->|SIM| RichCheck[Complexidade interna<br/>rica + cross-area?]
     IndepCheck -->|NÃO| AgrCheck[Só faz sentido como<br/>agrupamento de outro block?]
@@ -200,9 +223,10 @@ flowchart TD
     RichCheck -->|NÃO| Block[technical_category: block]
 
     AgrCheck -->|SIM| BlockGroup[technical_category: block-group]
-    AgrCheck -->|NÃO| Reconsider2[Reconsiderar<br/>provavelmente tool]
+    AgrCheck -->|NÃO| Reconsider[Reconsiderar]
 
     style Tool fill:#1e40af,color:#fff
+    style ToolCategory fill:#3b82f6,color:#fff
     style Block fill:#15803d,color:#fff
     style BlockGroup fill:#65a30d,color:#fff
     style TLF fill:#7c3aed,color:#fff
@@ -211,11 +235,12 @@ flowchart TD
 
 ### Implicações de classificação no código
 
-| technical_category | Components | Pages | Manifest |
+| Categoria | Components | Pages | Manifest |
 |---|---|---|---|
 | Block | `src/components/{name}/` | `src/app/admin/blocks/{name}/` | `src/lib/blocks/blocks/{name}.block.ts` |
 | Block group | `src/components/{parent}/groups/{name}/` | `src/app/admin/blocks/{parent}/groups/{name}/` | dentro do `{parent}.block.ts` (campo `groups`) |
-| Tool | `src/components/tools/{name}/` | `src/app/admin/tools/{name}/` | `src/lib/tools/tools/{name}.tool.ts` |
+| Tool | (chrome genérico em `src/components/tools/`) | `src/app/admin/tools/{category}/{tool}/` | embedded em `{category}.category.ts` |
+| Tool category | (landing via `category-landing.tsx`) | `src/app/admin/tools/{category}/` | `src/lib/tools/categories/{category}.category.ts` |
 | Top-level feature | `src/components/{name}/` | `src/app/admin/{name}/` | `src/lib/features/{name}.feature.ts` |
 
 ### Re-classifications planejadas (refator R3-R7)
@@ -359,13 +384,15 @@ Limitação: diagramas Mermaid são lazy-rendered na abertura da seção. Diagra
 | perspective | perspectiva | Uma das seis seções de uma entry de Handbook: Business, Product, Architecture, Operations, Glossary, Changelog. |
 | SKILL.md | SKILL.md | Guia operacional voltado para agentes. Formato definido por agentskills.io. |
 | solution | solução | Pacote curado de tools para um propósito macro. Atualmente deferred. |
-| technical_category | categoria técnica | Classificação arquitetural. 4 canônicas (block, block-group, tool, top-level-feature) + dimensions temáticas (foundation, financial, infrastructure, sales, marketing, support, commerce). |
+| technical_category | categoria técnica | Classificação arquitetural. 5 canônicas (block, block-group, tool, tool-category, top-level-feature) + dimensions temáticas (foundation, financial, infrastructure, sales, marketing, support, commerce). |
 | tool | ferramenta | Composição cross-block com um objetivo de negócio. technical_category canônica. |
+| tool-category | categoria de tool | Agrupamento de tools por área de negócio (Finances, Legal, Marketing, Sales, Operations). technical_category canônica; declarativa, sem CRUD próprio. |
 | top-level-feature | top-level feature | technical_category canônica para infraestrutura rica consumida cross-area (Knowledge, Organization, Directory, Blocks, Handbook). |
 | uid | uid | Identificador estável no formato `herd.<level>.<id>`. |
 | xrefmap | xrefmap | Tabela gerada de tradução UID → path. Lookup canônico para cross-references. |
 
 ## Changelog
 
+- **2026-05-02 (R1)** — Reconciliação tools foundation. Tool ganhou kind discriminator. ToolCategoryManifest cravado como 5ª categoria arquitetural canônica. Schema enum bumpado 11 → 12 valores. ToolManifest + FeatureManifest provisórios deletados (dead code).
 - **2026-05-02** — R0.1 Handbook content reform. Substitui pyramid de 6 níveis singular por hierarquia plural (Networks/Solutions/Tools/Blocks/Integrations) com Networks como categoria com sub-tipos. Adiciona `block-group` e `top-level-feature` como `technical_category` canônicos (era 3 valores, vira 11: 4 arquiteturais + 7 temáticos). Adiciona path-mapping, re-classifications planejadas, classification-discipline guide, e distinção `level` vs `technical_category`. Schema Zod bumpado.
 - **2026-05-01** — Publicação inicial. Etapa Handbook foundation + first entries. Estabelece níveis comerciais, technical categories, 4 artifacts por feature, Zod 4 (via subpath `zod/v4`) como schema source-of-truth, doc-first como workflow, e CI gates (3 hard-fail + 3 soft warning).

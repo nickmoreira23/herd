@@ -1,7 +1,7 @@
 # HERD
 
 > HERD is an AI-native B2B platform for marketing networks.
-> Currently 23 documented entries across 5 layers (Networks, Solutions, Tools, Blocks, Integrations) plus a meta namespace.
+> Currently 24 documented entries across 5 layers (Networks, Solutions, Tools, Blocks, Integrations) plus a meta namespace.
 
 ## Documentation
 
@@ -25,6 +25,7 @@
 - [Financial Blocks](https://herd.app/admin/handbook/blocks/financial): Financial data primitives — records, flows, immutable events — that serve as the foundation for tools and product flows.
 - [Miscellaneous](https://herd.app/admin/handbook/blocks/miscellaneous): Blocks not yet classified into a specific category. Temporary accommodation — debt to resolve during backfill.
 - [R0 — Manifest Registry Foundation](https://herd.app/admin/handbook/refactor/r0-manifest-registry): Refactor foundation: pre-refactor cleanup, architectural content reform in the Handbook, and introduction of the kind discriminator in the manifest registry.
+- [R1 — Tools Foundation Reconciliation](https://herd.app/admin/handbook/refactor/r1-tools-foundation): Reconciliation of the existing tools infrastructure with the discriminator schema established in R0.2. Categories as 5th technical category.
 
 ## Meta
 

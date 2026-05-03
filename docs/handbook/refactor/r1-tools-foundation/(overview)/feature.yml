@@ -1,0 +1,43 @@
+id: r1-tools-foundation
+uid: herd.category.refactor.r1-tools-foundation
+level: category
+technical_category: foundation
+
+title:
+  pt-BR: "R1 — Tools Foundation Reconciliation"
+  en-US: "R1 — Tools Foundation Reconciliation"
+description:
+  pt-BR: "Reconciliação da infraestrutura de tools existente com o discriminator schema cravado em R0.2. Categories como 5ª categoria técnica."
+  en-US: "Reconciliation of the existing tools infrastructure with the discriminator schema established in R0.2. Categories as 5th technical category."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-02
+updated: 2026-05-02
+
+parent: herd.layer.refactor
+children: []
+consumes: []
+consumed_by: []
+related:
+  - herd.category.refactor.r0-manifest-registry
+
+source_paths:
+  - "src/lib/tools/manifest.ts"
+  - "src/lib/tools/registry.ts"
+  - "src/lib/tools/categories/"
+  - "src/lib/blocks/manifest.ts"
+  - "schemas/feature.zod.ts"
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

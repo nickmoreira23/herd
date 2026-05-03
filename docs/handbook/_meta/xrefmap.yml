@@ -64,6 +64,13 @@ references:
     title:
       pt-BR: R0 — Manifest Registry Foundation
       en-US: R0 — Manifest Registry Foundation
+  herd.category.refactor.r1-tools-foundation:
+    level: category
+    id: r1-tools-foundation
+    path: docs/handbook/refactor/r1-tools-foundation/(overview)
+    title:
+      pt-BR: R1 — Tools Foundation Reconciliation
+      en-US: R1 — Tools Foundation Reconciliation
   herd.category.tools.financial:
     level: category
     id: financial
