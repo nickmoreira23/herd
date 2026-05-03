@@ -7,14 +7,23 @@
 // `src/lib/tools/manifest.ts` (which were pre-existing and richer than
 // the provisional shapes once defined here). The provisional ToolManifest
 // and FeatureManifest types were dead code (zero external callers) and
-// have been removed. The top-level feature variant returns in R2 when
-// the first real feature manifest lands.
+// have been removed.
+//
+// R2 introduces Area as 5th canonical technical category (replacing the
+// speculative top-level-feature). Areas are macro-divisions of the product
+// where tools are positioned (Communication, Transaction, Workflow,
+// Notification, Identity, Infrastructure).
 
 import type { Tool, ToolCategoryManifest } from "@/lib/tools/manifest";
+import type { AreaManifest } from "@/lib/core/manifest";
 
-export type EntityKind = "block" | "tool" | "tool_category";
+export type EntityKind = "block" | "tool" | "tool_category" | "area";
 
-export type EntityManifest = BlockManifest | Tool | ToolCategoryManifest;
+export type EntityManifest =
+  | BlockManifest
+  | Tool
+  | ToolCategoryManifest
+  | AreaManifest;
 
 export interface BlockAction {
   /** Globally unique action name, e.g. "create_product" */

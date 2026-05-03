@@ -61,6 +61,19 @@ export interface Tool {
   actions: ToolAction[];
   /** Whether this tool has sub-routes beyond the main page */
   hasSubRoutes: boolean;
+  /**
+   * Optional business discipline (e.g., "finances", "legal", "marketing",
+   * "sales", "operations"). Cross-cutting tools (chat, marketplace,
+   * knowledge, network, handbook, dashboard) leave this undefined.
+   * Tools embedded in a ToolCategoryManifest inherit the category implicitly.
+   */
+  category?: string;
+  /**
+   * Mandatory area positioning the tool in the product macro-division.
+   * Values: "communication" | "transaction" | "workflow" | "notification"
+   *         | "identity" | "infrastructure".
+   */
+  area: string;
   /** File paths (relative to project root) */
   paths: {
     page: string;

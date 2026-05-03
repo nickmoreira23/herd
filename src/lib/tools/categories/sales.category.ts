@@ -32,6 +32,7 @@ export const salesCategory: ToolCategoryManifest = {
         { blockName: "services", usage: "read", purpose: "Service catalog used in package wizard" },
       ],
       actions: [],
+      area: "transaction",
       paths: {
         page: "src/app/admin/tools/sales/packages/",
       },
@@ -59,6 +60,7 @@ export const salesCategory: ToolCategoryManifest = {
         },
       ],
       actions: [],
+      area: "workflow",
       paths: {
         page: "src/app/admin/tools/sales/pipeline/",
       },
@@ -75,6 +77,7 @@ export const salesCategory: ToolCategoryManifest = {
       hasSubRoutes: false,
       blocks: [],
       actions: [],
+      area: "workflow",
       paths: {
         page: "src/app/admin/tools/sales/targets/",
       },
@@ -91,6 +94,7 @@ export const salesCategory: ToolCategoryManifest = {
       hasSubRoutes: false,
       blocks: [],
       actions: [],
+      area: "workflow",
       paths: {
         page: "src/app/admin/tools/sales/performance/",
       },

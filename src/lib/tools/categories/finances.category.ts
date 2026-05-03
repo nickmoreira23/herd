@@ -71,6 +71,7 @@ export const financesCategory: ToolCategoryManifest = {
           responseDescription: "Created projection snapshot",
         },
       ],
+      area: "workflow",
       paths: {
         page: "src/app/admin/tools/finances/projections/",
         components: "src/components/financials/",
@@ -94,6 +95,7 @@ export const financesCategory: ToolCategoryManifest = {
         },
       ],
       actions: [],
+      area: "workflow",
       paths: {
         page: "src/app/admin/tools/finances/payments/",
         components: "src/components/network/promoters/tabs/",
@@ -122,6 +124,7 @@ export const financesCategory: ToolCategoryManifest = {
             "Array of expense categories with pre-launch cost totals",
         },
       ],
+      area: "workflow",
       paths: {
         page: "src/app/admin/tools/finances/expenses/",
         components: "src/components/operations/",

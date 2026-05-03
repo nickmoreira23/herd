@@ -26,7 +26,7 @@ export const TechnicalCategory = z.enum([
   "block-group",
   "tool",
   "tool-category",
-  "top-level-feature",
+  "area",
   // thematic dimensions
   "foundation",
   "financial",
