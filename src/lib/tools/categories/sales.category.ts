@@ -1,6 +1,7 @@
 import type { ToolCategoryManifest } from "../manifest";
 
 export const salesCategory: ToolCategoryManifest = {
+  kind: "tool_category",
   name: "sales",
   displayName: "Sales",
   description:
@@ -16,6 +17,7 @@ export const salesCategory: ToolCategoryManifest = {
   ],
   tools: [
     {
+      kind: "tool",
       name: "packages",
       displayName: "Packages",
       description:
@@ -35,6 +37,7 @@ export const salesCategory: ToolCategoryManifest = {
       },
     },
     {
+      kind: "tool",
       name: "pipeline",
       displayName: "Pipeline",
       description:
@@ -61,6 +64,7 @@ export const salesCategory: ToolCategoryManifest = {
       },
     },
     {
+      kind: "tool",
       name: "targets",
       displayName: "Targets",
       description:
@@ -76,6 +80,7 @@ export const salesCategory: ToolCategoryManifest = {
       },
     },
     {
+      kind: "tool",
       name: "performance",
       displayName: "Performance",
       description:

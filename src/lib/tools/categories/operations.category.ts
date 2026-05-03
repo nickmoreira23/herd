@@ -1,6 +1,7 @@
 import type { ToolCategoryManifest } from "../manifest";
 
 export const operationsCategory: ToolCategoryManifest = {
+  kind: "tool_category",
   name: "operations",
   displayName: "Operations",
   description:
@@ -15,6 +16,7 @@ export const operationsCategory: ToolCategoryManifest = {
   ],
   tools: [
     {
+      kind: "tool",
       name: "milestones",
       displayName: "Milestones",
       description:
