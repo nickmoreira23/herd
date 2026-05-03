@@ -78,9 +78,11 @@ const PROSE_CODE_THEME =
   "prose-pre:bg-muted prose-pre:text-foreground " +
   "prose-pre:border prose-pre:border-border prose-pre:rounded-md " +
   "prose-pre:shadow-none " +
-  "prose-code:bg-muted prose-code:text-foreground " +
-  "prose-code:px-1 prose-code:py-0.5 prose-code:rounded " +
-  "prose-code:font-normal prose-code:text-[0.9em] " +
+  // Inline code uses an inverted pill so identifiers and paths stand out
+  // from prose. Foreground/background tokens flip cleanly in dark mode.
+  "prose-code:bg-foreground prose-code:text-background " +
+  "prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded " +
+  "prose-code:font-normal prose-code:text-[0.85em] " +
   "prose-code:before:hidden prose-code:after:hidden " +
   // Code inside <pre> resets the inline pill styling — pre itself is the
   // container and we don't want a double background.

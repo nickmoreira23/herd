@@ -52,19 +52,20 @@ export function HandbookGlossaryTable({ content, locale }: Props) {
               key={idx}
               className="border-b border-border last:border-0 align-top"
             >
-              {/* `h-14` on a <td> behaves as a min-height — cells stay at
-                  least two body-text lines tall even when the term/def is
-                  short, so single-line and multi-line rows look uniform. */}
-              <td className="px-4 py-3 font-medium text-foreground h-14">
+              {/* `h-[4.5rem]` (72px) acts as the row's minimum height —
+                  enough for two body-text lines plus py-3 padding. Single-
+                  line entries get the same row height as two-line ones,
+                  keeping the table visually uniform. */}
+              <td className="px-4 py-3 font-medium text-foreground h-[4.5rem]">
                 {e.term}
               </td>
-              <td className="px-4 py-3 text-muted-foreground h-14">
+              <td className="px-4 py-3 text-muted-foreground h-[4.5rem]">
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   components={{
                     p: ({ children }) => <span>{children}</span>,
                     code: ({ children }) => (
-                      <code className="bg-muted px-1 py-0.5 rounded text-xs font-mono">
+                      <code className="bg-foreground text-background px-1.5 py-0.5 rounded text-xs font-mono">
                         {children}
                       </code>
                     ),
