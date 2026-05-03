@@ -44,21 +44,9 @@ import {
   MessageSquare,
   Receipt,
   Brain,
-  Briefcase,
-  Bell,
-  UserCircle,
-  Server,
-  GitBranch,
-  TrendingUp,
-  Wallet,
-  FileSignature,
-  FileText,
-  HelpCircle,
+  Layers,
   type LucideIcon,
 } from "lucide-react";
-import { getAllAreas } from "@/lib/core/registry";
-import { allTools } from "@/lib/tools/registry";
-import type { Tool } from "@/lib/tools/manifest";
 import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
@@ -97,122 +85,23 @@ interface NavGroup {
 
 type NavItem = NavLink | NavGroup;
 
-// ─── Icon resolution ─────────────────────────────────────────────────
-// Manifest icons are stored as string names. Map to Lucide components.
-
-const SIDEBAR_ICON_MAP: Record<string, LucideIcon> = {
-  // Area icons
-  MessageSquare,
-  ShoppingBag,
-  Briefcase,
-  Bell,
-  UserCircle,
-  Server,
-  // Standalone tool icons
-  LayoutDashboard,
-  Receipt,
-  BookOpen,
-  Brain,
-  Network,
-  // Embedded tool icons
-  Boxes,
-  GitBranch,
-  Target,
-  TrendingUp,
-  CreditCard,
-  Wallet,
-  FileSignature,
-  FileText,
-  Flag,
-};
-
-function resolveIcon(name: string): LucideIcon {
-  return SIDEBAR_ICON_MAP[name] ?? HelpCircle;
-}
-
-// Resolve admin URL from manifest paths.page (source of truth).
-// Special-case: dashboard is the /admin root.
-function getToolHref(tool: Tool): string {
-  if (tool.name === "dashboard") return "/admin";
-  // "src/app/admin/foo/" → "/admin/foo"
-  return tool.paths.page.replace(/^src\/app/, "").replace(/\/$/, "");
-}
-
 // ─── Navigation config ──────────────────────────────────────────────
 
-function buildNavItems(): NavItem[] {
-  const areaGroups: NavItem[] = getAllAreas().flatMap<NavItem>((area) => {
-    const areaTools = Object.values(allTools).filter(
-      (t) => t.area === area.name
-    );
-    // Hide empty area groups for cleaner UX.
-    if (areaTools.length === 0) return [];
-    return [
-      {
-        type: "group",
-        label: area.displayName,
-        icon: resolveIcon(area.icon),
-        children: areaTools.map<NavLink>((tool) => ({
-          type: "link",
-          href: getToolHref(tool),
-          label: tool.displayName,
-          icon: resolveIcon(tool.icon),
-        })),
-      },
-    ];
-  });
-
-  return [
-    // 1. Dashboard top-level (special — root /admin home).
-    {
-      type: "link",
-      href: "/admin",
-      label: "Dashboard",
-      labelKey: "nav.sidebar.dashboard",
-      icon: LayoutDashboard,
-    },
-    // 2. Areas as expandable groups (registry-driven, sorted by sortOrder).
-    ...areaGroups,
-    // 3. Specials (hardcoded — special routes outside Areas).
-    {
-      type: "link",
-      href: "/admin/organization/profile",
-      label: "Organization",
-      labelKey: "nav.sidebar.organization",
-      icon: Building2,
-    },
-    {
-      type: "link",
-      href: "/admin/tools",
-      label: "Tools",
-      labelKey: "nav.sidebar.tools",
-      icon: Lightbulb,
-    },
-    {
-      type: "link",
-      href: "/admin/blocks",
-      label: "Blocks",
-      labelKey: "nav.sidebar.blocks",
-      icon: Blocks,
-    },
-    {
-      type: "link",
-      href: "/admin/integrations",
-      label: "Integrations",
-      labelKey: "nav.sidebar.integrations",
-      icon: Plug,
-    },
-    {
-      type: "link",
-      href: "/admin/agents",
-      label: "Agents",
-      labelKey: "nav.sidebar.agents",
-      icon: Bot,
-    },
-  ];
-}
-
-const navItems: NavItem[] = buildNavItems();
+const navItems: NavItem[] = [
+  { type: "link", href: "/admin", label: "Dashboard", labelKey: "nav.sidebar.dashboard", icon: LayoutDashboard },
+  { type: "link", href: "/admin/chat", label: "Chat", labelKey: "nav.sidebar.chat", icon: MessageSquare },
+  { type: "link", href: "/admin/organization/profile", label: "Organization", labelKey: "nav.sidebar.organization", icon: Building2 },
+  { type: "link", href: "/admin/knowledge", label: "Knowledge", labelKey: "nav.sidebar.knowledge", icon: Brain },
+  { type: "link", href: "/admin/handbook", label: "Handbook", labelKey: "nav.sidebar.handbook", icon: BookOpen },
+  { type: "link", href: "/admin/network", label: "Network", labelKey: "nav.sidebar.network", icon: Network },
+  { type: "link", href: "/admin/marketplace", label: "Marketplace", labelKey: "nav.sidebar.marketplace", icon: ShoppingBag },
+  { type: "link", href: "/admin/ledger", label: "Ledger", labelKey: "nav.sidebar.ledger", icon: Receipt },
+  { type: "link", href: "/admin/agents", label: "Agents", labelKey: "nav.sidebar.agents", icon: Bot },
+  { type: "link", href: "/admin/areas", label: "Areas", labelKey: "nav.sidebar.areas", icon: Layers },
+  { type: "link", href: "/admin/tools", label: "Tools", labelKey: "nav.sidebar.tools", icon: Lightbulb },
+  { type: "link", href: "/admin/blocks", label: "Blocks", labelKey: "nav.sidebar.blocks", icon: Blocks },
+  { type: "link", href: "/admin/integrations", label: "Integrations", labelKey: "nav.sidebar.integrations", icon: Plug },
+];
 
 // Closed sidebar width: 16px padding + 40px logo/icon + 16px padding
 const ICON_COL = 72; // px
