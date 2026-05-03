@@ -37,11 +37,11 @@ Daqui para frente, qualquer agent (humano ou IA) executando uma etapa em R3-R8 d
 2. Tratar a mini-spec como contrato de escopo. Surpresas durante execução (que façam o escopo crescer ou contradizer a mini-spec) devem ser elevadas ao usuário, não absorvidas silenciosamente.
 3. Não pré-criar manifests prometidos por mini-specs (ex: `subscription-offering.tool.ts`, `marketplace.feature.ts`) durante outras etapas — esses landings são parte da etapa específica.
 
-R1.5 não destrava etapas downstream sequencialmente: R2.5–R8 dependem de R2 (top-level features foundation). R6 e R7 em particular consomem o featureRegistry estabelecido em R2.
+R1.5 não destrava etapas downstream sequencialmente: R2.5–R8 dependem de R2 (areas foundation). R6 e R7 em particular consomem o registry estabelecido em R2.
 
 ## Glossary
 
-- **Re-classification**: mudança de `technical_category` de uma feature existente (ex: block → tool, block → top-level-feature). Documentada na mini-spec da etapa.
+- **Re-classification**: mudança de `technical_category` de uma feature existente (ex: block → tool, block → area). Documentada na mini-spec da etapa.
 - **Mini-spec**: entry de Handbook descrevendo escopo e decisões de uma etapa do refator antes da execução. Status `draft` enquanto não executada.
 - **Brownfield investigation**: leitura do código real (paths, manifests, surfaces) para confrontar suposições do plano original. Inverso de greenfield (planejar como se nada existisse).
 - **Doc-first**: protocolo onde decisões arquiteturais são cristalizadas em prosa canônica antes de qualquer mudança de código.

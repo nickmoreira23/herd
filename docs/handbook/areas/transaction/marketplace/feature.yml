@@ -1,0 +1,43 @@
+id: marketplace
+uid: herd.tool.transaction.marketplace
+level: tool
+technical_category: tool
+
+title:
+  pt-BR: "Marketplace"
+  en-US: "Marketplace"
+description:
+  pt-BR: "Storefront público. Compõe products, services, subscriptions e packages em itens vendáveis com seções, visibilidade e renderer."
+  en-US: "Public-facing storefront. Composes products, services, subscriptions, and packages into sellable items with sections, visibility, and renderer."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-03
+updated: 2026-05-03
+
+parent: herd.category.areas.transaction
+children: []
+consumes: []
+consumed_by: []
+related: []
+
+source_paths:
+  - "src/lib/tools/tools/marketplace.tool.ts"
+  - "src/app/admin/marketplace"
+  - "src/components/marketplace"
+
+admin_paths:
+  - "/admin/marketplace"
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

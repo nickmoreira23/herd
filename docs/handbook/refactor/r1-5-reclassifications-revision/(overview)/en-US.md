@@ -37,11 +37,11 @@ Going forward, any agent (human or AI) executing an R3-R8 stage must:
 2. Treat the mini-spec as a scope contract. Surprises during execution (that would grow the scope or contradict the mini-spec) must be escalated to the user, not silently absorbed.
 3. Not pre-create manifests promised by mini-specs (e.g. `subscription-offering.tool.ts`, `marketplace.feature.ts`) during other stages — those landings belong to the specific stage.
 
-R1.5 does not unblock downstream stages sequentially: R2.5–R8 depend on R2 (top-level features foundation). R6 and R7 in particular consume the featureRegistry established in R2.
+R1.5 does not unblock downstream stages sequentially: R2.5–R8 depend on R2 (areas foundation). R6 and R7 in particular consume the registry established in R2.
 
 ## Glossary
 
-- **Re-classification**: change of `technical_category` for an existing feature (e.g. block → tool, block → top-level-feature). Documented in the stage's mini-spec.
+- **Re-classification**: change of `technical_category` for an existing feature (e.g. block → tool, block → area). Documented in the stage's mini-spec.
 - **Mini-spec**: Handbook entry describing scope and decisions for a refactor stage before execution. Status `draft` while not executed.
 - **Brownfield investigation**: reading the actual code (paths, manifests, surfaces) to confront the original plan's assumptions. Opposite of greenfield (planning as if nothing existed).
 - **Doc-first**: protocol where architectural decisions are crystallized into canonical prose before any code change.

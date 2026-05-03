@@ -1,0 +1,37 @@
+id: identity
+uid: herd.category.areas.identity
+level: category
+technical_category: area
+
+title:
+  pt-BR: "Identidade"
+  en-US: "Identity"
+description:
+  pt-BR: "Área de identidade e conhecimento. Tools que gerem quem está no sistema (pessoas, organizações) e o que o sistema sabe."
+  en-US: "Identity and knowledge area. Tools that manage who is in the system (people, organizations) and what the system knows."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-03
+updated: 2026-05-03
+
+parent: herd.layer.areas
+children:
+  - herd.tool.identity.knowledge
+  - herd.tool.identity.network
+consumes: []
+consumed_by: []
+related: []
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

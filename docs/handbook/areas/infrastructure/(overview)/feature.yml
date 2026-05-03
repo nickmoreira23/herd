@@ -1,0 +1,36 @@
+id: infrastructure
+uid: herd.category.areas.infrastructure
+level: category
+technical_category: area
+
+title:
+  pt-BR: "Infraestrutura"
+  en-US: "Infrastructure"
+description:
+  pt-BR: "Infraestrutura de plataforma sob o capô. Tools que documentam, configuram, ou operam a própria plataforma — invisíveis em fluxo normal."
+  en-US: "Under-the-hood platform infrastructure. Tools that document, configure, or operate the platform itself — invisible in normal flow."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-03
+updated: 2026-05-03
+
+parent: herd.layer.areas
+children:
+  - herd.tool.infrastructure.handbook
+consumes: []
+consumed_by: []
+related: []
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

@@ -41,7 +41,7 @@ Each stage has its own entry at `docs/handbook/refactor/r{N}-{name}/(overview)/`
 For agents (human or AI) working on the refactor:
 
 1. Read the specific stage entry before proposing changes. The decisions are canonical and justified — improvising contradicts the protocol.
-2. Consult `_meta/handbook` for the classification decision tree (block / block-group / tool / top-level-feature). The whole refactor depends on this taxonomy.
+2. Consult `_meta/handbook` for the classification decision tree (block / block-group / tool / area). The whole refactor depends on this taxonomy.
 3. Downstream stages (R3–R7) consume decisions from R0 (kind discriminator) and R1/R2 (tool/feature manifests). Don't skip reading the prior stages.
 4. Every stage closes with commit + updated Handbook entry. Without the entry, the stage isn't closed.
 

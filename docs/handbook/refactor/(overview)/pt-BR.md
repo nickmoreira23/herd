@@ -41,7 +41,7 @@ Cada etapa tem entrada própria em `docs/handbook/refactor/r{N}-{nome}/(overview
 Para agentes (humanos ou IA) trabalhando no refator:
 
 1. Leia a entrada da etapa específica antes de propor mudanças. As decisões são canônicas e justificadas — improvisar contradiz o protocolo.
-2. Consulte `_meta/handbook` para a árvore de decisão de classificação (block / block-group / tool / top-level-feature). O refator inteiro depende dessa taxonomia.
+2. Consulte `_meta/handbook` para a árvore de decisão de classificação (block / block-group / tool / area). O refator inteiro depende dessa taxonomia.
 3. Etapas downstream (R3–R7) consomem decisões de R0 (kind discriminator) e R1/R2 (tool/feature manifests). Não pule a leitura das etapas anteriores.
 4. Cada etapa fecha com commit + entrada do Handbook atualizada. Sem entrada, a etapa não está fechada.
 

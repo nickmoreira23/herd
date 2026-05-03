@@ -9,7 +9,7 @@ uid: herd.meta.handbook
 
 # Handbook
 
-The Handbook is HERD's documentation system. Every feature in the platform — block, tool, top-level-feature, integration, or solution — is described here using a consistent template, so that humans, internal AI agents (Claude Code), and external AI agents (ChatGPT, Claude Desktop via MCP) can all build a correct mental model of HERD without reading source code.
+The Handbook is HERD's documentation system. Every feature in the platform — block, tool, area, integration, or solution — is described here using a consistent template, so that humans, internal AI agents (Claude Code), and external AI agents (ChatGPT, Claude Desktop via MCP) can all build a correct mental model of HERD without reading source code.
 
 This entry documents the Handbook itself: what each commercial level means, what the canonical technical categories are, how `feature.yml` works, how to read or write a Handbook entry, and how the system stays consistent under change.
 
@@ -211,15 +211,15 @@ flowchart TD
     Workflow -->|NÃO| AggregatorCheck[É agrupamento<br/>declarativo de tools?]
 
     AggregatorCheck -->|SIM| ToolCategory[technical_category: tool-category]
-    AggregatorCheck -->|NÃO| TLF[technical_category: top-level-feature<br/>infraestrutura]
+    AggregatorCheck -->|NÃO| Area[technical_category: area<br/>macro-divisão do produto]
 
     Goal -->|SIM| Tool[technical_category: tool]
-    Goal -->|NÃO| TLF
+    Goal -->|NÃO| Area
 
     IndepCheck -->|SIM| RichCheck[Complexidade interna<br/>rica + cross-area?]
     IndepCheck -->|NÃO| AgrCheck[Só faz sentido como<br/>agrupamento de outro block?]
 
-    RichCheck -->|SIM| TLFData[technical_category: top-level-feature<br/>com dado próprio]
+    RichCheck -->|SIM| ToolMeta[technical_category: tool<br/>meta-tool com dado composto]
     RichCheck -->|NÃO| Block[technical_category: block]
 
     AgrCheck -->|SIM| BlockGroup[technical_category: block-group]
@@ -229,8 +229,8 @@ flowchart TD
     style ToolCategory fill:#3b82f6,color:#fff
     style Block fill:#15803d,color:#fff
     style BlockGroup fill:#65a30d,color:#fff
-    style TLF fill:#7c3aed,color:#fff
-    style TLFData fill:#7c3aed,color:#fff
+    style Area fill:#7c3aed,color:#fff
+    style ToolMeta fill:#1e40af,color:#fff
 ```
 
 ### Classification implications in code
@@ -241,7 +241,7 @@ flowchart TD
 | Block group | `src/components/{parent}/groups/{name}/` | `src/app/admin/blocks/{parent}/groups/{name}/` | inside `{parent}.block.ts` (`groups` field) |
 | Tool | (generic chrome at `src/components/tools/`) | `src/app/admin/tools/{category}/{tool}/` | embedded in `{category}.category.ts` |
 | Tool category | (landing via `category-landing.tsx`) | `src/app/admin/tools/{category}/` | `src/lib/tools/categories/{category}.category.ts` |
-| Top-level feature | `src/components/{name}/` | `src/app/admin/{name}/` | `src/lib/features/{name}.feature.ts` |
+| Area | (composition only) | `src/app/admin/areas/{name}/` | `src/lib/core/areas/{name}.area.ts` |
 
 ### Planned re-classifications (refactor R2.5-R8)
 
@@ -254,9 +254,9 @@ Confirmed after detailed investigation of the actual code state during R1.5.
 | campaigns | Active block + coming-soon placeholder | Promote block to tool in marketing; delete placeholder | R4 |
 | subscriptions | Block + divergent paths (tiers/, api/tiers/) | Stays block; paths consolidated; subscription-offering tool created | R5 |
 | subscription-offering | Does not exist | Create new tool in sales | R5 |
-| routines | Block with no top-level surface | Top-level feature; create /admin/routines/ + sidebar item | R6 |
-| agents | Block + dual surface (admin/agents already exists) | Top-level feature; consolidate; drop admin/blocks/agents/ | R7 |
-| marketplace | Standalone UI | Top-level feature | R8 |
+| routines | Block with no top-level surface | Promote to tool; create /admin/routines/ + sidebar item | R6 |
+| agents | Block + dual surface (admin/agents already exists) | Promote to tool; consolidate; drop admin/blocks/agents/ | R7 |
+| marketplace | Standalone UI | Cravado as tool in transaction area (R2) | R2 |
 
 Each re-classification has its own entry at `docs/handbook/refactor/r{X}-{name}/`.
 
@@ -266,7 +266,7 @@ These are two orthogonal dimensions in every `feature.yml` frontmatter.
 
 **`level`** defines **where the entry lives in the Handbook navigation structure**. Values: `layer` (top of menu — networks, blocks, tools, solutions, integrations), `category` (sub-organization within a layer), `meta` (meta-organizational entries — handbook, glossary), `block` (block leaf entry), `tool` (tool leaf entry). Reflects the docs tree, not the technical classification.
 
-**`technical_category`** defines **what the thing is architecturally**, independent of where it lives in navigation. Values: `block`, `block-group`, `tool`, `top-level-feature` (4 canonical architectural categories) + additional thematic dimensions when applicable (`foundation`, `financial`, `infrastructure`, `sales`, `marketing`, `support`, `commerce`).
+**`technical_category`** defines **what the thing is architecturally**, independent of where it lives in navigation. Values: `block`, `block-group`, `tool`, `tool-category`, `area` (5 canonical architectural categories — `area` replaces the speculative `top-level-feature` removed in R2) + additional thematic dimensions when applicable (`foundation`, `financial`, `infrastructure`, `sales`, `marketing`, `support`, `commerce`).
 
 The dimensions can coincide (a block feature lives at `level: block` in the docs structure and has `technical_category: block` architecturally) or diverge (a meta-organizational handbook entry might have `level: meta` and describe a `technical_category: tool`).
 
@@ -321,13 +321,13 @@ This entry is **operational** — agents should treat it as authoritative.
 
 1. **Classify before proposing.** For each part touched, identify the current `technical_category`. If it is wrongly classified, **pause and report** before touching. Do not improvise re-classification during other work.
 
-2. **When creating something new, justify the `technical_category` with reference to the decision tree.** It is not enough to say "it's a block" — say "it's a block because it has a Prisma model with an independent lifecycle, the data exists without composition, and there is no rich cross-area complexity that would justify top-level-feature."
+2. **When creating something new, justify the `technical_category` with reference to the decision tree.** It is not enough to say "it's a block" — say "it's a block because it has a Prisma model with an independent lifecycle, the data exists without composition, and there is no rich cross-area complexity that would justify a meta-tool."
 
 3. **When re-classifying something existing, document the why in the commit message and update the manifest.** A classification change has cost (paths, manifests, references) — only worthwhile with clear justification.
 
 4. **When in doubt, bring it to the dialogue.** Architectural decisions are not made solo. The agent identifies and proposes; the human validates or adjusts.
 
-5. **Do not invent a new category without real need.** If something doesn't fit the 4 canonical categories (block / block-group / tool / top-level-feature), first try to force-fit into the 4. If it really doesn't, **pause and report** — it may be a new need, but it's a lasting architectural decision.
+5. **Do not invent a new category without real need.** If something doesn't fit the 5 canonical categories (block / block-group / tool / tool-category / area), first try to force-fit. If it really doesn't, **pause and report** — it may be a new need, but it's a lasting architectural decision.
 
 ### Pattern: SKILL → Handbook migration
 
@@ -386,15 +386,16 @@ Limitation: Mermaid diagrams are lazy-rendered on section open. Diagrams in sect
 | perspective | perspectiva | One of the six sections of a Handbook entry: Business, Product, Architecture, Operations, Glossary, Changelog. |
 | SKILL.md | SKILL.md | Agent-facing operational guide. Format defined by agentskills.io. |
 | solution | solução | Curated bundle of tools for a macro purpose. Currently deferred. |
-| technical_category | categoria técnica | Architectural classification. 5 canonical (block, block-group, tool, tool-category, top-level-feature) + thematic dimensions (foundation, financial, infrastructure, sales, marketing, support, commerce). |
+| technical_category | categoria técnica | Architectural classification. 5 canonical (block, block-group, tool, tool-category, area) + thematic dimensions (foundation, financial, infrastructure, sales, marketing, support, commerce). |
 | tool | ferramenta | Cross-block composition with a business objective. Canonical technical_category. |
 | tool-category | categoria de tool | Grouping of tools by business area (Finances, Legal, Marketing, Sales, Operations). Canonical technical_category; declarative, no own CRUD. |
-| top-level-feature | top-level feature | Canonical technical_category for rich infrastructure consumed cross-area (Knowledge, Organization, Directory, Blocks, Handbook). |
+| area | área | Canonical technical_category for product macro-divisions (Communication, Transaction, Workflow, Notification, Identity, Infrastructure). Replaces `top-level-feature` (deprecated R2). |
 | uid | uid | Stable identifier in the form `herd.<level>.<id>`. |
 | xrefmap | xrefmap | Generated UID → path translation table. Canonical lookup for cross-references. |
 
 ## Changelog
 
 - **2026-05-02 (R1)** — Tools foundation reconciliation. Tool gained kind discriminator. ToolCategoryManifest established as the 5th canonical architectural category. Schema enum bumped from 11 → 12 values. Provisional ToolManifest + FeatureManifest deleted (dead code).
+- **2026-05-03 (R2)** — Areas foundation. `top-level-feature` removed in favor of `area` (5th canonical architectural category — macro-divisions of the product: Communication, Transaction, Workflow, Notification, Identity, Infrastructure). Areas added as a Handbook layer with 6 categories. Hierarchy simplified to 5 levels: Networks → Areas → Tools → Blocks → Integrations.
 - **2026-05-02** — R0.1 Handbook content reform. Replaces 6-level singular pyramid with plural commercial hierarchy (Networks/Solutions/Tools/Blocks/Integrations) with Networks as a category with sub-types. Adds `block-group` and `top-level-feature` as canonical `technical_category` values (was 3 values, becomes 11: 4 architectural + 7 thematic). Adds path-mapping, planned re-classifications, classification-discipline guide, and `level` vs `technical_category` distinction. Zod schema bumped.
 - **2026-05-01** — Initial publication. Etapa Handbook foundation + first entries. Establishes commercial levels, technical categories, 4 artifacts per feature, Zod 4 (via `zod/v4` subpath) as schema source-of-truth, doc-first as workflow, and CI gates (3 hard-fail + 3 soft warning).

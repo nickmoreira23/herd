@@ -1,0 +1,43 @@
+id: chat
+uid: herd.tool.communication.chat
+level: tool
+technical_category: tool
+
+title:
+  pt-BR: "Chat"
+  en-US: "Chat"
+description:
+  pt-BR: "Interface conversacional com IA. Orquestra agentes, recupera dados via search, executa ações através de blocks."
+  en-US: "Conversational AI interface. Orchestrates agents, retrieves data via search, executes actions across blocks."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-03
+updated: 2026-05-03
+
+parent: herd.category.areas.communication
+children: []
+consumes: []
+consumed_by: []
+related: []
+
+source_paths:
+  - "src/lib/tools/tools/chat.tool.ts"
+  - "src/app/admin/chat"
+  - "src/components/chat"
+
+admin_paths:
+  - "/admin/chat"
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

@@ -1,0 +1,43 @@
+id: knowledge
+uid: herd.tool.identity.knowledge
+level: tool
+technical_category: tool
+
+title:
+  pt-BR: "Knowledge"
+  en-US: "Knowledge"
+description:
+  pt-BR: "Meta-tool que compõe 9 blocks first-class (documents, images, videos, audios, tables, forms, links, feeds, apps) em base de conhecimento unificada."
+  en-US: "Meta-tool composing 9 first-class blocks (documents, images, videos, audios, tables, forms, links, feeds, apps) into a unified knowledge base."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-03
+updated: 2026-05-03
+
+parent: herd.category.areas.identity
+children: []
+consumes: []
+consumed_by: []
+related: []
+
+source_paths:
+  - "src/lib/tools/tools/knowledge.tool.ts"
+  - "src/app/admin/knowledge"
+  - "src/components/knowledge"
+
+admin_paths:
+  - "/admin/knowledge"
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

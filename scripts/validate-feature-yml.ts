@@ -12,6 +12,7 @@ const FIXED_LAYERS = new Set([
   "blocks",
   "integrations",
   "refactor",
+  "areas", // R2 — new layer
 ]);
 
 const FEATURE_LEVELS = new Set([

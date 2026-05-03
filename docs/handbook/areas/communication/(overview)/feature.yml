@@ -1,0 +1,36 @@
+id: communication
+uid: herd.category.areas.communication
+level: category
+technical_category: area
+
+title:
+  pt-BR: "Comunicação"
+  en-US: "Communication"
+description:
+  pt-BR: "Comunicação entre pessoas no sistema. Tools que habilitam conversação, mensageria e interação humano-humano ou humano-agente."
+  en-US: "Communication between people in the system. Tools that enable conversation, messaging, and human-human or human-agent interaction."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-03
+updated: 2026-05-03
+
+parent: herd.layer.areas
+children:
+  - herd.tool.communication.chat
+consumes: []
+consumed_by: []
+related: []
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

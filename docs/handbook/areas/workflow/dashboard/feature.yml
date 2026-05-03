@@ -1,0 +1,43 @@
+id: dashboard
+uid: herd.tool.workflow.dashboard
+level: tool
+technical_category: tool
+
+title:
+  pt-BR: "Dashboard"
+  en-US: "Dashboard"
+description:
+  pt-BR: "Visão operacional. Agrega métricas-chave de products, subscriptions, partners e snapshots financeiros."
+  en-US: "Operational overview. Aggregates key metrics across products, subscriptions, partners, and financial snapshots."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-03
+updated: 2026-05-03
+
+parent: herd.category.areas.workflow
+children: []
+consumes: []
+consumed_by: []
+related: []
+
+source_paths:
+  - "src/lib/tools/tools/dashboard.tool.ts"
+  - "src/app/admin"
+  - "src/components/dashboard"
+
+admin_paths:
+  - "/admin"
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog
