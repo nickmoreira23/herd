@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { tenantScopingExtension } from "./tenancy/prisma-extension";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -12,7 +13,9 @@ function getClient(): PrismaClient | null {
     const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL;
     if (!connectionString) return null; // Build time — no DB available
     const adapter = new PrismaPg(connectionString);
-    globalForPrisma.prisma = new PrismaClient({ adapter });
+    globalForPrisma.prisma = new PrismaClient({ adapter }).$extends(
+      tenantScopingExtension,
+    ) as unknown as PrismaClient;
   }
   return globalForPrisma.prisma;
 }
