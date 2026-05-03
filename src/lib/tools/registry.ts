@@ -9,6 +9,12 @@ import { legalCategory } from "./categories/legal.category";
 import { marketingCategory } from "./categories/marketing.category";
 import { salesCategory } from "./categories/sales.category";
 import { operationsCategory } from "./categories/operations.category";
+import { chatTool } from "./tools/chat.tool";
+import { marketplaceTool } from "./tools/marketplace.tool";
+import { dashboardTool } from "./tools/dashboard.tool";
+import { knowledgeTool } from "./tools/knowledge.tool";
+import { networkTool } from "./tools/network.tool";
+import { handbookTool } from "./tools/handbook.tool";
 
 // ─── All registered tool categories ───────────────────────────────
 // To add a new category, create a manifest and add it here.
@@ -115,6 +121,33 @@ export function buildToolActionCatalog(): string {
     });
   return sections.join("\n\n");
 }
+
+// ─── Standalone Tools (cross-cutting, not in any business category) ──
+
+const standaloneTools: Record<string, Tool> = {
+  chat: chatTool,
+  marketplace: marketplaceTool,
+  dashboard: dashboardTool,
+  knowledge: knowledgeTool,
+  network: networkTool,
+  handbook: handbookTool,
+};
+
+function flattenCategoryTools(): Record<string, Tool> {
+  const flat: Record<string, Tool> = {};
+  for (const category of toolCategoryRegistry.values()) {
+    for (const tool of category.tools) {
+      flat[tool.name] = tool;
+    }
+  }
+  return flat;
+}
+
+/** Unified lookup combining tools embedded in categories + standalone tools. */
+export const allTools: Record<string, Tool> = {
+  ...flattenCategoryTools(),
+  ...standaloneTools,
+};
 
 /**
  * Validates that all block references in tool category manifests exist in

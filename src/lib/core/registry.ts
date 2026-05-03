@@ -8,9 +8,21 @@
 
 import type { Tool } from "@/lib/tools/manifest";
 import type { AreaManifest } from "./manifest";
+import { communicationArea } from "./areas/communication.area";
+import { transactionArea } from "./areas/transaction.area";
+import { workflowArea } from "./areas/workflow.area";
+import { notificationArea } from "./areas/notification.area";
+import { identityArea } from "./areas/identity.area";
+import { infrastructureArea } from "./areas/infrastructure.area";
 
-// Stub — populated in Commit 2 with 6 area manifests.
-export const areaRegistry: Record<string, AreaManifest> = {};
+export const areaRegistry: Record<string, AreaManifest> = {
+  communication: communicationArea,
+  transaction: transactionArea,
+  workflow: workflowArea,
+  notification: notificationArea,
+  identity: identityArea,
+  infrastructure: infrastructureArea,
+};
 
 export function getAllAreas(): AreaManifest[] {
   return Object.values(areaRegistry).sort(
