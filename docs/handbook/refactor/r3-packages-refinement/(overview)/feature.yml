@@ -1,0 +1,38 @@
+id: r3-packages-refinement
+uid: herd.category.refactor.r3-packages-refinement
+level: category
+technical_category: foundation
+
+title:
+  pt-BR: "R3 — Packages Refinement"
+  en-US: "R3 — Packages Refinement"
+description:
+  pt-BR: "Refinement do tool packages em sales — investigar se conceito 'products bundled' merece block-group de products dentro da tool."
+  en-US: "Refinement of the packages tool in sales — investigate whether 'products bundled' concept warrants a block-group of products inside the tool."
+
+status: draft
+owners: ["@nick"]
+since: 2026-05-03
+updated: 2026-05-03
+
+parent: herd.layer.refactor
+children: []
+consumes: []
+consumed_by: []
+related:
+  - herd.category.refactor.r1-5-reclassifications-revision
+
+source_paths: []
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

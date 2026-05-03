@@ -1,0 +1,38 @@
+id: r2-5-network-split
+uid: herd.category.refactor.r2-5-network-split
+level: category
+technical_category: foundation
+
+title:
+  pt-BR: "R2.5 — Network Split (Organization + Directory)"
+  en-US: "R2.5 — Network Split (Organization + Directory)"
+description:
+  pt-BR: "Split do top-level Network atual em duas top-level features distintas: Organization (estrutura institucional) e Directory (estrutura de pessoas). Inclui channel disambiguation."
+  en-US: "Split of the current Network top-level into two distinct top-level features: Organization (institutional structure) and Directory (people structure). Includes channel disambiguation."
+
+status: draft
+owners: ["@nick"]
+since: 2026-05-03
+updated: 2026-05-03
+
+parent: herd.layer.refactor
+children: []
+consumes: []
+consumed_by: []
+related:
+  - herd.category.refactor.r1-5-reclassifications-revision
+
+source_paths: []
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

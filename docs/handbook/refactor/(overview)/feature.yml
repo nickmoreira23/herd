@@ -18,6 +18,15 @@ updated: 2026-05-02
 parent: null
 children:
   - herd.category.refactor.r0-manifest-registry
+  - herd.category.refactor.r1-tools-foundation
+  - herd.category.refactor.r1-5-reclassifications-revision
+  - herd.category.refactor.r2-5-network-split
+  - herd.category.refactor.r3-packages-refinement
+  - herd.category.refactor.r4-campaigns-convergence
+  - herd.category.refactor.r5-subscriptions-split
+  - herd.category.refactor.r6-routines-feature
+  - herd.category.refactor.r7-agents-feature
+  - herd.category.refactor.r8-marketplace-feature
 consumes: []
 consumed_by: []
 related:

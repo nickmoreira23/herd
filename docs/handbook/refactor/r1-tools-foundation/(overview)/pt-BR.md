@@ -115,3 +115,4 @@ Cinco instruções para agentes trabalhando em superfícies pós-R1:
 ## Changelog
 
 - **2026-05-02 (R1 fecha)** — Reconciliação tools foundation (commit 1: schema, hash `e096d1a`; commit 2: handbook, esta entry). Tool ganha `kind: "tool"`. ToolCategoryManifest ganha `kind: "tool_category"`. ToolManifest + FeatureManifest provisórios deletados de `src/lib/blocks/manifest.ts`. Schema enum `technical_category` bumpado 11 → 12 (adiciona `"tool-category"`). 24 `feature.yml` totais (era 23). Próximo: R1.5 (re-investigação de re-classifications planejadas para R3–R8).
+- **2026-05-03 (cross-cutting note)** — Investigação durante R1 revelou divergências entre plano original e estado real do código. Decisões revistas para R3-R8 documentadas em [R1.5](../r1-5-reclassifications-revision/).

@@ -1,0 +1,38 @@
+id: r5-subscriptions-split
+uid: herd.category.refactor.r5-subscriptions-split
+level: category
+technical_category: foundation
+
+title:
+  pt-BR: "R5 — Subscriptions Split + Offering Creation"
+  en-US: "R5 — Subscriptions Split + Offering Creation"
+description:
+  pt-BR: "Separar subscriptions monolito em block residual (subscription real do cliente) + tool subscription-offering (catalog vendável). Consolidar paths divergentes."
+  en-US: "Split subscriptions monolith into residual block (customer's real subscription) + subscription-offering tool (sellable catalog). Consolidate divergent paths."
+
+status: draft
+owners: ["@nick"]
+since: 2026-05-03
+updated: 2026-05-03
+
+parent: herd.layer.refactor
+children: []
+consumes: []
+consumed_by: []
+related:
+  - herd.category.refactor.r1-5-reclassifications-revision
+
+source_paths: []
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

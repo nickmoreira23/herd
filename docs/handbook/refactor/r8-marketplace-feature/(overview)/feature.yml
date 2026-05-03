@@ -1,0 +1,38 @@
+id: r8-marketplace-feature
+uid: herd.category.refactor.r8-marketplace-feature
+level: category
+technical_category: foundation
+
+title:
+  pt-BR: "R8 — Marketplace as Top-Level Feature"
+  en-US: "R8 — Marketplace as Top-Level Feature"
+description:
+  pt-BR: "Formalizar marketplace como top-level feature (mudança importante — antes plano era tool). Estrutura existente preservada; manifest cravado."
+  en-US: "Formalize marketplace as top-level feature (important change — original plan was tool). Existing structure preserved; manifest established."
+
+status: draft
+owners: ["@nick"]
+since: 2026-05-03
+updated: 2026-05-03
+
+parent: herd.layer.refactor
+children: []
+consumes: []
+consumed_by: []
+related:
+  - herd.category.refactor.r1-5-reclassifications-revision
+
+source_paths: []
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog
