@@ -1124,8 +1124,8 @@ model Company {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
-  contacts      Contact[]
-  deals         Deal[]
+  contacts Contact[]
+  deals    Deal[]
 
   @@index([domain])
   @@index([industry])
@@ -1134,16 +1134,16 @@ model Company {
 }
 
 model Contact {
-  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  firstName     String
-  lastName      String?
-  email         String?
-  phone         String?
-  avatarUrl     String?
-  jobTitle      String?
-  department    String?
-  companyId     String?   @db.Uuid
-  ownerId       String?   @db.Uuid
+  id         String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  firstName  String
+  lastName   String?
+  email      String?
+  phone      String?
+  avatarUrl  String?
+  jobTitle   String?
+  department String?
+  companyId  String? @db.Uuid
+  ownerId    String? @db.Uuid
 
   company       Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
   deals         Deal[]
@@ -1774,6 +1774,7 @@ enum SyncDirection {
 
 model Integration {
   id            String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String?             @map("tenant_id") @db.Uuid
   name          String
   slug          String              @unique
   description   String?
@@ -1806,6 +1807,7 @@ model Integration {
 // Members connect via OAuth flow and their personal tokens are stored here
 model MemberConnection {
   id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String?   @map("tenant_id") @db.Uuid
   profileId      String    @db.Uuid
   integrationId  String    @db.Uuid
   status         String    @default("ACTIVE") // ACTIVE, EXPIRED, REVOKED
@@ -1831,6 +1833,7 @@ model MemberConnection {
 
 model IntegrationTierMapping {
   id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId           String?       @map("tenant_id") @db.Uuid
   integrationId      String        @db.Uuid
   externalPlanId     String
   externalPlanName   String?
@@ -1848,6 +1851,7 @@ model IntegrationTierMapping {
 
 model IntegrationWebhookEvent {
   id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String?   @map("tenant_id") @db.Uuid
   integrationId String    @db.Uuid
   eventType     String
   payload       String // Raw JSON
@@ -1863,6 +1867,7 @@ model IntegrationWebhookEvent {
 
 model IntegrationSyncLog {
   id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId         String?  @map("tenant_id") @db.Uuid
   integrationId    String   @db.Uuid
   action           String // e.g. "sync_plans", "test_connection"
   status           String // "success" | "error"
@@ -2039,6 +2044,7 @@ model NetworkProfile {
   memberConnections        MemberConnection[]
   messageThreadsAsContact  MessageThread[]                    @relation("ThreadContact")
   messageThreadsAsAssignee MessageThread[]                    @relation("ThreadAssignee")
+  ownedOrganization        Organization?                      @relation("OrganizationOwner")
 
   @@map("network_profiles")
 }
@@ -2181,6 +2187,23 @@ model NetworkTeamMember {
 
   @@id([teamId, profileId])
   @@map("network_team_members")
+}
+
+// ========================
+// Multi-tenancy (Camada 1, Sub-etapa 1)
+// ========================
+
+model Organization {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug      String   @unique
+  name      String
+  ownerId   String   @unique @map("owner_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  owner NetworkProfile @relation("OrganizationOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@map("organizations")
 }
 
 // ========================
@@ -2949,7 +2972,7 @@ model MarketplaceSection {
   blockNames String[]
 
   layout     Json?
-  components Json   @default("[]")
+  components Json  @default("[]")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2991,39 +3014,39 @@ enum DealStage {
 }
 
 model Deal {
-  id                String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
   // Identification
-  title             String
-  description       String?
+  title       String
+  description String?
 
   // Pipeline
-  stage             DealStage  @default(LEAD)
-  amount            Decimal?   @db.Decimal(12, 2)
-  currency          String     @default("BRL")
+  stage             DealStage @default(LEAD)
+  amount            Decimal?  @db.Decimal(12, 2)
+  currency          String    @default("BRL")
   probability       Int?
   expectedCloseDate DateTime?
   closedAt          DateTime?
   lostReason        String?
 
   // Links
-  contactId         String?    @db.Uuid
-  companyId         String?    @db.Uuid
-  campaignId        String?    @db.Uuid
-  ownerId           String?    @db.Uuid
-  source            String?
+  contactId  String? @db.Uuid
+  companyId  String? @db.Uuid
+  campaignId String? @db.Uuid
+  ownerId    String? @db.Uuid
+  source     String?
 
-  contact           Contact?   @relation(fields: [contactId], references: [id], onDelete: SetNull)
-  company           Company?   @relation(fields: [companyId], references: [id], onDelete: SetNull)
-  campaign          Campaign?  @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  contact  Contact?  @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  company  Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  campaign Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
 
   // Content
-  contentJson       Json       @default("{}")
-  contentText       String     @default("")
-  tags              String[]
+  contentJson Json     @default("{}")
+  contentText String   @default("")
+  tags        String[]
 
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([stage])
   @@index([contactId])
@@ -3068,40 +3091,40 @@ enum CampaignObjective {
 }
 
 model Campaign {
-  id            String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
-  name          String
-  description   String?
-  status        CampaignStatus     @default(DRAFT)
-  channels      CampaignChannel[]  @default([])
-  objective     CampaignObjective?
+  name        String
+  description String?
+  status      CampaignStatus     @default(DRAFT)
+  channels    CampaignChannel[]  @default([])
+  objective   CampaignObjective?
 
   // Schedule
-  startDate     DateTime?
-  endDate       DateTime?
+  startDate DateTime?
+  endDate   DateTime?
 
   // Budget (in campaign currency)
-  budget        Decimal?           @db.Decimal(12, 2)
-  spent         Decimal?           @db.Decimal(12, 2)
-  currency      String             @default("BRL")
+  budget   Decimal? @db.Decimal(12, 2)
+  spent    Decimal? @db.Decimal(12, 2)
+  currency String   @default("BRL")
 
   // Targeting & ownership
-  audience      String?
-  ownerId       String?            @db.Uuid
+  audience String?
+  ownerId  String? @db.Uuid
 
   // Free-form metrics (impressions, clicks, conversions, etc.)
-  metrics       Json               @default("{}")
+  metrics Json @default("{}")
 
   // Content
-  contentJson   Json               @default("{}")
-  contentText   String             @default("")
-  tags          String[]
+  contentJson Json     @default("{}")
+  contentText String   @default("")
+  tags        String[]
 
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  deals         Deal[]
+  deals Deal[]
 
   @@index([status])
   @@index([ownerId])
@@ -3128,42 +3151,42 @@ enum ExperienceStatus {
 }
 
 model Experience {
-  id            String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
-  name          String
-  headline      String?
-  description   String?
+  name        String
+  headline    String?
+  description String?
 
-  format        ExperienceFormat @default(IN_PERSON)
-  status        ExperienceStatus @default(DRAFT)
+  format ExperienceFormat @default(IN_PERSON)
+  status ExperienceStatus @default(DRAFT)
 
   // Schedule
-  startDate     DateTime?
-  endDate       DateTime?
-  durationMin   Int?
+  startDate   DateTime?
+  endDate     DateTime?
+  durationMin Int?
 
   // Logistics
-  locationName  String?
-  locationUrl   String?
-  capacity      Int?
+  locationName String?
+  locationUrl  String?
+  capacity     Int?
 
   // Pricing
-  price         Decimal?         @db.Decimal(12, 2)
-  currency      String           @default("BRL")
+  price    Decimal? @db.Decimal(12, 2)
+  currency String   @default("BRL")
 
   // Presentation
   coverImageUrl String?
 
   // Ownership
-  hostId        String?          @db.Uuid
+  hostId String? @db.Uuid
 
   // Content
-  contentJson   Json             @default("{}")
-  contentText   String           @default("")
-  tags          String[]
+  contentJson Json     @default("{}")
+  contentText String   @default("")
+  tags        String[]
 
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([status])
   @@index([format])
@@ -3201,48 +3224,48 @@ enum RoutineTriggerSource {
 }
 
 model Routine {
-  id              String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name            String
-  description     String?
-  promptTemplate  String              @db.Text
-  status          RoutineStatus       @default(DRAFT)
+  id             String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String
+  description    String?
+  promptTemplate String        @db.Text
+  status         RoutineStatus @default(DRAFT)
 
-  agentId         String              @db.Uuid
-  agent           Agent               @relation(fields: [agentId], references: [id], onDelete: Restrict)
+  agentId String @db.Uuid
+  agent   Agent  @relation(fields: [agentId], references: [id], onDelete: Restrict)
 
   // Trigger config
-  triggerType     RoutineTriggerType
-  cronExpression  String?
-  timezone        String              @default("America/Sao_Paulo")
-  eventBlock      String?
-  eventType       String?
-  eventFilter     Json                @default("{}")
+  triggerType    RoutineTriggerType
+  cronExpression String?
+  timezone       String             @default("America/Sao_Paulo")
+  eventBlock     String?
+  eventType      String?
+  eventFilter    Json               @default("{}")
 
   // Inputs / Outputs
-  inputSchema     Json                @default("{}")
-  defaultInputs   Json                @default("{}")
-  outputFormat    String              @default("text")
+  inputSchema   Json   @default("{}")
+  defaultInputs Json   @default("{}")
+  outputFormat  String @default("text")
 
   // Scheduling state
-  nextRunAt       DateTime?
-  lastRunAt       DateTime?
-  lastRunStatus   RoutineRunStatus?
+  nextRunAt     DateTime?
+  lastRunAt     DateTime?
+  lastRunStatus RoutineRunStatus?
 
   // Stats
-  runCount        Int                 @default(0)
-  successCount    Int                 @default(0)
-  failureCount    Int                 @default(0)
+  runCount     Int @default(0)
+  successCount Int @default(0)
+  failureCount Int @default(0)
 
-  ownerId         String?             @db.Uuid
-  tags            String[]
-  contentJson     Json                @default("{}")
-  contentText     String              @default("")
+  ownerId     String?  @db.Uuid
+  tags        String[]
+  contentJson Json     @default("{}")
+  contentText String   @default("")
 
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  runs            RoutineRun[]
-  steps           RoutineStep[]
+  runs  RoutineRun[]
+  steps RoutineStep[]
 
   @@index([status])
   @@index([triggerType])
@@ -3253,22 +3276,22 @@ model Routine {
 }
 
 model RoutineRun {
-  id               String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  routineId        String                @db.Uuid
-  routine          Routine               @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  routineId String  @db.Uuid
+  routine   Routine @relation(fields: [routineId], references: [id], onDelete: Cascade)
 
-  status           RoutineRunStatus      @default(QUEUED)
-  triggerSource    RoutineTriggerSource
+  status        RoutineRunStatus     @default(QUEUED)
+  triggerSource RoutineTriggerSource
 
-  scheduledFor     DateTime              @default(now())
-  startedAt        DateTime?
-  completedAt      DateTime?
-  durationMs       Int?
+  scheduledFor DateTime  @default(now())
+  startedAt    DateTime?
+  completedAt  DateTime?
+  durationMs   Int?
 
-  input            Json                  @default("{}")
-  output           String?               @db.Text
-  outputJson       Json?
-  error            String?               @db.Text
+  input      Json    @default("{}")
+  output     String? @db.Text
+  outputJson Json?
+  error      String? @db.Text
 
   promptTokens     Int?
   completionTokens Int?
@@ -3276,13 +3299,13 @@ model RoutineRun {
   // Per-step trace for multi-step routines.
   // Array of { stepId, stepOrder, status, output, outputJson, error,
   //            durationMs, promptTokens, completionTokens, startedAt, completedAt }.
-  stepResults      Json                  @default("[]")
+  stepResults Json @default("[]")
 
-  lockedBy         String?
-  lockedAt         DateTime?
+  lockedBy String?
+  lockedAt DateTime?
 
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([routineId, createdAt])
   @@index([status, scheduledFor])
@@ -3290,30 +3313,30 @@ model RoutineRun {
 }
 
 model RoutineStep {
-  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  routineId      String           @db.Uuid
-  routine        Routine          @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  routineId String  @db.Uuid
+  routine   Routine @relation(fields: [routineId], references: [id], onDelete: Cascade)
 
-  stepOrder      Int
-  name           String?
+  stepOrder Int
+  name      String?
 
-  agentId        String           @db.Uuid
-  agent          Agent            @relation(fields: [agentId], references: [id], onDelete: Restrict)
+  agentId String @db.Uuid
+  agent   Agent  @relation(fields: [agentId], references: [id], onDelete: Restrict)
 
-  promptTemplate String           @db.Text
-  outputFormat   String           @default("text")
+  promptTemplate String @db.Text
+  outputFormat   String @default("text")
 
   // "trigger" — uses routine trigger payload + defaultInputs
   // "step"    — uses previous step output as {{previousOutput}}
-  inputSource    String           @default("trigger")
-  previousStepId String?          @db.Uuid
+  inputSource    String  @default("trigger")
+  previousStepId String? @db.Uuid
 
   // Canvas position (so the user's manual layout sticks)
-  positionX      Float?
-  positionY      Float?
+  positionX Float?
+  positionY Float?
 
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([routineId, stepOrder])
   @@index([routineId])
@@ -3418,18 +3441,18 @@ model JournalLine {
 // ============================================================
 
 model DomainEvent {
-  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  aggregateType   String
-  aggregateId     String    @db.Uuid
-  eventType       String
-  payload         Json      @default("{}")
-  idempotencyKey  String?   @unique
-  occurredAt      DateTime
-  createdAt       DateTime  @default(now())
-  processedAt     DateTime?
-  attempts        Int       @default(0)
-  lastError       String?
-  nextAttemptAt   DateTime?
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  aggregateType  String
+  aggregateId    String    @db.Uuid
+  eventType      String
+  payload        Json      @default("{}")
+  idempotencyKey String?   @unique
+  occurredAt     DateTime
+  createdAt      DateTime  @default(now())
+  processedAt    DateTime?
+  attempts       Int       @default(0)
+  lastError      String?
+  nextAttemptAt  DateTime?
 
   @@index([processedAt, nextAttemptAt])
   @@index([aggregateType, aggregateId])
