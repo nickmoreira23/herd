@@ -1,6 +1,7 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
+import { tenancyPlugin } from "./eslint-rules/index.mjs";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -228,6 +229,50 @@ const eslintConfig = defineConfig([
           "#",
         ],
       }],
+    },
+  },
+  // ============================================================
+  // TENANCY — prevent direct prisma queries on tenant-scoped models
+  // outside withTenant/withSessionTenant. Camada 1, Sub-etapa 3.
+  //
+  // Default: error in new code.
+  // Legacy paths (admin API + webhooks pré-Camada 1) are downgraded
+  // to warn until they pick up auth + tenant resolution in a later
+  // sub-etapa. New code MUST stay within withTenant.
+  // ============================================================
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    plugins: { "herd-tenancy": tenancyPlugin },
+    rules: {
+      "herd-tenancy/no-direct-prisma-on-scoped-models": "error",
+    },
+  },
+  {
+    // NOTE: square brackets in Next.js dynamic route segments (e.g. [id])
+    // are glob character classes, so match them with a wildcard segment.
+    files: [
+      // Admin API routes that touch scoped models without auth — Sub-etapa
+      // futura de "API auth + tenant resolution" vai refatorar essas.
+      "src/app/api/integrations/*/test/route.ts",
+      "src/app/api/integrations/*/sync/route.ts",
+      "src/app/api/integrations/*/connect/route.ts",
+      "src/app/api/integrations/*/logs/route.ts",
+      "src/app/api/integrations/*/mappings/route.ts",
+      "src/app/api/integrations/airtable/import/route.ts",
+      "src/app/api/integrations/oauth/callback/route.ts",
+      // Webhook handlers — tenant resolution from payload chega na Sub-etapa
+      // 5 (webhook framework).
+      "src/app/api/webhooks/recharge/route.ts",
+      "src/app/api/webhooks/gorgias/route.ts",
+      "src/app/api/webhooks/intercom/route.ts",
+      "src/app/api/messages/webhook/*/route.ts",
+      // Server util chamado de webhook contexts.
+      "src/lib/messages/contact-resolver.ts",
+      // RSC reading sync logs.
+      "src/components/integrations/category-hub.tsx",
+    ],
+    rules: {
+      "herd-tenancy/no-direct-prisma-on-scoped-models": "warn",
     },
   },
 ]);
