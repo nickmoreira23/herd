@@ -1,10 +1,12 @@
 "use client";
 
+import { Children, isValidElement, type ComponentProps } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import { Pencil } from "lucide-react";
 import { MermaidDiagram } from "./mermaid-diagram";
+import { HandbookCodeBlock } from "./handbook-code-block";
 import { HandbookCollapsibleSection } from "./handbook-collapsible-section";
 import { HandbookGlossaryTable } from "./handbook-glossary-table";
 import { HandbookChangelogTimeline } from "./handbook-changelog-timeline";
@@ -12,7 +14,6 @@ import { useSectionState } from "./use-section-state";
 import { TODO_PLACEHOLDER_TEXT } from "@/lib/handbook/transform-markdown";
 import { splitByH2 } from "@/lib/handbook/split-sections";
 import type { HandbookLocale } from "@/lib/handbook/config";
-import type { ComponentProps } from "react";
 
 interface Props {
   body: string;
@@ -23,6 +24,7 @@ interface Props {
 
 type CodeProps = ComponentProps<"code"> & { className?: string };
 type DivProps = ComponentProps<"div">;
+type PreProps = ComponentProps<"pre">;
 
 function makeMarkdownComponents(locale: HandbookLocale) {
   return {
@@ -37,6 +39,18 @@ function makeMarkdownComponents(locale: HandbookLocale) {
           {children}
         </code>
       );
+    },
+    pre(props: PreProps) {
+      // Mermaid blocks are returned by the `code` handler as <MermaidDiagram>
+      // — those mustn't be wrapped in a code-block <pre>. For everything
+      // else, replace the prose <pre> with a copy-button-aware container.
+      const arr = Children.toArray(props.children);
+      for (const c of arr) {
+        if (isValidElement(c) && c.type === MermaidDiagram) {
+          return <>{c}</>;
+        }
+      }
+      return <HandbookCodeBlock>{props.children}</HandbookCodeBlock>;
     },
     div(props: DivProps) {
       const { children, ...rest } = props;

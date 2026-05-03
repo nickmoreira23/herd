@@ -336,40 +336,42 @@ function BlocksSubPanel() {
               <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
                 {getCategoryLabel(cat.id, locale)}
               </p>
-              {cat.blocks.map((blockName) => {
-                const Icon = BLOCK_ICON_MAP[blockName];
-                const label = getBlockLabel(blockName, locale);
-                const href = `/admin/blocks/${blockName}`;
-                const active = isActive(href);
-                return (
-                  <Link
-                    key={blockName}
-                    href={href}
-                    className={cn(
-                      "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                      active
-                        ? ""
-                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                    )}
-                    style={
-                      active
-                        ? {
-                            backgroundColor: hexToRgba(catColor, 0.1),
-                            color: catColor,
-                          }
-                        : undefined
-                    }
-                  >
-                    {Icon && (
-                      <Icon
-                        className="h-4 w-4 shrink-0"
-                        style={{ color: catColor }}
-                      />
-                    )}
-                    <span className="truncate">{label}</span>
-                  </Link>
-                );
-              })}
+              <div className="space-y-2">
+                {cat.blocks.map((blockName) => {
+                  const Icon = BLOCK_ICON_MAP[blockName];
+                  const label = getBlockLabel(blockName, locale);
+                  const href = `/admin/blocks/${blockName}`;
+                  const active = isActive(href);
+                  return (
+                    <Link
+                      key={blockName}
+                      href={href}
+                      className={cn(
+                        "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                        active
+                          ? ""
+                          : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                      )}
+                      style={
+                        active
+                          ? {
+                              backgroundColor: hexToRgba(catColor, 0.1),
+                              color: catColor,
+                            }
+                          : undefined
+                      }
+                    >
+                      {Icon && (
+                        <Icon
+                          className="h-4 w-4 shrink-0"
+                          style={{ color: catColor }}
+                        />
+                      )}
+                      <span className="truncate">{label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
           );
         })}
@@ -931,8 +933,10 @@ function HandbookSubPanel() {
         </button>
       </div>
 
-      {/* Links */}
-      <nav className="flex-1 pb-4 overflow-y-auto overscroll-contain px-3 space-y-0.5">
+      {/* Links — same shape as BlocksSubPanel: top-level link, then
+          category sections (mt-4), each with a label + space-y-2 stack
+          of 8px-gapped links. */}
+      <nav className="flex-1 pb-4 overflow-y-auto overscroll-contain px-3">
         {/* Overview link */}
         <Link
           href="/admin/handbook"
@@ -952,34 +956,9 @@ function HandbookSubPanel() {
           <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
             Layers
           </p>
-          {layers.map((entry) => {
-            const href = `/admin/handbook/${entry.id}`;
-            const active = isActive(href);
-            return (
-              <Link
-                key={entry.uid}
-                href={href}
-                className={cn(
-                  "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                  active
-                    ? "bg-primary/10 text-primary dark:bg-brand/10 dark:text-brand"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                )}
-              >
-                <span className="truncate">{titleOf(entry)}</span>
-              </Link>
-            );
-          })}
-        </div>
-
-        {/* Meta entries (about the handbook itself) */}
-        {metaEntries.length > 0 && (
-          <div className="mt-6 pt-3 border-t border-border">
-            <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-              Meta
-            </p>
-            {metaEntries.map((entry) => {
-              const href = `/admin/handbook/meta/${entry.id}`;
+          <div className="space-y-2">
+            {layers.map((entry) => {
+              const href = `/admin/handbook/${entry.id}`;
               const active = isActive(href);
               return (
                 <Link
@@ -996,6 +975,36 @@ function HandbookSubPanel() {
                 </Link>
               );
             })}
+          </div>
+        </div>
+
+        {/* Meta entries (about the handbook itself) — no divider above; the
+            section gap matches Blocks. */}
+        {metaEntries.length > 0 && (
+          <div className="mt-4">
+            <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+              Meta
+            </p>
+            <div className="space-y-2">
+              {metaEntries.map((entry) => {
+                const href = `/admin/handbook/meta/${entry.id}`;
+                const active = isActive(href);
+                return (
+                  <Link
+                    key={entry.uid}
+                    href={href}
+                    className={cn(
+                      "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                      active
+                        ? "bg-primary/10 text-primary dark:bg-brand/10 dark:text-brand"
+                        : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                    )}
+                  >
+                    <span className="truncate">{titleOf(entry)}</span>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         )}
       </nav>
