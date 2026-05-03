@@ -50,38 +50,41 @@ export function HandbookEntryHeader({
   return (
     <header className="flex items-start justify-between gap-4">
       <div className="flex-1 min-w-0">
-        <div className="flex items-baseline gap-3 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap">
           <h1
             aria-label={title}
-            className="m-0 text-2xl font-bold flex items-baseline gap-2 flex-wrap"
+            className="m-0 text-2xl flex items-baseline gap-2 flex-wrap"
           >
-            {crumbs.map((c, idx) => (
-              <Fragment key={idx}>
-                {idx > 0 && (
-                  <span className="text-muted-foreground/40 select-none font-normal">
-                    /
-                  </span>
-                )}
-                {c.href ? (
-                  <Link
-                    href={c.href}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {c.label}
-                  </Link>
-                ) : (
-                  <span className="text-muted-foreground">{c.label}</span>
-                )}
-              </Fragment>
-            ))}
             {crumbs.length > 0 && (
-              <span className="text-muted-foreground/40 select-none font-normal">
-                /
+              <span className="flex items-baseline gap-2 text-muted-foreground font-medium">
+                {crumbs.map((c, idx) => (
+                  <Fragment key={idx}>
+                    {idx > 0 && (
+                      <span className="text-muted-foreground/40 select-none">
+                        /
+                      </span>
+                    )}
+                    {c.href ? (
+                      <Link
+                        href={c.href}
+                        className="hover:text-foreground transition-colors"
+                      >
+                        {c.label}
+                      </Link>
+                    ) : (
+                      <span>{c.label}</span>
+                    )}
+                  </Fragment>
+                ))}
+                <span className="text-muted-foreground/40 select-none">/</span>
               </span>
             )}
-            <span className="text-foreground">{title}</span>
+            <span className="font-bold text-foreground">{title}</span>
           </h1>
-          <Badge variant={status === "active" ? "default" : "secondary"}>
+          <Badge
+            variant={status === "active" ? "default" : "secondary"}
+            className="capitalize"
+          >
             {status}
           </Badge>
         </div>

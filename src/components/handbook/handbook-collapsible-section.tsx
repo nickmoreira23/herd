@@ -32,7 +32,7 @@ export function HandbookCollapsibleSection({
       onOpenChange={onOpenChange}
       className="border-t border-border first:border-t-0"
     >
-      <CollapsibleTrigger className="flex items-center w-full py-3 text-left group">
+      <CollapsibleTrigger className="flex items-center w-full py-3 text-left group outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0">
         <ChevronRight
           className={`h-4 w-4 mr-2 text-muted-foreground transition-transform ${
             open ? "rotate-90" : ""
@@ -48,9 +48,10 @@ export function HandbookCollapsibleSection({
         )}
       </CollapsibleTrigger>
       <CollapsibleContent className="pt-2 pb-6">
-        <div className="prose prose-neutral dark:prose-invert max-w-none">
-          {children}
-        </div>
+        {/* Prose styling is applied by HandbookReader per-section so that
+            custom renderers (glossary table, changelog timeline) can opt
+            out of typography defaults via `not-prose`. */}
+        {children}
       </CollapsibleContent>
     </Collapsible>
   );

@@ -41,7 +41,7 @@ sequenceDiagram
   participant DB as domain_events
   participant W as Worker
   participant H as Handler
-  P->>DB: BEGIN; INSERT mudança; INSERT evento; COMMIT
+  P->>DB: BEGIN, INSERT mudança, INSERT evento, COMMIT
   W->>DB: SELECT pendentes FOR UPDATE SKIP LOCKED
   DB-->>W: batch de eventos
   loop por evento

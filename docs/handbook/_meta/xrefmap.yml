@@ -34,8 +34,8 @@ references:
     id: financial
     path: docs/handbook/blocks/financial/(overview)
     title:
-      pt-BR: Blocos Financeiros
-      en-US: Financial Blocks
+      pt-BR: Financeiro
+      en-US: Financial
   herd.category.blocks.miscellaneous:
     level: category
     id: miscellaneous
@@ -64,20 +64,27 @@ references:
     title:
       pt-BR: R0 — Manifest Registry Foundation
       en-US: R0 — Manifest Registry Foundation
+  herd.category.refactor.r1-tools-foundation:
+    level: category
+    id: r1-tools-foundation
+    path: docs/handbook/refactor/r1-tools-foundation/(overview)
+    title:
+      pt-BR: R1 — Tools Foundation Reconciliation
+      en-US: R1 — Tools Foundation Reconciliation
   herd.category.tools.financial:
     level: category
     id: financial
     path: docs/handbook/tools/financial/(overview)
     title:
-      pt-BR: Ferramentas Financeiras
-      en-US: Financial Tools
+      pt-BR: Financeiro
+      en-US: Financial
   herd.category.tools.infrastructure:
     level: category
     id: infrastructure
     path: docs/handbook/tools/infrastructure/(overview)
     title:
-      pt-BR: Ferramentas de Infraestrutura
-      en-US: Infrastructure Tools
+      pt-BR: Infraestrutura
+      en-US: Infrastructure
   herd.layer.blocks:
     level: layer
     id: blocks

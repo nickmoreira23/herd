@@ -1,6 +1,7 @@
 import type { ToolCategoryManifest } from "../manifest";
 
 export const legalCategory: ToolCategoryManifest = {
+  kind: "tool_category",
   name: "legal",
   displayName: "Legal",
   description:
@@ -16,6 +17,7 @@ export const legalCategory: ToolCategoryManifest = {
   ],
   tools: [
     {
+      kind: "tool",
       name: "forms",
       displayName: "Forms",
       description:
@@ -37,6 +39,7 @@ export const legalCategory: ToolCategoryManifest = {
       },
     },
     {
+      kind: "tool",
       name: "contracts",
       displayName: "Contracts",
       description:

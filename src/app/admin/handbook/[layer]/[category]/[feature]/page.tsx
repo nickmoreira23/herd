@@ -49,7 +49,6 @@ export default async function FeaturePage({
           labelEnUS: categoryEntry.title_en_US,
           href: `/admin/handbook/${layer}/${category}`,
         },
-        { labelPtBR: indexEntry.title_pt_BR, labelEnUS: indexEntry.title_en_US },
       ]}
       entry={{
         ptBR: {

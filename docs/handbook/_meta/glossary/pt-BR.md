@@ -38,11 +38,23 @@ Histórico cronológico imutável de todas as mudanças, usado para auditoria e 
 
 Esquema de auth onde o cliente envia `Authorization: Bearer <token>` no header. Day-1 do HTTP transport usa token estático configurado via env var.
 
+### BlockConnection
+
+**From [R1 — Tools Foundation Reconciliation](/admin/handbook/refactor/r1-tools-foundation):**
+
+descriptor `{blockName, usage, purpose}` em Tool.blocks. Indica como uma tool consome dados de um block.
+
 ### BlockGroupSpec
 
 **From [R0 — Manifest Registry Foundation](/admin/handbook/refactor/r0-manifest-registry):**
 
 especificação aninhada para grupos de block (ex.: packages como grupo de products). Mora dentro do campo `groups?` do block pai. R3 exercitará isto.
+
+### buildToolActionCatalog
+
+**From [R1 — Tools Foundation Reconciliation](/admin/handbook/refactor/r1-tools-foundation):**
+
+helper em `registry.ts` que materializa o catálogo de actions para o system prompt do orquestrador, achatando categories → tools → actions.
 
 ### Compensating entry
 
@@ -188,9 +200,25 @@ Transport MCP via HTTP que suporta tanto SSE quanto request/response direto. Imp
 
 ### Tool
 
+**From [R1 — Tools Foundation Reconciliation](/admin/handbook/refactor/r1-tools-foundation):**
+
+interface canônica para tool individual em `src/lib/tools/manifest.ts`. 10 campos + `kind: "tool"`. Mora embedded em ToolCategoryManifest.tools.
+
 **From [Servidor MCP](/admin/handbook/meta/mcp):**
 
 Função invocável pelo cliente MCP. Cada tool tem nome, descrição, input schema (JSON Schema) e implementação.
+
+### ToolAction
+
+**From [R1 — Tools Foundation Reconciliation](/admin/handbook/refactor/r1-tools-foundation):**
+
+ação exposta por uma tool ao chat orchestrator. Pode orquestrar block actions (`blockActions`) ou ter endpoint próprio (`endpoint`).
+
+### ToolCategoryManifest
+
+**From [R1 — Tools Foundation Reconciliation](/admin/handbook/refactor/r1-tools-foundation):**
+
+interface canônica para agrupamento de tools por área de negócio. `kind: "tool_category"`. Registry: `src/lib/tools/registry.ts`.
 
 ### type guard
 

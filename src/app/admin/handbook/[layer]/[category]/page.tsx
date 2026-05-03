@@ -42,7 +42,6 @@ export default async function CategoryOverviewPage({
           labelEnUS: layerEntry.title_en_US,
           href: `/admin/handbook/${layer}`,
         },
-        { labelPtBR: indexEntry.title_pt_BR, labelEnUS: indexEntry.title_en_US },
       ]}
       entry={{
         ptBR: {

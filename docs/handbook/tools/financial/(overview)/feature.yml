@@ -3,8 +3,8 @@ uid: herd.category.tools.financial
 level: category
 technical_category: foundation
 title:
-  pt-BR: Ferramentas Financeiras
-  en-US: Financial Tools
+  pt-BR: Financeiro
+  en-US: Financial
 description:
   pt-BR: Ferramentas que organizam, processam e auditam fluxos financeiros do
     produto, da contabilidade interna até integração com sistemas de pagamento e

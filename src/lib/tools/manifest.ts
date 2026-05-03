@@ -40,6 +40,7 @@ export interface BlockConnection {
 export type ToolStatus = "active" | "beta" | "coming-soon";
 
 export interface Tool {
+  kind: "tool";
   /** Machine name, e.g. "projections" */
   name: string;
   /** Display name, e.g. "Projections" */
@@ -74,6 +75,7 @@ export interface Tool {
 // of tools — intentionally not modeled here yet.
 
 export interface ToolCategoryManifest {
+  kind: "tool_category";
   /** Machine name, e.g. "finances" */
   name: string;
   /** Display name, e.g. "Finances" */

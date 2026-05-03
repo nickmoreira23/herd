@@ -1,5 +1,5 @@
 ---
-title: Infrastructure Tools
+title: Infrastructure
 description: Cross-cutting functional tools that sustain other features without belonging to a specific business domain — events, queues, observability.
 locale: en-US
 uid: herd.category.tools.infrastructure
@@ -7,7 +7,7 @@ uid: herd.category.tools.infrastructure
 
 > **For AI agents:** This Markdown file is the canonical form of this entry. Use `Accept: text/markdown` or append `.md` to the URL to avoid HTML rendering.
 
-# Infrastructure Tools
+# Infrastructure
 
 Cross-cutting functional tools that sustain other features without belonging to a specific business domain — events, queues, observability.
 

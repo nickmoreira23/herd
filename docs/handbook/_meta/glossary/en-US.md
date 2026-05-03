@@ -36,11 +36,23 @@ Immutable chronological history of all changes, used for audit and state reconst
 
 Auth scheme where the client sends `Authorization: Bearer <token>` in the header. Day-1 of the HTTP transport uses a static token configured via env var.
 
+### BlockConnection
+
+**From [R1 — Tools Foundation Reconciliation](/admin/handbook/refactor/r1-tools-foundation):**
+
+descriptor `{blockName, usage, purpose}` in Tool.blocks. Indicates how a tool consumes data from a block.
+
 ### BlockGroupSpec
 
 **From [R0 — Manifest Registry Foundation](/admin/handbook/refactor/r0-manifest-registry):**
 
 nested specification for block groups (e.g., packages as a group of products). Lives inside the parent block's `groups?` field. R3 will exercise this.
+
+### buildToolActionCatalog
+
+**From [R1 — Tools Foundation Reconciliation](/admin/handbook/refactor/r1-tools-foundation):**
+
+helper in `registry.ts` that materializes the action catalog for the orchestrator system prompt, flattening categories → tools → actions.
 
 ### Compensating entry
 
@@ -186,9 +198,25 @@ HTTP-based MCP transport supporting both SSE and direct request/response. Implem
 
 ### Tool
 
+**From [R1 — Tools Foundation Reconciliation](/admin/handbook/refactor/r1-tools-foundation):**
+
+canonical interface for an individual tool at `src/lib/tools/manifest.ts`. 10 fields + `kind: "tool"`. Lives embedded in ToolCategoryManifest.tools.
+
 **From [MCP Server](/admin/handbook/meta/mcp):**
 
 Client-invokable function in MCP. Each tool has a name, description, input schema (JSON Schema), and implementation.
+
+### ToolAction
+
+**From [R1 — Tools Foundation Reconciliation](/admin/handbook/refactor/r1-tools-foundation):**
+
+action exposed by a tool to the chat orchestrator. May orchestrate block actions (`blockActions`) or have its own endpoint (`endpoint`).
+
+### ToolCategoryManifest
+
+**From [R1 — Tools Foundation Reconciliation](/admin/handbook/refactor/r1-tools-foundation):**
+
+canonical interface for grouping tools by business area. `kind: "tool_category"`. Registry: `src/lib/tools/registry.ts`.
 
 ### type guard
 

@@ -1,5 +1,5 @@
 ---
-title: Blocos Financeiros
+title: Financeiro
 description: Primitivos de dados financeiros — registros, fluxos, eventos imutáveis — que servem como base para ferramentas e fluxos do produto.
 locale: pt-BR
 uid: herd.category.blocks.financial
@@ -7,7 +7,7 @@ uid: herd.category.blocks.financial
 
 > **Para agentes de IA:** Este arquivo Markdown é a forma canônica desta entry. Use `Accept: text/markdown` ou adicione `.md` à URL para evitar renderização HTML.
 
-# Blocos Financeiros
+# Financeiro
 
 Primitivos de dados financeiros — registros, fluxos, eventos imutáveis — que servem como base para ferramentas e fluxos do produto.
 

@@ -21,10 +21,11 @@ export const Level = z.enum([
 ]);
 
 export const TechnicalCategory = z.enum([
-  // architectural canonical (4)
+  // architectural canonical (5)
   "block",
   "block-group",
   "tool",
+  "tool-category",
   "top-level-feature",
   // thematic dimensions
   "foundation",

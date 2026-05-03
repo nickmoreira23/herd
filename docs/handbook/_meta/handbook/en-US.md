@@ -95,9 +95,9 @@ graph TB
     style I fill:#0f172a,color:#94a3b8
 ```
 
-### The 4 technical categories
+### The 5 technical categories
 
-Cut across the commercial hierarchy. Defined in the `technical_category` field of `feature.yml`. The 4 are canonical; the field also accepts thematic dimensions (`foundation`, `financial`, `infrastructure`, `sales`, `marketing`, `support`, `commerce`) when applicable to a feature.
+Cut across the commercial hierarchy. Defined in the `technical_category` field of `feature.yml`. The 5 are canonical; the field also accepts thematic dimensions (`foundation`, `financial`, `infrastructure`, `sales`, `marketing`, `support`, `commerce`) when applicable to a feature.
 
 #### Block
 
@@ -149,6 +149,26 @@ Cut across the commercial hierarchy. Defined in the `technical_category` field o
 
 **Subtle distinction — tool vs block-with-relations**: relations don't make a block a tool. The criterion is business objective. A real subscription (record of who subscribed) is a block; a subscription offering (sellable composition) is a tool.
 
+#### Tool Category
+
+**Definition**: grouping of tools by business area.
+
+**Decisive criterion**: tool-category has no data of its own — it is a declarative container that groups semantically related tools. Unlike Solutions (commercial bundles for specific outcomes), Categories are structural taxonomy.
+
+**Characteristics**:
+- Owns a `ToolCategoryManifest` with embedded tools as an array.
+- Metadata: name, displayName, description, icon, color, capabilities, sortOrder.
+- No own CRUD — declarative.
+- Surfaces at `/admin/tools/{category}` as a landing page.
+
+**Path layout**: `src/lib/tools/categories/{category}.category.ts`.
+
+**Canonical examples** (5 implemented): Finances, Legal, Marketing, Sales, Operations.
+
+**Subtle distinction — Category vs Solution**:
+- **Category** (exists): structural grouping by business area. Permanent.
+- **Solution** (deferred): curated tool bundle for a specific outcome (e.g., "Complete Support"). Commercial, sellable.
+
 #### Top-Level Feature
 
 **Definition**: shared infrastructure with rich depth that multiple tools/blocks consume.
@@ -183,26 +203,30 @@ When introducing a new feature into HERD, walk the tree below to classify it.
 
 ```mermaid
 flowchart TD
-    Start[Does the thing own data<br/>with an independent lifecycle?]
-    Start -->|NO| Workflow[Is it workflow / composition?]
-    Start -->|YES| IndepCheck[Does the data exist<br/>independent of<br/>composition?]
+    Start[A coisa tem dado próprio<br/>com lifecycle independente?]
+    Start -->|NÃO| Workflow[É workflow / composição?]
+    Start -->|SIM| IndepCheck[Dado existe<br/>independente de<br/>composição?]
 
-    Workflow -->|YES| Goal[Has a single clear<br/>business objective?]
-    Workflow -->|NO| Reconsider1[Reconsider —<br/>likely UI helper]
+    Workflow -->|SIM| Goal[Tem único objetivo<br/>de negócio claro?]
+    Workflow -->|NÃO| AggregatorCheck[É agrupamento<br/>declarativo de tools?]
 
-    Goal -->|YES| Tool[technical_category: tool]
-    Goal -->|NO| TLF[technical_category: top-level-feature<br/>infrastructure]
+    AggregatorCheck -->|SIM| ToolCategory[technical_category: tool-category]
+    AggregatorCheck -->|NÃO| TLF[technical_category: top-level-feature<br/>infraestrutura]
 
-    IndepCheck -->|YES| RichCheck[Rich internal complexity<br/>+ cross-area?]
-    IndepCheck -->|NO| AgrCheck[Only makes sense as<br/>a grouping of another block?]
+    Goal -->|SIM| Tool[technical_category: tool]
+    Goal -->|NÃO| TLF
 
-    RichCheck -->|YES| TLFData[technical_category: top-level-feature<br/>with own data]
-    RichCheck -->|NO| Block[technical_category: block]
+    IndepCheck -->|SIM| RichCheck[Complexidade interna<br/>rica + cross-area?]
+    IndepCheck -->|NÃO| AgrCheck[Só faz sentido como<br/>agrupamento de outro block?]
 
-    AgrCheck -->|YES| BlockGroup[technical_category: block-group]
-    AgrCheck -->|NO| Reconsider2[Reconsider —<br/>likely tool]
+    RichCheck -->|SIM| TLFData[technical_category: top-level-feature<br/>com dado próprio]
+    RichCheck -->|NÃO| Block[technical_category: block]
+
+    AgrCheck -->|SIM| BlockGroup[technical_category: block-group]
+    AgrCheck -->|NÃO| Reconsider[Reconsiderar]
 
     style Tool fill:#1e40af,color:#fff
+    style ToolCategory fill:#3b82f6,color:#fff
     style Block fill:#15803d,color:#fff
     style BlockGroup fill:#65a30d,color:#fff
     style TLF fill:#7c3aed,color:#fff
@@ -211,11 +235,12 @@ flowchart TD
 
 ### Classification implications in code
 
-| technical_category | Components | Pages | Manifest |
+| Category | Components | Pages | Manifest |
 |---|---|---|---|
 | Block | `src/components/{name}/` | `src/app/admin/blocks/{name}/` | `src/lib/blocks/blocks/{name}.block.ts` |
 | Block group | `src/components/{parent}/groups/{name}/` | `src/app/admin/blocks/{parent}/groups/{name}/` | inside `{parent}.block.ts` (`groups` field) |
-| Tool | `src/components/tools/{name}/` | `src/app/admin/tools/{name}/` | `src/lib/tools/tools/{name}.tool.ts` |
+| Tool | (generic chrome at `src/components/tools/`) | `src/app/admin/tools/{category}/{tool}/` | embedded in `{category}.category.ts` |
+| Tool category | (landing via `category-landing.tsx`) | `src/app/admin/tools/{category}/` | `src/lib/tools/categories/{category}.category.ts` |
 | Top-level feature | `src/components/{name}/` | `src/app/admin/{name}/` | `src/lib/features/{name}.feature.ts` |
 
 ### Planned re-classifications (refactor R3-R7)
@@ -359,13 +384,15 @@ Limitation: Mermaid diagrams are lazy-rendered on section open. Diagrams in sect
 | perspective | perspectiva | One of the six sections of a Handbook entry: Business, Product, Architecture, Operations, Glossary, Changelog. |
 | SKILL.md | SKILL.md | Agent-facing operational guide. Format defined by agentskills.io. |
 | solution | solução | Curated bundle of tools for a macro purpose. Currently deferred. |
-| technical_category | categoria técnica | Architectural classification. 4 canonical (block, block-group, tool, top-level-feature) + thematic dimensions (foundation, financial, infrastructure, sales, marketing, support, commerce). |
+| technical_category | categoria técnica | Architectural classification. 5 canonical (block, block-group, tool, tool-category, top-level-feature) + thematic dimensions (foundation, financial, infrastructure, sales, marketing, support, commerce). |
 | tool | ferramenta | Cross-block composition with a business objective. Canonical technical_category. |
+| tool-category | categoria de tool | Grouping of tools by business area (Finances, Legal, Marketing, Sales, Operations). Canonical technical_category; declarative, no own CRUD. |
 | top-level-feature | top-level feature | Canonical technical_category for rich infrastructure consumed cross-area (Knowledge, Organization, Directory, Blocks, Handbook). |
 | uid | uid | Stable identifier in the form `herd.<level>.<id>`. |
 | xrefmap | xrefmap | Generated UID → path translation table. Canonical lookup for cross-references. |
 
 ## Changelog
 
+- **2026-05-02 (R1)** — Tools foundation reconciliation. Tool gained kind discriminator. ToolCategoryManifest established as the 5th canonical architectural category. Schema enum bumped from 11 → 12 values. Provisional ToolManifest + FeatureManifest deleted (dead code).
 - **2026-05-02** — R0.1 Handbook content reform. Replaces 6-level singular pyramid with plural commercial hierarchy (Networks/Solutions/Tools/Blocks/Integrations) with Networks as a category with sub-types. Adds `block-group` and `top-level-feature` as canonical `technical_category` values (was 3 values, becomes 11: 4 architectural + 7 thematic). Adds path-mapping, planned re-classifications, classification-discipline guide, and `level` vs `technical_category` distinction. Zod schema bumped.
 - **2026-05-01** — Initial publication. Etapa Handbook foundation + first entries. Establishes commercial levels, technical categories, 4 artifacts per feature, Zod 4 (via `zod/v4` subpath) as schema source-of-truth, doc-first as workflow, and CI gates (3 hard-fail + 3 soft warning).
