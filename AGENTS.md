@@ -380,6 +380,79 @@ Handbook is worse than no Handbook — it lies confidently. The
 5-minute cost of updating docs alongside code is small; the cost of
 debugging based on stale docs is enormous.
 
+## Tenancy
+
+`Organization` is the tenant boundary. Each `NetworkProfile` owns one
+personal Organization (1:1, V1). Four tables are tenant-scoped via
+`tenant_id`:
+
+- `MemberConnection` — `tenant_id NOT NULL` + FK + index.
+- `IntegrationTierMapping`, `IntegrationWebhookEvent`,
+  `IntegrationSyncLog` — `tenant_id` nullable + FK + index. NOT NULL
+  is deferred until admin API auth and webhook tenant resolution land
+  in a later sub-etapa.
+
+**X1 — `Integration` is single-tenant.** The integration catalog is
+plataforma-wide. `Integration.tenantId` stays nullable indefinitely,
+and `Integration.slug @unique` global is preserved. Trigger to revisit:
+first enterprise customer that needs their own OAuth app.
+
+### Using `withTenant`
+
+`src/lib/tenancy/context.ts` exports an `AsyncLocalStorage`-backed
+helper. Wrap business logic in `withTenant(orgId, () => ...)`; queries
+on tenant-scoped models inside the callback are auto-filtered by
+`tenant_id`.
+
+```typescript
+import { withTenant } from "@/lib/tenancy/context";
+
+const session = await auth();
+return withTenant(session.user.activeOrgId, async () => {
+  return prisma.memberConnection.findMany();
+});
+```
+
+`requireTenantId()` reads the current context and throws if there is
+none — use it at the entry of business-logic helpers that must run
+under a tenant.
+
+### ALS gotcha — sync `fn` returning a Promise
+
+`AsyncLocalStorage` loses context if `storage.run(ctx, fn)` is given a
+synchronous `fn` that just returns a Promise: the Promise's
+continuations resolve after `storage.run` exits its scope and the
+async-hook chain breaks. `withTenant` works around this by wrapping
+the user `fn` with an internal `async () => fn()`. **Any new helper
+that uses `AsyncLocalStorage` must do the same.**
+
+```typescript
+// wrong — context leaks before Prisma's continuations run
+storage.run(ctx, () => prisma.x.findMany());
+
+// right — internal async forces await inside the scope
+storage.run(ctx, async () => fn());
+```
+
+### ESLint rule — `herd-tenancy/no-direct-prisma-on-scoped-models`
+
+Bans `prisma.{memberConnection,integrationTierMapping,integrationWebhookEvent,integrationSyncLog}.X`
+outside an enclosing `withTenant(...)` call. Static AST walk only — if
+the prisma call is inside a helper function called from a `withTenant`
+block, the rule cannot prove the chain. To declare an exception, add
+an inline disable with a comment explaining the helper's contract:
+
+```typescript
+// eslint-disable-next-line herd-tenancy/no-direct-prisma-on-scoped-models
+// — caller is always inside withTenant; see resolveTenantFromWebhookPayload.
+const conn = await prisma.memberConnection.findFirst({ ... });
+```
+
+Legacy admin API routes and webhook handlers that pre-date Camada 1
+are downgraded to `warn` in `eslint.config.mjs`. New code is held to
+`error`. When you refactor a legacy route to wrap with `withTenant`,
+remove its entry from the warn override list.
+
 ## Boundaries
 
 - Never edit `mcp/generated/`, `schemas/feature.schema.json`,
