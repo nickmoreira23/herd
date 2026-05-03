@@ -129,6 +129,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.role = (user as { role?: string }).role;
         token.dbId = user.id;
+        const org = await prisma.organization.findUnique({
+          where: { ownerId: user.id as string },
+          select: { id: true },
+        });
+        token.activeOrgId = org?.id ?? null;
       }
       // Recover dbId from DB if missing (e.g. token created before this field existed)
       if (!token.dbId && token.email) {
@@ -161,6 +166,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (session.user) {
         (session.user as { role?: string }).role = token.role as string;
         (session.user as { id?: string }).id = token.dbId as string;
+        (session.user as { activeOrgId?: string | null }).activeOrgId =
+          (token.activeOrgId as string | null | undefined) ?? null;
         if (typeof token.picture === "string" || token.picture === null) {
           session.user.image = token.picture as string | null | undefined;
         }
