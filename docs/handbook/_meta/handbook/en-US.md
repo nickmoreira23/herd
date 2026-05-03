@@ -243,20 +243,22 @@ flowchart TD
 | Tool category | (landing via `category-landing.tsx`) | `src/app/admin/tools/{category}/` | `src/lib/tools/categories/{category}.category.ts` |
 | Top-level feature | `src/components/{name}/` | `src/app/admin/{name}/` | `src/lib/features/{name}.feature.ts` |
 
-### Planned re-classifications (refactor R3-R7)
+### Planned re-classifications (refactor R2.5-R8)
 
-| Today (technical_category) | Becomes (technical_category) | Etapa |
-|---|---|---|
-| `packages` (block) | block-group of products | R3 |
-| `campaigns` (block) | tool | R4 |
-| `subscriptions` offering (block) | `subscription-offering` (tool) | R5 |
-| `subscriptions` real (block) | residual block | R5 |
-| `marketplace` current UI | tool | R5 |
-| `routines` (block) | top-level-feature | (deferred) |
-| `agents` (block) | top-level-feature | R7 |
-| Current Network | Organization + Directory (2× top-level-feature) | R2.5 |
+Confirmed after detailed investigation of the actual code state during R1.5.
 
-Each re-classification has its motivation documented in the relevant refactor entry (`docs/handbook/refactor/r{X}-{name}/`).
+| Item | Actual state | Decision | Stage |
+|---|---|---|---|
+| Current Network | Top-level feature with rich sub-features | Split into Organization + Directory | R2.5 |
+| packages | Active tool in sales/packages | Stays tool; investigate block-group of products inside | R3 |
+| campaigns | Active block + coming-soon placeholder | Promote block to tool in marketing; delete placeholder | R4 |
+| subscriptions | Block + divergent paths (tiers/, api/tiers/) | Stays block; paths consolidated; subscription-offering tool created | R5 |
+| subscription-offering | Does not exist | Create new tool in sales | R5 |
+| routines | Block with no top-level surface | Top-level feature; create /admin/routines/ + sidebar item | R6 |
+| agents | Block + dual surface (admin/agents already exists) | Top-level feature; consolidate; drop admin/blocks/agents/ | R7 |
+| marketplace | Standalone UI | Top-level feature | R8 |
+
+Each re-classification has its own entry at `docs/handbook/refactor/r{X}-{name}/`.
 
 ### level vs technical_category
 

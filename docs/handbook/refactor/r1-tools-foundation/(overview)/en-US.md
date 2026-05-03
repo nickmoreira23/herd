@@ -115,3 +115,4 @@ Five instructions for agents working on post-R1 surfaces:
 ## Changelog
 
 - **2026-05-02 (R1 closes)** — Tools foundation reconciliation (commit 1: schema, hash `e096d1a`; commit 2: handbook, this entry). Tool gains `kind: "tool"`. ToolCategoryManifest gains `kind: "tool_category"`. Provisional ToolManifest + FeatureManifest deleted from `src/lib/blocks/manifest.ts`. Schema enum `technical_category` bumped 11 → 12 (adds `"tool-category"`). 24 `feature.yml` total (was 23). Next: R1.5 (re-investigation of re-classifications planned for R3–R8).
+- **2026-05-03 (cross-cutting note)** — Investigation during R1 revealed divergences between original plan and actual code state. Revised decisions for R3-R8 documented in [R1.5](../r1-5-reclassifications-revision/).

@@ -243,20 +243,22 @@ flowchart TD
 | Tool category | (landing via `category-landing.tsx`) | `src/app/admin/tools/{category}/` | `src/lib/tools/categories/{category}.category.ts` |
 | Top-level feature | `src/components/{name}/` | `src/app/admin/{name}/` | `src/lib/features/{name}.feature.ts` |
 
-### Re-classifications planejadas (refator R3-R7)
+### Re-classifications planejadas (refator R2.5-R8)
 
-| Hoje (technical_category) | Vira (technical_category) | Etapa |
-|---|---|---|
-| `packages` (block) | block-group de products | R3 |
-| `campaigns` (block) | tool | R4 |
-| `subscriptions` oferta (block) | `subscription-offering` (tool) | R5 |
-| `subscriptions` real (block) | block residual | R5 |
-| `marketplace` UI atual | tool | R5 |
-| `routines` (block) | top-level-feature | (deferido) |
-| `agents` (block) | top-level-feature | R7 |
-| Network atual | Organization + Directory (2× top-level-feature) | R2.5 |
+Confirmadas após investigação detalhada do estado real do código durante R1.5.
 
-Cada re-classification tem motivação documentada na entry de refactor própria (`docs/handbook/refactor/r{X}-{name}/`).
+| Item | Estado real | Decisão | Etapa |
+|---|---|---|---|
+| Network atual | Top-level feature com sub-features ricas | Split em Organization + Directory | R2.5 |
+| packages | Tool active em sales/packages | Permanece tool; investigar block-group de products dentro | R3 |
+| campaigns | Block ativo + placeholder coming-soon | Promover block para tool em marketing; deletar placeholder | R4 |
+| subscriptions | Block + paths divergentes (tiers/, api/tiers/) | Permanece bloco; paths consolidados; subscription-offering tool criada | R5 |
+| subscription-offering | Não existe | Criar nova tool em sales | R5 |
+| routines | Block sem top-level surface | Top-level feature; criar /admin/routines/ + sidebar item | R6 |
+| agents | Block + dual surface (admin/agents existe) | Top-level feature; consolidar; dropar admin/blocks/agents/ | R7 |
+| marketplace | UI standalone | Top-level feature | R8 |
+
+Cada re-classification tem entry própria em `docs/handbook/refactor/r{X}-{name}/`.
 
 ### level vs technical_category
 

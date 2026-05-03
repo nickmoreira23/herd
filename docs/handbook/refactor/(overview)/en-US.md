@@ -18,19 +18,21 @@ Invisible to end users. Pure foundation work. The impact arrives via: faster dow
 
 ## Architecture
 
-The refactor is divided into 9 stages. R0 (now closed) is the starting point — foundation for everything that follows.
+The refactor is divided into 12 stages. R0 and R1 are closed; R1.5 is the doc-first re-investigation of the planned re-classifications. Stages R2.5–R8 were revised against the actual code state.
 
 | Stage | Work | Status |
 |---|---|---|
-| R0 | Foundation (pre-refactor cleanup + content reform + manifest schema bump) | done (2026-05-02) |
-| R1 | Tools foundation (tool registry, parallel manifest) | planned |
-| R2 | Top-level features foundation (feature registry, parallel manifest) | planned |
-| R2.5 | Network split (Organization + Directory as distinct contexts) | planned |
-| R3 | Packages → block group (move packages inside products as a group) | planned |
-| R4 | Campaigns → tool (re-classify from block to tool) | planned |
-| R5 | Subscriptions split (separate commercial contracts from technical subscriptions) | planned |
-| R6 | Routines → top-level feature (re-classify) | deferred |
-| R7 | Agents → top-level feature (re-classify) | planned |
+| R0 | Foundation (cleanup + content reform + schema bump) | done (2026-05-02) |
+| R1 | Tools Foundation reconciliation (5 technical categories) | done (2026-05-02) |
+| R1.5 | Re-investigation R3-R8 (re-classifications revised against actual state) | done (2026-05-03) |
+| R2 | Top-level features foundation | planned |
+| R2.5 | Network split (Organization + Directory) | planned |
+| R3 | Packages refinement | planned |
+| R4 | Campaigns convergence (block → tool) | planned |
+| R5 | Subscriptions split + subscription-offering creation | planned |
+| R6 | Routines → top-level feature | planned |
+| R7 | Agents → top-level feature (consolidate dual surface) | planned |
+| R8 | Marketplace → top-level feature | planned |
 
 Each stage has its own entry at `docs/handbook/refactor/r{N}-{name}/(overview)/` documenting: motivation, decisions, migration mechanics, and reference to the commit that closed it.
 
@@ -46,3 +48,5 @@ For agents (human or AI) working on the refactor:
 ## Changelog
 
 - **2026-05-02 (R0 closes)** — Foundation ready. R0.0 (pre-refactor cleanup), R0.1 (architectural content reform), R0.2 (manifest schema bump) merged to main. R1–R7 unblocked.
+- **2026-05-02 (R1 closes)** — Tools Foundation reconciliation. Tool gains `kind: "tool"`. ToolCategoryManifest gains `kind: "tool_category"`. `tool-category` established as 5th canonical architectural category.
+- **2026-05-03 (R1.5 closes)** — Doc-first re-investigation. Re-classifications R3–R8 revised against actual code state. 7 mini-specs created (R2.5, R3, R4, R5, R6, R7, R8). Sequence expanded to 12 stages.

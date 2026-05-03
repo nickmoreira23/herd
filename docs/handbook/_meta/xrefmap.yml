@@ -64,6 +64,13 @@ references:
     title:
       pt-BR: R0 — Manifest Registry Foundation
       en-US: R0 — Manifest Registry Foundation
+  herd.category.refactor.r1-5-reclassifications-revision:
+    level: category
+    id: r1-5-reclassifications-revision
+    path: docs/handbook/refactor/r1-5-reclassifications-revision/(overview)
+    title:
+      pt-BR: R1.5 — Re-investigation R3-R8 Reclassifications
+      en-US: R1.5 — Re-investigation R3-R8 Reclassifications
   herd.category.refactor.r1-tools-foundation:
     level: category
     id: r1-tools-foundation
@@ -71,6 +78,55 @@ references:
     title:
       pt-BR: R1 — Tools Foundation Reconciliation
       en-US: R1 — Tools Foundation Reconciliation
+  herd.category.refactor.r2-5-network-split:
+    level: category
+    id: r2-5-network-split
+    path: docs/handbook/refactor/r2-5-network-split/(overview)
+    title:
+      pt-BR: R2.5 — Network Split (Organization + Directory)
+      en-US: R2.5 — Network Split (Organization + Directory)
+  herd.category.refactor.r3-packages-refinement:
+    level: category
+    id: r3-packages-refinement
+    path: docs/handbook/refactor/r3-packages-refinement/(overview)
+    title:
+      pt-BR: R3 — Packages Refinement
+      en-US: R3 — Packages Refinement
+  herd.category.refactor.r4-campaigns-convergence:
+    level: category
+    id: r4-campaigns-convergence
+    path: docs/handbook/refactor/r4-campaigns-convergence/(overview)
+    title:
+      pt-BR: R4 — Campaigns Convergence (block → tool)
+      en-US: R4 — Campaigns Convergence (block → tool)
+  herd.category.refactor.r5-subscriptions-split:
+    level: category
+    id: r5-subscriptions-split
+    path: docs/handbook/refactor/r5-subscriptions-split/(overview)
+    title:
+      pt-BR: R5 — Subscriptions Split + Offering Creation
+      en-US: R5 — Subscriptions Split + Offering Creation
+  herd.category.refactor.r6-routines-feature:
+    level: category
+    id: r6-routines-feature
+    path: docs/handbook/refactor/r6-routines-feature/(overview)
+    title:
+      pt-BR: R6 — Routines as Top-Level Feature
+      en-US: R6 — Routines as Top-Level Feature
+  herd.category.refactor.r7-agents-feature:
+    level: category
+    id: r7-agents-feature
+    path: docs/handbook/refactor/r7-agents-feature/(overview)
+    title:
+      pt-BR: R7 — Agents as Top-Level Feature (consolidate dual surface)
+      en-US: R7 — Agents as Top-Level Feature (consolidate dual surface)
+  herd.category.refactor.r8-marketplace-feature:
+    level: category
+    id: r8-marketplace-feature
+    path: docs/handbook/refactor/r8-marketplace-feature/(overview)
+    title:
+      pt-BR: R8 — Marketplace as Top-Level Feature
+      en-US: R8 — Marketplace as Top-Level Feature
   herd.category.tools.financial:
     level: category
     id: financial
