@@ -493,7 +493,7 @@ export function FormBuilder({ initialForm }: FormBuilderProps) {
           variant="ghost"
           size="sm"
           onClick={() =>
-            router.push("/admin/organization/knowledge/forms")
+            router.push("/admin/knowledge/forms")
           }
         >
           <ArrowLeft className="h-3.5 w-3.5 mr-1" />
@@ -539,7 +539,7 @@ export function FormBuilder({ initialForm }: FormBuilderProps) {
             size="sm"
             onClick={() =>
               router.push(
-                `/admin/organization/knowledge/forms/${form.id}/responses`
+                `/admin/knowledge/forms/${form.id}/responses`
               )
             }
           >

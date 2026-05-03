@@ -440,6 +440,7 @@ export const messages = {
   "nav.sidebar.marketplace": "Marketplace",
   "nav.sidebar.ledger": "Ledger",
   "nav.sidebar.agents": "Agentes",
+  "nav.sidebar.areas": "Áreas",
   "nav.sidebar.tools": "Ferramentas",
   "nav.sidebar.blocks": "Blocos",
   "nav.sidebar.integrations": "Integrações",

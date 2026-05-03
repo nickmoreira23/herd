@@ -64,7 +64,7 @@ export function TablesListClient({
   }, []);
 
   const handleOpen = useCallback((table: TableRow) => {
-    router.push(`/admin/organization/knowledge/tables/${table.id}`);
+    router.push(`/admin/knowledge/tables/${table.id}`);
   }, [router]);
 
   const handleToggleActive = useCallback(async (table: TableRow) => {

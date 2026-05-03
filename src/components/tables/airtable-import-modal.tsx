@@ -693,7 +693,7 @@ export function AirtableImportModal({
                         onOpenChange(false);
                         onComplete();
                         router.push(
-                          `/admin/organization/knowledge/tables/${importedTableId}`
+                          `/admin/knowledge/tables/${importedTableId}`
                         );
                       }}
                     >
@@ -735,7 +735,7 @@ export function AirtableImportModal({
                       onOpenChange(false);
                       onComplete();
                       router.push(
-                        `/admin/organization/knowledge/tables/${importedTableId}`
+                        `/admin/knowledge/tables/${importedTableId}`
                       );
                     }}
                   >

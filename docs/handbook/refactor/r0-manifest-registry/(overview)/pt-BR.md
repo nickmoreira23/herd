@@ -10,7 +10,7 @@ Por que R0 importa comercialmente: o refator viabiliza Tools, Solutions e Networ
 
 ## Product
 
-Invisível ao usuário final. R0 não muda comportamento de nenhuma feature. O que muda é o que vem depois — features futuras nascem com classificação canônica e o registry está preparado para receber as três formas (block, tool, top-level-feature) em vez de assumir uma só.
+Invisível ao usuário final. R0 não muda comportamento de nenhuma feature. O que muda é o que vem depois — features futuras nascem com classificação canônica e o registry está preparado para receber as três formas (block, tool, area — esta última substitui o antigo top-level-feature em R2) em vez de assumir uma só.
 
 ## Architecture
 
@@ -25,7 +25,7 @@ Sem R0.0, R0.1 e R0.2 não teriam base limpa para aplicar mudanças.
 Seis lacunas arquiteturais fechadas em `_meta/handbook`:
 
 1. Hierarquia comercial 5-níveis plural — Networks como categoria com subtipos Multi-market / Market / Corporate.
-2. Quatro valores canônicos de `technical_category` arquitetural — `block` / `block-group` / `tool` / `top-level-feature`.
+2. Valores canônicos de `technical_category` arquitetural — `block` / `block-group` / `tool` / `area` (área substitui `top-level-feature`, removido em R2).
 3. Árvore de decisão atualizada para classificar nova feature por natureza (dado / utilidade / autônoma).
 4. Tabela de mapeamento de paths atualizada cobrindo os quatro tipos arquiteturais.
 5. Tabela de re-classificações para R3–R7 — referência canônica para que cada etapa sabe o que muda.

@@ -59,13 +59,13 @@ flowchart TD
     Root --> BG["block-group<br/>agrupamento intra-block"]
     Root --> Tool["tool<br/>composição cross-block"]
     Root --> TC["tool-category<br/>agrupamento de tools"]
-    Root --> TLF["top-level-feature<br/>infra cross-area"]
+    Root --> Area["area<br/>product macro-division"]
 
     style Block fill:#15803d,color:#fff
     style BG fill:#65a30d,color:#fff
     style Tool fill:#1e40af,color:#fff
     style TC fill:#3b82f6,color:#fff
-    style TLF fill:#7c3aed,color:#fff
+    style Area fill:#7c3aed,color:#fff
 ```
 
 Critical distinction: **Category ≠ Solution**.

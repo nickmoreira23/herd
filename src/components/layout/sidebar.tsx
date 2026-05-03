@@ -44,6 +44,7 @@ import {
   MessageSquare,
   Receipt,
   Brain,
+  Layers,
   type LucideIcon,
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
@@ -90,12 +91,13 @@ const navItems: NavItem[] = [
   { type: "link", href: "/admin", label: "Dashboard", labelKey: "nav.sidebar.dashboard", icon: LayoutDashboard },
   { type: "link", href: "/admin/chat", label: "Chat", labelKey: "nav.sidebar.chat", icon: MessageSquare },
   { type: "link", href: "/admin/organization/profile", label: "Organization", labelKey: "nav.sidebar.organization", icon: Building2 },
-  { type: "link", href: "/admin/organization/knowledge", label: "Knowledge", labelKey: "nav.sidebar.knowledge", icon: Brain },
+  { type: "link", href: "/admin/knowledge", label: "Knowledge", labelKey: "nav.sidebar.knowledge", icon: Brain },
   { type: "link", href: "/admin/handbook", label: "Handbook", labelKey: "nav.sidebar.handbook", icon: BookOpen },
   { type: "link", href: "/admin/network", label: "Network", labelKey: "nav.sidebar.network", icon: Network },
   { type: "link", href: "/admin/marketplace", label: "Marketplace", labelKey: "nav.sidebar.marketplace", icon: ShoppingBag },
   { type: "link", href: "/admin/ledger", label: "Ledger", labelKey: "nav.sidebar.ledger", icon: Receipt },
   { type: "link", href: "/admin/agents", label: "Agents", labelKey: "nav.sidebar.agents", icon: Bot },
+  { type: "link", href: "/admin/areas", label: "Areas", labelKey: "nav.sidebar.areas", icon: Layers },
   { type: "link", href: "/admin/tools", label: "Tools", labelKey: "nav.sidebar.tools", icon: Lightbulb },
   { type: "link", href: "/admin/blocks", label: "Blocks", labelKey: "nav.sidebar.blocks", icon: Blocks },
   { type: "link", href: "/admin/integrations", label: "Integrations", labelKey: "nav.sidebar.integrations", icon: Plug },

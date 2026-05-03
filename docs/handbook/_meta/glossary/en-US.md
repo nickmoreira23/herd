@@ -12,45 +12,51 @@ Global glossary aggregated from the `## Glossary` sections of all Handbook entri
 
 <!-- BEGIN_GENERATED_GLOSSARY -->
 
+### 5-level hierarchy
+
+**From [R2 — Areas Foundation](/admin/handbook/refactor/r2-areas-foundation):**
+
+Networks → Areas → Tools → Blocks → Integrations.
+
 ### Agent
 
-**From [R7 — Agents as Top-Level Feature (consolidate dual surface)](/admin/handbook/refactor/r7-agents-feature):**
+**From [R7 — Agents as Tool (consolidate dual surface)](/admin/handbook/refactor/r7-agents-tool):**
 
 configurable AI assistant. Top-level feature post-R7.
 
 ### AgentKnowledgeItem
 
-**From [R7 — Agents as Top-Level Feature (consolidate dual surface)](/admin/handbook/refactor/r7-agents-feature):**
+**From [R7 — Agents as Tool (consolidate dual surface)](/admin/handbook/refactor/r7-agents-tool):**
 
 knowledge item associated with the agent (rename of KnowledgeApp).
 
 ### AgentRole
 
-**From [R7 — Agents as Top-Level Feature (consolidate dual surface)](/admin/handbook/refactor/r7-agents-feature):**
+**From [R7 — Agents as Tool (consolidate dual surface)](/admin/handbook/refactor/r7-agents-tool):**
 
 agent's functional role (orchestrator, specialist).
 
 ### AgentSkill
 
-**From [R7 — Agents as Top-Level Feature (consolidate dual surface)](/admin/handbook/refactor/r7-agents-feature):**
+**From [R7 — Agents as Tool (consolidate dual surface)](/admin/handbook/refactor/r7-agents-tool):**
 
 declared capability of the agent (resolves specific problems).
 
 ### AgentStatus
 
-**From [R7 — Agents as Top-Level Feature (consolidate dual surface)](/admin/handbook/refactor/r7-agents-feature):**
+**From [R7 — Agents as Tool (consolidate dual surface)](/admin/handbook/refactor/r7-agents-tool):**
 
 states (ACTIVE, INACTIVE, ARCHIVED).
 
 ### AgentTierAccess
 
-**From [R7 — Agents as Top-Level Feature (consolidate dual surface)](/admin/handbook/refactor/r7-agents-feature):**
+**From [R7 — Agents as Tool (consolidate dual surface)](/admin/handbook/refactor/r7-agents-tool):**
 
 agent access matrix by subscription tier.
 
 ### AgentTool
 
-**From [R7 — Agents as Top-Level Feature (consolidate dual surface)](/admin/handbook/refactor/r7-agents-feature):**
+**From [R7 — Agents as Tool (consolidate dual surface)](/admin/handbook/refactor/r7-agents-tool):**
 
 tool exposed to the agent (platform tool the agent can invoke).
 
@@ -65,6 +71,42 @@ The domain entity an event is about. Identified by `aggregateType` + `aggregateI
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
 
 Write strategy where existing records are never modified or deleted; correction comes through new compensating records.
+
+### Area
+
+**From [Areas](/admin/handbook/areas):**
+
+product macro-division grouping tools by the function they perform (Communication, Transaction, Workflow, Notification, Identity, Infrastructure).
+
+**From [R2 — Areas Foundation](/admin/handbook/refactor/r2-areas-foundation):**
+
+product macro-division where tools are positioned. 6 canonical values.
+
+### AreaManifest
+
+**From [Areas](/admin/handbook/areas):**
+
+TypeScript schema in `src/lib/core/manifest.ts` describing an area.
+
+**From [R2 — Areas Foundation](/admin/handbook/refactor/r2-areas-foundation):**
+
+area manifest interface with kind: "area".
+
+### areaRegistry
+
+**From [Areas](/admin/handbook/areas):**
+
+static registry in `src/lib/core/registry.ts` enumerating the 6 canonical areas.
+
+**From [R2 — Areas Foundation](/admin/handbook/refactor/r2-areas-foundation):**
+
+lookup `Record<string, AreaManifest>` in `src/lib/core/registry.ts`.
+
+### areas-as-Handbook-layer
+
+**From [Areas](/admin/handbook/areas):**
+
+R2 convention — areas became the 5th canonical Handbook layer (under `docs/handbook/areas/`).
 
 ### Audit trail
 
@@ -150,23 +192,29 @@ states (DRAFT, SCHEDULED, RUNNING, COMPLETED, PAUSED, CANCELLED).
 
 polysemous term — in Organization it means institutional channel (organizational); in messaging it means communication channel. Critical distinction.
 
+### Communication area
+
+**From [Communication](/admin/handbook/areas/communication):**
+
+macro-division for human-human and human-agent interaction tools.
+
 ### Compensating entry
 
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
 
 A new entry created to neutralize the effect of a previous entry; the original entry stays intact.
 
-### Composer
-
-**From [R8 — Marketplace as Top-Level Feature](/admin/handbook/refactor/r8-marketplace-feature):**
-
-admin UI that assembles the marketplace structure (sections, layout, visibility).
-
 ### Directory
 
 **From [R2.5 — Network Split (Organization + Directory)](/admin/handbook/refactor/r2-5-network-split):**
 
 top-level feature with people structure (profiles, roles, permissions, promoters, onboarding).
+
+### Directory (R2.5)
+
+**From [Network](/admin/handbook/areas/identity/network):**
+
+will cover lookup — searching people.
 
 ### Doc-first
 
@@ -192,11 +240,27 @@ Accounting model where every movement is recorded simultaneously as a debit and 
 
 discriminated union of `BlockManifest | ToolManifest | FeatureManifest`. Replaces the monolithic `BlockManifest` of pre-R0.
 
+### Entry
+
+**From [Handbook](/admin/handbook/areas/infrastructure/handbook):**
+
+a `feature.yml` + `{pt-BR,en-US}.md` pair documenting a feature/category/layer.
+
 ### Exhaustion
 
 **From [Domain Events](/admin/handbook/tools/infrastructure/domain-events):**
 
 State after 5 failed attempts. `nextAttemptAt = NULL`, auto-retry stops, manual intervention required.
+
+### getToolsByArea
+
+**From [Areas](/admin/handbook/areas):**
+
+helper returning tools registered in a given area.
+
+**From [R2 — Areas Foundation](/admin/handbook/refactor/r2-areas-foundation):**
+
+helper that filters tools[] by area.name.
 
 ### Handler
 
@@ -213,6 +277,18 @@ Key uniquely identifying a request; lets retries be safe without duplicating eff
 **From [Domain Events](/admin/handbook/tools/infrastructure/domain-events):**
 
 Optional unique key on emission. Repeated emit with the same key returns the existing event if payload matches, throws if it diverges.
+
+### Identity area
+
+**From [Identity](/admin/handbook/areas/identity):**
+
+macro-division for who (Network/Directory) and what is known (Knowledge) tools.
+
+### Infrastructure area
+
+**From [Infrastructure](/admin/handbook/areas/infrastructure):**
+
+macro-division for platform tools (docs, observability, config) invisible in the normal product flow.
 
 ### Journal entry
 
@@ -238,29 +314,17 @@ JSON-based RPC protocol used by MCP. Requests carry `{jsonrpc, id, method, param
 
 discriminator field on `EntityManifest`. Values: `"block" | "tool" | "top_level_feature"`. Determines structural shape and where the manifest physically lives.
 
+### Knowledge folder
+
+**From [Knowledge](/admin/handbook/areas/identity/knowledge):**
+
+cross-block grouping by context rather than by block type.
+
 ### llms.txt
 
 **From [llms.txt](/admin/handbook/meta/llms-txt):**
 
 Markdown file at `/llms.txt` that guides LLMs about the product. Convention defined at llmstxt.org.
-
-### Marketplace
-
-**From [R8 — Marketplace as Top-Level Feature](/admin/handbook/refactor/r8-marketplace-feature):**
-
-infrastructure top-level feature for exposing content (items) on configurable surfaces (sections + composer).
-
-### MarketplaceItem
-
-**From [R8 — Marketplace as Top-Level Feature](/admin/handbook/refactor/r8-marketplace-feature):**
-
-item displayable in the marketplace (product, service, plan, event, etc. — comes from any block).
-
-### MarketplaceSection
-
-**From [R8 — Marketplace as Top-Level Feature](/admin/handbook/refactor/r8-marketplace-feature):**
-
-configurable section grouping items by criterion (block + filters + ordering).
 
 ### MCP
 
@@ -280,11 +344,41 @@ Handbook entry describing scope and decisions for a refactor stage before execut
 
 Representation `(amountCents: bigint, currency)` — never a bare `number` or `Decimal`.
 
+### Network (R2)
+
+**From [Network](/admin/handbook/areas/identity/network):**
+
+provisional unified identity-management tool.
+
+### Notification area
+
+**From [Notification](/admin/handbook/areas/notification):**
+
+macro-division for unidirectional, event-driven system → user communication tools.
+
+### Orchestrator
+
+**From [Chat](/admin/handbook/areas/communication/chat):**
+
+Chat component deciding which action or retrieval to invoke.
+
 ### Organization
 
 **From [R2.5 — Network Split (Organization + Directory)](/admin/handbook/refactor/r2-5-network-split):**
 
 top-level feature with institutional structure (multimarket, market, company, departments, institutional channels).
+
+### Organization (R2.5)
+
+**From [Network](/admin/handbook/areas/identity/network):**
+
+will cover structure — departments, channels, hierarchy.
+
+### Origin tracking
+
+**From [Knowledge](/admin/handbook/areas/identity/knowledge):**
+
+provenance trail per item.
 
 ### Outbox
 
@@ -344,13 +438,7 @@ special profile — internal promoter (employee) vs external promoter (partner r
 
 **From [R1.5 — Re-investigation R3-R8 Reclassifications](/admin/handbook/refactor/r1-5-reclassifications-revision):**
 
-change of `technical_category` for an existing feature (e.g. block → tool, block → top-level-feature). Documented in the stage's mini-spec.
-
-### Renderer
-
-**From [R8 — Marketplace as Top-Level Feature](/admin/handbook/refactor/r8-marketplace-feature):**
-
-pipeline that transforms the composer config into public UI.
+change of `technical_category` for an existing feature (e.g. block → tool, block → area). Documented in the stage's mini-spec.
 
 ### Reversal
 
@@ -366,33 +454,39 @@ Historical analog — a file that guides search engine crawlers. `llms.txt` foll
 
 ### Routine
 
-**From [R6 — Routines as Top-Level Feature](/admin/handbook/refactor/r6-routines-feature):**
+**From [R6 — Routines as Tool](/admin/handbook/refactor/r6-routines-tool):**
 
 reusable sequence of steps with configurable triggers. Top-level feature.
 
 ### RoutineRun
 
-**From [R6 — Routines as Top-Level Feature](/admin/handbook/refactor/r6-routines-feature):**
+**From [R6 — Routines as Tool](/admin/handbook/refactor/r6-routines-tool):**
 
 execution instance of a routine.
 
 ### RoutineStatus
 
-**From [R6 — Routines as Top-Level Feature](/admin/handbook/refactor/r6-routines-feature):**
+**From [R6 — Routines as Tool](/admin/handbook/refactor/r6-routines-tool):**
 
 routine states (DRAFT, ACTIVE, PAUSED, ARCHIVED).
 
 ### RoutineTriggerType
 
-**From [R6 — Routines as Top-Level Feature](/admin/handbook/refactor/r6-routines-feature):**
+**From [R6 — Routines as Tool](/admin/handbook/refactor/r6-routines-tool):**
 
 trigger type (MANUAL, SCHEDULE, EVENT).
 
-### Section blocks
+### search_data / execute_action
 
-**From [R8 — Marketplace as Top-Level Feature](/admin/handbook/refactor/r8-marketplace-feature):**
+**From [Chat](/admin/handbook/areas/communication/chat):**
 
-blocks referenced by a section as a source of items.
+the orchestrator's two primary tools.
+
+### Section
+
+**From [Marketplace](/admin/handbook/areas/transaction/marketplace):**
+
+configurable grouping of items within the storefront.
 
 ### Source kind/id
 
@@ -411,6 +505,12 @@ Mode of the Streamable HTTP transport where no session ID is maintained between 
 **From [MCP Server](/admin/handbook/meta/mcp):**
 
 MCP transport where the server is a Node process spawned by the client; communication over stdin/stdout.
+
+### Storefront
+
+**From [Marketplace](/admin/handbook/areas/transaction/marketplace):**
+
+the marketplace's public surface.
 
 ### Streamable HTTP
 
@@ -470,22 +570,40 @@ action exposed by a tool to the chat orchestrator. May orchestrate block actions
 
 canonical interface for grouping tools by business area. `kind: "tool_category"`. Registry: `src/lib/tools/registry.ts`.
 
+### Transaction area
+
+**From [Transaction](/admin/handbook/areas/transaction):**
+
+macro-division for customer-facing commercial-exchange tools.
+
 ### type guard
 
 **From [R0 — Manifest Registry Foundation](/admin/handbook/refactor/r0-manifest-registry):**
 
 TypeScript narrowing function (`isBlockManifest`, etc.) that confirms the `kind` of an `EntityManifest` at runtime, allowing the compiler to access kind-specific fields safely.
 
-### Visibility
+### Widget
 
-**From [R8 — Marketplace as Top-Level Feature](/admin/handbook/refactor/r8-marketplace-feature):**
+**From [Dashboard](/admin/handbook/areas/workflow/dashboard):**
 
-who-sees-what control (PUBLIC, PRIVATE, MEMBERS_ONLY).
+individual card on the dashboard aggregating one metric.
 
 ### Worker
 
 **From [Domain Events](/admin/handbook/tools/infrastructure/domain-events):**
 
 The CLI process (`npm run worker:domain-events`) that picks pending events and dispatches them to handlers.
+
+### Workflow area
+
+**From [Workflow](/admin/handbook/areas/workflow):**
+
+macro-division for admin-facing day-to-day operations tools.
+
+### xrefmap
+
+**From [Handbook](/admin/handbook/areas/infrastructure/handbook):**
+
+generated index of cross-references between entries.
 
 <!-- END_GENERATED_GLOSSARY -->

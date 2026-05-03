@@ -161,7 +161,7 @@ export function PackageDetailClient({
         return;
       }
       toast.success("Package deleted");
-      router.push("/admin/tools/sales/packages");
+      router.push("/admin/tools/packages");
     } catch {
       toast.error("Failed to delete package");
     } finally {
@@ -180,7 +180,7 @@ export function PackageDetailClient({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => router.push(`/admin/tools/sales/packages/${pkg.id}`)}
+          onClick={() => router.push(`/admin/tools/packages/${pkg.id}`)}
         >
           <ArrowLeft className="h-4 w-4 mr-1" />
           Back to Package

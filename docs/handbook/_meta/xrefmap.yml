@@ -29,6 +29,48 @@ references:
     title:
       pt-BR: Reuniões
       en-US: Meetings
+  herd.category.areas.communication:
+    level: category
+    id: communication
+    path: docs/handbook/areas/communication/(overview)
+    title:
+      pt-BR: Comunicação
+      en-US: Communication
+  herd.category.areas.identity:
+    level: category
+    id: identity
+    path: docs/handbook/areas/identity/(overview)
+    title:
+      pt-BR: Identidade
+      en-US: Identity
+  herd.category.areas.infrastructure:
+    level: category
+    id: infrastructure
+    path: docs/handbook/areas/infrastructure/(overview)
+    title:
+      pt-BR: Infraestrutura
+      en-US: Infrastructure
+  herd.category.areas.notification:
+    level: category
+    id: notification
+    path: docs/handbook/areas/notification/(overview)
+    title:
+      pt-BR: Notificação
+      en-US: Notification
+  herd.category.areas.transaction:
+    level: category
+    id: transaction
+    path: docs/handbook/areas/transaction/(overview)
+    title:
+      pt-BR: Transação
+      en-US: Transaction
+  herd.category.areas.workflow:
+    level: category
+    id: workflow
+    path: docs/handbook/areas/workflow/(overview)
+    title:
+      pt-BR: Workflow
+      en-US: Workflow
   herd.category.blocks.financial:
     level: category
     id: financial
@@ -85,6 +127,13 @@ references:
     title:
       pt-BR: R2.5 — Network Split (Organization + Directory)
       en-US: R2.5 — Network Split (Organization + Directory)
+  herd.category.refactor.r2-areas-foundation:
+    level: category
+    id: r2-areas-foundation
+    path: docs/handbook/refactor/r2-areas-foundation/(overview)
+    title:
+      pt-BR: R2 — Areas Foundation
+      en-US: R2 — Areas Foundation
   herd.category.refactor.r3-packages-refinement:
     level: category
     id: r3-packages-refinement
@@ -106,27 +155,20 @@ references:
     title:
       pt-BR: R5 — Subscriptions Split + Offering Creation
       en-US: R5 — Subscriptions Split + Offering Creation
-  herd.category.refactor.r6-routines-feature:
+  herd.category.refactor.r6-routines-tool:
     level: category
-    id: r6-routines-feature
-    path: docs/handbook/refactor/r6-routines-feature/(overview)
+    id: r6-routines-tool
+    path: docs/handbook/refactor/r6-routines-tool/(overview)
     title:
-      pt-BR: R6 — Routines as Top-Level Feature
-      en-US: R6 — Routines as Top-Level Feature
-  herd.category.refactor.r7-agents-feature:
+      pt-BR: R6 — Routines as Tool
+      en-US: R6 — Routines as Tool
+  herd.category.refactor.r7-agents-tool:
     level: category
-    id: r7-agents-feature
-    path: docs/handbook/refactor/r7-agents-feature/(overview)
+    id: r7-agents-tool
+    path: docs/handbook/refactor/r7-agents-tool/(overview)
     title:
-      pt-BR: R7 — Agents as Top-Level Feature (consolidate dual surface)
-      en-US: R7 — Agents as Top-Level Feature (consolidate dual surface)
-  herd.category.refactor.r8-marketplace-feature:
-    level: category
-    id: r8-marketplace-feature
-    path: docs/handbook/refactor/r8-marketplace-feature/(overview)
-    title:
-      pt-BR: R8 — Marketplace as Top-Level Feature
-      en-US: R8 — Marketplace as Top-Level Feature
+      pt-BR: R7 — Agents as Tool (consolidate dual surface)
+      en-US: R7 — Agents as Tool (consolidate dual surface)
   herd.category.tools.financial:
     level: category
     id: financial
@@ -141,6 +183,13 @@ references:
     title:
       pt-BR: Infraestrutura
       en-US: Infrastructure
+  herd.layer.areas:
+    level: layer
+    id: areas
+    path: docs/handbook/areas/(overview)
+    title:
+      pt-BR: Áreas
+      en-US: Areas
   herd.layer.blocks:
     level: layer
     id: blocks
@@ -211,6 +260,13 @@ references:
     title:
       pt-BR: Servidor MCP
       en-US: MCP Server
+  herd.tool.communication.chat:
+    level: tool
+    id: chat
+    path: docs/handbook/areas/communication/chat
+    title:
+      pt-BR: Chat
+      en-US: Chat
   herd.tool.financial.ledger:
     level: tool
     id: ledger
@@ -218,6 +274,20 @@ references:
     title:
       pt-BR: Ledger
       en-US: Ledger
+  herd.tool.identity.knowledge:
+    level: tool
+    id: knowledge
+    path: docs/handbook/areas/identity/knowledge
+    title:
+      pt-BR: Knowledge
+      en-US: Knowledge
+  herd.tool.identity.network:
+    level: tool
+    id: network
+    path: docs/handbook/areas/identity/network
+    title:
+      pt-BR: Network
+      en-US: Network
   herd.tool.infrastructure.domain-events:
     level: tool
     id: domain-events
@@ -225,3 +295,24 @@ references:
     title:
       pt-BR: Eventos de Domínio
       en-US: Domain Events
+  herd.tool.infrastructure.handbook:
+    level: tool
+    id: handbook
+    path: docs/handbook/areas/infrastructure/handbook
+    title:
+      pt-BR: Handbook
+      en-US: Handbook
+  herd.tool.transaction.marketplace:
+    level: tool
+    id: marketplace
+    path: docs/handbook/areas/transaction/marketplace
+    title:
+      pt-BR: Marketplace
+      en-US: Marketplace
+  herd.tool.workflow.dashboard:
+    level: tool
+    id: dashboard
+    path: docs/handbook/areas/workflow/dashboard
+    title:
+      pt-BR: Dashboard
+      en-US: Dashboard

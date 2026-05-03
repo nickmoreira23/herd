@@ -1,0 +1,44 @@
+id: handbook
+uid: herd.tool.infrastructure.handbook
+level: tool
+technical_category: tool
+
+title:
+  pt-BR: "Handbook"
+  en-US: "Handbook"
+description:
+  pt-BR: "Reader do sistema de documentação. Renderiza entries bilíngues com cross-references, glossário e diagramas Mermaid."
+  en-US: "Documentation system reader. Renders bilingual entries with cross-references, glossary, and Mermaid diagrams."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-03
+updated: 2026-05-03
+
+parent: herd.category.areas.infrastructure
+children: []
+consumes: []
+consumed_by: []
+related:
+  - herd.meta.handbook
+
+source_paths:
+  - "src/lib/tools/tools/handbook.tool.ts"
+  - "src/app/admin/handbook"
+  - "src/components/handbook"
+
+admin_paths:
+  - "/admin/handbook"
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

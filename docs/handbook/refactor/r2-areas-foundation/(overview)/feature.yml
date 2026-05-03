@@ -1,0 +1,43 @@
+id: r2-areas-foundation
+uid: herd.category.refactor.r2-areas-foundation
+level: category
+technical_category: foundation
+
+title:
+  pt-BR: "R2 — Areas Foundation"
+  en-US: "R2 — Areas Foundation"
+description:
+  pt-BR: "Camada de Areas — macro-divisões do produto onde tools são posicionadas. 5ª categoria técnica canônica substituindo top-level-feature."
+  en-US: "Areas layer — product macro-divisions where tools are positioned. 5th canonical technical category replacing top-level-feature."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-03
+updated: 2026-05-03
+
+parent: herd.layer.refactor
+children: []
+consumes: []
+consumed_by: []
+related:
+  - herd.category.refactor.r1-tools-foundation
+
+source_paths:
+  - "src/lib/core/manifest.ts"
+  - "src/lib/core/registry.ts"
+  - "src/lib/tools/manifest.ts"
+  - "src/lib/blocks/manifest.ts"
+  - "schemas/feature.zod.ts"
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

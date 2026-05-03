@@ -60,7 +60,7 @@ export function FormsListClient({
   }, []);
 
   const handleOpen = useCallback((form: FormRow) => {
-    router.push(`/admin/organization/knowledge/forms/${form.id}`);
+    router.push(`/admin/knowledge/forms/${form.id}`);
   }, [router]);
 
   const handleDelete = useCallback(async (form: FormRow) => {
@@ -76,7 +76,7 @@ export function FormsListClient({
 
   const handleCreated = useCallback((formId?: string) => {
     if (formId) {
-      router.push(`/admin/organization/knowledge/forms/${formId}`);
+      router.push(`/admin/knowledge/forms/${formId}`);
     } else {
       refreshForms();
     }

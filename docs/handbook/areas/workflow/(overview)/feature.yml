@@ -1,0 +1,36 @@
+id: workflow
+uid: herd.category.areas.workflow
+level: category
+technical_category: area
+
+title:
+  pt-BR: "Workflow"
+  en-US: "Workflow"
+description:
+  pt-BR: "Centro de workflow operacional. Tools internas para gerir trabalho do dia-a-dia — finanças ops, vendas ops, jurídico ops, milestones, dashboards."
+  en-US: "Operational workflow hub. Internal tools to manage day-to-day work — finance ops, sales ops, legal ops, milestones, dashboards."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-03
+updated: 2026-05-03
+
+parent: herd.layer.areas
+children:
+  - herd.tool.workflow.dashboard
+consumes: []
+consumed_by: []
+related: []
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

@@ -10,7 +10,7 @@ Why R0 matters commercially: the refactor enables plural Tools, Solutions, and N
 
 ## Product
 
-Invisible to end users. R0 doesn't change behavior of any feature. What changes is what comes next — future features ship pre-classified and the registry is prepared to receive the three shapes (block, tool, top-level-feature) instead of assuming only one.
+Invisible to end users. R0 doesn't change behavior of any feature. What changes is what comes next — future features ship pre-classified and the registry is prepared to receive the three shapes (block, tool, area — the latter replaces the former top-level-feature in R2) instead of assuming only one.
 
 ## Architecture
 
@@ -25,7 +25,7 @@ Without R0.0, R0.1 and R0.2 would have no clean base to apply changes against.
 Six architectural gaps closed in `_meta/handbook`:
 
 1. 5-level plural commercial hierarchy — Networks as a category with subtypes Multi-market / Market / Corporate.
-2. Four canonical architectural `technical_category` values — `block` / `block-group` / `tool` / `top-level-feature`.
+2. Canonical architectural `technical_category` values — `block` / `block-group` / `tool` / `area` (area replaces `top-level-feature`, removed in R2).
 3. Updated decision tree to classify a new feature by nature (data / utility / autonomous).
 4. Updated path-mapping table covering the four architectural types.
 5. Re-classifications table for R3–R7 — canonical reference so each stage knows what changes.

@@ -336,7 +336,7 @@ export default function AirtableOverview({
                             </div>
                             {imported ? (
                               <Link
-                                href={`/admin/organization/knowledge/tables/${imported.id}`}
+                                href={`/admin/knowledge/tables/${imported.id}`}
                                 className="inline-flex items-center gap-1"
                               >
                                 <Badge className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20 transition-colors">

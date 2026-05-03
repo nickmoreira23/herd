@@ -1,0 +1,41 @@
+id: areas
+uid: herd.layer.areas
+level: layer
+technical_category: foundation
+
+title:
+  pt-BR: "Áreas"
+  en-US: "Areas"
+description:
+  pt-BR: "Camada estrutural de macro-divisões do produto. Cada área agrupa tools por função no produto."
+  en-US: "Structural layer of product macro-divisions. Each area groups tools by their function in the product."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-03
+updated: 2026-05-03
+
+parent: null
+children:
+  - herd.category.areas.communication
+  - herd.category.areas.transaction
+  - herd.category.areas.workflow
+  - herd.category.areas.notification
+  - herd.category.areas.identity
+  - herd.category.areas.infrastructure
+consumes: []
+consumed_by: []
+related: []
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

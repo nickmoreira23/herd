@@ -280,7 +280,7 @@ export function AppDetailClient({ app: initial }: AppDetailClientProps) {
       {/* Back link + header */}
       <div>
         <Link
-          href="/admin/organization/knowledge/apps"
+          href="/admin/knowledge/apps"
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
         >
           <ArrowLeft className="h-4 w-4" />

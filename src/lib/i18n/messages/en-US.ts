@@ -435,6 +435,7 @@ export const messages: Record<MessageKey, string> = {
   "nav.sidebar.marketplace": "Marketplace",
   "nav.sidebar.ledger": "Ledger",
   "nav.sidebar.agents": "Agents",
+  "nav.sidebar.areas": "Areas",
   "nav.sidebar.tools": "Tools",
   "nav.sidebar.blocks": "Blocks",
   "nav.sidebar.integrations": "Integrations",

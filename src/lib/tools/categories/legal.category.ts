@@ -34,8 +34,9 @@ export const legalCategory: ToolCategoryManifest = {
         },
       ],
       actions: [],
+      area: "workflow",
       paths: {
-        page: "src/app/admin/tools/legal/forms/",
+        page: "src/app/admin/tools/forms/",
       },
     },
     {
@@ -62,8 +63,9 @@ export const legalCategory: ToolCategoryManifest = {
       ],
       agentKeys: ["contract-reviewer"],
       actions: [],
+      area: "workflow",
       paths: {
-        page: "src/app/admin/tools/legal/contracts/",
+        page: "src/app/admin/tools/contracts/",
       },
     },
   ],

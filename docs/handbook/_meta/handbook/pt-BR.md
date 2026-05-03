@@ -9,7 +9,7 @@ uid: herd.meta.handbook
 
 # Handbook
 
-O Handbook é o sistema de documentação do HERD. Toda feature da plataforma — block, tool, top-level-feature, integration ou solution — é descrita aqui usando um template consistente, para que humanos, agentes de IA internos (Claude Code) e agentes de IA externos (ChatGPT, Claude Desktop via MCP) consigam construir um modelo mental correto do HERD sem precisar ler código-fonte.
+O Handbook é o sistema de documentação do HERD. Toda feature da plataforma — block, tool, area, integration ou solution — é descrita aqui usando um template consistente, para que humanos, agentes de IA internos (Claude Code) e agentes de IA externos (ChatGPT, Claude Desktop via MCP) consigam construir um modelo mental correto do HERD sem precisar ler código-fonte.
 
 Esta entry documenta o próprio Handbook: o que cada nível comercial significa, quais são as categorias técnicas canônicas, como o `feature.yml` funciona, como ler ou escrever uma entry do Handbook, e como o sistema se mantém consistente sob mudança.
 
@@ -211,15 +211,15 @@ flowchart TD
     Workflow -->|NÃO| AggregatorCheck[É agrupamento<br/>declarativo de tools?]
 
     AggregatorCheck -->|SIM| ToolCategory[technical_category: tool-category]
-    AggregatorCheck -->|NÃO| TLF[technical_category: top-level-feature<br/>infraestrutura]
+    AggregatorCheck -->|NÃO| Area[technical_category: area<br/>macro-divisão do produto]
 
     Goal -->|SIM| Tool[technical_category: tool]
-    Goal -->|NÃO| TLF
+    Goal -->|NÃO| Area
 
     IndepCheck -->|SIM| RichCheck[Complexidade interna<br/>rica + cross-area?]
     IndepCheck -->|NÃO| AgrCheck[Só faz sentido como<br/>agrupamento de outro block?]
 
-    RichCheck -->|SIM| TLFData[technical_category: top-level-feature<br/>com dado próprio]
+    RichCheck -->|SIM| ToolMeta[technical_category: tool<br/>meta-tool com dado composto]
     RichCheck -->|NÃO| Block[technical_category: block]
 
     AgrCheck -->|SIM| BlockGroup[technical_category: block-group]
@@ -229,8 +229,8 @@ flowchart TD
     style ToolCategory fill:#3b82f6,color:#fff
     style Block fill:#15803d,color:#fff
     style BlockGroup fill:#65a30d,color:#fff
-    style TLF fill:#7c3aed,color:#fff
-    style TLFData fill:#7c3aed,color:#fff
+    style Area fill:#7c3aed,color:#fff
+    style ToolMeta fill:#1e40af,color:#fff
 ```
 
 ### Implicações de classificação no código
@@ -241,7 +241,7 @@ flowchart TD
 | Block group | `src/components/{parent}/groups/{name}/` | `src/app/admin/blocks/{parent}/groups/{name}/` | dentro do `{parent}.block.ts` (campo `groups`) |
 | Tool | (chrome genérico em `src/components/tools/`) | `src/app/admin/tools/{category}/{tool}/` | embedded em `{category}.category.ts` |
 | Tool category | (landing via `category-landing.tsx`) | `src/app/admin/tools/{category}/` | `src/lib/tools/categories/{category}.category.ts` |
-| Top-level feature | `src/components/{name}/` | `src/app/admin/{name}/` | `src/lib/features/{name}.feature.ts` |
+| Area | (composição apenas) | `src/app/admin/areas/{name}/` | `src/lib/core/areas/{name}.area.ts` |
 
 ### Re-classifications planejadas (refator R2.5-R8)
 
@@ -249,14 +249,14 @@ Confirmadas após investigação detalhada do estado real do código durante R1.
 
 | Item | Estado real | Decisão | Etapa |
 |---|---|---|---|
-| Network atual | Top-level feature com sub-features ricas | Split em Organization + Directory | R2.5 |
+| Network atual | Tool unificada com sub-features ricas | Split em Organization + Directory | R2.5 |
 | packages | Tool active em sales/packages | Permanece tool; investigar block-group de products dentro | R3 |
 | campaigns | Block ativo + placeholder coming-soon | Promover block para tool em marketing; deletar placeholder | R4 |
 | subscriptions | Block + paths divergentes (tiers/, api/tiers/) | Permanece bloco; paths consolidados; subscription-offering tool criada | R5 |
 | subscription-offering | Não existe | Criar nova tool em sales | R5 |
-| routines | Block sem top-level surface | Top-level feature; criar /admin/routines/ + sidebar item | R6 |
-| agents | Block + dual surface (admin/agents existe) | Top-level feature; consolidar; dropar admin/blocks/agents/ | R7 |
-| marketplace | UI standalone | Top-level feature | R8 |
+| routines | Block sem top-level surface | Promover para tool; criar /admin/routines/ + sidebar item | R6 |
+| agents | Block + dual surface (admin/agents existe) | Promover para tool; consolidar; dropar admin/blocks/agents/ | R7 |
+| marketplace | UI standalone | Cravado como tool em transaction area (R2) | R2 |
 
 Cada re-classification tem entry própria em `docs/handbook/refactor/r{X}-{name}/`.
 
@@ -266,7 +266,7 @@ São duas dimensões ortogonais cravadas no frontmatter de cada `feature.yml`.
 
 **`level`** define **onde a entry vive na estrutura de navegação do Handbook**. Valores: `layer` (top do menu — networks, blocks, tools, solutions, integrations), `category` (sub-organização dentro de um layer), `meta` (entries meta-organizacionais — handbook, glossary), `block` (entry-folha de bloco), `tool` (entry-folha de tool). Refletem a árvore de docs, não a classificação técnica.
 
-**`technical_category`** define **o que a coisa é arquiteturalmente**, independente de onde mora na navegação. Valores: `block`, `block-group`, `tool`, `top-level-feature` (4 categorias arquiteturais canônicas) + dimensions temáticas adicionais quando aplicável (`foundation`, `financial`, `infrastructure`, `sales`, `marketing`, `support`, `commerce`).
+**`technical_category`** define **o que a coisa é arquiteturalmente**, independente de onde mora na navegação. Valores: `block`, `block-group`, `tool`, `tool-category`, `area` (5 categorias arquiteturais canônicas — `area` substitui o especulativo `top-level-feature` removido em R2) + dimensions temáticas adicionais quando aplicável (`foundation`, `financial`, `infrastructure`, `sales`, `marketing`, `support`, `commerce`).
 
 As dimensões podem coincidir (uma feature de bloco vive em `level: block` na estrutura de docs e tem `technical_category: block` arquiteturalmente) ou divergir (handbook entry meta-organizacional pode ter `level: meta` e descrever um `technical_category: tool`).
 
@@ -321,13 +321,13 @@ Esta entry é **operacional** — agentes devem tratá-la como autoritativa.
 
 1. **Classifique antes de propor**. Para cada parte tocada, identifique a technical_category atual. Se está classificada erroneamente, **pause e reporte** antes de tocar. Não improvisar re-classificação durante outro trabalho.
 
-2. **Ao criar coisa nova, justifique a technical_category com referência à árvore de decisão**. Não basta dizer "é um block" — diga "é block porque tem model Prisma com lifecycle independente, dado existe sem composição, e não tem complexidade rica cross-area que justificaria top-level-feature."
+2. **Ao criar coisa nova, justifique a technical_category com referência à árvore de decisão**. Não basta dizer "é um block" — diga "é block porque tem model Prisma com lifecycle independente, dado existe sem composição, e não tem complexidade rica cross-area que justificaria meta-tool."
 
 3. **Ao re-classificar coisa existente, documente o porquê no commit message e atualize manifest**. Mudança de classificação tem custo (paths, manifests, references) — só vale com justificativa clara.
 
 4. **Quando estiver na dúvida, traga ao diálogo**. Decisão arquitetural não é tomada solo. Agente identifica e propõe; humano valida ou ajusta.
 
-5. **Não invente nova categoria sem necessidade real**. Se uma coisa não cabe nas 4 categorias canônicas (block / block-group / tool / top-level-feature), primeiro tente forçar nas 4. Se não der, **pause e reporte** — pode ser necessidade nova, mas é decisão arquitetural duradoura.
+5. **Não invente nova categoria sem necessidade real**. Se uma coisa não cabe nas 5 categorias canônicas (block / block-group / tool / tool-category / area), primeiro tente forçar nas 5. Se não der, **pause e reporte** — pode ser necessidade nova, mas é decisão arquitetural duradoura.
 
 ### Pattern: SKILL → Handbook migration
 
@@ -386,15 +386,16 @@ Limitação: diagramas Mermaid são lazy-rendered na abertura da seção. Diagra
 | perspective | perspectiva | Uma das seis seções de uma entry de Handbook: Business, Product, Architecture, Operations, Glossary, Changelog. |
 | SKILL.md | SKILL.md | Guia operacional voltado para agentes. Formato definido por agentskills.io. |
 | solution | solução | Pacote curado de tools para um propósito macro. Atualmente deferred. |
-| technical_category | categoria técnica | Classificação arquitetural. 5 canônicas (block, block-group, tool, tool-category, top-level-feature) + dimensions temáticas (foundation, financial, infrastructure, sales, marketing, support, commerce). |
+| technical_category | categoria técnica | Classificação arquitetural. 5 canônicas (block, block-group, tool, tool-category, area) + dimensions temáticas (foundation, financial, infrastructure, sales, marketing, support, commerce). |
 | tool | ferramenta | Composição cross-block com um objetivo de negócio. technical_category canônica. |
 | tool-category | categoria de tool | Agrupamento de tools por área de negócio (Finances, Legal, Marketing, Sales, Operations). technical_category canônica; declarativa, sem CRUD próprio. |
-| top-level-feature | top-level feature | technical_category canônica para infraestrutura rica consumida cross-area (Knowledge, Organization, Directory, Blocks, Handbook). |
+| area | área | technical_category canônica para macro-divisões do produto (Communication, Transaction, Workflow, Notification, Identity, Infrastructure). Substitui `top-level-feature` (deprecated R2). |
 | uid | uid | Identificador estável no formato `herd.<level>.<id>`. |
 | xrefmap | xrefmap | Tabela gerada de tradução UID → path. Lookup canônico para cross-references. |
 
 ## Changelog
 
 - **2026-05-02 (R1)** — Reconciliação tools foundation. Tool ganhou kind discriminator. ToolCategoryManifest cravado como 5ª categoria arquitetural canônica. Schema enum bumpado 11 → 12 valores. ToolManifest + FeatureManifest provisórios deletados (dead code).
+- **2026-05-03 (R2)** — Areas foundation. `top-level-feature` removido em favor de `area` (5ª categoria arquitetural canônica — macro-divisões do produto: Communication, Transaction, Workflow, Notification, Identity, Infrastructure). Areas adicionada como Handbook layer com 6 categories. Hierarquia simplificada para 5 níveis: Networks → Areas → Tools → Blocks → Integrations.
 - **2026-05-02** — R0.1 Handbook content reform. Substitui pyramid de 6 níveis singular por hierarquia plural (Networks/Solutions/Tools/Blocks/Integrations) com Networks como categoria com sub-tipos. Adiciona `block-group` e `top-level-feature` como `technical_category` canônicos (era 3 valores, vira 11: 4 arquiteturais + 7 temáticos). Adiciona path-mapping, re-classifications planejadas, classification-discipline guide, e distinção `level` vs `technical_category`. Schema Zod bumpado.
 - **2026-05-01** — Publicação inicial. Etapa Handbook foundation + first entries. Estabelece níveis comerciais, technical categories, 4 artifacts por feature, Zod 4 (via subpath `zod/v4`) como schema source-of-truth, doc-first como workflow, e CI gates (3 hard-fail + 3 soft warning).

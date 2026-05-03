@@ -1,0 +1,36 @@
+id: transaction
+uid: herd.category.areas.transaction
+level: category
+technical_category: area
+
+title:
+  pt-BR: "Transação"
+  en-US: "Transaction"
+description:
+  pt-BR: "Transações comerciais. Tools customer-facing para vender, comprar e trocar valor."
+  en-US: "Commercial transactions. Customer-facing tools to sell, buy, and exchange value."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-03
+updated: 2026-05-03
+
+parent: herd.layer.areas
+children:
+  - herd.tool.transaction.marketplace
+consumes: []
+consumed_by: []
+related: []
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

@@ -74,7 +74,7 @@ export function getAppColumns(
       ),
       cell: ({ row }) => (
         <Link
-          href={`/admin/organization/knowledge/apps/${row.original.id}`}
+          href={`/admin/knowledge/apps/${row.original.id}`}
           className="flex items-center gap-3 text-left hover:underline"
         >
           {row.original.logoUrl ? (

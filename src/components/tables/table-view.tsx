@@ -112,7 +112,7 @@ export function TableView({
             variant="ghost"
             size="sm"
             onClick={() =>
-              router.push("/admin/organization/knowledge/tables")
+              router.push("/admin/knowledge/tables")
             }
             className="text-xs text-muted-foreground hover:text-foreground -ml-2 mb-2"
           >
