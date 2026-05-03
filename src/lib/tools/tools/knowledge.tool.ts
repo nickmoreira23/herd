@@ -60,7 +60,7 @@ export const knowledgeTool: Tool = {
   ],
   actions: [],
   paths: {
-    page: "src/app/admin/organization/knowledge",
+    page: "src/app/admin/knowledge",
     components: "src/components/knowledge",
   },
 };

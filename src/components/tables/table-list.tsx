@@ -104,7 +104,7 @@ export function TableList({
 
   const handleOpen = useCallback(
     (table: TableRow) => {
-      router.push(`/admin/organization/knowledge/tables/${table.id}`);
+      router.push(`/admin/knowledge/tables/${table.id}`);
     },
     [router]
   );

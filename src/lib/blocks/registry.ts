@@ -2,7 +2,6 @@ import type { BlockAction, BlockManifest } from "./manifest";
 import { eventsBlock } from "./blocks/events.block";
 import { productsBlock } from "./blocks/products.block";
 import { meetingsBlock } from "./blocks/meetings.block";
-import { knowledgeBlock } from "./blocks/knowledge.block";
 import { agentsBlock } from "./blocks/agents.block";
 import { communityBlock } from "./blocks/community.block";
 import { perksBlock } from "./blocks/perks.block";
@@ -42,7 +41,6 @@ const blocks: BlockManifest[] = [
   eventsBlock,
   productsBlock,
   meetingsBlock,
-  knowledgeBlock,
   agentsBlock,
   communityBlock,
   perksBlock,

@@ -15,6 +15,7 @@ import { dashboardTool } from "./tools/dashboard.tool";
 import { knowledgeTool } from "./tools/knowledge.tool";
 import { networkTool } from "./tools/network.tool";
 import { handbookTool } from "./tools/handbook.tool";
+import { ledgerTool } from "./tools/ledger.tool";
 
 // ─── All registered tool categories ───────────────────────────────
 // To add a new category, create a manifest and add it here.
@@ -131,6 +132,7 @@ const standaloneTools: Record<string, Tool> = {
   knowledge: knowledgeTool,
   network: networkTool,
   handbook: handbookTool,
+  ledger: ledgerTool,
 };
 
 function flattenCategoryTools(): Record<string, Tool> {

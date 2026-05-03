@@ -15,15 +15,15 @@ interface BlockInfo {
 }
 
 const BLOCK_HREF: Record<string, string> = {
-  documents: "/admin/organization/knowledge/documents",
-  images: "/admin/organization/knowledge/images",
-  videos: "/admin/organization/knowledge/videos",
-  audios: "/admin/organization/knowledge/audios",
-  tables: "/admin/organization/knowledge/tables",
-  forms: "/admin/organization/knowledge/forms",
-  links: "/admin/organization/knowledge/links",
-  feeds: "/admin/organization/knowledge/feeds",
-  apps: "/admin/organization/knowledge/apps",
+  documents: "/admin/knowledge/documents",
+  images: "/admin/knowledge/images",
+  videos: "/admin/knowledge/videos",
+  audios: "/admin/knowledge/audios",
+  tables: "/admin/knowledge/tables",
+  forms: "/admin/knowledge/forms",
+  links: "/admin/knowledge/links",
+  feeds: "/admin/knowledge/feeds",
+  apps: "/admin/knowledge/apps",
 };
 
 const BLOCK_ORDER = [

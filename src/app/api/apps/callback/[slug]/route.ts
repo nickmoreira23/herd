@@ -21,7 +21,7 @@ export async function GET(
 
   const appsPageUrl =
     (process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000") +
-    "/admin/organization/knowledge/apps";
+    "/admin/knowledge/apps";
 
   // Handle OAuth error (user denied, etc.)
   if (error) {

@@ -96,7 +96,7 @@ export function FormResponsesTable({
             variant="ghost"
             size="sm"
             onClick={() =>
-              router.push(`/admin/organization/knowledge/forms/${formId}`)
+              router.push(`/admin/knowledge/forms/${formId}`)
             }
           >
             <ArrowLeft className="h-3.5 w-3.5 mr-1" />

@@ -103,7 +103,7 @@ export function FormList({
 
   const handleOpen = useCallback(
     (form: FormRow) => {
-      router.push(`/admin/organization/knowledge/forms/${form.id}`);
+      router.push(`/admin/knowledge/forms/${form.id}`);
     },
     [router]
   );
@@ -127,7 +127,7 @@ export function FormList({
   const handleCreated = useCallback(
     (formId?: string) => {
       if (formId) {
-        router.push(`/admin/organization/knowledge/forms/${formId}`);
+        router.push(`/admin/knowledge/forms/${formId}`);
       } else {
         refreshForms();
       }

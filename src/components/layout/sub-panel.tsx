@@ -237,7 +237,7 @@ export const hrefToSubPanel: Record<string, string> = {
   "/admin/network": "network",
   "/admin/tools": "tools",
   "/admin/organization/profile": "organization",
-  "/admin/organization/knowledge": "knowledge",
+  "/admin/knowledge": "knowledge",
   "/admin/integrations": "integrations",
   "/admin/marketplace": "marketplace",
   "/admin/ledger": "ledger",
@@ -253,7 +253,7 @@ export function getSubPanelIdForPath(pathname: string): string | null {
   if (pathname.startsWith("/admin/ledger")) return "ledger";
   if (pathname.startsWith("/admin/handbook")) return "handbook";
   if (pathname.startsWith("/admin/network")) return "network";
-  if (pathname.startsWith("/admin/organization/knowledge")) return "knowledge";
+  if (pathname.startsWith("/admin/knowledge")) return "knowledge";
   if (pathname.startsWith("/admin/organization")) return "organization";
 
   for (const [, config] of Object.entries(subPanelRegistry)) {
@@ -439,13 +439,13 @@ function KnowledgeSubPanel() {
 
   function hrefForBlock(blockName: string): string {
     return knowledgeTypeBlocks.has(blockName)
-      ? `/admin/organization/knowledge/${blockName}`
+      ? `/admin/knowledge/${blockName}`
       : `/admin/blocks/${blockName}`;
   }
 
   function isActive(href: string) {
-    if (href === "/admin/organization/knowledge") {
-      return pathname === "/admin/organization/knowledge";
+    if (href === "/admin/knowledge") {
+      return pathname === "/admin/knowledge";
     }
     return pathname === href || pathname.startsWith(href + "/");
   }
@@ -471,10 +471,10 @@ function KnowledgeSubPanel() {
       <nav className="flex-1 pb-4 overflow-y-auto overscroll-contain px-3">
         {/* All Sources link */}
         <Link
-          href="/admin/organization/knowledge"
+          href="/admin/knowledge"
           className={cn(
             "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-            isActive("/admin/organization/knowledge")
+            isActive("/admin/knowledge")
               ? "bg-primary/10 text-primary dark:bg-brand/10 dark:text-brand"
               : "text-muted-foreground hover:bg-accent hover:text-foreground"
           )}
