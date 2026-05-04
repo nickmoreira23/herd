@@ -1,7 +1,7 @@
 # HERD
 
 > HERD is an AI-native B2B platform for marketing networks.
-> Currently 45 documented entries across 5 layers (Networks, Solutions, Tools, Blocks, Integrations) plus a meta namespace.
+> Currently 48 documented entries across 5 layers (Networks, Solutions, Tools, Blocks, Integrations) plus a meta namespace.
 
 ## Documentation
 
@@ -48,6 +48,9 @@
 - [Handbook](https://herd.app/admin/handbook/meta/handbook): HERD's documentation system: architecture, conventions, and operations.
 - [llms.txt](https://herd.app/admin/handbook/meta/llms-txt): Public file at /llms.txt following the llmstxt.org convention — guides LLMs about what HERD is, where to find canonical content, and how to access it programmatically.
 - [MCP Server](https://herd.app/admin/handbook/meta/mcp): Model Context Protocol server that exposes the Handbook as a navigable resource for AI assistants via stdio (local clients) and HTTP (remote clients).
+- [Pattern: Block](https://herd.app/admin/handbook/meta/pattern-block-level): Blocks are single sources of truth for data types, organized into families (Block Family → Block → Block Group → Record). Always plural; canonical suffixes define each block's semantics.
+- [Pattern: Three-Level Composition](https://herd.app/admin/handbook/meta/pattern-three-level-composition): HERD's fundamental architectural pattern: every capability is a Tool (manipulation) + Block Family (data) + Surface (manifestation) trio. Without the trio, the feature doesn't fit.
+- [Pattern: Tool](https://herd.app/admin/handbook/meta/pattern-tool-level): Tool is HERD's commercial and operational unit: a rich manipulation system with UI, rules, and two modes (standalone and embedded). Natural-language naming; generates a Block Family, not a single block.
 
 ## Programmatic access
 

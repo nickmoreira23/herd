@@ -1,0 +1,39 @@
+id: pattern-tool-level
+uid: herd.meta.pattern-tool-level
+level: meta
+technical_category: foundation
+
+title:
+  pt-BR: "Pattern: Tool"
+  en-US: "Pattern: Tool"
+description:
+  pt-BR: "Tool é a unidade comercial e operacional do HERD: sistema rico de manipulação com UI, regras e dois modos (standalone e embedded). Naming por linguagem natural; gera Block Family, não block único."
+  en-US: "Tool is HERD's commercial and operational unit: a rich manipulation system with UI, rules, and two modes (standalone and embedded). Natural-language naming; generates a Block Family, not a single block."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-04
+updated: 2026-05-04
+
+parent: null
+children: []
+consumes: []
+consumed_by: []
+related:
+  - herd.meta.handbook
+  - herd.category.refactor.r2-5-network-split
+  - herd.meta.pattern-three-level-composition
+  - herd.meta.pattern-block-level
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

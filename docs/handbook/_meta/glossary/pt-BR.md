@@ -10,7 +10,7 @@ uid: herd.meta.glossary
 
 Glossário global agregado a partir das seções `## Glossary` de todas as entries do Handbook. Gerado automaticamente por `npm run gen:glossary`.
 
-**Última atualização:** 2026-05-03
+**Última atualização:** 2026-05-04
 
 <!-- BEGIN_GENERATED_GLOSSARY -->
 
@@ -84,6 +84,10 @@ macro-divisão do produto agrupando tools pela função que exercem (Communicati
 
 macro-divisão do produto onde tools são posicionadas. 6 valores canônicos.
 
+**From [Pattern: Tool](/admin/handbook/meta/pattern-tool-level):**
+
+macro-divisão estrutural do produto (Organization, Identity, Communication, Transaction, Workflow, Notification). Tools vivem dentro de areas.
+
 ### AreaManifest
 
 **From [Áreas](/admin/handbook/areas):**
@@ -127,6 +131,36 @@ Esquema de auth onde o cliente envia `Authorization: Bearer <token>` no header. 
 **From [R5 — Subscriptions Split + Offering Creation](/admin/handbook/refactor/r5-subscriptions-split):**
 
 ciclo de cobrança (monthly, annual, etc.). Atributo da subscription real.
+
+### Block
+
+**From [Pattern: Block](/admin/handbook/meta/pattern-block-level):**
+
+nível de dado — single source of truth de um tipo de registro. Sempre plural.
+
+**From [Pattern: Composição em Três Níveis](/admin/handbook/meta/pattern-three-level-composition):**
+
+categoria de dado dentro de uma family — single source of truth daquele tipo de registro.
+
+### Block Family
+
+**From [Pattern: Block](/admin/handbook/meta/pattern-block-level):**
+
+conjunto de blocks correlacionados gerados/manipulados por uma tool.
+
+**From [Pattern: Composição em Três Níveis](/admin/handbook/meta/pattern-three-level-composition):**
+
+agrupamento de blocks correlacionados gerados por uma tool.
+
+### Block Group
+
+**From [Pattern: Block](/admin/handbook/meta/pattern-block-level):**
+
+agrupamento opcional intra-block; metadata declarativa, sem CRUD próprio.
+
+**From [Pattern: Composição em Três Níveis](/admin/handbook/meta/pattern-three-level-composition):**
+
+agrupamento opcional intra-block, para organização interna.
 
 ### BlockConnection
 
@@ -242,6 +276,16 @@ Registro imutável de algo significativo que aconteceu em um bounded context. Fa
 
 Modelo contábil onde todo movimento é registrado simultaneamente como débito e crédito em contas diferentes, somando zero.
 
+### Embedded Mode
+
+**From [Pattern: Composição em Três Níveis](/admin/handbook/meta/pattern-three-level-composition):**
+
+tool invocada inline em outro contexto, sem sair da surface chamadora.
+
+**From [Pattern: Tool](/admin/handbook/meta/pattern-tool-level):**
+
+tool invocada inline a partir de outra surface.
+
 ### EntityManifest
 
 **From [R0 — Manifest Registry Foundation](/admin/handbook/refactor/r0-manifest-registry):**
@@ -259,6 +303,12 @@ par `feature.yml` + `{pt-BR,en-US}.md` documentando uma feature/category/layer.
 **From [Eventos de Domínio](/admin/handbook/tools/infrastructure/domain-events):**
 
 Estado após 5 tentativas falhas. `nextAttemptAt = NULL`, auto-retry para, intervenção manual necessária.
+
+### External Surface
+
+**From [Pattern: Composição em Três Níveis](/admin/handbook/meta/pattern-three-level-composition):**
+
+surface fora da plataforma (página pública, embed, email, push, integração externa).
 
 ### getToolsByArea
 
@@ -298,6 +348,12 @@ macro-divisão para tools de quem (Network/Directory) e o que se sabe (Knowledge
 
 macro-divisão para tools de plataforma (docs, observability, config) invisíveis em fluxo de produto normal.
 
+### Internal Surface
+
+**From [Pattern: Composição em Três Níveis](/admin/handbook/meta/pattern-three-level-composition):**
+
+surface dentro da plataforma (tab embedded, modal, inline component, cross-area embed).
+
 ### Journal entry
 
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
@@ -333,6 +389,12 @@ agrupamento transversal por contexto, não por tipo de block.
 **From [llms.txt](/admin/handbook/meta/llms-txt):**
 
 arquivo Markdown em `/llms.txt` que orienta LLMs sobre o produto. Convenção definida em llmstxt.org.
+
+### Manifest
+
+**From [Pattern: Tool](/admin/handbook/meta/pattern-tool-level):**
+
+declaração TypeScript que descreve a tool — identidade, paths, capabilities, block family.
 
 ### MCP
 
@@ -442,6 +504,22 @@ profile especial — internal promoter (funcionário) vs external promoter (parc
 
 mudança de `technical_category` de uma feature existente (ex: block → tool, block → area). Documentada na mini-spec da etapa.
 
+### Record
+
+**From [Pattern: Block](/admin/handbook/meta/pattern-block-level):**
+
+instância concreta dentro de um block — o que o usuário cria/edita/lê.
+
+**From [Pattern: Composição em Três Níveis](/admin/handbook/meta/pattern-three-level-composition):**
+
+instância concreta dentro de um block — o registro que o usuário vê em tela.
+
+### Registry
+
+**From [Pattern: Tool](/admin/handbook/meta/pattern-tool-level):**
+
+tabela central que indexa todos os manifests; o orchestrator consulta o registry.
+
 ### Reversal
 
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
@@ -490,11 +568,33 @@ as duas tools primárias do orquestrador.
 
 agrupamento configurável de items dentro do storefront.
 
+### Single source of truth
+
+**From [Pattern: Block](/admin/handbook/meta/pattern-block-level):**
+
+princípio de que cada tipo de dado tem exatamente um block dono; outros referenciam via FK.
+
+### Source attribution
+
+**From [Pattern: Block](/admin/handbook/meta/pattern-block-level):**
+
+campo polimórfico em events que aponta para o registro de origem (source_block + source_id + source_type).
+
 ### Source kind/id
 
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
 
 Referência polimórfica que liga a entry ao evento de negócio que a originou (cobrança, comissão, etc.).
+
+### Standalone Mode
+
+**From [Pattern: Composição em Três Níveis](/admin/handbook/meta/pattern-three-level-composition):**
+
+tool acessada em seu path canônico, com workflow completo.
+
+**From [Pattern: Tool](/admin/handbook/meta/pattern-tool-level):**
+
+tool em seu path canônico com workflow completo.
 
 ### Stateless mode
 
@@ -544,6 +644,18 @@ estados (ACTIVE, PAUSED, CANCELLED, PAST_DUE, TRIAL).
 
 offering structure — definição do plano/tier vendável. Owner conceitual é a tool subscription-offering.
 
+### Sufixo canônico
+
+**From [Pattern: Block](/admin/handbook/meta/pattern-block-level):**
+
+tag no id do block que codifica semântica (`-events`, `-snapshots`, `-progress`, etc.).
+
+### Surface
+
+**From [Pattern: Composição em Três Níveis](/admin/handbook/meta/pattern-three-level-composition):**
+
+nível de manifestação — onde dados e funcionalidade aparecem para alguém.
+
 ### Tier access
 
 **From [R5 — Subscriptions Split + Offering Creation](/admin/handbook/refactor/r5-subscriptions-split):**
@@ -559,6 +671,20 @@ interface canônica para tool individual em `src/lib/tools/manifest.ts`. 10 camp
 **From [Servidor MCP](/admin/handbook/meta/mcp):**
 
 Função invocável pelo cliente MCP. Cada tool tem nome, descrição, input schema (JSON Schema) e implementação.
+
+**From [Pattern: Composição em Três Níveis](/admin/handbook/meta/pattern-three-level-composition):**
+
+nível de manipulação rica — UI, regras, registry, manifest. Unidade comercial e operacional do HERD.
+
+**From [Pattern: Tool](/admin/handbook/meta/pattern-tool-level):**
+
+unidade de manipulação rica — UI, regras, manifest, registry. Unidade comercial do HERD.
+
+### Tool Category
+
+**From [Pattern: Tool](/admin/handbook/meta/pattern-tool-level):**
+
+agrupamento runtime de tools por afinidade de orquestração (Finances, Legal, Marketing, Sales, Operations, Foundation). Não é tool em si.
 
 ### ToolAction
 
@@ -577,6 +703,12 @@ interface canônica para agrupamento de tools por área de negócio. `kind: "too
 **From [Transação](/admin/handbook/areas/transaction):**
 
 macro-divisão para tools de troca comercial customer-facing.
+
+### Trio
+
+**From [Pattern: Composição em Três Níveis](/admin/handbook/meta/pattern-three-level-composition):**
+
+a composição Tool + Block Family + Surface que define toda capability do HERD.
 
 ### type guard
 

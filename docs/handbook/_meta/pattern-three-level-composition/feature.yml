@@ -1,0 +1,39 @@
+id: pattern-three-level-composition
+uid: herd.meta.pattern-three-level-composition
+level: meta
+technical_category: foundation
+
+title:
+  pt-BR: "Pattern: Composição em Três Níveis"
+  en-US: "Pattern: Three-Level Composition"
+description:
+  pt-BR: "Padrão arquitetural fundamental do HERD: toda capability é trio Tool (manipulação) + Block Family (dados) + Surface (manifestação). Sem o trio, a feature não cabe na arquitetura."
+  en-US: "HERD's fundamental architectural pattern: every capability is a Tool (manipulation) + Block Family (data) + Surface (manifestation) trio. Without the trio, the feature doesn't fit."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-04
+updated: 2026-05-04
+
+parent: null
+children: []
+consumes: []
+consumed_by: []
+related:
+  - herd.meta.handbook
+  - herd.category.refactor.r2-5-network-split
+  - herd.meta.pattern-tool-level
+  - herd.meta.pattern-block-level
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog
