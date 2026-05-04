@@ -1,0 +1,38 @@
+id: pattern-manage-types
+uid: herd.meta.pattern-manage-types
+level: meta
+technical_category: foundation
+
+title:
+  pt-BR: "Pattern: Manage Types/Sets"
+  en-US: "Pattern: Manage Types/Sets"
+description:
+  pt-BR: "Pattern UX para tools que gerenciam templates + instances no mesmo lugar. Header sub-action 'Manage types' (ou 'Manage sets') abre gerenciador de templates. Listing principal mostra instances."
+  en-US: "UX pattern for tools managing templates + instances together. Header sub-action 'Manage types' (or 'Manage sets') opens template manager. Main listing shows instances."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-04
+updated: 2026-05-04
+
+parent: null
+children: []
+consumes: []
+consumed_by: []
+related:
+  - herd.meta.handbook
+  - herd.category.refactor.r2-5-network-split
+  - herd.meta.pattern-tool-level
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

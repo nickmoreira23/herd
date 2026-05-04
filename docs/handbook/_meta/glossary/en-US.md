@@ -66,6 +66,12 @@ tool exposed to the agent (platform tool the agent can invoke).
 
 The domain entity an event is about. Identified by `aggregateType` + `aggregateId` (UUID).
 
+### agnostic primitive
+
+**From [Pattern: Plan Orchestrator](/admin/handbook/meta/pattern-plan-orchestrator):**
+
+entity that attaches to multiple contexts (any profile-type) without logic coupled to a specific context.
+
 ### Append-only
 
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
@@ -244,6 +250,18 @@ macro-division for human-human and human-agent interaction tools.
 
 A new entry created to neutralize the effect of a previous entry; the original entry stays intact.
 
+### Cross-area embed
+
+**From [Pattern: Surface](/admin/handbook/meta/pattern-surface-level):**
+
+Internal surface from one area rendered inside another area.
+
+### cross-tool reference
+
+**From [Pattern: Plan Orchestrator](/admin/handbook/meta/pattern-plan-orchestrator):**
+
+declarative reference from one tool to definitions in another tool — does not duplicate data, only points.
+
 ### Directory
 
 **From [R2.5 — Network Split (Organization + Directory)](/admin/handbook/refactor/r2-5-network-split):**
@@ -274,6 +292,12 @@ An immutable record that something significant happened in a bounded context. Pa
 
 Accounting model where every movement is recorded simultaneously as a debit and a credit in different accounts, summing to zero.
 
+### Embed
+
+**From [Pattern: Surface](/admin/handbook/meta/pattern-surface-level):**
+
+External surface distributed as an injectable widget on a third-party site.
+
 ### Embedded Mode
 
 **From [Pattern: Three-Level Composition](/admin/handbook/meta/pattern-three-level-composition):**
@@ -283,6 +307,12 @@ tool invoked inline from another surface, without leaving it.
 **From [Pattern: Tool](/admin/handbook/meta/pattern-tool-level):**
 
 tool invoked inline from another surface.
+
+### Embedded tab
+
+**From [Pattern: Surface](/admin/handbook/meta/pattern-surface-level):**
+
+internal surface that appears as a tab inside another tool.
 
 ### EntityManifest
 
@@ -304,6 +334,10 @@ State after 5 failed attempts. `nextAttemptAt = NULL`, auto-retry stops, manual 
 
 ### External Surface
 
+**From [Pattern: Surface](/admin/handbook/meta/pattern-surface-level):**
+
+surface outside the platform; accessible to external audiences (public, end clients, third-party systems).
+
 **From [Pattern: Three-Level Composition](/admin/handbook/meta/pattern-three-level-composition):**
 
 surface outside the platform (public page, embed, email, push, external integration).
@@ -318,11 +352,23 @@ helper returning tools registered in a given area.
 
 helper that filters tools[] by area.name.
 
+### governance pattern
+
+**From [Pattern: Manage Types/Sets](/admin/handbook/meta/pattern-manage-types):**
+
+class of UX patterns whose function is to organize the relationship between rules (templates) and operation (instances).
+
 ### Handler
 
 **From [Domain Events](/admin/handbook/tools/infrastructure/domain-events):**
 
 A function that reacts to an event of a given `eventType`. Registered statically. Must be idempotent.
+
+### header sub-action
+
+**From [Pattern: Manage Types/Sets](/admin/handbook/meta/pattern-manage-types):**
+
+UX affordance in the tool's header (button or dropdown) that opens a secondary view of the same tool.
 
 ### Idempotency key
 
@@ -346,7 +392,29 @@ macro-division for who (Network/Directory) and what is known (Knowledge) tools.
 
 macro-division for platform tools (docs, observability, config) invisible in the normal product flow.
 
+### Inline component
+
+**From [Pattern: Surface](/admin/handbook/meta/pattern-surface-level):**
+
+component embedded in another screen that shows or manipulates data.
+
+### instance
+
+**From [Pattern: Manage Types/Sets](/admin/handbook/meta/pattern-manage-types):**
+
+concrete entity attached to a specific context, derived from a template.
+
+### Integration surface
+
+**From [Pattern: Surface](/admin/handbook/meta/pattern-surface-level):**
+
+External surface provided by a third-party system that receives our data (e.g., Stripe checkout).
+
 ### Internal Surface
+
+**From [Pattern: Surface](/admin/handbook/meta/pattern-surface-level):**
+
+surface inside the platform; requires authenticated session.
 
 **From [Pattern: Three-Level Composition](/admin/handbook/meta/pattern-three-level-composition):**
 
@@ -388,6 +456,18 @@ cross-block grouping by context rather than by block type.
 
 Markdown file at `/llms.txt` that guides LLMs about the product. Convention defined at llmstxt.org.
 
+### manage-sets-pattern
+
+**From [Pattern: Manage Types/Sets](/admin/handbook/meta/pattern-manage-types):**
+
+variant for tools whose natural terminology is "sets" instead of "types" (e.g., Permissions with "Manage sets").
+
+### manage-types-pattern
+
+**From [Pattern: Manage Types/Sets](/admin/handbook/meta/pattern-manage-types):**
+
+UX pattern for tools managing templates + instances via the "Manage types" header sub-action.
+
 ### Manifest
 
 **From [Pattern: Tool](/admin/handbook/meta/pattern-tool-level):**
@@ -405,6 +485,12 @@ Model Context Protocol — open spec defining how AI assistants consult external
 **From [R1.5 — Re-investigation R3-R8 Reclassifications](/admin/handbook/refactor/r1-5-reclassifications-revision):**
 
 Handbook entry describing scope and decisions for a refactor stage before execution. Status `draft` while not executed.
+
+### Modal/Sheet
+
+**From [Pattern: Surface](/admin/handbook/meta/pattern-surface-level):**
+
+surface invoked inline for a single-shot task.
 
 ### Money tuple
 
@@ -429,6 +515,12 @@ macro-division for unidirectional, event-driven system → user communication to
 **From [Chat](/admin/handbook/areas/communication/chat):**
 
 Chat component deciding which action or retrieval to invoke.
+
+### orchestrator pattern
+
+**From [Pattern: Plan Orchestrator](/admin/handbook/meta/pattern-plan-orchestrator):**
+
+architectural pattern where an agnostic primitive (Plan) declares rules referencing other tools without holding execution logic.
 
 ### Organization
 
@@ -466,6 +558,30 @@ sellable instance composing a ProductGroup + commercial terms (contract, billing
 
 a package is the commercial offering; a product-group is the underlying products bundle. A package consumes a product-group.
 
+### plan
+
+**From [Pattern: Plan Orchestrator](/admin/handbook/meta/pattern-plan-orchestrator):**
+
+instance attached to a profile, declaring how it relates to the company via references to other tools.
+
+### plan-instance
+
+**From [Pattern: Plan Orchestrator](/admin/handbook/meta/pattern-plan-orchestrator):**
+
+operational synonym for plan — used when emphasizing the contrast with plan-type.
+
+### plan-transition
+
+**From [Pattern: Plan Orchestrator](/admin/handbook/meta/pattern-plan-orchestrator):**
+
+append-only record of a profile's migration between plans, with timestamp, previous plan, new plan, and met criterion.
+
+### plan-type
+
+**From [Pattern: Plan Orchestrator](/admin/handbook/meta/pattern-plan-orchestrator):**
+
+reusable plan template, managed via the "Manage types" header sub-action.
+
 ### postedAt
 
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
@@ -501,6 +617,12 @@ typed classification of profiles (internal vs external, operational roles).
 **From [R2.5 — Network Split (Organization + Directory)](/admin/handbook/refactor/r2-5-network-split):**
 
 special profile — internal promoter (employee) vs external promoter (partner referrer).
+
+### Public page
+
+**From [Pattern: Surface](/admin/handbook/meta/pattern-surface-level):**
+
+External surface accessible by public URL without corporate authentication.
 
 ### Re-classification
 
@@ -650,9 +772,19 @@ offering structure — sellable plan/tier definition. Conceptual owner is the su
 
 ### Surface
 
+**From [Pattern: Surface](/admin/handbook/meta/pattern-surface-level):**
+
+manifestation level — where data and functionality appear to someone.
+
 **From [Pattern: Three-Level Composition](/admin/handbook/meta/pattern-three-level-composition):**
 
 manifestation level — where data and functionality appear to someone.
+
+### template
+
+**From [Pattern: Manage Types/Sets](/admin/handbook/meta/pattern-manage-types):**
+
+reusable definition of an entity — the mold from which instances are derived.
 
 ### Tier access
 

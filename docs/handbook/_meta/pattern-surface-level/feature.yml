@@ -1,0 +1,39 @@
+id: pattern-surface-level
+uid: herd.meta.pattern-surface-level
+level: meta
+technical_category: foundation
+
+title:
+  pt-BR: "Pattern: Surface"
+  en-US: "Pattern: Surface"
+description:
+  pt-BR: "Surfaces são manifestações concretas onde dados de blocks e funcionalidade de tools aparecem. Dividem-se em External (página pública, embed, integração) e Internal (tab, modal, inline). Mesmo mecanismo, locais distintos."
+  en-US: "Surfaces are concrete manifestations where block data and tool functionality appear. They split into External (public page, embed, integration) and Internal (tab, modal, inline). Same mechanism, different locations."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-04
+updated: 2026-05-04
+
+parent: null
+children: []
+consumes: []
+consumed_by: []
+related:
+  - herd.meta.handbook
+  - herd.category.refactor.r2-5-network-split
+  - herd.meta.pattern-three-level-composition
+  - herd.meta.pattern-tool-level
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

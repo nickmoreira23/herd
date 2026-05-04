@@ -68,6 +68,12 @@ ferramenta exposta ao agent (tool da plataforma que o agent pode invocar).
 
 Entidade de domínio sobre a qual um evento é. Identificada por `aggregateType` + `aggregateId` (UUID).
 
+### agnostic primitive
+
+**From [Pattern: Plan Orchestrator](/admin/handbook/meta/pattern-plan-orchestrator):**
+
+entidade que se atrela a múltiplos contextos (qualquer profile-type) sem ter lógica acoplada a contexto específico.
+
 ### Append-only
 
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
@@ -240,6 +246,18 @@ macro-divisão para tools de interação humano-humano e humano-agente.
 
 Entry nova criada para anular o efeito de uma entry anterior; preserva a entry original intacta.
 
+### Cross-area embed
+
+**From [Pattern: Surface](/admin/handbook/meta/pattern-surface-level):**
+
+Internal surface de uma área renderizada dentro de outra área.
+
+### cross-tool reference
+
+**From [Pattern: Plan Orchestrator](/admin/handbook/meta/pattern-plan-orchestrator):**
+
+referência declarativa de uma tool a definições em outra tool — não duplica dado, apenas aponta.
+
 ### Directory
 
 **From [R2.5 — Network Split (Organization + Directory)](/admin/handbook/refactor/r2-5-network-split):**
@@ -276,6 +294,12 @@ Registro imutável de algo significativo que aconteceu em um bounded context. Fa
 
 Modelo contábil onde todo movimento é registrado simultaneamente como débito e crédito em contas diferentes, somando zero.
 
+### Embed
+
+**From [Pattern: Surface](/admin/handbook/meta/pattern-surface-level):**
+
+External surface distribuída como widget injetável em site terceiro.
+
 ### Embedded Mode
 
 **From [Pattern: Composição em Três Níveis](/admin/handbook/meta/pattern-three-level-composition):**
@@ -306,6 +330,10 @@ Estado após 5 tentativas falhas. `nextAttemptAt = NULL`, auto-retry para, inter
 
 ### External Surface
 
+**From [Pattern: Surface](/admin/handbook/meta/pattern-surface-level):**
+
+surface fora da plataforma; acessível por audiências externas (público, clientes finais, sistemas terceiros).
+
 **From [Pattern: Composição em Três Níveis](/admin/handbook/meta/pattern-three-level-composition):**
 
 surface fora da plataforma (página pública, embed, email, push, integração externa).
@@ -320,11 +348,23 @@ helper que retorna as tools registradas em uma dada area.
 
 helper que filtra tools[] por area.name.
 
+### governance pattern
+
+**From [Pattern: Manage Types/Sets](/admin/handbook/meta/pattern-manage-types):**
+
+classe de patterns UX cuja função é organizar relação entre regras (templates) e operação (instances).
+
 ### Handler
 
 **From [Eventos de Domínio](/admin/handbook/tools/infrastructure/domain-events):**
 
 Função que reage a um evento de um dado `eventType`. Registrada estaticamente. Deve ser idempotente.
+
+### header sub-action
+
+**From [Pattern: Manage Types/Sets](/admin/handbook/meta/pattern-manage-types):**
+
+affordance UX no header da tool (botão ou dropdown) que abre vista secundária da mesma tool.
 
 ### Idempotency key
 
@@ -348,7 +388,29 @@ macro-divisão para tools de quem (Network/Directory) e o que se sabe (Knowledge
 
 macro-divisão para tools de plataforma (docs, observability, config) invisíveis em fluxo de produto normal.
 
+### Inline component
+
+**From [Pattern: Surface](/admin/handbook/meta/pattern-surface-level):**
+
+componente embutido em outra tela que mostra ou manipula dados.
+
+### instance
+
+**From [Pattern: Manage Types/Sets](/admin/handbook/meta/pattern-manage-types):**
+
+entidade concreta atrelada a contexto específico, derivada de um template.
+
+### Integration surface
+
+**From [Pattern: Surface](/admin/handbook/meta/pattern-surface-level):**
+
+External surface fornecida por sistema terceiro que recebe dados nossos (ex: Stripe checkout).
+
 ### Internal Surface
+
+**From [Pattern: Surface](/admin/handbook/meta/pattern-surface-level):**
+
+surface dentro da plataforma; requer sessão autenticada.
 
 **From [Pattern: Composição em Três Níveis](/admin/handbook/meta/pattern-three-level-composition):**
 
@@ -390,6 +452,18 @@ agrupamento transversal por contexto, não por tipo de block.
 
 arquivo Markdown em `/llms.txt` que orienta LLMs sobre o produto. Convenção definida em llmstxt.org.
 
+### manage-sets-pattern
+
+**From [Pattern: Manage Types/Sets](/admin/handbook/meta/pattern-manage-types):**
+
+variação para tools cuja terminologia natural é "sets" em vez de "types" (ex: Permissions com "Manage sets").
+
+### manage-types-pattern
+
+**From [Pattern: Manage Types/Sets](/admin/handbook/meta/pattern-manage-types):**
+
+pattern UX para tools que gerenciam templates + instances via header sub-action "Manage types".
+
 ### Manifest
 
 **From [Pattern: Tool](/admin/handbook/meta/pattern-tool-level):**
@@ -407,6 +481,12 @@ Model Context Protocol — spec aberta que define como AI assistants consultam r
 **From [R1.5 — Re-investigation R3-R8 Reclassifications](/admin/handbook/refactor/r1-5-reclassifications-revision):**
 
 entry de Handbook descrevendo escopo e decisões de uma etapa do refator antes da execução. Status `draft` enquanto não executada.
+
+### Modal/Sheet
+
+**From [Pattern: Surface](/admin/handbook/meta/pattern-surface-level):**
+
+surface invocada inline para tarefa pontual.
 
 ### Money tuple
 
@@ -431,6 +511,12 @@ macro-divisão para tools de comunicação unidirecional sistema → usuário, o
 **From [Chat](/admin/handbook/areas/communication/chat):**
 
 componente do Chat que decide qual ação ou retrieve invocar.
+
+### orchestrator pattern
+
+**From [Pattern: Plan Orchestrator](/admin/handbook/meta/pattern-plan-orchestrator):**
+
+pattern arquitetural onde primitivo agnóstico (Plan) declara regras referenciando outros tools sem armazenar lógica de execução.
 
 ### Organization
 
@@ -461,6 +547,30 @@ A tabela `domain_events` que guarda eventos entre emissão e entrega. Transacion
 **From [R3 — Packages Refinement](/admin/handbook/refactor/r3-packages-refinement):**
 
 instância vendável que compõe um ProductGroup + termos comerciais (contrato, billing). Tool em sales.
+
+### plan
+
+**From [Pattern: Plan Orchestrator](/admin/handbook/meta/pattern-plan-orchestrator):**
+
+instance atrelada a um profile, declarando como ele se relaciona com a empresa via references a outras tools.
+
+### plan-instance
+
+**From [Pattern: Plan Orchestrator](/admin/handbook/meta/pattern-plan-orchestrator):**
+
+sinônimo operacional de plan — termo usado quando precisa enfatizar a oposição a plan-type.
+
+### plan-transition
+
+**From [Pattern: Plan Orchestrator](/admin/handbook/meta/pattern-plan-orchestrator):**
+
+registro append-only de migração de profile entre plans, com timestamp, plan anterior, plan novo, e critério atendido.
+
+### plan-type
+
+**From [Pattern: Plan Orchestrator](/admin/handbook/meta/pattern-plan-orchestrator):**
+
+template reutilizável de plan, gerenciado via header sub-action "Manage types".
 
 ### postedAt
 
@@ -497,6 +607,12 @@ classificação tipada de profiles (interno vs externo, roles operacionais).
 **From [R2.5 — Network Split (Organization + Directory)](/admin/handbook/refactor/r2-5-network-split):**
 
 profile especial — internal promoter (funcionário) vs external promoter (parceiro indicador).
+
+### Public page
+
+**From [Pattern: Surface](/admin/handbook/meta/pattern-surface-level):**
+
+External surface acessível por URL pública sem autenticação corporativa.
 
 ### Re-classification
 
@@ -652,9 +768,25 @@ tag no id do block que codifica semântica (`-events`, `-snapshots`, `-progress`
 
 ### Surface
 
+**From [Pattern: Surface](/admin/handbook/meta/pattern-surface-level):**
+
+nível de manifestação — onde dados e funcionalidade aparecem para alguém.
+
 **From [Pattern: Composição em Três Níveis](/admin/handbook/meta/pattern-three-level-composition):**
 
 nível de manifestação — onde dados e funcionalidade aparecem para alguém.
+
+### Tab embedded
+
+**From [Pattern: Surface](/admin/handbook/meta/pattern-surface-level):**
+
+surface interna que aparece como aba dentro de outra tool.
+
+### template
+
+**From [Pattern: Manage Types/Sets](/admin/handbook/meta/pattern-manage-types):**
+
+definição reutilizável de uma entidade — molde a partir do qual instâncias são derivadas.
 
 ### Tier access
 
