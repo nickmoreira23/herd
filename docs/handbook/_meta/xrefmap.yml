@@ -260,6 +260,27 @@ references:
     title:
       pt-BR: Servidor MCP
       en-US: MCP Server
+  herd.meta.pattern-block-level:
+    level: meta
+    id: pattern-block-level
+    path: docs/handbook/_meta/pattern-block-level
+    title:
+      pt-BR: "Pattern: Block"
+      en-US: "Pattern: Block"
+  herd.meta.pattern-three-level-composition:
+    level: meta
+    id: pattern-three-level-composition
+    path: docs/handbook/_meta/pattern-three-level-composition
+    title:
+      pt-BR: "Pattern: Composição em Três Níveis"
+      en-US: "Pattern: Three-Level Composition"
+  herd.meta.pattern-tool-level:
+    level: meta
+    id: pattern-tool-level
+    path: docs/handbook/_meta/pattern-tool-level
+    title:
+      pt-BR: "Pattern: Tool"
+      en-US: "Pattern: Tool"
   herd.tool.communication.chat:
     level: tool
     id: chat
