@@ -1,0 +1,40 @@
+id: pattern-plan-orchestrator
+uid: herd.meta.pattern-plan-orchestrator
+level: meta
+technical_category: foundation
+
+title:
+  pt-BR: "Pattern: Plan Orchestrator"
+  en-US: "Pattern: Plan Orchestrator"
+description:
+  pt-BR: "Plans é tool agnóstica que se atrela a qualquer profile-type, declarando regras que referenciam outros tools (recognition, capacitation, ranking, remuneration, points). Plan não armazena eventos próprios."
+  en-US: "Plans is an agnostic tool attaching to any profile-type, declaring rules that reference other tools (recognition, capacitation, ranking, remuneration, points). A plan does not store its own events."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-04
+updated: 2026-05-04
+
+parent: null
+children: []
+consumes: []
+consumed_by: []
+related:
+  - herd.meta.handbook
+  - herd.category.refactor.r2-5-network-split
+  - herd.meta.pattern-three-level-composition
+  - herd.meta.pattern-block-level
+  - herd.meta.pattern-manage-types
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

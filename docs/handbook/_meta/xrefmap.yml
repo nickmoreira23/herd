@@ -267,6 +267,27 @@ references:
     title:
       pt-BR: "Pattern: Block"
       en-US: "Pattern: Block"
+  herd.meta.pattern-manage-types:
+    level: meta
+    id: pattern-manage-types
+    path: docs/handbook/_meta/pattern-manage-types
+    title:
+      pt-BR: "Pattern: Manage Types/Sets"
+      en-US: "Pattern: Manage Types/Sets"
+  herd.meta.pattern-plan-orchestrator:
+    level: meta
+    id: pattern-plan-orchestrator
+    path: docs/handbook/_meta/pattern-plan-orchestrator
+    title:
+      pt-BR: "Pattern: Plan Orchestrator"
+      en-US: "Pattern: Plan Orchestrator"
+  herd.meta.pattern-surface-level:
+    level: meta
+    id: pattern-surface-level
+    path: docs/handbook/_meta/pattern-surface-level
+    title:
+      pt-BR: "Pattern: Surface"
+      en-US: "Pattern: Surface"
   herd.meta.pattern-three-level-composition:
     level: meta
     id: pattern-three-level-composition
