@@ -126,6 +126,18 @@ convenção R2 — areas viraram a 5ª camada canônica do Handbook (sob `docs/h
 
 Histórico cronológico imutável de todas as mudanças, usado para auditoria e reconstrução de estado.
 
+### audit-trail
+
+**From [Pattern: Source Attribution](/admin/handbook/meta/pattern-source-attribution):**
+
+histórico rastreável de events com origem identificável, usado para auditoria.
+
+### balance
+
+**From [Pattern: Snapshots](/admin/handbook/meta/pattern-snapshots):**
+
+current saldo dinâmico que atualiza on event, sem fechamento periódico.
+
 ### Bearer token
 
 **From [Servidor MCP](/admin/handbook/meta/mcp):**
@@ -240,11 +252,15 @@ termo polissêmico — em Organization significa channel institucional (canal or
 
 macro-divisão para tools de interação humano-humano e humano-agente.
 
-### Compensating entry
+### compensating entry
 
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
 
 Entry nova criada para anular o efeito de uma entry anterior; preserva a entry original intacta.
+
+**From [Pattern: Source Attribution](/admin/handbook/meta/pattern-source-attribution):**
+
+event com valor invertido que neutraliza efeito de event anterior — preserva audit trail (não deleta).
 
 ### Cross-area embed
 
@@ -257,6 +273,12 @@ Internal surface de uma área renderizada dentro de outra área.
 **From [Pattern: Plan Orchestrator](/admin/handbook/meta/pattern-plan-orchestrator):**
 
 referência declarativa de uma tool a definições em outra tool — não duplica dado, apenas aponta.
+
+### current-state
+
+**From [Pattern: Snapshots](/admin/handbook/meta/pattern-snapshots):**
+
+estado atual sem dimensão temporal de fechamento — dinâmico, atualiza continuamente.
 
 ### Directory
 
@@ -293,6 +315,12 @@ Registro imutável de algo significativo que aconteceu em um bounded context. Fa
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
 
 Modelo contábil onde todo movimento é registrado simultaneamente como débito e crédito em contas diferentes, somando zero.
+
+### drill-down
+
+**From [Pattern: Source Attribution](/admin/handbook/meta/pattern-source-attribution):**
+
+navegação do efeito (event derivado) para a causa (registro de origem).
 
 ### Embed
 
@@ -366,6 +394,12 @@ Função que reage a um evento de um dado `eventType`. Registrada estaticamente.
 
 affordance UX no header da tool (botão ou dropdown) que abre vista secundária da mesma tool.
 
+### historical-state
+
+**From [Pattern: Snapshots](/admin/handbook/meta/pattern-snapshots):**
+
+estado capturado em ponto específico do tempo — imutável, append-only.
+
 ### Idempotency key
 
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
@@ -434,6 +468,12 @@ Componente individual de uma entry — vincula uma account, direção (D/C), amo
 
 Protocolo de RPC baseado em JSON usado pelo MCP. Requests têm `{jsonrpc, id, method, params}`; responses têm `{jsonrpc, id, result}` ou `{jsonrpc, id, error}`.
 
+### kebab-case
+
+**From [Pattern: Naming Convention](/admin/handbook/meta/pattern-naming-convention):**
+
+convenção de naming com palavras em lowercase separadas por hyphens (ex: `recognition-tracks`).
+
 ### kind
 
 **From [R0 — Manifest Registry Foundation](/admin/handbook/refactor/r0-manifest-registry):**
@@ -494,6 +534,12 @@ surface invocada inline para tarefa pontual.
 
 Representação `(amountCents: bigint, currency)` — nunca `number` ou `Decimal` solto.
 
+### natural-language-naming
+
+**From [Pattern: Naming Convention](/admin/handbook/meta/pattern-naming-convention):**
+
+princípio de que tool name deve refletir como o time fala da tool no dia-a-dia.
+
 ### Network (R2)
 
 **From [Network](/admin/handbook/areas/identity/network):**
@@ -548,6 +594,18 @@ A tabela `domain_events` que guarda eventos entre emissão e entrega. Transacion
 
 instância vendável que compõe um ProductGroup + termos comerciais (contrato, billing). Tool em sales.
 
+### period
+
+**From [Pattern: Snapshots](/admin/handbook/meta/pattern-snapshots):**
+
+janela temporal explícita do snapshot, com type enum e start_date/end_date.
+
+### period-configurable
+
+**From [Pattern: Snapshots](/admin/handbook/meta/pattern-snapshots):**
+
+capacidade do snapshot acomodar períodos variados (mensal, quinzenal, trimestral, anual, custom).
+
 ### plan
 
 **From [Pattern: Plan Orchestrator](/admin/handbook/meta/pattern-plan-orchestrator):**
@@ -571,6 +629,24 @@ registro append-only de migração de profile entre plans, com timestamp, plan a
 **From [Pattern: Plan Orchestrator](/admin/handbook/meta/pattern-plan-orchestrator):**
 
 template reutilizável de plan, gerenciado via header sub-action "Manage types".
+
+### plural-naming
+
+**From [Pattern: Naming Convention](/admin/handbook/meta/pattern-naming-convention):**
+
+convenção para tools que gerenciam coleções (Plans, Products, Contracts) e para todos os blocks.
+
+### polymorphic-reference
+
+**From [Pattern: Source Attribution](/admin/handbook/meta/pattern-source-attribution):**
+
+referência composta por (block_uid + id + type) que aponta para tipos diversos de registros.
+
+### position
+
+**From [Pattern: Snapshots](/admin/handbook/meta/pattern-snapshots):**
+
+current rank + histórico congelado por período; específico para tool Ranking.
 
 ### postedAt
 
@@ -601,6 +677,12 @@ entry de pessoa no Directory.
 **From [R2.5 — Network Split (Organization + Directory)](/admin/handbook/refactor/r2-5-network-split):**
 
 classificação tipada de profiles (interno vs externo, roles operacionais).
+
+### progress
+
+**From [Pattern: Snapshots](/admin/handbook/meta/pattern-snapshots):**
+
+current state contínuo de progressão (level atual + histórico no track), sem fechamento periódico.
 
 ### Promoter
 
@@ -641,6 +723,12 @@ tabela central que indexa todos os manifests; o orchestrator consulta o registry
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
 
 Compensating entry com direções invertidas que neutraliza o efeito de uma entry original.
+
+### reversal-cascade
+
+**From [Pattern: Source Attribution](/admin/handbook/meta/pattern-source-attribution):**
+
+propagação automática de reversão de um event original para todos os events derivados, via source attribution.
 
 ### robots.txt
 
@@ -684,11 +772,29 @@ as duas tools primárias do orquestrador.
 
 agrupamento configurável de items dentro do storefront.
 
+### semantic-distinction
+
+**From [Pattern: Naming Convention](/admin/handbook/meta/pattern-naming-convention):**
+
+princípio de diferenciação entre termos similares via contexto (ex: Profile tool singular vs profile-types block plural).
+
 ### Single source of truth
 
 **From [Pattern: Block](/admin/handbook/meta/pattern-block-level):**
 
 princípio de que cada tipo de dado tem exatamente um block dono; outros referenciam via FK.
+
+### singular-naming
+
+**From [Pattern: Naming Convention](/admin/handbook/meta/pattern-naming-convention):**
+
+convenção para tools que são sistemas únicos (Chat, Marketplace, Recognition).
+
+### snapshot
+
+**From [Pattern: Snapshots](/admin/handbook/meta/pattern-snapshots):**
+
+foto congelada de estado em ponto no tempo, append-only, com período explícito.
 
 ### Source attribution
 
@@ -701,6 +807,30 @@ campo polimórfico em events que aponta para o registro de origem (source_block 
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
 
 Referência polimórfica que liga a entry ao evento de negócio que a originou (cobrança, comissão, etc.).
+
+### source-attribution
+
+**From [Pattern: Source Attribution](/admin/handbook/meta/pattern-source-attribution):**
+
+pattern arquitetural onde todo event carrega referência polimórfica ao registro de origem.
+
+### source-block
+
+**From [Pattern: Source Attribution](/admin/handbook/meta/pattern-source-attribution):**
+
+campo do source apontando para o UID do block onde o registro de origem mora.
+
+### source-id
+
+**From [Pattern: Source Attribution](/admin/handbook/meta/pattern-source-attribution):**
+
+campo do source apontando para a FK do registro específico de origem.
+
+### source-type
+
+**From [Pattern: Source Attribution](/admin/handbook/meta/pattern-source-attribution):**
+
+discriminator do tipo de evento dentro do source_block (ex: sale-completed, sale-refunded).
 
 ### Standalone Mode
 
@@ -759,6 +889,12 @@ estados (ACTIVE, PAUSED, CANCELLED, PAST_DUE, TRIAL).
 **From [R5 — Subscriptions Split + Offering Creation](/admin/handbook/refactor/r5-subscriptions-split):**
 
 offering structure — definição do plano/tier vendável. Owner conceitual é a tool subscription-offering.
+
+### suffix-convention
+
+**From [Pattern: Naming Convention](/admin/handbook/meta/pattern-naming-convention):**
+
+sistema de sufixos canônicos que codificam semântica de blocks (`-events`, `-snapshots`, `-progress`, etc.).
 
 ### Sufixo canônico
 
