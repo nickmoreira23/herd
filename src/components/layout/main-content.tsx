@@ -20,14 +20,14 @@ export function MainContent({ children }: { children: React.ReactNode }) {
 
   if (!showExpandButton) {
     return (
-      <main className="flex-1 p-6 overflow-auto" id="admin-main">
+      <main className="relative flex-1 p-6 overflow-auto" id="admin-main">
         {children}
       </main>
     );
   }
 
   return (
-    <main className="flex-1 overflow-auto" id="admin-main">
+    <main className="relative flex-1 overflow-auto" id="admin-main">
       <div className="flex min-h-full">
         {/* Expand button column: 20px left pad + 26px icon (18px + p-1) + ~14px right = 60px total */}
         <div className="shrink-0 w-[3.75rem] pt-6 pl-5">
