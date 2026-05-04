@@ -1,7 +1,7 @@
 # HERD
 
 > HERD is an AI-native B2B platform for marketing networks.
-> Currently 51 documented entries across 5 layers (Networks, Solutions, Tools, Blocks, Integrations) plus a meta namespace.
+> Currently 54 documented entries across 5 layers (Networks, Solutions, Tools, Blocks, Integrations) plus a meta namespace.
 
 ## Documentation
 
@@ -50,7 +50,10 @@
 - [MCP Server](https://herd.app/admin/handbook/meta/mcp): Model Context Protocol server that exposes the Handbook as a navigable resource for AI assistants via stdio (local clients) and HTTP (remote clients).
 - [Pattern: Block](https://herd.app/admin/handbook/meta/pattern-block-level): Blocks are single sources of truth for data types, organized into families (Block Family → Block → Block Group → Record). Always plural; canonical suffixes define each block's semantics.
 - [Pattern: Manage Types/Sets](https://herd.app/admin/handbook/meta/pattern-manage-types): UX pattern for tools managing templates + instances together. Header sub-action 'Manage types' (or 'Manage sets') opens template manager. Main listing shows instances.
+- [Pattern: Naming Convention](https://herd.app/admin/handbook/meta/pattern-naming-convention): Natural-language naming: tools singular or plural as natural; blocks always plural; canonical suffixes encode semantics; Profile vs profile-types vs profiles distinction.
 - [Pattern: Plan Orchestrator](https://herd.app/admin/handbook/meta/pattern-plan-orchestrator): Plans is an agnostic tool attaching to any profile-type, declaring rules that reference other tools (recognition, capacitation, ranking, remuneration, points). A plan does not store its own events.
+- [Pattern: Snapshots](https://herd.app/admin/handbook/meta/pattern-snapshots): Snapshots are frozen state photos at a point in time, with a configurable period (not fixed monthly). Distinct from progress/balances/positions — each suffix encodes state semantics.
+- [Pattern: Source Attribution](https://herd.app/admin/handbook/meta/pattern-source-attribution): Every event in any block carries a polymorphic source field (source_block + source_id + source_type) pointing to the originating record. Enables drill-down, audit, and automatic reversal.
 - [Pattern: Surface](https://herd.app/admin/handbook/meta/pattern-surface-level): Surfaces are concrete manifestations where block data and tool functionality appear. They split into External (public page, embed, integration) and Internal (tab, modal, inline). Same mechanism, different locations.
 - [Pattern: Three-Level Composition](https://herd.app/admin/handbook/meta/pattern-three-level-composition): HERD's fundamental architectural pattern: every capability is a Tool (manipulation) + Block Family (data) + Surface (manifestation) trio. Without the trio, the feature doesn't fit.
 - [Pattern: Tool](https://herd.app/admin/handbook/meta/pattern-tool-level): Tool is HERD's commercial and operational unit: a rich manipulation system with UI, rules, and two modes (standalone and embedded). Natural-language naming; generates a Block Family, not a single block.

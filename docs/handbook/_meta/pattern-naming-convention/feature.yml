@@ -1,0 +1,40 @@
+id: pattern-naming-convention
+uid: herd.meta.pattern-naming-convention
+level: meta
+technical_category: foundation
+
+title:
+  pt-BR: "Pattern: Naming Convention"
+  en-US: "Pattern: Naming Convention"
+description:
+  pt-BR: "Naming por linguagem natural: tools singular ou plural conforme natural; blocks sempre plural; sufixos canônicos codificam semântica; distinção Profile vs profile-types vs profiles."
+  en-US: "Natural-language naming: tools singular or plural as natural; blocks always plural; canonical suffixes encode semantics; Profile vs profile-types vs profiles distinction."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-04
+updated: 2026-05-04
+
+parent: null
+children: []
+consumes: []
+consumed_by: []
+related:
+  - herd.meta.handbook
+  - herd.category.refactor.r2-5-network-split
+  - herd.meta.pattern-three-level-composition
+  - herd.meta.pattern-tool-level
+  - herd.meta.pattern-block-level
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

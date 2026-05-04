@@ -1,0 +1,39 @@
+id: pattern-snapshots
+uid: herd.meta.pattern-snapshots
+level: meta
+technical_category: foundation
+
+title:
+  pt-BR: "Pattern: Snapshots"
+  en-US: "Pattern: Snapshots"
+description:
+  pt-BR: "Snapshots são fotos congeladas de estado em ponto no tempo, com período configurável (não fixo em mensal). Distintos de progress/balances/positions — cada sufixo codifica semântica de estado."
+  en-US: "Snapshots are frozen state photos at a point in time, with a configurable period (not fixed monthly). Distinct from progress/balances/positions — each suffix encodes state semantics."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-04
+updated: 2026-05-04
+
+parent: null
+children: []
+consumes: []
+consumed_by: []
+related:
+  - herd.meta.handbook
+  - herd.category.refactor.r2-5-network-split
+  - herd.meta.pattern-block-level
+  - herd.meta.pattern-source-attribution
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

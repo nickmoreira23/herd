@@ -274,6 +274,13 @@ references:
     title:
       pt-BR: "Pattern: Manage Types/Sets"
       en-US: "Pattern: Manage Types/Sets"
+  herd.meta.pattern-naming-convention:
+    level: meta
+    id: pattern-naming-convention
+    path: docs/handbook/_meta/pattern-naming-convention
+    title:
+      pt-BR: "Pattern: Naming Convention"
+      en-US: "Pattern: Naming Convention"
   herd.meta.pattern-plan-orchestrator:
     level: meta
     id: pattern-plan-orchestrator
@@ -281,6 +288,20 @@ references:
     title:
       pt-BR: "Pattern: Plan Orchestrator"
       en-US: "Pattern: Plan Orchestrator"
+  herd.meta.pattern-snapshots:
+    level: meta
+    id: pattern-snapshots
+    path: docs/handbook/_meta/pattern-snapshots
+    title:
+      pt-BR: "Pattern: Snapshots"
+      en-US: "Pattern: Snapshots"
+  herd.meta.pattern-source-attribution:
+    level: meta
+    id: pattern-source-attribution
+    path: docs/handbook/_meta/pattern-source-attribution
+    title:
+      pt-BR: "Pattern: Source Attribution"
+      en-US: "Pattern: Source Attribution"
   herd.meta.pattern-surface-level:
     level: meta
     id: pattern-surface-level

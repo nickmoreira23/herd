@@ -124,6 +124,18 @@ R2 convention — areas became the 5th canonical Handbook layer (under `docs/han
 
 Immutable chronological history of all changes, used for audit and state reconstruction.
 
+### audit-trail
+
+**From [Pattern: Source Attribution](/admin/handbook/meta/pattern-source-attribution):**
+
+traceable history of events with identifiable origin, used for audit.
+
+### balance
+
+**From [Pattern: Snapshots](/admin/handbook/meta/pattern-snapshots):**
+
+dynamic current balance that updates on event, no periodic close.
+
 ### Bearer token
 
 **From [MCP Server](/admin/handbook/meta/mcp):**
@@ -244,11 +256,15 @@ polysemous term — in Organization it means institutional channel (organization
 
 macro-division for human-human and human-agent interaction tools.
 
-### Compensating entry
+### compensating entry
 
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
 
 A new entry created to neutralize the effect of a previous entry; the original entry stays intact.
+
+**From [Pattern: Source Attribution](/admin/handbook/meta/pattern-source-attribution):**
+
+event with inverted value that neutralizes the effect of a prior event — preserves the audit trail (does not delete).
 
 ### Cross-area embed
 
@@ -261,6 +277,12 @@ Internal surface from one area rendered inside another area.
 **From [Pattern: Plan Orchestrator](/admin/handbook/meta/pattern-plan-orchestrator):**
 
 declarative reference from one tool to definitions in another tool — does not duplicate data, only points.
+
+### current-state
+
+**From [Pattern: Snapshots](/admin/handbook/meta/pattern-snapshots):**
+
+current state with no periodic-close dimension — dynamic, updates continuously.
 
 ### Directory
 
@@ -291,6 +313,12 @@ An immutable record that something significant happened in a bounded context. Pa
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
 
 Accounting model where every movement is recorded simultaneously as a debit and a credit in different accounts, summing to zero.
+
+### drill-down
+
+**From [Pattern: Source Attribution](/admin/handbook/meta/pattern-source-attribution):**
+
+navigation from the effect (derived event) to the cause (originating record).
 
 ### Embed
 
@@ -370,6 +398,12 @@ A function that reacts to an event of a given `eventType`. Registered statically
 
 UX affordance in the tool's header (button or dropdown) that opens a secondary view of the same tool.
 
+### historical-state
+
+**From [Pattern: Snapshots](/admin/handbook/meta/pattern-snapshots):**
+
+state captured at a specific point in time — immutable, append-only.
+
 ### Idempotency key
 
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
@@ -438,6 +472,12 @@ Individual component of an entry — binds an account, direction (D/C), amount, 
 
 JSON-based RPC protocol used by MCP. Requests carry `{jsonrpc, id, method, params}`; responses carry `{jsonrpc, id, result}` or `{jsonrpc, id, error}`.
 
+### kebab-case
+
+**From [Pattern: Naming Convention](/admin/handbook/meta/pattern-naming-convention):**
+
+naming convention with lowercase words separated by hyphens (e.g., `recognition-tracks`).
+
 ### kind
 
 **From [R0 — Manifest Registry Foundation](/admin/handbook/refactor/r0-manifest-registry):**
@@ -497,6 +537,12 @@ surface invoked inline for a single-shot task.
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
 
 Representation `(amountCents: bigint, currency)` — never a bare `number` or `Decimal`.
+
+### natural-language-naming
+
+**From [Pattern: Naming Convention](/admin/handbook/meta/pattern-naming-convention):**
+
+principle that a tool's name should reflect how the team talks about the tool day-to-day.
 
 ### Network (R2)
 
@@ -558,6 +604,18 @@ sellable instance composing a ProductGroup + commercial terms (contract, billing
 
 a package is the commercial offering; a product-group is the underlying products bundle. A package consumes a product-group.
 
+### period
+
+**From [Pattern: Snapshots](/admin/handbook/meta/pattern-snapshots):**
+
+explicit temporal window of the snapshot, with type enum and start_date/end_date.
+
+### period-configurable
+
+**From [Pattern: Snapshots](/admin/handbook/meta/pattern-snapshots):**
+
+a snapshot's ability to accommodate varied periods (monthly, biweekly, quarterly, yearly, custom).
+
 ### plan
 
 **From [Pattern: Plan Orchestrator](/admin/handbook/meta/pattern-plan-orchestrator):**
@@ -581,6 +639,24 @@ append-only record of a profile's migration between plans, with timestamp, previ
 **From [Pattern: Plan Orchestrator](/admin/handbook/meta/pattern-plan-orchestrator):**
 
 reusable plan template, managed via the "Manage types" header sub-action.
+
+### plural-naming
+
+**From [Pattern: Naming Convention](/admin/handbook/meta/pattern-naming-convention):**
+
+convention for tools that manage collections (Plans, Products, Contracts) and for all blocks.
+
+### polymorphic-reference
+
+**From [Pattern: Source Attribution](/admin/handbook/meta/pattern-source-attribution):**
+
+reference composed of (block_uid + id + type) that points to varied record types.
+
+### position
+
+**From [Pattern: Snapshots](/admin/handbook/meta/pattern-snapshots):**
+
+current rank + frozen history per period; specific to the Ranking tool.
 
 ### postedAt
 
@@ -611,6 +687,12 @@ person entry in the Directory.
 **From [R2.5 — Network Split (Organization + Directory)](/admin/handbook/refactor/r2-5-network-split):**
 
 typed classification of profiles (internal vs external, operational roles).
+
+### progress
+
+**From [Pattern: Snapshots](/admin/handbook/meta/pattern-snapshots):**
+
+continuous current state of progression (current level + history on a track), no periodic close.
 
 ### Promoter
 
@@ -651,6 +733,12 @@ central table indexing all manifests; the orchestrator consults the registry.
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
 
 Compensating entry with directions flipped that neutralizes the effect of an original entry.
+
+### reversal-cascade
+
+**From [Pattern: Source Attribution](/admin/handbook/meta/pattern-source-attribution):**
+
+automatic propagation of a reversal from an original event to all derived events, via source attribution.
 
 ### robots.txt
 
@@ -694,11 +782,29 @@ the orchestrator's two primary tools.
 
 configurable grouping of items within the storefront.
 
+### semantic-distinction
+
+**From [Pattern: Naming Convention](/admin/handbook/meta/pattern-naming-convention):**
+
+principle of differentiating between similar terms via context (e.g., Profile tool singular vs profile-types block plural).
+
 ### Single source of truth
 
 **From [Pattern: Block](/admin/handbook/meta/pattern-block-level):**
 
 principle that each data type has exactly one owning block; others reference it via FK.
+
+### singular-naming
+
+**From [Pattern: Naming Convention](/admin/handbook/meta/pattern-naming-convention):**
+
+convention for tools that are unique systems (Chat, Marketplace, Recognition).
+
+### snapshot
+
+**From [Pattern: Snapshots](/admin/handbook/meta/pattern-snapshots):**
+
+frozen state photo at a point in time, append-only, with explicit period.
 
 ### Source attribution
 
@@ -711,6 +817,30 @@ polymorphic field on events pointing to the originating record (source_block + s
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
 
 Polymorphic reference linking an entry back to the business event that produced it (charge, commission, etc.).
+
+### source-attribution
+
+**From [Pattern: Source Attribution](/admin/handbook/meta/pattern-source-attribution):**
+
+architectural pattern where every event carries a polymorphic reference to its originating record.
+
+### source-block
+
+**From [Pattern: Source Attribution](/admin/handbook/meta/pattern-source-attribution):**
+
+source field pointing to the UID of the block where the originating record lives.
+
+### source-id
+
+**From [Pattern: Source Attribution](/admin/handbook/meta/pattern-source-attribution):**
+
+source field pointing to the FK of the specific originating record.
+
+### source-type
+
+**From [Pattern: Source Attribution](/admin/handbook/meta/pattern-source-attribution):**
+
+discriminator of the event type inside the source_block (e.g., sale-completed, sale-refunded).
 
 ### Standalone Mode
 
@@ -769,6 +899,12 @@ states (ACTIVE, PAUSED, CANCELLED, PAST_DUE, TRIAL).
 **From [R5 — Subscriptions Split + Offering Creation](/admin/handbook/refactor/r5-subscriptions-split):**
 
 offering structure — sellable plan/tier definition. Conceptual owner is the subscription-offering tool.
+
+### suffix-convention
+
+**From [Pattern: Naming Convention](/admin/handbook/meta/pattern-naming-convention):**
+
+system of canonical suffixes encoding block semantics (`-events`, `-snapshots`, `-progress`, etc.).
 
 ### Surface
 
