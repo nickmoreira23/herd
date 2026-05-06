@@ -573,9 +573,9 @@ export const messages = {
     "% Reps Ultrapassando Meta",
   "commissions.simulator.input.billing_title": "Mix de Cobrança",
   "commissions.simulator.input.billing_tooltip":
-    "Como assinantes pagam. Planos trimestral/anual têm desconto, então o mix afeta receita média e cálculo de residual.",
+    "Como assinantes pagam. Planos semestral/anual têm desconto, então o mix afeta receita média e cálculo de residual.",
   "commissions.simulator.input.billing_monthly": "Mensal %",
-  "commissions.simulator.input.billing_quarterly": "Trimestral %",
+  "commissions.simulator.input.billing_biannual": "Semestral %",
   "commissions.simulator.input.billing_annual": "Anual %",
   "commissions.simulator.input.billing_must_total":
     "Deve totalizar 100% (atual {value}%)",
@@ -965,6 +965,11 @@ export const messages = {
   // Projection spreadsheet
   "financials.projection.empty": "Nenhum resultado ainda",
   "financials.projection.tier_indent": "  └ {tier}",
+  "financials.projection.tier_indent_with_pct": "  └ {tier} ({percent})",
+  "financials.projection.tier_subindent": "      └ {tier}",
+  "financials.projection.tier_subindent_with_count": "      └ {tier} ({count} assinantes)",
+  "financials.projection.row.buck_license": "Licença Buck",
+  "financials.projection.row.buck_tokens": "Tokens Buck",
   "financials.projection.section.subscribers": "Assinantes",
   "financials.projection.section.revenue": "Receita",
   "financials.projection.section.cogs": "Custo dos Produtos",
@@ -978,7 +983,7 @@ export const messages = {
   "financials.projection.row.total_active": "Total Ativos",
   "financials.projection.row.subscription_revenue": "Receita de Assinatura",
   "financials.projection.row.monthly_billing": "  └ Cobrança Mensal",
-  "financials.projection.row.quarterly_billing": "  └ Cobrança Trimestral",
+  "financials.projection.row.biannual_billing": "  └ Cobrança Semestral",
   "financials.projection.row.annual_billing": "  └ Cobrança Anual",
   "financials.projection.row.product_fulfillment": "Produto & Fulfillment",
   "financials.projection.row.gross_profit": "Lucro Bruto",
@@ -1022,7 +1027,7 @@ export const messages = {
   "financials.toolbar.button.duplicating": "Duplicando...",
   "financials.toolbar.button.deleting": "Excluindo...",
   "financials.toolbar.button.full_screen": "Tela cheia",
-  "financials.toolbar.button.exit_full_screen": "Sair da tela cheia",
+  "financials.toolbar.button.exit_full_screen": "Minimizar",
   "financials.toolbar.tab.summary": "Resumo",
   "financials.toolbar.tab.statement": "DRE",
   "financials.toolbar.tab.spreadsheet": "Planilha",
@@ -1194,9 +1199,9 @@ export const messages = {
   "financials.builder.plans.field_monthly_pct": "Mensal %",
   "financials.builder.plans.field_monthly_pct_tooltip":
     "% padrão de assinantes pagando mês-a-mês. Planos individuais podem sobrescrever isso na seção de Sobreposições.",
-  "financials.builder.plans.field_quarterly_pct": "Trimestral %",
-  "financials.builder.plans.field_quarterly_pct_tooltip":
-    "% padrão de assinantes pagando trimestralmente.",
+  "financials.builder.plans.field_biannual_pct": "Semestral %",
+  "financials.builder.plans.field_biannual_pct_tooltip":
+    "% padrão de assinantes pagando a cada 6 meses (semestralmente).",
   "financials.builder.plans.field_annual_pct": "Anual %",
   "financials.builder.plans.field_annual_pct_tooltip":
     "% padrão de assinantes pagando anualmente.",
@@ -1206,7 +1211,7 @@ export const messages = {
     "% padrão de créditos que assinantes realmente usam. Planos podem sobrescrever individualmente. Créditos não resgatados viram lucro de breakage.",
   "financials.builder.plans.plan_structure": "Estrutura do Plano",
   "financials.builder.plans.price_per_month": "{amount}/mês",
-  "financials.builder.plans.price_per_quarter": "{amount}/tri",
+  "financials.builder.plans.price_per_quarter": "{amount}/sem",
   "financials.builder.plans.price_per_year": "{amount}/ano",
   "financials.builder.plans.credits_per_month": "{amount} créditos/mês",
   "financials.builder.plans.apparel_per_month": "{amount} vestuário/mês",
@@ -1234,9 +1239,9 @@ export const messages = {
   "financials.builder.overrides.field_mo": "Mês %",
   "financials.builder.overrides.field_mo_tooltip":
     "Porcentagem dos assinantes deste plano pagando mensalmente. Sobrescreve o mix global para este plano específico.",
-  "financials.builder.overrides.field_qtr": "Tri %",
+  "financials.builder.overrides.field_qtr": "Sem %",
   "financials.builder.overrides.field_qtr_tooltip":
-    "Porcentagem dos assinantes deste plano pagando trimestralmente.",
+    "Porcentagem dos assinantes deste plano pagando semestralmente.",
   "financials.builder.overrides.field_ann": "Ano %",
   "financials.builder.overrides.field_ann_tooltip":
     "Porcentagem dos assinantes deste plano pagando anualmente.",
@@ -3993,6 +3998,316 @@ export const messages = {
   "error.knowledge.airtable.fetch_tables_failed": "Falha ao buscar tabelas",
   "error.knowledge.airtable.import_failed": "Falha na importação",
   "error.knowledge.airtable.start_import_failed": "Falha ao iniciar importação",
+
+  // Meeting Prep
+  "meeting_prep.tool.name": "Preparação de Reuniões",
+  "meeting_prep.tool.short_description":
+    "Prepare-se para reuniões importantes com role-play multi-agente.",
+  "meeting_prep.tool.description":
+    "Capture o contexto da reunião, ative um painel de especialistas, monte um plano estratégico, ensaie por role-play e entre com checklist em mãos.",
+  "meeting_prep.tool.beta_badge": "Beta",
+
+  "meeting_prep.list.title": "Preparação de Reuniões",
+  "meeting_prep.list.description":
+    "Sessões que você preparou. Cada sessão guarda briefing, painel, plano, ensaio e debrief.",
+  "meeting_prep.list.new_session": "Nova sessão",
+  "meeting_prep.list.empty_title": "Nenhuma sessão ainda",
+  "meeting_prep.list.empty_body":
+    "Crie uma nova sessão para capturar o contexto de uma reunião próxima.",
+  "meeting_prep.list.column.title": "Título",
+  "meeting_prep.list.column.type": "Tipo",
+  "meeting_prep.list.column.status": "Status",
+  "meeting_prep.list.column.updated": "Atualizada",
+  "meeting_prep.list.column.actions": "",
+  "meeting_prep.list.untitled": "Sessão sem título",
+  "meeting_prep.list.delete": "Excluir",
+  "meeting_prep.list.delete_confirm":
+    "Excluir esta sessão? Não pode ser desfeito.",
+
+  "meeting_prep.status.draft": "Rascunho",
+  "meeting_prep.status.briefed": "Briefing pronto",
+  "meeting_prep.status.specialists_ready": "Especialistas prontos",
+  "meeting_prep.status.plan_ready": "Plano pronto",
+  "meeting_prep.status.rehearsed": "Ensaiada",
+  "meeting_prep.status.closed": "Concluída",
+
+  "meeting_prep.briefing.crumb": "Ferramentas",
+  "meeting_prep.briefing.title": "Briefing da reunião",
+  "meeting_prep.briefing.description":
+    "Descreva o contexto da reunião. Defaults inteligentes — tudo é editável. Salva automaticamente.",
+  "meeting_prep.briefing.progress": "{filled} de {total} seções",
+  "meeting_prep.briefing.autosave_idle": "Tudo salvo",
+  "meeting_prep.briefing.autosave_pending": "Salvando…",
+  "meeting_prep.briefing.optional": "Opcional",
+  "meeting_prep.briefing.recommended": "Recomendado",
+
+  "meeting_prep.briefing.section.identification": "1. Identificação",
+  "meeting_prep.briefing.section.identification_help":
+    "O que é a reunião e quando acontece.",
+  "meeting_prep.briefing.section.objective": "2. Objetivo de negócio",
+  "meeting_prep.briefing.section.objective_help":
+    "O que você quer alcançar — concreto e mensurável.",
+  "meeting_prep.briefing.section.participants": "3. Participantes",
+  "meeting_prep.briefing.section.participants_help":
+    "Quem mais está na sala. Pelo menos um.",
+  "meeting_prep.briefing.section.outcome": "4. Resultado desejado",
+  "meeting_prep.briefing.section.outcome_help":
+    "Como é o sucesso — e o resultado mínimo aceitável.",
+  "meeting_prep.briefing.section.context": "5. Contexto adicional",
+  "meeting_prep.briefing.section.context_help":
+    "Histórico, restrições e tom — afia todas as outras etapas.",
+
+  "meeting_prep.field.title": "Título da reunião",
+  "meeting_prep.field.title_placeholder":
+    "ex. Board do Q1 · Negociação Acme · 1:1 com Sara",
+  "meeting_prep.field.meeting_type": "Tipo",
+  "meeting_prep.field.meeting_type_placeholder": "Escolha um tipo",
+  "meeting_prep.field.scheduled_at": "Quando acontece",
+  "meeting_prep.field.duration": "Duração estimada",
+  "meeting_prep.field.duration_value": "{minutes} min",
+
+  "meeting_prep.meeting_type.one_on_one": "1:1",
+  "meeting_prep.meeting_type.commercial": "Comercial / Vendas",
+  "meeting_prep.meeting_type.board": "Board / Diretoria",
+  "meeting_prep.meeting_type.hr_feedback": "RH / Feedback / Performance",
+  "meeting_prep.meeting_type.negotiation": "Negociação",
+  "meeting_prep.meeting_type.interview": "Entrevista",
+  "meeting_prep.meeting_type.kickoff": "Kickoff",
+  "meeting_prep.meeting_type.partnership": "Parceria",
+  "meeting_prep.meeting_type.investor": "Investidor",
+  "meeting_prep.meeting_type.other": "Outro",
+
+  "meeting_prep.field.objective": "Objetivo",
+  "meeting_prep.field.objective_placeholder.one_on_one":
+    "ex. Desbloquear a entrega da Acme e alinhar prioridades da próxima semana.",
+  "meeting_prep.field.objective_placeholder.commercial":
+    "ex. Avançar o deal Acme para a etapa de proposta com compromisso explícito.",
+  "meeting_prep.field.objective_placeholder.board":
+    "ex. Aprovar o plano do Q1 e o delta de orçamento de marketing.",
+  "meeting_prep.field.objective_placeholder.hr_feedback":
+    "ex. Entregar feedback estruturado e alinhar plano de 30 dias.",
+  "meeting_prep.field.objective_placeholder.negotiation":
+    "ex. Chegar a um acordo que respeite minha BATNA e crie ganho mútuo.",
+  "meeting_prep.field.objective_placeholder.interview":
+    "ex. Decidir se o candidato atende à barra do papel sênior.",
+  "meeting_prep.field.objective_placeholder.kickoff":
+    "ex. Definir escopo, prazos e papéis sem zonas cinzentas.",
+  "meeting_prep.field.objective_placeholder.partnership":
+    "ex. Identificar se os interesses convergem para um piloto.",
+  "meeting_prep.field.objective_placeholder.investor":
+    "ex. Gerar interesse para uma próxima conversa com o sócio decisor.",
+  "meeting_prep.field.objective_placeholder.other":
+    "ex. Sair com uma decisão clara registrada por escrito.",
+  "meeting_prep.field.objective_placeholder.default":
+    "Descreva o que você quer alcançar em uma ou duas frases.",
+  "meeting_prep.field.suggest_objectives": "Sugerir 3 objetivos",
+  "meeting_prep.field.suggest_objectives_loading": "Gerando ideias…",
+  "meeting_prep.field.suggest_objectives_use": "Usar este",
+  "meeting_prep.field.suggest_objectives_dismiss": "Descartar sugestões",
+
+  "meeting_prep.participants.add": "Adicionar participante",
+  "meeting_prep.participants.remove": "Remover",
+  "meeting_prep.participants.empty":
+    "Nenhum participante ainda — adicione pelo menos um.",
+  "meeting_prep.participant.name": "Nome",
+  "meeting_prep.participant.name_placeholder": "ex. Sara Lima",
+  "meeting_prep.participant.role": "Cargo",
+  "meeting_prep.participant.role_placeholder": "ex. VP de Vendas",
+  "meeting_prep.participant.organization": "Organização",
+  "meeting_prep.participant.organization_placeholder": "ex. Acme S.A.",
+  "meeting_prep.participant.relationship": "Relação",
+  "meeting_prep.participant.profile_notes": "Perfil observado",
+  "meeting_prep.participant.profile_notes_placeholder":
+    "O que você já observou — estilo de comunicação, gatilhos, histórico.",
+
+  "meeting_prep.relationship.subordinate": "Subordinado",
+  "meeting_prep.relationship.peer": "Par",
+  "meeting_prep.relationship.superior": "Superior",
+  "meeting_prep.relationship.client": "Cliente",
+  "meeting_prep.relationship.supplier": "Fornecedor",
+  "meeting_prep.relationship.partner": "Parceiro",
+  "meeting_prep.relationship.unknown": "Desconhecido",
+
+  "meeting_prep.field.desired_outcome":
+    "Como será sua reunião se ela for um sucesso?",
+  "meeting_prep.field.desired_outcome_placeholder":
+    "Descreva um estado de sucesso concreto — o que é verdade ao final que não era no início.",
+  "meeting_prep.field.batna": "Resultado mínimo aceitável (BATNA)",
+  "meeting_prep.field.batna_placeholder":
+    "Qual seu plano B se o ideal não rolar?",
+
+  "meeting_prep.field.history": "Histórico relevante",
+  "meeting_prep.field.history_placeholder":
+    "O que aconteceu antes que importa para esta reunião?",
+  "meeting_prep.field.constraints": "Restrições",
+  "meeting_prep.field.constraints_placeholder":
+    "ex. confidencialidade, política interna, prazo, orçamento.",
+  "meeting_prep.field.tone_tags": "Tom desejado",
+  "meeting_prep.tone.formal": "Formal",
+  "meeting_prep.tone.consultive": "Consultivo",
+  "meeting_prep.tone.assertive": "Assertivo",
+  "meeting_prep.tone.collaborative": "Colaborativo",
+  "meeting_prep.tone.empathetic": "Empático",
+  "meeting_prep.tone.direct": "Direto",
+
+  "meeting_prep.validation.title": "Antes de continuar",
+  "meeting_prep.validation.missing_title":
+    "Adicione um título — ele orienta todas as outras etapas.",
+  "meeting_prep.validation.missing_meeting_type":
+    "Escolha um tipo para o sistema personalizar as sugestões.",
+  "meeting_prep.validation.missing_objective":
+    "Descreva o objetivo — sem ele o plano não foca.",
+  "meeting_prep.validation.missing_participants":
+    "Adicione pelo menos um participante.",
+  "meeting_prep.validation.missing_desired_outcome":
+    "Descreva como é o sucesso desta reunião.",
+  "meeting_prep.validation.suggest_batna":
+    "Definir uma BATNA dá pé ao role-play — você sabe quando recuar.",
+  "meeting_prep.validation.suggest_tone":
+    "Escolher um tom evita que o plano saia genérico.",
+  "meeting_prep.validation.suggest_history":
+    "Mesmo uma frase de histórico afia muito as sugestões de personas.",
+
+  "meeting_prep.summary.title": "Brief consolidado",
+  "meeting_prep.summary.placeholder":
+    "Após validar, seu contexto vai aparecer resumido aqui. Você pode editar.",
+  "meeting_prep.summary.regenerate": "Regerar",
+  "meeting_prep.summary.regenerating": "Regerando…",
+
+  "meeting_prep.actions.save_draft": "Salvar rascunho",
+  "meeting_prep.actions.validate_continue": "Validar e continuar",
+  "meeting_prep.actions.continue_anyway": "Continuar mesmo assim",
+  "meeting_prep.actions.cancel": "Cancelar",
+  "meeting_prep.actions.back_to_list": "Voltar para sessões",
+
+  "meeting_prep.feedback.draft_saved": "Rascunho salvo",
+  "meeting_prep.feedback.briefed":
+    "Briefing pronto — especialistas liberados na próxima etapa.",
+  "meeting_prep.feedback.session_deleted": "Sessão excluída",
+  "error.meeting_prep.session_not_found": "Sessão não encontrada",
+  "error.meeting_prep.suggest_failed":
+    "Não consegui gerar sugestões — tente novamente.",
+  "error.meeting_prep.validate_failed":
+    "Falha na validação — tente novamente.",
+
+  // Painel de especialistas — feature 02
+  "meeting_prep.specialists.crumb": "Especialistas",
+  "meeting_prep.specialists.title": "Painel de especialistas",
+  "meeting_prep.specialists.description":
+    "Ative os especialistas que vão ler sua reunião sob a lente de cada um. Selecione 1 a 5.",
+  "meeting_prep.specialists.tab.archetype": "Arquétipos",
+  "meeting_prep.specialists.tab.inspired": "Inspirados",
+  "meeting_prep.specialists.tab.custom": "Custom",
+  "meeting_prep.specialists.selected_count":
+    "{count} de {max} selecionados",
+  "meeting_prep.specialists.select_min":
+    "Selecione pelo menos um especialista para convocar.",
+  "meeting_prep.specialists.select_max":
+    "Limite de 5 — remova um para adicionar outro.",
+  "meeting_prep.specialists.convene": "Convocar painel",
+  "meeting_prep.specialists.add_to_panel": "Adicionar ao painel",
+  "meeting_prep.specialists.remove_from_panel": "Remover",
+  "meeting_prep.specialists.next_step": "Avançar para o plano",
+  "meeting_prep.specialists.streaming": "Gerando…",
+  "meeting_prep.specialists.complete": "Pronto",
+  "meeting_prep.specialists.queued": "Na fila",
+  "meeting_prep.specialists.error": "Erro — tente regerar.",
+
+  "meeting_prep.specialists.section.situation": "Leitura da situação",
+  "meeting_prep.specialists.section.priorities": "Priorizar",
+  "meeting_prep.specialists.section.avoid": "Evitar",
+  "meeting_prep.specialists.section.question": "Pergunta para você",
+  "meeting_prep.specialists.section.anchor": "Frase-âncora",
+
+  "meeting_prep.specialists.action.regenerate": "Regerar",
+  "meeting_prep.specialists.action.pin": "Pin para o plano",
+  "meeting_prep.specialists.action.unpin": "Despinear",
+  "meeting_prep.specialists.action.remove": "Remover do painel",
+  "meeting_prep.specialists.action.add_custom": "Adicionar custom",
+
+  "meeting_prep.specialists.custom.title": "Especialista custom",
+  "meeting_prep.specialists.custom.description":
+    "Descreva o papel em 1-2 frases. Output fica só nessa sessão e não é salvo na biblioteca.",
+  "meeting_prep.specialists.custom.placeholder":
+    "ex. Uma diretora sênior de marketing B2B cética com plays de alcance amplo.",
+
+  "meeting_prep.specialists.inspired.toggle":
+    "Personas inspiradas (configuração do workspace)",
+  "meeting_prep.specialists.inspired.toggle_help":
+    "Desative para esconder modelos de raciocínio inspirados em figuras públicas.",
+  "meeting_prep.specialists.inspired.disabled_body":
+    "Este workspace tem a biblioteca de personas inspiradas desativada. Um admin pode reativar nas configurações.",
+  "meeting_prep.specialists.inspired.disclaimer":
+    "Interpretação por IA dos princípios públicos atribuídos a {name}. Não são declarações reais de {name}.",
+  "meeting_prep.specialists.inspired.style_prefix": "Estilo de {name}",
+  "meeting_prep.specialists.inspired.sources": "Fontes públicas",
+  "meeting_prep.specialists.inspired.principles": "Princípios de raciocínio",
+  "meeting_prep.specialists.inspired.show_card": "Ver detalhes",
+  "meeting_prep.specialists.inspired.hide_card": "Esconder detalhes",
+
+  "meeting_prep.specialists.empty_panel.title":
+    "Nenhum especialista ativado ainda",
+  "meeting_prep.specialists.empty_panel.body":
+    "Selecione alguns na galeria e convoque o painel.",
+
+  "meeting_prep.feedback.specialists_ready":
+    "Painel pronto — revise e pin o que mais importa para o plano.",
+
+  // Plano de preparação — feature 03
+  "meeting_prep.plan.crumb": "Plano",
+  "meeting_prep.plan.title": "Plano de preparação",
+  "meeting_prep.plan.description":
+    "Brief em uma tela só, pra ler 30 minutos antes da reunião. Streamed e editável por seção.",
+  "meeting_prep.plan.empty.title": "Nenhum plano ainda",
+  "meeting_prep.plan.empty.body":
+    "Gere o plano a partir do seu contexto e dos especialistas ativados. Os pinados têm peso extra.",
+  "meeting_prep.plan.action.generate": "Gerar plano",
+  "meeting_prep.plan.action.regenerate_all": "Regerar tudo",
+  "meeting_prep.plan.action.regenerating": "Gerando…",
+  "meeting_prep.plan.action.regenerate_section": "Regerar seção",
+  "meeting_prep.plan.action.edit": "Editar",
+  "meeting_prep.plan.action.save": "Salvar",
+  "meeting_prep.plan.action.cancel": "Cancelar",
+  "meeting_prep.plan.action.copy_md": "Copiar como Markdown",
+  "meeting_prep.plan.action.print": "Imprimir / PDF",
+  "meeting_prep.plan.action.continue": "Avançar para o role-play",
+
+  "meeting_prep.plan.toc.title": "Seções",
+  "meeting_prep.plan.stale.title": "Plano desatualizado",
+  "meeting_prep.plan.stale.body":
+    "O contexto ou os pins mudaram depois deste plano. Regenere para atualizar.",
+  "meeting_prep.plan.stale.dismiss": "Dispensar",
+  "meeting_prep.plan.generated_at": "Gerado {when}",
+  "meeting_prep.plan.edited_at": "Editado {when}",
+
+  "meeting_prep.plan.section.executive_summary": "Resumo executivo",
+  "meeting_prep.plan.section.objectives": "Os 3 objetivos",
+  "meeting_prep.plan.section.counterpart_motives": "O que o outro lado provavelmente quer",
+  "meeting_prep.plan.section.risks": "Riscos",
+  "meeting_prep.plan.section.opportunities": "Oportunidades",
+  "meeting_prep.plan.section.anticipated_questions": "Perguntas que vão te fazer",
+  "meeting_prep.plan.section.my_questions": "Perguntas que VOCÊ deve fazer",
+  "meeting_prep.plan.section.objections": "Objeções esperadas",
+  "meeting_prep.plan.section.anchor_phrases": "Frases-âncora",
+  "meeting_prep.plan.section.plan_b": "Plano B",
+  "meeting_prep.plan.section.materials_checklist": "Materiais a levar",
+
+  "meeting_prep.plan.label.rationale": "Por quê",
+  "meeting_prep.plan.label.mitigation": "Mitigação",
+  "meeting_prep.plan.label.suggested_answer": "Resposta sugerida",
+  "meeting_prep.plan.label.reveals": "O que revela",
+  "meeting_prep.plan.label.response": "Como responder",
+  "meeting_prep.plan.label.opening": "Abertura",
+  "meeting_prep.plan.label.pivot": "Pivot",
+  "meeting_prep.plan.label.closing": "Fechamento",
+  "meeting_prep.plan.placeholder.text":
+    "Escreva um parágrafo. Salva no clique do botão abaixo — auto-save no blur.",
+
+  "meeting_prep.feedback.plan_ready":
+    "Plano pronto — leia de cima a baixo antes da reunião.",
+  "meeting_prep.feedback.plan_section_regenerated": "Seção regerada.",
+  "meeting_prep.feedback.plan_md_copied":
+    "Markdown copiado para a área de transferência.",
 } as const;
 
 export type MessageKey = keyof typeof messages;
