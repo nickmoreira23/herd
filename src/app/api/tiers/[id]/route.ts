@@ -24,7 +24,7 @@ export async function GET(
   }
 }
 
-const PRICE_FIELDS = ["monthlyPrice", "quarterlyPrice", "annualPrice"] as const;
+const PRICE_FIELDS = ["monthlyPrice", "biannualPrice", "annualPrice"] as const;
 
 export async function PATCH(
   request: Request,
@@ -45,7 +45,7 @@ export async function PATCH(
           data: {
             subscriptionTierId: id,
             monthlyPrice: current.monthlyPrice,
-            quarterlyPrice: current.quarterlyPrice,
+            biannualPrice: current.biannualPrice,
             annualPrice: current.annualPrice,
             changedBy: "admin",
           },

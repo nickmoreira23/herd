@@ -30,9 +30,11 @@ export function StepIdentity({ onNext, onBack }: StepIdentityProps) {
     imageUrl,
     fitnessGoal,
     creationPath,
+    aiIdentityRan,
     setName,
     setDescription,
     setImageUrl,
+    setAiIdentityRan,
   } = usePackageWizardStore();
 
   const [saving, setSaving] = useState(false);
@@ -42,9 +44,18 @@ export function StepIdentity({ onNext, onBack }: StepIdentityProps) {
   const slug = slugify(name);
   const canProceed = name.trim().length > 0;
 
-  // Co-Pilot: auto-generate name + description on mount
+  // Co-Pilot: auto-generate name + description on mount.
+  //
+  // CRITICAL: this runs at most ONCE per package. The persisted
+  // `aiIdentityRan` flag guards against re-firing when the user
+  // navigates back to this step (e.g., "Edit Identity" from Review)
+  // — without the flag, the AI would clobber a name the user just
+  // typed. The component-level `aiTriggered` ref guards against
+  // double-fire from React's StrictMode mounting cycle within a
+  // single mount.
   useEffect(() => {
-    if (creationPath !== "copilot" || !packageId || aiTriggered.current) return;
+    if (creationPath !== "copilot" || !packageId) return;
+    if (aiIdentityRan || aiTriggered.current) return;
     aiTriggered.current = true;
 
     async function generateIdentity() {
@@ -57,18 +68,38 @@ export function StepIdentity({ onNext, onBack }: StepIdentityProps) {
         });
         if (res.ok) {
           const json = await res.json();
-          if (json.data?.name) setName(json.data.name);
-          if (json.data?.description) setDescription(json.data.description);
+          // Only seed name/description from AI when the user hasn't
+          // already typed something. Belt-and-suspenders defense:
+          // even if the flag leaks across packages, we still won't
+          // overwrite user-entered text.
+          if (json.data?.name && !name.trim()) setName(json.data.name);
+          if (json.data?.description && !description.trim()) {
+            setDescription(json.data.description);
+          }
         }
       } catch {
         // Silent — user can fill in manually
       } finally {
+        // Mark ran regardless of success — a failed AI call shouldn't
+        // cause the generator to retry on every remount and risk
+        // overwriting user input later.
+        setAiIdentityRan(true);
         setAiLoading(false);
       }
     }
 
     generateIdentity();
-  }, [creationPath, packageId, fitnessGoal, setName, setDescription]);
+  }, [
+    creationPath,
+    packageId,
+    fitnessGoal,
+    aiIdentityRan,
+    name,
+    description,
+    setName,
+    setDescription,
+    setAiIdentityRan,
+  ]);
 
   async function handleNext() {
     if (!canProceed || !packageId) return;

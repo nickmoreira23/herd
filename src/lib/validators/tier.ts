@@ -19,9 +19,9 @@ export const createTierSchema = z.object({
 
   // Pricing
   monthlyPrice: z.coerce.number().positive(),
-  quarterlyPrice: z.coerce.number().positive(),
+  biannualPrice: z.coerce.number().positive(),
   annualPrice: z.coerce.number().positive(),
-  quarterlyDisplay: z.coerce.number().nonnegative().optional().nullable(),
+  biannualDisplay: z.coerce.number().nonnegative().optional().nullable(),
   annualDisplay: z.coerce.number().nonnegative().optional().nullable(),
   setupFee: z.coerce.number().nonnegative().optional(),
   trialDays: z.coerce.number().int().nonnegative().optional(),

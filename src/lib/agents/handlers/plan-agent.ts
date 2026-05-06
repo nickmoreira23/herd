@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { prisma } from "@/lib/prisma";
 import type { SendFn } from "../runtime";
+import { toNumber } from "@/lib/utils";
 
 // ─── Tool Definitions ──────────────────────────────────────────
 
@@ -26,7 +27,7 @@ export const PLAN_AGENT_TOOLS: Anthropic.Tool[] = [
   {
     name: "update_plan_fields",
     description:
-      "Update one or more fields on a subscription plan. Supports all plan configuration: identity (name, slug, tagline, description, colorAccent, iconUrl, highlightFeatures, status, visibility, isFeatured, sortOrder), pricing (monthlyPrice, quarterlyPrice, annualPrice, quarterlyDisplay, annualDisplay, setupFee, trialDays, billingAnchor), credits (monthlyCredits, creditExpirationDays, creditIssuing, rolloverMonths, rolloverCap, creditExpiry, annualBonusCredits, referralCreditAmt), access (maxMembers, geoRestriction, minimumAge, inviteOnly, repChannelOnly), rules (upgradeToTierIds, downgradeToTierIds, upgradeTiming, downgradeTiming, creditOnUpgrade, creditOnDowngrade), cancellation (minimumCommitMonths, cancelCreditBehavior, cancelCreditGraceDays, pauseAllowed, pauseMaxMonths, pauseCreditBehavior, winbackDays, winbackBonusCredits, exitSurveyRequired), and other fields (partnerDiscountPercent, includedAIFeatures, apparelCadence, apparelBudget, agentConfig, communityConfig, perksConfig).",
+      "Update one or more fields on a subscription plan. Supports all plan configuration: identity (name, slug, tagline, description, colorAccent, iconUrl, highlightFeatures, status, visibility, isFeatured, sortOrder), pricing (monthlyPrice, biannualPrice, annualPrice, biannualDisplay, annualDisplay, setupFee, trialDays, billingAnchor), credits (monthlyCredits, creditExpirationDays, creditIssuing, rolloverMonths, rolloverCap, creditExpiry, annualBonusCredits, referralCreditAmt), access (maxMembers, geoRestriction, minimumAge, inviteOnly, repChannelOnly), rules (upgradeToTierIds, downgradeToTierIds, upgradeTiming, downgradeTiming, creditOnUpgrade, creditOnDowngrade), cancellation (minimumCommitMonths, cancelCreditBehavior, cancelCreditGraceDays, pauseAllowed, pauseMaxMonths, pauseCreditBehavior, winbackDays, winbackBonusCredits, exitSurveyRequired), and other fields (partnerDiscountPercent, includedAIFeatures, apparelCadence, apparelBudget, agentConfig, communityConfig, perksConfig).",
     input_schema: {
       type: "object" as const,
       properties: {
@@ -280,7 +281,7 @@ const ALLOWED_FIELDS = new Set([
   "name", "slug", "tagline", "description", "colorAccent", "iconUrl",
   "highlightFeatures", "sortOrder", "status", "visibility", "isFeatured", "isActive",
   // Pricing
-  "monthlyPrice", "quarterlyPrice", "annualPrice", "quarterlyDisplay", "annualDisplay",
+  "monthlyPrice", "biannualPrice", "annualPrice", "biannualDisplay", "annualDisplay",
   "setupFee", "trialDays", "billingAnchor",
   // Credits
   "monthlyCredits", "creditExpirationDays", "creditIssuing", "rolloverMonths",
@@ -368,7 +369,7 @@ ${planList}
 
 ### Plan Configuration (use update_plan_fields)
 - **Identity**: name, slug, tagline, description, colorAccent, iconUrl, highlightFeatures, sortOrder, status, visibility, isFeatured
-- **Pricing**: monthlyPrice, quarterlyPrice, annualPrice, quarterlyDisplay, annualDisplay, setupFee, trialDays, billingAnchor
+- **Pricing**: monthlyPrice, biannualPrice, annualPrice, biannualDisplay, annualDisplay, setupFee, trialDays, billingAnchor
 - **Credits**: monthlyCredits, creditExpirationDays, creditIssuing, rolloverMonths, rolloverCap, creditExpiry, annualBonusCredits, referralCreditAmt
 - **Access**: maxMembers, geoRestriction, minimumAge, inviteOnly, repChannelOnly
 - **Rules**: upgradeToTierIds, downgradeToTierIds, upgradeTiming, downgradeTiming, creditOnUpgrade, creditOnDowngrade
@@ -486,22 +487,22 @@ async function handleGetPlanDetails(
 - Sort Order: ${plan.sortOrder}`);
 
     sections.push(`## Pricing
-- Monthly: $${Number(plan.monthlyPrice)}
-- Quarterly: $${Number(plan.quarterlyPrice)}
-- Annual: $${Number(plan.annualPrice)}
-- Setup Fee: $${Number(plan.setupFee)}
+- Monthly: $${toNumber(plan.monthlyPrice)}
+- Biannual: $${toNumber(plan.biannualPrice)}
+- Annual: $${toNumber(plan.annualPrice)}
+- Setup Fee: $${toNumber(plan.setupFee)}
 - Trial Days: ${plan.trialDays}
 - Billing Anchor: ${plan.billingAnchor}`);
 
     sections.push(`## Credits
-- Monthly Credits: $${Number(plan.monthlyCredits)}
+- Monthly Credits: $${toNumber(plan.monthlyCredits)}
 - Expiration Days: ${plan.creditExpirationDays}
 - Issuing: ${plan.creditIssuing}
 - Rollover Months: ${plan.rolloverMonths}
-- Rollover Cap: ${plan.rolloverCap != null ? `$${Number(plan.rolloverCap)}` : "uncapped"}
+- Rollover Cap: ${plan.rolloverCap != null ? `$${toNumber(plan.rolloverCap)}` : "uncapped"}
 - Credit Expiry: ${plan.creditExpiry}
-- Annual Bonus: $${Number(plan.annualBonusCredits)}
-- Referral Credit: $${Number(plan.referralCreditAmt)}`);
+- Annual Bonus: $${toNumber(plan.annualBonusCredits)}
+- Referral Credit: $${toNumber(plan.referralCreditAmt)}`);
 
     sections.push(`## Access
 - Max Members: ${plan.maxMembers ?? "unlimited"}
@@ -526,7 +527,7 @@ async function handleGetPlanDetails(
 - Pause Max Months: ${plan.pauseMaxMonths}
 - Pause Credit Behavior: ${plan.pauseCreditBehavior}
 - Win-back Days: ${plan.winbackDays}
-- Win-back Bonus: $${Number(plan.winbackBonusCredits)}
+- Win-back Bonus: $${toNumber(plan.winbackBonusCredits)}
 - Exit Survey: ${plan.exitSurveyRequired}`);
 
     if (plan.redemptionRules.length > 0) {

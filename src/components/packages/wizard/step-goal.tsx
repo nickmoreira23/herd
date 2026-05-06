@@ -140,6 +140,7 @@ export function StepGoal({ onNext, onBack, tiers }: StepGoalProps) {
     setImageUrl,
     setName,
     setDescription,
+    setAiIdentityRan,
     addProduct,
     markAiRun,
     setAutonomousStatus,
@@ -349,8 +350,16 @@ export function StepGoal({ onNext, onBack, tiers }: StepGoalProps) {
             }),
           });
         }
+        // Mark AI identity as already-run so that if the user later
+        // jumps to step-identity (e.g. "Edit Identity" from Review)
+        // and edits the name, the auto-generator won't re-fire on
+        // remount and clobber their input.
+        setAiIdentityRan(true);
       } catch {
-        // Identity generation is optional — continue with defaults
+        // Identity generation is optional — continue with defaults.
+        // Even on failure, mark as ran — we don't want a failed call
+        // to leave the auto-generator armed for later remounts.
+        setAiIdentityRan(true);
       }
 
       // Phase 5: Done — jump to review (step 7)

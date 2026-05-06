@@ -14,7 +14,7 @@ The schema for FinancialInputs is:
     {
       "tierId": string,
       "monthlyPrice": number,
-      "quarterlyPricePerMonth": number,
+      "biannualPricePerMonth": number,
       "annualPricePerMonth": number,
       "monthlyCredits": number,
       "apparelCOGSPerMonth": number,
@@ -25,7 +25,7 @@ The schema for FinancialInputs is:
   ],
   "billingCycleDistribution": {
     "monthly": number (0-100),
-    "quarterly": number (0-100),
+    "biannual": number (0-100),
     "annual": number (0-100)
     // must sum to 100
   },

@@ -5,47 +5,15 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
-  Building2,
-  Package,
-  Bot,
-  Gem,
-  Handshake,
-  BarChart3,
   Settings,
   LogOut,
   ChevronDown,
   ChevronRight,
-  Blocks,
-  Boxes,
-  Gift,
-  Users,
-  CreditCard,
-  Flag,
-  Network,
-  ShoppingBag,
-  Megaphone,
-  Star,
-  Link2,
-  Store,
-  Crown,
-  BookOpen,
   User,
   ChevronsUpDown,
   Pin,
-  Plug,
   Sun,
   Moon,
-  Lightbulb,
-  Scale,
-  Target,
-  Dumbbell,
-  Apple,
-  MessageSquare,
-  Receipt,
-  Brain,
-  Layers,
-  type LucideIcon,
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -53,7 +21,6 @@ import { useUIStore } from "@/stores/ui-store";
 import { hrefToSubPanel, getSubPanelIdForPath } from "@/components/layout/sub-panel";
 import { LocaleSelector } from "@/components/i18n/locale-selector";
 import { useT } from "@/lib/i18n/locale-context";
-import type { MessageKey } from "@/lib/i18n/t";
 import {
   Tooltip,
   TooltipContent,
@@ -64,44 +31,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-
-// ─── Nav item types ──────────────────────────────────────────────────
-
-interface NavLink {
-  type: "link";
-  href: string;
-  label: string;
-  labelKey?: MessageKey;
-  icon: LucideIcon;
-}
-
-interface NavGroup {
-  type: "group";
-  label: string;
-  labelKey?: MessageKey;
-  icon: LucideIcon;
-  children: NavLink[];
-}
-
-type NavItem = NavLink | NavGroup;
-
-// ─── Navigation config ──────────────────────────────────────────────
-
-const navItems: NavItem[] = [
-  { type: "link", href: "/admin", label: "Dashboard", labelKey: "nav.sidebar.dashboard", icon: LayoutDashboard },
-  { type: "link", href: "/admin/chat", label: "Chat", labelKey: "nav.sidebar.chat", icon: MessageSquare },
-  { type: "link", href: "/admin/organization/profile", label: "Organization", labelKey: "nav.sidebar.organization", icon: Building2 },
-  { type: "link", href: "/admin/knowledge", label: "Knowledge", labelKey: "nav.sidebar.knowledge", icon: Brain },
-  { type: "link", href: "/admin/handbook", label: "Handbook", labelKey: "nav.sidebar.handbook", icon: BookOpen },
-  { type: "link", href: "/admin/network", label: "Network", labelKey: "nav.sidebar.network", icon: Network },
-  { type: "link", href: "/admin/marketplace", label: "Marketplace", labelKey: "nav.sidebar.marketplace", icon: ShoppingBag },
-  { type: "link", href: "/admin/ledger", label: "Ledger", labelKey: "nav.sidebar.ledger", icon: Receipt },
-  { type: "link", href: "/admin/agents", label: "Agents", labelKey: "nav.sidebar.agents", icon: Bot },
-  { type: "link", href: "/admin/areas", label: "Areas", labelKey: "nav.sidebar.areas", icon: Layers },
-  { type: "link", href: "/admin/tools", label: "Tools", labelKey: "nav.sidebar.tools", icon: Lightbulb },
-  { type: "link", href: "/admin/blocks", label: "Blocks", labelKey: "nav.sidebar.blocks", icon: Blocks },
-  { type: "link", href: "/admin/integrations", label: "Integrations", labelKey: "nav.sidebar.integrations", icon: Plug },
-];
+import { ProfileViewSelector } from "@/components/sidebar/profile-view-selector";
+import { useProfileView } from "@/lib/core/profile-view/hook";
+import {
+  buildNavForView,
+  type NavGroup,
+  type NavItem,
+  type NavLink,
+} from "@/components/sidebar/nav-config";
 
 // Closed sidebar width: 16px padding + 40px logo/icon + 16px padding
 const ICON_COL = 72; // px
@@ -115,6 +52,7 @@ export function Sidebar() {
   const expanded = useUIStore((s) => s.sidebarExpanded());
   const { data: session } = useSession();
   const t = useT();
+  const { view: profileView } = useProfileView();
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
 
@@ -219,7 +157,7 @@ export function Sidebar() {
 
   const renderLink = (item: NavLink, indent = false) => {
     const active = isActive(item.href);
-    const linkLabel = item.labelKey ? t(item.labelKey) : item.label;
+    const linkLabel = item.label;
 
     const handleClick = () => {
       const panelId = hrefToSubPanel[item.href];
@@ -233,21 +171,64 @@ export function Sidebar() {
       }
     };
 
+    const isSquare = !!item.squareColor;
+
+    const iconNode = isSquare ? (
+      <span
+        className={cn(
+          "h-10 w-10 shrink-0 flex items-center justify-center rounded-[8px] border-[1.5px] transition-colors",
+          "group-hover:bg-accent",
+          active
+            ? "border-foreground"
+            : "border-border group-hover:border-foreground",
+        )}
+        aria-hidden
+      >
+        <item.icon className="h-[18px] w-[18px]" style={{ color: item.squareColor }} />
+      </span>
+    ) : (
+      <span className="h-10 w-10 shrink-0 flex items-center justify-center">
+        <item.icon className="h-[18px] w-[18px]" />
+      </span>
+    );
+
     const content = (
       <Link
         key={item.href}
         href={item.href}
         onClick={handleClick}
         className={cn(
-          "flex items-center rounded-md text-sm font-medium transition-colors h-10",
+          "group relative flex items-center text-sm h-10",
           active
-            ? "bg-primary/10 text-primary dark:bg-brand/10 dark:text-brand"
-            : "text-muted-foreground hover:bg-accent hover:text-foreground"
+            ? "text-foreground font-semibold"
+            : "text-muted-foreground font-medium",
         )}
-        style={{ paddingLeft: indent && expanded ? 28 : 15 }}
       >
-        <item.icon className="h-[18px] w-[18px] shrink-0 mr-3" />
-        {expanded && <span className="truncate">{linkLabel}</span>}
+        {active && (
+          <span
+            aria-hidden
+            className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-full bg-foreground"
+          />
+        )}
+        {!isSquare && (
+          <span
+            aria-hidden
+            className="absolute inset-y-0 left-4 right-4 rounded-md transition-colors group-hover:bg-accent"
+          />
+        )}
+        <span
+          className={cn(
+            "relative flex items-center pl-4 pr-4 min-w-0",
+            isSquare ? "gap-3" : "gap-4",
+          )}
+        >
+          {iconNode}
+          {expanded && (
+            <span className={cn("truncate transition-colors", "group-hover:text-foreground")}>
+              {linkLabel}
+            </span>
+          )}
+        </span>
       </Link>
     );
 
@@ -266,30 +247,46 @@ export function Sidebar() {
   const renderGroup = (group: NavGroup) => {
     const isOpen = openGroups.has(group.label);
     const groupActive = isGroupActive(group);
-    const groupLabel = group.labelKey ? t(group.labelKey) : group.label;
+    const groupLabel = group.label;
 
     const groupButton = (
       <button
         onClick={() => toggleGroup(group.label)}
         className={cn(
-          "flex items-center rounded-md text-sm font-medium transition-colors w-full h-10",
+          "group relative flex items-center text-sm w-full h-10",
           groupActive
-            ? "text-primary dark:text-brand"
-            : "text-muted-foreground hover:bg-accent hover:text-foreground"
+            ? "text-foreground font-semibold"
+            : "text-muted-foreground font-medium",
         )}
-        style={{ paddingLeft: 15 }}
       >
-        <group.icon className="h-[18px] w-[18px] shrink-0 mr-3" />
-        {expanded && (
-          <>
-            <span className="flex-1 text-left truncate">{groupLabel}</span>
-            {isOpen ? (
-              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground mr-3" />
-            ) : (
-              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground mr-3" />
-            )}
-          </>
+        {groupActive && (
+          <span
+            aria-hidden
+            className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-full bg-foreground"
+          />
         )}
+        <span
+          className={cn(
+            "absolute inset-y-0 left-4 right-4 rounded-md transition-colors",
+            !groupActive && "group-hover:bg-accent",
+          )}
+          aria-hidden
+        />
+        <span className="relative flex items-center pl-4 pr-4 gap-3 min-w-0 w-full">
+          <span className="h-10 w-10 shrink-0 flex items-center justify-center">
+            <group.icon className="h-[18px] w-[18px]" />
+          </span>
+          {expanded && (
+            <>
+              <span className="flex-1 text-left truncate">{groupLabel}</span>
+              {isOpen ? (
+                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+              ) : (
+                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+              )}
+            </>
+          )}
+        </span>
       </button>
     );
 
@@ -335,12 +332,12 @@ export function Sidebar() {
             <Image
               src={companyIconUrl}
               alt={companyName}
-              width={40}
-              height={40}
+              width={39}
+              height={39}
               className="rounded-md object-contain"
             />
           ) : (
-            <div className="h-10 w-10 rounded-md bg-primary/10 dark:bg-brand/20 flex items-center justify-center">
+            <div className="h-[39px] w-[39px] rounded-md bg-primary/10 dark:bg-brand/20 flex items-center justify-center">
               <span className="text-sm font-bold text-primary dark:text-brand">
                 {companyName.charAt(0)}
               </span>
@@ -353,9 +350,9 @@ export function Sidebar() {
               <p className="text-sm font-semibold truncate leading-tight">
                 {companyName}
               </p>
-              <p className="text-[11px] text-muted-foreground truncate">
-                {t("shell.sidebar.administrator")}
-              </p>
+              <div className="mt-0.5">
+                <ProfileViewSelector />
+              </div>
             </div>
             <button
               onClick={toggleSidebarPinned}
@@ -368,15 +365,61 @@ export function Sidebar() {
         )}
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 pt-0 pb-2 overflow-y-auto overscroll-contain scrollbar-thin space-y-1.5 px-3">
-        {navItems.map((item) =>
-          item.type === "group" ? renderGroup(item) : renderLink(item)
-        )}
-      </nav>
+      {/* Navigation — top / middle / bottom sections */}
+      {(() => {
+        const nav = buildNavForView(profileView);
+        const middle = nav.middle;
+        const renderItem = (item: NavItem) =>
+          item.type === "group" ? renderGroup(item) : renderLink(item);
+        const middleHasItems = !!middle && middle.items.length > 0;
+        const MiddleIcon = middle?.icon;
+        return (
+          <div className="flex-1 flex flex-col min-h-0">
+            {/* Top */}
+            {nav.top.length > 0 && (
+              <nav className="shrink-0 pt-2 pb-4 space-y-2">
+                {nav.top.map(renderItem)}
+              </nav>
+            )}
+
+            {/* Middle (scrollable) — shown only when section has items */}
+            {middleHasItems && middle && MiddleIcon && (
+              <>
+                <div className="shrink-0 mx-4 border-t border-border" />
+                <div className="shrink-0 pt-4">
+                  <div className="relative flex items-center text-sm font-medium h-10 text-muted-foreground">
+                    <span className="flex items-center pl-4 pr-4 gap-3 min-w-0 w-full">
+                      <span className="h-10 w-10 shrink-0 flex items-center justify-center">
+                        <MiddleIcon className="h-[18px] w-[18px]" />
+                      </span>
+                      {expanded && <span className="truncate">{middle.label}</span>}
+                    </span>
+                  </div>
+                </div>
+                <nav className="min-h-0 overflow-y-auto overscroll-contain scrollbar-thin space-y-3 pt-3 pb-4 shrink">
+                  {middle.items.map(renderItem)}
+                </nav>
+              </>
+            )}
+
+            {/* Flexible spacer — absorbs empty space, keeps bottom divider+nav glued to bottom */}
+            <div className="flex-1 min-h-0" />
+
+            {/* Bottom */}
+            {nav.bottom.length > 0 && (
+              <>
+                <div className="shrink-0 mx-4 border-t border-border" />
+                <nav className="shrink-0 pt-4 pb-2 space-y-2">
+                  {nav.bottom.map(renderItem)}
+                </nav>
+              </>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Profile */}
-      <div className="shrink-0 border-t border-border">
+      <div className="shrink-0">
         <Popover open={profileOpen} onOpenChange={setProfileOpen}>
           <PopoverTrigger
             className="flex items-center w-full min-h-[56px] transition-colors hover:bg-accent cursor-pointer"

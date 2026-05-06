@@ -25,7 +25,7 @@ export function TierComparison({ tiers, settings }: TierComparisonProps) {
     tier,
     preview: calculateTierPreview({
       monthlyPrice: toNumber(tier.monthlyPrice),
-      quarterlyPrice: toNumber(tier.quarterlyPrice),
+      biannualPrice: toNumber(tier.biannualPrice),
       annualPrice: toNumber(tier.annualPrice),
       monthlyCredits: toNumber(tier.monthlyCredits),
       apparelCOGSPerMonth:
@@ -34,7 +34,7 @@ export function TierComparison({ tiers, settings }: TierComparisonProps) {
           : tier.apparelCadence === "QUARTERLY"
             ? toNumber(tier.apparelBudget ?? 0) / 3
             : 0,
-      billingDistribution: { monthly: 60, quarterly: 25, annual: 15 },
+      billingDistribution: { monthly: 60, biannual: 25, annual: 15 },
       creditRedemptionRate: settings.redemptionRate,
       avgCOGSToMemberPriceRatio: settings.cogsRatio,
       breakageRate: settings.breakageRate,
@@ -67,7 +67,7 @@ export function TierComparison({ tiers, settings }: TierComparisonProps) {
     },
     {
       label: "Quarterly Price/mo",
-      values: previews.map((p) => formatCurrency(toNumber(p.tier.quarterlyPrice))),
+      values: previews.map((p) => formatCurrency(toNumber(p.tier.biannualPrice))),
     },
     {
       label: "Annual Price/mo",

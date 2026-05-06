@@ -1,7 +1,31 @@
 "use client";
 
 import { PanelLeftOpen } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useUIStore } from "@/stores/ui-store";
+
+/**
+ * Pages that own their own header and expand-button placement (full-bleed
+ * pages). MainContent skips the standard 60px expand-button column for
+ * these so the page can wire the button into its own header.
+ */
+// Trailing slash on each prefix means we only match the detail/new pages
+// (e.g. /admin/tools/projections/new and /admin/tools/projections/{id}),
+// NOT the index listing at /admin/tools/projections itself.
+//
+// Both URL families resolve to FinancialPageClient and that component
+// already owns its own header with an edge-to-edge border-b and an
+// expand-button slot. Without listing both prefixes here, the operation
+// route would inherit MainContent's `p-6` and the inline header's
+// bottom border would stop short of the page edges.
+const FULL_BLEED_PREFIXES = [
+  "/admin/tools/projections/",
+  "/admin/operation/finances/projections/",
+];
+
+function isFullBleed(pathname: string): boolean {
+  return FULL_BLEED_PREFIXES.some((p) => pathname.startsWith(p));
+}
 
 /**
  * Client wrapper for <main> that conditionally shows the sub-panel expand button.
@@ -9,14 +33,24 @@ import { useUIStore } from "@/stores/ui-store";
  * When the sub-panel is collapsed, the layout becomes a two-column flex:
  *   [ expand-button-column (60px) | page content ]
  *
- * The expand icon sits 20px from the left edge, with a 12px gap to the
- * title/description block. It's vertically positioned to align with the
- * center of a typical page header (title + description).
+ * Full-bleed pages render their own expand button inside their header, so
+ * the column is skipped for those routes.
  */
 export function MainContent({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const subPanelId = useUIStore((s) => s.subPanelId);
   const subPanelCollapsed = useUIStore((s) => s.subPanelCollapsed);
-  const showExpandButton = !!subPanelId && subPanelCollapsed;
+  const showExpandButton =
+    !!subPanelId && subPanelCollapsed && !isFullBleed(pathname);
+
+  if (isFullBleed(pathname)) {
+    // Full-bleed page handles its own padding & expand button.
+    return (
+      <main className="relative flex-1 overflow-auto" id="admin-main">
+        {children}
+      </main>
+    );
+  }
 
   if (!showExpandButton) {
     return (

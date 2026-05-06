@@ -33,6 +33,13 @@ export default async function EditModelPage({
       partnerData={defaults.partnerData}
       overheadData={defaults.overheadData}
       opexData={defaults.opexData}
+      productCOGSRatio={defaults.productCOGSRatio}
+      productFulfillmentCost={defaults.productFulfillmentCost}
+      productShippingCost={defaults.productShippingCost}
+      fullyLoadedCommissionData={defaults.fullyLoadedCommissionData}
+      dataSourceMeta={defaults.dataSourceMeta}
+      tierDisplayMeta={defaults.tierDisplayMeta}
+      packagesCatalog={defaults.packagesCatalog}
       modelId={snapshot.id}
       initialName={snapshot.scenarioName || ""}
       initialColor={snapshot.color || "#3B82F6"}

@@ -74,7 +74,7 @@ export default async function CommissionsPage() {
       subscriptionTier: {
         ...r.subscriptionTier,
         monthlyPrice: num(r.subscriptionTier.monthlyPrice),
-        quarterlyPrice: num(r.subscriptionTier.quarterlyPrice),
+        biannualPrice: num(r.subscriptionTier.biannualPrice),
         annualPrice: num(r.subscriptionTier.annualPrice),
         monthlyCredits: num(r.subscriptionTier.monthlyCredits),
         partnerDiscountPercent: num(r.subscriptionTier.partnerDiscountPercent),
@@ -86,7 +86,7 @@ export default async function CommissionsPage() {
   const serializedTiers = tiers.map((t) => ({
     ...t,
     monthlyPrice: num(t.monthlyPrice),
-    quarterlyPrice: num(t.quarterlyPrice),
+    biannualPrice: num(t.biannualPrice),
     annualPrice: num(t.annualPrice),
     monthlyCredits: num(t.monthlyCredits),
     partnerDiscountPercent: num(t.partnerDiscountPercent),

@@ -21,6 +21,7 @@ export default async function NewProjectionPage() {
     fullyLoadedCommissionData,
     dataSourceMeta,
     tierDisplayMeta,
+    packagesCatalog,
   } = defaults;
 
   return (
@@ -38,6 +39,7 @@ export default async function NewProjectionPage() {
       fullyLoadedCommissionData={fullyLoadedCommissionData}
       dataSourceMeta={dataSourceMeta}
       tierDisplayMeta={tierDisplayMeta}
+      packagesCatalog={packagesCatalog}
       locale={locale}
     />
   );

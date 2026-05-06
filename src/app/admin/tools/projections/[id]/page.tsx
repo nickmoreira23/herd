@@ -38,6 +38,7 @@ export default async function EditProjectionPage({
       fullyLoadedCommissionData={defaults.fullyLoadedCommissionData}
       dataSourceMeta={defaults.dataSourceMeta}
       tierDisplayMeta={defaults.tierDisplayMeta}
+      packagesCatalog={defaults.packagesCatalog}
       modelId={snapshot.id}
       initialName={snapshot.scenarioName || ""}
       initialColor={snapshot.color || "#3B82F6"}

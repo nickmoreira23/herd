@@ -57,7 +57,7 @@ export function CommissionSimulator({ structure, tiers, locale }: SimulatorProps
   const [totalSubscribers, setTotalSubscribers] = useState(5000);
   const [billingDistribution, setBillingDistribution] = useState({
     monthly: 60,
-    quarterly: 25,
+    biannual: 25,
     annual: 15,
   });
 
@@ -73,21 +73,23 @@ export function CommissionSimulator({ structure, tiers, locale }: SimulatorProps
       const rate = structure.tierRates.find((r) => r.subscriptionTierId === tier.id);
       const flatBonus = rate ? toNumber(rate.flatBonusAmount) : 0;
       const accMultiplier = rate?.acceleratorMultiplier ? toNumber(rate.acceleratorMultiplier) : 1;
+      const accThreshold = rate?.acceleratorThreshold ? toNumber(rate.acceleratorThreshold) : 1.5;
 
       const effectiveBonus = calculateCommissionPerNewSub(
         flatBonus,
         acceleratorPercent,
-        accMultiplier
+        accMultiplier,
+        accThreshold,
       );
       const upfrontCost = newSubs * effectiveBonus;
 
-      const quarterlyPerMonth = Math.round((toNumber(tier.quarterlyPrice) / 3) * 100) / 100;
-      const annualPerMonth = Math.round((toNumber(tier.annualPrice) / 12) * 100) / 100;
-
+      // `biannualPrice` and `annualPrice` already store the DISCOUNTED
+      // PER-MONTH rate — the customer pays rate × 6 (biannual) or rate
+      // × 12 (annual) once at signup. No division needed.
       const blendedRevenue = calculateBlendedRevenue(
         toNumber(tier.monthlyPrice),
-        quarterlyPerMonth,
-        annualPerMonth,
+        toNumber(tier.biannualPrice),
+        toNumber(tier.annualPrice),
         billingDistribution
       );
 
@@ -145,7 +147,7 @@ export function CommissionSimulator({ structure, tiers, locale }: SimulatorProps
   }
 
   const distTotal = Object.values(tierDistribution).reduce((s, v) => s + v, 0);
-  const billingTotal = billingDistribution.monthly + billingDistribution.quarterly + billingDistribution.annual;
+  const billingTotal = billingDistribution.monthly + billingDistribution.biannual + billingDistribution.annual;
 
   return (
     <TooltipProvider>
@@ -243,11 +245,11 @@ export function CommissionSimulator({ structure, tiers, locale }: SimulatorProps
                   onChange={(v) => setBillingDistribution((prev) => ({ ...prev, monthly: v }))}
                 />
                 <NumberField
-                  label={t("commissions.simulator.input.billing_quarterly")}
-                  value={billingDistribution.quarterly}
+                  label={t("commissions.simulator.input.billing_biannual")}
+                  value={billingDistribution.biannual}
                   step={5}
                   max={100}
-                  onChange={(v) => setBillingDistribution((prev) => ({ ...prev, quarterly: v }))}
+                  onChange={(v) => setBillingDistribution((prev) => ({ ...prev, biannual: v }))}
                 />
                 <NumberField
                   label={t("commissions.simulator.input.billing_annual")}
