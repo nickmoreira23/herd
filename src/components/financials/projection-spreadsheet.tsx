@@ -83,6 +83,10 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
   const grossProfit: number[] = [];
   const grossMarginPct: number[] = [];
   const commissions: number[] = [];
+  const buckLicense: number[] = [];
+  const buckTokens: number[] = [];
+  const addOns: number[] = [];
+  const welcomeKit: number[] = [];
   const overhead: number[] = [];
   const totalOpEx: number[] = [];
   const netProfit: number[] = [];
@@ -107,7 +111,10 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
     totalActive.push(curr.subscribers);
     subscriptionRevenue.push(curr.revenue);
 
-    const monthCOGS = curr.subscribers * costPerSub;
+    // Prefer the engine's emitted COGS / commission / chargeback figures.
+    // Fallbacks keep the view backward-compatible with any older snapshot
+    // that pre-dates these fields.
+    const monthCOGS = curr.cogsExpense ?? curr.subscribers * costPerSub;
     productFulfillment.push(monthCOGS);
 
     const monthGross = curr.revenue - monthCOGS;
@@ -116,13 +123,36 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
     const monthGrossMargin = curr.revenue > 0 ? (monthGross / curr.revenue) * 100 : 0;
     grossMarginPct.push(monthGrossMargin);
 
-    // Derive commissions: costs - subscriberCOGS - overhead
-    const monthCommissions = curr.costs - monthCOGS - curr.operationalOverhead;
+    const monthChargebackCost = curr.chargebackCost ?? 0;
+    const monthCommissions =
+      curr.commissionExpense ??
+      // Fallback: derive from costs after pulling out COGS, overhead, and
+      // chargeback so the value isn't inflated by chargeback expense (which
+      // is a separate P&L line, not a commission).
+      curr.costs - monthCOGS - curr.operationalOverhead - monthChargebackCost;
     commissions.push(monthCommissions);
+
+    const monthBuckLicense = curr.buckLicenseCost ?? 0;
+    const monthBuckTokens = curr.buckTokenCost ?? 0;
+    const monthBuck =
+      curr.buckPlatformCost ?? monthBuckLicense + monthBuckTokens;
+    buckLicense.push(monthBuckLicense);
+    buckTokens.push(monthBuckTokens);
+
+    const monthAddOns = curr.addOnCost ?? 0;
+    addOns.push(monthAddOns);
+
+    const monthWelcomeKit = curr.welcomeKitCost ?? 0;
+    welcomeKit.push(monthWelcomeKit);
 
     overhead.push(curr.operationalOverhead);
 
-    const monthTotalOpEx = monthCommissions + curr.operationalOverhead;
+    const monthTotalOpEx =
+      monthCommissions +
+      monthBuck +
+      monthAddOns +
+      monthWelcomeKit +
+      curr.operationalOverhead;
     totalOpEx.push(monthTotalOpEx);
 
     netProfit.push(curr.netProfit);
@@ -164,7 +194,7 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
   const hasBillingBreakdown = projection[0]?.revenueByBillingCycle != null;
   const billingCycleRows: RowDef[] = hasBillingBreakdown ? [
     { label: t("financials.projection.row.monthly_billing"), type: "currency" as const, totalMode: "sum" as const, values: projection.map((mo) => mo.revenueByBillingCycle?.monthly ?? 0) },
-    { label: t("financials.projection.row.quarterly_billing"), type: "currency" as const, totalMode: "sum" as const, values: projection.map((mo) => mo.revenueByBillingCycle?.quarterly ?? 0) },
+    { label: t("financials.projection.row.biannual_billing"), type: "currency" as const, totalMode: "sum" as const, values: projection.map((mo) => mo.revenueByBillingCycle?.biannual ?? 0) },
     { label: t("financials.projection.row.annual_billing"), type: "currency" as const, totalMode: "sum" as const, values: projection.map((mo) => mo.revenueByBillingCycle?.annual ?? 0) },
   ] : [];
 
@@ -201,6 +231,10 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
       header: t("financials.projection.section.opex"),
       rows: [
         { label: t("financials.projection.row.commissions"), type: "currency", totalMode: "sum", values: commissions },
+        { label: t("financials.projection.row.buck_license"), type: "currency", totalMode: "sum", values: buckLicense },
+        { label: t("financials.projection.row.buck_tokens"), type: "currency", totalMode: "sum", values: buckTokens },
+        { label: "Add-ons (Path Scale)", type: "currency", totalMode: "sum", values: addOns },
+        { label: "Welcome Kit", type: "currency", totalMode: "sum", values: welcomeKit },
         { label: t("financials.projection.row.overhead"), type: "currency", totalMode: "sum", values: overhead },
         { label: t("financials.projection.row.total_opex"), type: "currency", totalMode: "sum", values: totalOpEx, bold: true },
       ],

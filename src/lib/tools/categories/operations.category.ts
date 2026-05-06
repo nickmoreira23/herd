@@ -38,5 +38,22 @@ export const operationsCategory: ToolCategoryManifest = {
         page: "src/app/admin/tools/milestones/",
       },
     },
+    {
+      kind: "tool",
+      name: "meeting-prep",
+      displayName: "Meeting Prep",
+      description:
+        "Prep for important meetings — capture context, activate experts, build a plan, rehearse via role-play, and walk in with a checklist.",
+      icon: "Handshake",
+      color: "#8b5cf6",
+      status: "beta",
+      hasSubRoutes: true,
+      blocks: [],
+      actions: [],
+      area: "workflow",
+      paths: {
+        page: "src/app/admin/tools/meeting-prep/",
+      },
+    },
   ],
 };

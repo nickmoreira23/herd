@@ -16,6 +16,7 @@ import {
   Workflow,
   Boxes,
   Flag,
+  Handshake,
 } from "lucide-react";
 
 /** Map tool category icon strings to LucideIcon components */
@@ -43,6 +44,7 @@ export const TOOL_ICON_MAP: Record<string, LucideIcon> = {
   Scale,
   Boxes,
   Flag,
+  Handshake,
 };
 
 export const DEFAULT_CATEGORY_ICON: LucideIcon = Wrench;
