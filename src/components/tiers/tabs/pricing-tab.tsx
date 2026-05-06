@@ -27,10 +27,10 @@ interface PricingTabProps {
 export function PricingTab({ form, updateForm, onBlurSave, pricingSnapshots }: PricingTabProps) {
   const monthlySavingsQ = useMemo(() => {
     const m = parseFloat(form.monthlyPrice) || 0;
-    const q = parseFloat(form.quarterlyPrice) || 0;
+    const q = parseFloat(form.biannualPrice) || 0;
     if (m <= 0 || q <= 0 || q >= m) return null;
     return Math.round(((m - q) / m) * 100);
-  }, [form.monthlyPrice, form.quarterlyPrice]);
+  }, [form.monthlyPrice, form.biannualPrice]);
 
   const monthlySavingsA = useMemo(() => {
     const m = parseFloat(form.monthlyPrice) || 0;
@@ -43,7 +43,7 @@ export function PricingTab({ form, updateForm, onBlurSave, pricingSnapshots }: P
     () =>
       calculateTierPreview({
         monthlyPrice: parseFloat(form.monthlyPrice) || 0,
-        quarterlyPrice: parseFloat(form.quarterlyPrice) || 0,
+        biannualPrice: parseFloat(form.biannualPrice) || 0,
         annualPrice: parseFloat(form.annualPrice) || 0,
         monthlyCredits: parseFloat(form.monthlyCredits) || 0,
         apparelCOGSPerMonth:
@@ -52,7 +52,7 @@ export function PricingTab({ form, updateForm, onBlurSave, pricingSnapshots }: P
             : form.apparelCadence === "QUARTERLY"
               ? (parseFloat(form.apparelBudget) || 0) / 3
               : 0,
-        billingDistribution: { monthly: 60, quarterly: 25, annual: 15 },
+        billingDistribution: { monthly: 60, biannual: 25, annual: 15 },
         creditRedemptionRate: 0.75,
         avgCOGSToMemberPriceRatio: 0.2,
         breakageRate: 0.25,
@@ -62,7 +62,7 @@ export function PricingTab({ form, updateForm, onBlurSave, pricingSnapshots }: P
         commissionResidualPercent: 6,
         operationalOverheadPerSub: 0,
       }),
-    [form.monthlyPrice, form.quarterlyPrice, form.annualPrice, form.monthlyCredits, form.apparelCadence, form.apparelBudget]
+    [form.monthlyPrice, form.biannualPrice, form.annualPrice, form.monthlyCredits, form.apparelCadence, form.apparelBudget]
   );
 
   const marginColor = (pct: number) =>
@@ -97,7 +97,7 @@ export function PricingTab({ form, updateForm, onBlurSave, pricingSnapshots }: P
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center gap-2">
-                <Label className="text-xs">Quarterly/mo <InfoTip text="Per-month price when billed quarterly. Members pay this amount x3 every 3 months." /></Label>
+                <Label className="text-xs">Biannual/mo <InfoTip text="Per-month price when committing to 6 months upfront. Members are charged this amount × 6 once every 6 months." /></Label>
                 {monthlySavingsQ && (
                   <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 text-[10px] px-1.5 py-0">
                     Save {monthlySavingsQ}%
@@ -109,8 +109,8 @@ export function PricingTab({ form, updateForm, onBlurSave, pricingSnapshots }: P
                 <Input
                   type="number"
                   step="0.01"
-                  value={form.quarterlyPrice}
-                  onChange={(e) => updateForm("quarterlyPrice", e.target.value)}
+                  value={form.biannualPrice}
+                  onChange={(e) => updateForm("biannualPrice", e.target.value)}
                   onBlur={onBlurSave}
                   className="pl-7"
                 />
@@ -154,8 +154,8 @@ export function PricingTab({ form, updateForm, onBlurSave, pricingSnapshots }: P
                 <Input
                   type="number"
                   step="0.01"
-                  value={form.quarterlyDisplay}
-                  onChange={(e) => updateForm("quarterlyDisplay", e.target.value)}
+                  value={form.biannualDisplay}
+                  onChange={(e) => updateForm("biannualDisplay", e.target.value)}
                   onBlur={onBlurSave}
                   placeholder="—"
                   className="pl-7"
@@ -324,8 +324,8 @@ export function PricingTab({ form, updateForm, onBlurSave, pricingSnapshots }: P
                   </span>
                   <div className="flex items-center gap-3 tabular-nums">
                     <span>{formatCurrency(snap.monthlyPrice)}/mo</span>
-                    {snap.quarterlyPrice != null && (
-                      <span className="text-muted-foreground">{formatCurrency(snap.quarterlyPrice)}/q</span>
+                    {snap.biannualPrice != null && (
+                      <span className="text-muted-foreground">{formatCurrency(snap.biannualPrice)}/q</span>
                     )}
                     {snap.annualPrice != null && (
                       <span className="text-muted-foreground">{formatCurrency(snap.annualPrice)}/yr</span>

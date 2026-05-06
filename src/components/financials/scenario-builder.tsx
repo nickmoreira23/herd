@@ -2,7 +2,9 @@
 
 import { createContext, useContext, useState } from "react";
 import { useFinancialStore } from "@/stores/financial-store";
-import { calculateCreditCOGS, calculateTotalCOGSPerSub } from "@/lib/financial-engine";
+// (calculateCreditCOGS / calculateTotalCOGSPerSub no longer needed here —
+// the per-sub cost calc lives entirely in the engine. The plan card no
+// longer duplicates a per-tier "Est. cost" preview.)
 
 const ReadOnlyContext = createContext(false);
 import { Input } from "@/components/ui/input";
@@ -30,12 +32,21 @@ import {
   Plus,
   Trash2,
   ShieldAlert,
+  Cpu,
+  Gift,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/locale-context";
 import type { Locale } from "@/lib/i18n/locales";
 import type { MessageKey } from "@/lib/i18n/messages/pt-BR";
 import { formatNumberAsMoney } from "@/lib/money/format";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
+import { Package as PackageIcon } from "lucide-react";
 import { formatNumber } from "@/lib/i18n/format-number";
 
 type TFunction = (
@@ -48,12 +59,14 @@ export function ScenarioBuilder({
   defaultOpen = true,
   dataSourceMeta,
   tierDisplayMeta,
+  packagesCatalog,
   locale,
 }: {
   readOnly?: boolean;
   defaultOpen?: boolean;
   dataSourceMeta?: DataSourceMeta;
   tierDisplayMeta?: TierDisplayMeta[];
+  packagesCatalog?: import("@/app/admin/financials/data").PackageCatalogEntry[];
   locale: Locale;
 }) {
   const t = useT();
@@ -61,7 +74,7 @@ export function ScenarioBuilder({
 
   const billingTotal =
     inputs.billingCycleDistribution.monthly +
-    inputs.billingCycleDistribution.quarterly +
+    inputs.billingCycleDistribution.biannual +
     inputs.billingCycleDistribution.annual;
 
   return (
@@ -122,7 +135,6 @@ export function ScenarioBuilder({
                 </button>
               </div>
             )}
-
             {inputs.operationalOverhead.mode === "fixed" ? (
               <NumberField
                 label={t("financials.builder.overhead.field_monthly_overhead")}
@@ -292,7 +304,6 @@ export function ScenarioBuilder({
               <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                 {t("financials.builder.commission.upfront_section")}
               </span>
-
               {/* Type toggle */}
               {!readOnly && (
                 <div className="flex items-center gap-2">
@@ -326,7 +337,6 @@ export function ScenarioBuilder({
                   </button>
                 </div>
               )}
-
               <div className="grid grid-cols-2 gap-2">
                 {(inputs.commissionStructure.upfrontType ?? "flat") === "flat" ? (
                   <NumberField
@@ -368,7 +378,6 @@ export function ScenarioBuilder({
                 />
               </div>
             </div>
-
             {/* Residual */}
             <div className="space-y-1.5">
               <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
@@ -401,7 +410,6 @@ export function ScenarioBuilder({
                 />
               </div>
             </div>
-
             {/* Accelerator */}
             <div className="space-y-1.5">
               <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
@@ -433,7 +441,6 @@ export function ScenarioBuilder({
                 />
               </div>
             </div>
-
             {/* Summary */}
             {(() => {
               const isPercent = inputs.commissionStructure.upfrontType === "percent";
@@ -489,6 +496,389 @@ export function ScenarioBuilder({
           </div>
         </InputCard>
 
+        {/* Plans */}
+        {inputs.tiers.length > 0 && (
+          <InputCard
+            icon={<Layers className="h-3.5 w-3.5" />}
+            title={t("financials.builder.plans.title")}
+            description={t("financials.builder.plans.description")}
+            tooltip={t("financials.builder.plans.tooltip")}
+            defaultOpen={false}
+            linkedBadge={
+              dataSourceMeta?.linked.tierPricing ? (
+                <LinkedBadge
+                  label={t("financials.builder.linked_badge.plans_linked", {
+                    count: dataSourceMeta.sources.tierCount ?? 0,
+                  })}
+                />
+              ) : undefined
+            }
+          >
+            <div className="space-y-3">
+              {/* Global Defaults */}
+              <div className="rounded-md bg-muted/30 px-2.5 py-2.5 space-y-2">
+                <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                  {t("financials.builder.plans.global_defaults")}
+                </span>
+                <div className="grid grid-cols-3 gap-1.5">
+                  <NumberField
+                    label={t("financials.builder.plans.field_monthly_pct")}
+                    tooltip={t("financials.builder.plans.field_monthly_pct_tooltip")}
+                    value={inputs.billingCycleDistribution.monthly}
+                    step={5}
+                    max={100}
+                    onChange={(v) =>
+                      setInputs({
+                        billingCycleDistribution: { ...inputs.billingCycleDistribution, monthly: v },
+                      })
+                    }
+                  />
+                  <NumberField
+                    label={t("financials.builder.plans.field_biannual_pct")}
+                    tooltip={t("financials.builder.plans.field_biannual_pct_tooltip")}
+                    value={inputs.billingCycleDistribution.biannual}
+                    step={5}
+                    max={100}
+                    onChange={(v) =>
+                      setInputs({
+                        billingCycleDistribution: { ...inputs.billingCycleDistribution, biannual: v },
+                      })
+                    }
+                  />
+                  <NumberField
+                    label={t("financials.builder.plans.field_annual_pct")}
+                    tooltip={t("financials.builder.plans.field_annual_pct_tooltip")}
+                    value={inputs.billingCycleDistribution.annual}
+                    step={5}
+                    max={100}
+                    onChange={(v) =>
+                      setInputs({
+                        billingCycleDistribution: { ...inputs.billingCycleDistribution, annual: v },
+                      })
+                    }
+                  />
+                </div>
+                {billingTotal !== 100 && (
+                  <p className="text-[10px] text-red-500">
+                    {t("financials.builder.plans.must_total_100", {
+                      current: formatNumber(billingTotal / 100, locale, "percent"),
+                    })}
+                  </p>
+                )}
+                {/* Credit Redemption % moved to per-plan configuration —
+                    each plan declares its own redemption rate, no global
+                    default needed at the scenario level. */}
+              </div>
+              {/* Reference Package selector — anchors COGS/sub for every
+                  tier to the real per-tier products in a chosen package
+                  (vs. the apparelBudget heuristic). Drives every margin
+                  calculation downstream. */}
+              {packagesCatalog && packagesCatalog.length > 0 && (
+                <ReferencePackageSelector
+                  packagesCatalog={packagesCatalog}
+                  inputs={inputs}
+                  setInputs={setInputs}
+                  readOnly={readOnly}
+                  locale={locale}
+                />
+              )}
+              {/* Per-tier cards */}
+              {inputs.tiers.map((tier, idx) => {
+                const meta = tierDisplayMeta?.find((m) => m.tierId === tier.tierId);
+                const hasBillingOverride = !!tier.billingDistribution;
+                const hasRedemptionOverride = tier.creditRedemptionRate != null;
+                const billingOverrideTotal = hasBillingOverride
+                  ? (tier.billingDistribution!.monthly + tier.billingDistribution!.biannual + tier.billingDistribution!.annual)
+                  : 100;
+                // No "estimated cost" calc here — the per-sub cost is fully
+                // owned by the package's per-tier COGS card above (and the
+                // engine's projection). Showing a separate "Est. cost"
+                // here was misleading because it added the global
+                // fulfillment heuristic on top of the package COGS,
+                // disagreeing with both the package detail card and the
+                // projection's actual blended cost.
+                return (
+                  <div key={tier.tierId} className="rounded-lg border bg-background p-2.5 space-y-2.5">
+                    {/* Tier header */}
+                    <div className="flex items-center gap-1.5">
+                      {meta && (
+                        <span
+                          className="h-2 w-2 rounded-full shrink-0"
+                          style={{ backgroundColor: meta.colorAccent }}
+                        />
+                      )}
+                      <p className="text-xs font-semibold">{tier.tierId}</p>
+                    </div>
+                    {/* Plan Structure — read-only.
+                        Cost composition is sourced from the PLAN
+                        (shipping + handling + processing) and the
+                        selected PACKAGE (product COGS). Apparel-budget
+                        and free-trial fields are intentionally NOT
+                        shown — neither feeds the projection's cost
+                        math anymore, so surfacing them here would
+                        suggest they do. */}
+                    <div className="rounded-md bg-muted/50 px-2.5 py-2 space-y-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <Lock className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                          {t("financials.builder.plans.plan_structure")}
+                        </span>
+                        <LinkedBadge label={t("financials.builder.linked_badge.from_plans")} />
+                      </div>
+                      {/* Per-billing-cycle variations — each row is an
+                          expandable disclosure showing the per-sub
+                          cost breakdown for that cadence. */}
+                      <div className="space-y-1">
+                        <PlanVariationRow
+                          label="Monthly"
+                          months={1}
+                          ratePerMonth={tier.monthlyPrice}
+                          tier={tier}
+                          globalFulfillment={inputs.fulfillmentCostPerOrder}
+                          globalShipping={inputs.shippingCostPerOrder}
+                          locale={locale}
+                        />
+                        {tier.biannualPricePerMonth > 0 && (
+                          <PlanVariationRow
+                            label="Biannual"
+                            months={6}
+                            ratePerMonth={tier.biannualPricePerMonth}
+                            tier={tier}
+                            globalFulfillment={inputs.fulfillmentCostPerOrder}
+                            globalShipping={inputs.shippingCostPerOrder}
+                            locale={locale}
+                          />
+                        )}
+                        {tier.annualPricePerMonth > 0 && (
+                          <PlanVariationRow
+                            label="Annual"
+                            months={12}
+                            ratePerMonth={tier.annualPricePerMonth}
+                            tier={tier}
+                            globalFulfillment={inputs.fulfillmentCostPerOrder}
+                            globalShipping={inputs.shippingCostPerOrder}
+                            locale={locale}
+                          />
+                        )}
+                      </div>
+                      {(tier.monthlyCredits > 0 || (meta && meta.setupFee > 0)) && (
+                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-muted-foreground pt-0.5">
+                          {tier.monthlyCredits > 0 && (
+                            <span>
+                              {t("financials.builder.plans.credits_per_month", {
+                                amount: formatNumberAsMoney(tier.monthlyCredits, locale),
+                              })}
+                            </span>
+                          )}
+                          {meta && meta.setupFee > 0 && (
+                            <span>
+                              {t("financials.builder.plans.setup_fee", {
+                                amount: formatNumberAsMoney(meta.setupFee, locale),
+                              })}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    {/* Performance Assumptions — editable */}
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                        {t("financials.builder.plans.performance_section")}
+                      </span>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        <NumberField
+                          label={t("financials.builder.plans.field_subscriber_mix")}
+                          tooltip={t("financials.builder.plans.field_subscriber_mix_tooltip")}
+                          value={tier.subscriberPercent}
+                          step={5}
+                          max={100}
+                          onChange={(v) => {
+                            const newTiers = [...inputs.tiers];
+                            newTiers[idx] = { ...newTiers[idx], subscriberPercent: v };
+                            setInputs({ tiers: newTiers });
+                          }}
+                        />
+                        <NumberField
+                          label={t("financials.builder.plans.field_monthly_churn")}
+                          tooltip={t("financials.builder.plans.field_monthly_churn_tooltip")}
+                          value={tier.churnRateMonthly}
+                          step={0.5}
+                          max={50}
+                          onChange={(v) => {
+                            const newTiers = [...inputs.tiers];
+                            newTiers[idx] = { ...newTiers[idx], churnRateMonthly: v };
+                            setInputs({ tiers: newTiers });
+                          }}
+                        />
+                        <NumberField
+                          label={t("financials.builder.plans.field_min_commit")}
+                          tooltip={t("financials.builder.plans.field_min_commit_tooltip")}
+                          value={tier.minimumCommitMonths ?? 1}
+                          step={1}
+                          max={24}
+                          onChange={(v) => {
+                            const newTiers = [...inputs.tiers];
+                            newTiers[idx] = { ...newTiers[idx], minimumCommitMonths: v };
+                            setInputs({ tiers: newTiers });
+                          }}
+                        />
+                      </div>
+                    </div>
+                    {/* Add-ons — collapsible, above Overrides */}
+                    <TierAddOns
+                      tier={tier}
+                      onUpdateTier={(updates) => {
+                        const newTiers = [...inputs.tiers];
+                        newTiers[idx] = { ...newTiers[idx], ...updates };
+                        setInputs({ tiers: newTiers });
+                      }}
+                    />
+                    {/* Advanced Overrides — collapsible */}
+                    <TierAdvancedOverrides
+                      t={t}
+                      locale={locale}
+                      tier={tier}
+                      tierIdx={idx}
+                      globalBilling={inputs.billingCycleDistribution}
+                      globalRedemptionRate={inputs.creditRedemptionRate}
+                      hasBillingOverride={hasBillingOverride}
+                      hasRedemptionOverride={hasRedemptionOverride}
+                      billingOverrideTotal={billingOverrideTotal}
+                      onUpdateTier={(updates) => {
+                        const newTiers = [...inputs.tiers];
+                        newTiers[idx] = { ...newTiers[idx], ...updates };
+                        setInputs({ tiers: newTiers });
+                      }}
+                      onResetBilling={() => {
+                        const newTiers = [...inputs.tiers];
+                        const { billingDistribution: _, ...rest } = newTiers[idx];
+                        newTiers[idx] = rest as typeof newTiers[number];
+                        setInputs({ tiers: newTiers });
+                      }}
+                      onResetRedemption={() => {
+                        const newTiers = [...inputs.tiers];
+                        const { creditRedemptionRate: _, ...rest } = newTiers[idx];
+                        newTiers[idx] = rest as typeof newTiers[number];
+                        setInputs({ tiers: newTiers });
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </InputCard>
+        )}
+
+        {/* Welcome Kit — one-time freebie cost shipped to every new
+            subscriber on signup. Adds to acquisition cost (rolls into
+            CAC and the month's net margin). */}
+        <InputCard
+          icon={<Gift className="h-3.5 w-3.5" />}
+          title="Welcome Kit"
+          description="One-time freebie shipped to every new subscriber"
+          tooltip="Cost of the welcome kit given free to every new subscriber at signup. Rolls into CAC and lands as an acquisition expense in the month each cohort joins."
+          defaultOpen={defaultOpen}
+        >
+          <div className="grid grid-cols-1 gap-1.5">
+            <NumberField
+              label="Cost / new subscriber ($)"
+              tooltip="Total cost of the welcome kit per new sub. Charged once when each new subscriber joins (paid on gross new subs, since the kit ships before any chargeback could occur)."
+              value={inputs.welcomeKitCostPerSub ?? 0}
+              step={1}
+              max={1000}
+              onChange={(v) => setInputs({ welcomeKitCostPerSub: v })}
+            />
+          </div>
+          {(inputs.welcomeKitCostPerSub ?? 0) > 0 && (
+            <div className="rounded-lg bg-muted/30 px-2.5 py-1.5 text-[11px] text-muted-foreground mt-1.5">
+              {formatNumberAsMoney(inputs.welcomeKitCostPerSub ?? 0, locale)} /
+              new sub · charged once at acquisition. Rolls into CAC and the
+              month's acquisition spend.
+            </div>
+          )}
+        </InputCard>
+
+        {/* Buck — platform fees per active subscriber. Flat license + AI
+            tokens, charged every month for every active sub. */}
+        <InputCard
+          icon={<Cpu className="h-3.5 w-3.5" />}
+          title="Buck Platform"
+          description="Per-subscriber monthly cost paid to the platform provider"
+          tooltip="Flat license fee plus estimated AI token consumption per active subscriber per month. Applied to every active sub each month."
+          defaultOpen={defaultOpen}
+        >
+          <div className="grid grid-cols-2 gap-1.5">
+            <NumberField
+              label="License $/sub/mo"
+              tooltip="Flat fee paid to the Buck provider per active subscriber per month."
+              value={inputs.buckPlatformFeePerSub ?? 0}
+              step={0.5}
+              max={500}
+              onChange={(v) => setInputs({ buckPlatformFeePerSub: v })}
+            />
+            <NumberField
+              label="Tokens $/sub/mo"
+              tooltip="Estimated AI token consumption cost per active subscriber per month."
+              value={inputs.buckTokenCostPerSub ?? 0}
+              step={0.5}
+              max={500}
+              onChange={(v) => setInputs({ buckTokenCostPerSub: v })}
+            />
+          </div>
+          {((inputs.buckPlatformFeePerSub ?? 0) + (inputs.buckTokenCostPerSub ?? 0)) > 0 && (
+            <div className="rounded-lg bg-muted/30 px-2.5 py-1.5 text-[11px] text-muted-foreground mt-1.5">
+              {formatNumberAsMoney(
+                (inputs.buckPlatformFeePerSub ?? 0) + (inputs.buckTokenCostPerSub ?? 0),
+                locale,
+              )}
+              /sub/mo · charged every month against every active subscriber.
+            </div>
+          )}
+        </InputCard>
+
+        {/* Chargebacks */}
+        <InputCard
+          icon={<ShieldAlert className="h-3.5 w-3.5" />}
+          title={t("financials.builder.chargebacks.title")}
+          description={t("financials.builder.chargebacks.description")}
+          tooltip={t("financials.builder.chargebacks.tooltip")}
+          defaultOpen={defaultOpen}
+        >
+          <div className="grid grid-cols-2 gap-1.5">
+            <NumberField
+              label={t("financials.builder.chargebacks.field_rate")}
+              tooltip={t("financials.builder.chargebacks.field_rate_tooltip")}
+              value={inputs.chargebackPercent ?? 0}
+              step={0.5}
+              max={100}
+              onChange={(v) => setInputs({ chargebackPercent: v })}
+            />
+            <NumberField
+              label={t("financials.builder.chargebacks.field_fee")}
+              tooltip={t("financials.builder.chargebacks.field_fee_tooltip")}
+              value={inputs.chargebackFee ?? 15}
+              step={5}
+              max={100}
+              onChange={(v) => setInputs({ chargebackFee: v })}
+            />
+          </div>
+          {(inputs.chargebackPercent ?? 0) > 0 && (() => {
+            const grossSubs = Math.round(
+              inputs.salesRepChannel.startingReps * inputs.salesRepChannel.salesPerRepPerMonth,
+            );
+            const cbs = Math.round(grossSubs * ((inputs.chargebackPercent ?? 0) / 100));
+            return (
+              <div className="rounded-lg bg-muted/30 px-2.5 py-1.5 text-[11px] text-muted-foreground mt-1.5">
+                {t("financials.builder.chargebacks.summary", {
+                  cbs: formatNumber(cbs, locale, "integer"),
+                  gross: formatNumber(grossSubs, locale, "integer"),
+                  net: formatNumber(grossSubs - cbs, locale, "integer"),
+                })}
+              </div>
+            );
+          })()}
+        </InputCard>
+
         {/* Profit Split */}
         <InputCard
           icon={<PieChart className="h-3.5 w-3.5" />}
@@ -503,7 +893,6 @@ export function ScenarioBuilder({
                 {t("financials.builder.profit_split.empty")}
               </div>
             )}
-
             {inputs.profitSplitParties.map((party, idx) => (
               <div key={party.id} className="flex items-end gap-2">
                 <div className="flex-1">
@@ -554,7 +943,6 @@ export function ScenarioBuilder({
                 )}
               </div>
             ))}
-
             {!readOnly && (
               <button
                 type="button"
@@ -574,7 +962,6 @@ export function ScenarioBuilder({
                 {t("financials.builder.profit_split.add_party")}
               </button>
             )}
-
             {/* Summary */}
             {inputs.profitSplitParties.length > 0 && (() => {
               const totalPercent = inputs.profitSplitParties.reduce((s, p) => s + p.percent, 0);
@@ -611,336 +998,6 @@ export function ScenarioBuilder({
             })()}
           </div>
         </InputCard>
-
-        {/* Chargebacks */}
-        <InputCard
-          icon={<ShieldAlert className="h-3.5 w-3.5" />}
-          title={t("financials.builder.chargebacks.title")}
-          description={t("financials.builder.chargebacks.description")}
-          tooltip={t("financials.builder.chargebacks.tooltip")}
-          defaultOpen={defaultOpen}
-        >
-          <div className="grid grid-cols-2 gap-1.5">
-            <NumberField
-              label={t("financials.builder.chargebacks.field_rate")}
-              tooltip={t("financials.builder.chargebacks.field_rate_tooltip")}
-              value={inputs.chargebackPercent ?? 0}
-              step={0.5}
-              max={100}
-              onChange={(v) => setInputs({ chargebackPercent: v })}
-            />
-            <NumberField
-              label={t("financials.builder.chargebacks.field_fee")}
-              tooltip={t("financials.builder.chargebacks.field_fee_tooltip")}
-              value={inputs.chargebackFee ?? 15}
-              step={5}
-              max={100}
-              onChange={(v) => setInputs({ chargebackFee: v })}
-            />
-          </div>
-          {(inputs.chargebackPercent ?? 0) > 0 && (() => {
-            const grossSubs = Math.round(
-              inputs.salesRepChannel.startingReps * inputs.salesRepChannel.salesPerRepPerMonth,
-            );
-            const cbs = Math.round(grossSubs * ((inputs.chargebackPercent ?? 0) / 100));
-            return (
-              <div className="rounded-lg bg-muted/30 px-2.5 py-1.5 text-[11px] text-muted-foreground mt-1.5">
-                {t("financials.builder.chargebacks.summary", {
-                  cbs: formatNumber(cbs, locale, "integer"),
-                  gross: formatNumber(grossSubs, locale, "integer"),
-                  net: formatNumber(grossSubs - cbs, locale, "integer"),
-                })}
-              </div>
-            );
-          })()}
-        </InputCard>
-
-        {/* Plans */}
-        {inputs.tiers.length > 0 && (
-          <InputCard
-            icon={<Layers className="h-3.5 w-3.5" />}
-            title={t("financials.builder.plans.title")}
-            description={t("financials.builder.plans.description")}
-            tooltip={t("financials.builder.plans.tooltip")}
-            defaultOpen={false}
-            linkedBadge={
-              dataSourceMeta?.linked.tierPricing ? (
-                <LinkedBadge
-                  label={t("financials.builder.linked_badge.plans_linked", {
-                    count: dataSourceMeta.sources.tierCount ?? 0,
-                  })}
-                />
-              ) : undefined
-            }
-          >
-            <div className="space-y-3">
-              {/* Global Defaults */}
-              <div className="rounded-md bg-muted/30 px-2.5 py-2.5 space-y-2">
-                <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                  {t("financials.builder.plans.global_defaults")}
-                </span>
-                <div className="grid grid-cols-3 gap-1.5">
-                  <NumberField
-                    label={t("financials.builder.plans.field_monthly_pct")}
-                    tooltip={t("financials.builder.plans.field_monthly_pct_tooltip")}
-                    value={inputs.billingCycleDistribution.monthly}
-                    step={5}
-                    max={100}
-                    onChange={(v) =>
-                      setInputs({
-                        billingCycleDistribution: { ...inputs.billingCycleDistribution, monthly: v },
-                      })
-                    }
-                  />
-                  <NumberField
-                    label={t("financials.builder.plans.field_quarterly_pct")}
-                    tooltip={t("financials.builder.plans.field_quarterly_pct_tooltip")}
-                    value={inputs.billingCycleDistribution.quarterly}
-                    step={5}
-                    max={100}
-                    onChange={(v) =>
-                      setInputs({
-                        billingCycleDistribution: { ...inputs.billingCycleDistribution, quarterly: v },
-                      })
-                    }
-                  />
-                  <NumberField
-                    label={t("financials.builder.plans.field_annual_pct")}
-                    tooltip={t("financials.builder.plans.field_annual_pct_tooltip")}
-                    value={inputs.billingCycleDistribution.annual}
-                    step={5}
-                    max={100}
-                    onChange={(v) =>
-                      setInputs({
-                        billingCycleDistribution: { ...inputs.billingCycleDistribution, annual: v },
-                      })
-                    }
-                  />
-                </div>
-                {billingTotal !== 100 && (
-                  <p className="text-[10px] text-red-500">
-                    {t("financials.builder.plans.must_total_100", {
-                      current: formatNumber(billingTotal / 100, locale, "percent"),
-                    })}
-                  </p>
-                )}
-                <div className="grid grid-cols-1 gap-1.5 max-w-[140px]">
-                  <NumberField
-                    label={t("financials.builder.plans.field_credit_redemption")}
-                    tooltip={t("financials.builder.plans.field_credit_redemption_tooltip")}
-                    value={Math.round(inputs.creditRedemptionRate * 100)}
-                    step={5}
-                    max={100}
-                    onChange={(v) => setInputs({ creditRedemptionRate: v / 100, breakageRate: 1 - v / 100 })}
-                  />
-                </div>
-              </div>
-
-              {/* Per-tier cards */}
-              {inputs.tiers.map((tier, idx) => {
-                const meta = tierDisplayMeta?.find((m) => m.tierId === tier.tierId);
-                const hasBillingOverride = !!tier.billingDistribution;
-                const hasRedemptionOverride = tier.creditRedemptionRate != null;
-                const billingOverrideTotal = hasBillingOverride
-                  ? (tier.billingDistribution!.monthly + tier.billingDistribution!.quarterly + tier.billingDistribution!.annual)
-                  : 100;
-
-                // Compute estimated cost per subscriber for this tier
-                const tierRedemption = tier.creditRedemptionRate ?? inputs.creditRedemptionRate;
-                const creditCOGS = calculateCreditCOGS(
-                  tier.monthlyCredits,
-                  tierRedemption,
-                  inputs.avgCOGSToMemberPriceRatio
-                );
-                const estCostPerSub = calculateTotalCOGSPerSub(
-                  creditCOGS,
-                  tier.apparelCOGSPerMonth,
-                  inputs.fulfillmentCostPerOrder,
-                  inputs.shippingCostPerOrder
-                );
-
-                return (
-                  <div key={tier.tierId} className="rounded-lg border bg-background p-2.5 space-y-2.5">
-                    {/* Tier header */}
-                    <div className="flex items-center gap-1.5">
-                      {meta && (
-                        <span
-                          className="h-2 w-2 rounded-full shrink-0"
-                          style={{ backgroundColor: meta.colorAccent }}
-                        />
-                      )}
-                      <p className="text-xs font-semibold">{tier.tierId}</p>
-                    </div>
-
-                    {/* Plan Structure — read-only */}
-                    <div className="rounded-md bg-muted/50 px-2.5 py-2 space-y-1">
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <Lock className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                          {t("financials.builder.plans.plan_structure")}
-                        </span>
-                        <LinkedBadge label={t("financials.builder.linked_badge.from_plans")} />
-                      </div>
-                      <div className="text-xs text-muted-foreground leading-relaxed">
-                        <span className="text-foreground font-medium">
-                          {t("financials.builder.plans.price_per_month", {
-                            amount: formatNumberAsMoney(tier.monthlyPrice, locale),
-                          })}
-                        </span>
-                        {meta && meta.quarterlyPriceTotal > 0 && (
-                          <>
-                            {" · "}
-                            {t("financials.builder.plans.price_per_quarter", {
-                              amount: formatNumberAsMoney(meta.quarterlyPriceTotal, locale),
-                            })}{" "}
-                            <span className="text-muted-foreground">
-                              ({t("financials.builder.plans.price_per_month", {
-                                amount: formatNumberAsMoney(tier.quarterlyPricePerMonth, locale),
-                              })})
-                            </span>
-                          </>
-                        )}
-                        {meta && meta.annualPriceTotal > 0 && (
-                          <>
-                            {" · "}
-                            {t("financials.builder.plans.price_per_year", {
-                              amount: formatNumberAsMoney(meta.annualPriceTotal, locale),
-                            })}{" "}
-                            <span className="text-muted-foreground">
-                              ({t("financials.builder.plans.price_per_month", {
-                                amount: formatNumberAsMoney(tier.annualPricePerMonth, locale),
-                              })})
-                            </span>
-                          </>
-                        )}
-                      </div>
-                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-                        {tier.monthlyCredits > 0 && (
-                          <span>
-                            {t("financials.builder.plans.credits_per_month", {
-                              amount: formatNumberAsMoney(tier.monthlyCredits, locale),
-                            })}
-                          </span>
-                        )}
-                        {tier.apparelCOGSPerMonth > 0 && (
-                          <span>
-                            {t("financials.builder.plans.apparel_per_month", {
-                              amount: formatNumberAsMoney(tier.apparelCOGSPerMonth, locale),
-                            })}
-                          </span>
-                        )}
-                        {tier.monthlyCredits === 0 && tier.apparelCOGSPerMonth === 0 && (
-                          <span>{t("financials.builder.plans.no_credits_apparel")}</span>
-                        )}
-                        {meta && meta.trialDays > 0 && (
-                          <span>
-                            {t("financials.builder.plans.trial_days", { days: meta.trialDays })}
-                          </span>
-                        )}
-                        {meta && meta.setupFee > 0 && (
-                          <span>
-                            {t("financials.builder.plans.setup_fee", {
-                              amount: formatNumberAsMoney(meta.setupFee, locale),
-                            })}
-                          </span>
-                        )}
-                      </div>
-                      {/* Estimated cost per subscriber */}
-                      <div className="pt-1 border-t border-border/30 mt-1.5">
-                        <span className="text-xs">
-                          {t("financials.builder.plans.est_cost_label")}:{" "}
-                          <span className="text-foreground font-medium">
-                            {t("financials.builder.plans.est_cost_value", {
-                              amount: formatNumberAsMoney(
-                                Math.round(estCostPerSub * 100) / 100,
-                                locale,
-                              ),
-                            })}
-                          </span>
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Performance Assumptions — editable */}
-                    <div className="space-y-1.5">
-                      <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                        {t("financials.builder.plans.performance_section")}
-                      </span>
-                      <div className="grid grid-cols-3 gap-1.5">
-                        <NumberField
-                          label={t("financials.builder.plans.field_subscriber_mix")}
-                          tooltip={t("financials.builder.plans.field_subscriber_mix_tooltip")}
-                          value={tier.subscriberPercent}
-                          step={5}
-                          max={100}
-                          onChange={(v) => {
-                            const newTiers = [...inputs.tiers];
-                            newTiers[idx] = { ...newTiers[idx], subscriberPercent: v };
-                            setInputs({ tiers: newTiers });
-                          }}
-                        />
-                        <NumberField
-                          label={t("financials.builder.plans.field_monthly_churn")}
-                          tooltip={t("financials.builder.plans.field_monthly_churn_tooltip")}
-                          value={tier.churnRateMonthly}
-                          step={0.5}
-                          max={50}
-                          onChange={(v) => {
-                            const newTiers = [...inputs.tiers];
-                            newTiers[idx] = { ...newTiers[idx], churnRateMonthly: v };
-                            setInputs({ tiers: newTiers });
-                          }}
-                        />
-                        <NumberField
-                          label={t("financials.builder.plans.field_min_commit")}
-                          tooltip={t("financials.builder.plans.field_min_commit_tooltip")}
-                          value={tier.minimumCommitMonths ?? 1}
-                          step={1}
-                          max={24}
-                          onChange={(v) => {
-                            const newTiers = [...inputs.tiers];
-                            newTiers[idx] = { ...newTiers[idx], minimumCommitMonths: v };
-                            setInputs({ tiers: newTiers });
-                          }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Advanced Overrides — collapsible */}
-                    <TierAdvancedOverrides
-                      t={t}
-                      locale={locale}
-                      tier={tier}
-                      tierIdx={idx}
-                      globalBilling={inputs.billingCycleDistribution}
-                      globalRedemptionRate={inputs.creditRedemptionRate}
-                      hasBillingOverride={hasBillingOverride}
-                      hasRedemptionOverride={hasRedemptionOverride}
-                      billingOverrideTotal={billingOverrideTotal}
-                      onUpdateTier={(updates) => {
-                        const newTiers = [...inputs.tiers];
-                        newTiers[idx] = { ...newTiers[idx], ...updates };
-                        setInputs({ tiers: newTiers });
-                      }}
-                      onResetBilling={() => {
-                        const newTiers = [...inputs.tiers];
-                        const { billingDistribution: _, ...rest } = newTiers[idx];
-                        newTiers[idx] = rest as typeof newTiers[number];
-                        setInputs({ tiers: newTiers });
-                      }}
-                      onResetRedemption={() => {
-                        const newTiers = [...inputs.tiers];
-                        const { creditRedemptionRate: _, ...rest } = newTiers[idx];
-                        newTiers[idx] = rest as typeof newTiers[number];
-                        setInputs({ tiers: newTiers });
-                      }}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          </InputCard>
-        )}
       </div>
     </TooltipProvider>
     </ReadOnlyContext.Provider>
@@ -955,6 +1012,176 @@ function LinkedBadge({ label }: { label: string }) {
       <Link2 className="h-2.5 w-2.5" />
       {label}
     </span>
+  );
+}
+
+/**
+ * Per-tier add-ons (Path Scale and future hardware/services that introduce
+ * cohort-aware unit economics). Collapsible, with mode selector (None /
+ * Lease / Sale) and the corresponding fields.
+ */
+function TierAddOns({
+  tier,
+  onUpdateTier,
+}: {
+  tier: import("@/lib/financial-engine").TierFinancialInput;
+  onUpdateTier: (updates: Partial<import("@/lib/financial-engine").TierFinancialInput>) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const readOnly = useContext(ReadOnlyContext);
+  const pathScale = tier.addOns?.pathScale;
+  const hasPathScale = !!pathScale;
+
+  const setPathScaleMode = (mode: "none" | "purchase" | "lease") => {
+    if (mode === "none") {
+      onUpdateTier({ addOns: undefined });
+      return;
+    }
+    if (mode === "purchase") {
+      onUpdateTier({
+        addOns: {
+          pathScale: {
+            mode: "purchase",
+            purchaseAmount:
+              pathScale && pathScale.mode === "purchase"
+                ? pathScale.purchaseAmount
+                : 100,
+          },
+        },
+      });
+    } else {
+      onUpdateTier({
+        addOns: {
+          pathScale: {
+            mode: "lease",
+            monthlyFee: pathScale && pathScale.mode === "lease" ? pathScale.monthlyFee : 12,
+            leaseMonths: pathScale && pathScale.mode === "lease" ? pathScale.leaseMonths : 12,
+          },
+        },
+      });
+    }
+  };
+
+  return (
+    <div className="border-t border-border/50 pt-1.5">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors w-full"
+      >
+        <ChevronRight className={cn("h-3 w-3 transition-transform duration-150", open && "rotate-90")} />
+        <span className="font-medium uppercase tracking-wider">Add-ons</span>
+        {hasPathScale && (
+          <span className="ml-auto text-[9px] rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 px-1.5 py-0.5 font-semibold">
+            Path Scale · {pathScale!.mode === "purchase" ? "Purchase" : "Lease"}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div className="mt-2 space-y-2.5">
+          <div className="rounded-md border border-border/60 p-2.5 space-y-2">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="text-[11px] font-semibold leading-tight">Path Scale</p>
+                <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">
+                  Smart scale that tracks subscriber health metrics.
+                </p>
+              </div>
+              {!readOnly && (
+                <div className="flex items-center gap-0.5 rounded-md bg-muted/40 p-0.5 shrink-0">
+                  {(["none", "purchase", "lease"] as const).map((m) => {
+                    const active =
+                      m === "none" ? !hasPathScale : pathScale?.mode === m;
+                    return (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setPathScaleMode(m)}
+                        className={cn(
+                          "px-2 py-0.5 rounded text-[10px] font-medium transition-colors capitalize",
+                          active
+                            ? "bg-foreground text-background"
+                            : "text-muted-foreground hover:text-foreground",
+                        )}
+                      >
+                        {m}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {pathScale?.mode === "purchase" && (
+              <div className="grid grid-cols-1 gap-1.5">
+                <NumberField
+                  label="Purchase $/sub"
+                  tooltip="One-time amount we pay the supplier per new subscriber to acquire the Path Scale unit at signup. Sunk cost — applies on every net new sub regardless of subsequent churn."
+                  value={pathScale.purchaseAmount}
+                  step={10}
+                  max={5000}
+                  readOnly={readOnly || undefined}
+                  onChange={(v) =>
+                    onUpdateTier({
+                      addOns: {
+                        pathScale: { mode: "purchase", purchaseAmount: v },
+                      },
+                    })
+                  }
+                />
+              </div>
+            )}
+
+            {pathScale?.mode === "lease" && (
+              <div className="grid grid-cols-2 gap-1.5">
+                <NumberField
+                  label="Monthly fee $"
+                  tooltip="Lease fee Bucked Up pays per active subscriber every month during the lease window."
+                  value={pathScale.monthlyFee}
+                  step={1}
+                  max={500}
+                  readOnly={readOnly || undefined}
+                  onChange={(v) =>
+                    onUpdateTier({
+                      addOns: {
+                        pathScale: { mode: "lease", monthlyFee: v, leaseMonths: pathScale.leaseMonths },
+                      },
+                    })
+                  }
+                />
+                <NumberField
+                  label="Lease months"
+                  tooltip="Number of months the lease runs. After this period the scale becomes Bucked Up's property — no further payments."
+                  value={pathScale.leaseMonths}
+                  step={1}
+                  max={36}
+                  readOnly={readOnly || undefined}
+                  onChange={(v) =>
+                    onUpdateTier({
+                      addOns: {
+                        pathScale: { mode: "lease", monthlyFee: pathScale.monthlyFee, leaseMonths: v },
+                      },
+                    })
+                  }
+                />
+              </div>
+            )}
+
+            {pathScale?.mode === "purchase" && (
+              <p className="text-[10px] text-muted-foreground">
+                We pay the supplier ${pathScale.purchaseAmount} per new subscriber at signup to acquire the Path Scale. We own the unit — no further payments regardless of churn.
+              </p>
+            )}
+            {pathScale?.mode === "lease" && (
+              <p className="text-[10px] text-muted-foreground">
+                We pay the supplier ${pathScale.monthlyFee}/sub/mo for the first {pathScale.leaseMonths} months while each subscriber stays active. After that the scale is ours — no further payments.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1050,13 +1277,13 @@ function TierAdvancedOverrides({
               <NumberField
                 label={t("financials.builder.overrides.field_qtr")}
                 tooltip={t("financials.builder.overrides.field_qtr_tooltip")}
-                value={hasBillingOverride ? tier.billingDistribution!.quarterly : globalBilling.quarterly}
+                value={hasBillingOverride ? tier.billingDistribution!.biannual : globalBilling.biannual}
                 step={5}
                 max={100}
                 readOnly={readOnly || undefined}
                 onChange={(v) => {
                   const base = tier.billingDistribution ?? { ...globalBilling };
-                  onUpdateTier({ billingDistribution: { ...base, quarterly: v } });
+                  onUpdateTier({ billingDistribution: { ...base, biannual: v } });
                 }}
               />
               <NumberField
@@ -1141,14 +1368,19 @@ function InputCard({
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <div className="rounded-lg border bg-muted/30">
+    // Card surface intentionally white (bg-card) instead of bg-muted/30 —
+    // the tinted gray was reading as "secondary content" against the
+    // white sub-panel background, blurring section boundaries. White
+    // surfaces with the standard border give cleaner, more readable
+    // separation for each assumption block.
+    <div className="rounded-lg border bg-card">
       {/* Collapsible header */}
       <div
         role="button"
         tabIndex={0}
         onClick={() => setOpen(!open)}
         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(!open); } }}
-        className="flex items-center justify-between w-full px-3 py-2.5 text-left hover:bg-muted/50 transition-colors rounded-lg cursor-pointer select-none"
+        className="flex items-center justify-between w-full px-3 py-2.5 text-left hover:bg-muted/30 transition-colors rounded-lg cursor-pointer select-none"
       >
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-muted-foreground shrink-0">{icon}</span>
@@ -1187,13 +1419,14 @@ function InputCard({
         </div>
       </div>
 
-      {/* Collapsible content */}
+      {/* Collapsible content. With the outer card now white, we no
+          longer need an inner contrast surface — just padding and a
+          top divider so the body reads as a continuation of the
+          header rather than a nested element. */}
       {open && (
-        <div className="px-3 pb-3">
-          <div className="rounded-md bg-background p-3">
-            {children}
-            {error && <p className="text-[11px] text-red-500 mt-1.5">{error}</p>}
-          </div>
+        <div className="px-3 pb-3 pt-2 border-t border-border/40">
+          {children}
+          {error && <p className="text-[11px] text-red-500 mt-1.5">{error}</p>}
         </div>
       )}
     </div>
@@ -1281,6 +1514,370 @@ function NumberField({
           className="h-8 text-sm"
         />
       )}
+    </div>
+  );
+}
+
+/**
+ * Reference Package selector — anchors COGS-per-sub to a real package from
+ * the catalog. When the user picks a package, every tier's
+ * `packageCOGSPerSub` is set to that package's per-tier variant total
+ * (sum of qty × costOfGoods over the products attached to the variant).
+ * Cleared = back to the apparelBudget heuristic. Critical: this is the
+ * authoritative input for tier margin from this point forward, so the
+ * onChange must atomically update BOTH `referencePackageId` AND every
+ * affected tier in a single setInputs call.
+ */
+function ReferencePackageSelector({
+  packagesCatalog,
+  inputs,
+  setInputs,
+  readOnly,
+  locale,
+}: {
+  packagesCatalog: import("@/app/admin/financials/data").PackageCatalogEntry[];
+  inputs: import("@/lib/financial-engine").FinancialInputs;
+  setInputs: (next: Partial<import("@/lib/financial-engine").FinancialInputs>) => void;
+  readOnly: boolean;
+  locale: Locale;
+}) {
+  const NONE = "__none";
+  const selected = inputs.referencePackageId ?? NONE;
+  const onChange = (next: string) => {
+    if (next === NONE) {
+      // Clear reference package — strip packageCOGSPerSub from every tier.
+      const tiers = inputs.tiers.map((t) => {
+        const { packageCOGSPerSub: _drop, ...rest } = t;
+        void _drop;
+        return rest as typeof t;
+      });
+      setInputs({ referencePackageId: undefined, tiers });
+      return;
+    }
+    const pkg = packagesCatalog.find((p) => p.id === next);
+    if (!pkg) return;
+    const tiers = inputs.tiers.map((t) => ({
+      ...t,
+      // Per-tier variant COGS from the chosen package. If a particular tier
+      // has no variant in this package, fall back to keeping any existing
+      // value (or undefined if there was none) — that signals "missing
+      // configuration" without silently zeroing out the COGS.
+      packageCOGSPerSub: pkg.perTierCOGS[t.tierId] ?? t.packageCOGSPerSub,
+    }));
+    setInputs({ referencePackageId: next, tiers });
+  };
+
+  const activePkg = packagesCatalog.find((p) => p.id === selected);
+
+  return (
+    <div className="rounded-md border border-border/60 bg-muted/20 p-2.5 space-y-2">
+      <div className="flex items-center gap-2">
+        <PackageIcon className="h-3.5 w-3.5 text-muted-foreground" />
+        <p className="text-[11px] font-semibold leading-tight">
+          Reference Package
+        </p>
+      </div>
+      <p className="text-[10px] text-muted-foreground leading-snug">
+        Anchor COGS-per-sub to a real package's per-tier products. Each tier's
+        cost in the projection becomes the sum of (qty × cost-of-goods) of the
+        products in that tier's variant — replacing the flat apparel-budget
+        guess.
+      </p>
+      <Select value={selected} onValueChange={onChange} disabled={readOnly}>
+        <SelectTrigger className="h-8 text-xs border-dashed">
+          {/* Render the human label, not the raw value (which is a UUID).
+              Base UI's <SelectValue /> with no children renders the raw
+              value as fallback text — providing explicit children solves
+              the "trigger shows UUID" problem. */}
+          <span className="truncate">
+            {selected === NONE
+              ? "None — use apparel budget heuristic"
+              : (activePkg?.name ?? "Select package…")}
+          </span>
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={NONE} className="text-xs">
+            None — use apparel budget heuristic
+          </SelectItem>
+          {packagesCatalog.map((p) => (
+            <SelectItem key={p.id} value={p.id} className="text-xs">
+              {p.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {activePkg && (
+        <div className="space-y-1 pt-1 border-t border-border/40">
+          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            Per-tier COGS from {activePkg.name}
+          </p>
+          <div className="space-y-1">
+            {inputs.tiers.map((t) => (
+              <PackageTierBreakdown
+                key={t.tierId}
+                tierName={t.tierId}
+                total={activePkg.perTierCOGS[t.tierId]}
+                products={activePkg.perTierProducts[t.tierId]}
+                locale={locale}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * One row inside the Reference Package's per-tier breakdown — a clickable
+ * disclosure that, when expanded, shows the line-item product list (qty
+ * × cost-each → subtotal) backing the tier's COGS total. Lets the CFO
+ * inspect exactly which products contribute to the projection's per-sub
+ * cost without leaving the panel.
+ */
+function PackageTierBreakdown({
+  tierName,
+  total,
+  products,
+  locale,
+}: {
+  tierName: string;
+  total: number | undefined;
+  products: import("@/app/admin/financials/data").PackageProductBreakdown[] | undefined;
+  locale: Locale;
+}) {
+  const [open, setOpen] = useState(false);
+  const hasProducts = products != null && products.length > 0;
+  return (
+    <div className="rounded bg-background/50">
+      <button
+        type="button"
+        onClick={() => hasProducts && setOpen((v) => !v)}
+        disabled={!hasProducts}
+        className="w-full flex items-center justify-between gap-1.5 px-1.5 py-1 text-[10px]"
+      >
+        <span className="flex items-center gap-1 min-w-0">
+          {hasProducts ? (
+            open ? (
+              <ChevronDown className="h-2.5 w-2.5 shrink-0 text-muted-foreground" />
+            ) : (
+              <ChevronRight className="h-2.5 w-2.5 shrink-0 text-muted-foreground" />
+            )
+          ) : (
+            <span className="w-2.5 shrink-0" />
+          )}
+          <span className="text-muted-foreground truncate">{tierName}</span>
+        </span>
+        <span className="font-semibold tabular-nums shrink-0">
+          {total != null ? `${formatNumberAsMoney(total, locale)}/sub/mo` : "—"}
+        </span>
+      </button>
+      {open && hasProducts && (
+        <div className="border-t border-border/30 px-2 py-1.5 space-y-0.5 text-[10px]">
+          {products.map((p) => (
+            <div
+              key={p.productId}
+              className="flex items-center justify-between gap-2"
+            >
+              <span className="text-muted-foreground truncate">
+                {p.quantity > 1 ? `${p.quantity}× ` : ""}
+                {p.name}
+              </span>
+              <span className="tabular-nums shrink-0 text-muted-foreground">
+                {p.quantity > 1 ? (
+                  <>
+                    {formatNumberAsMoney(p.costEach, locale)} ×{" "}
+                    {p.quantity} ={" "}
+                    <span className="text-foreground font-medium">
+                      {formatNumberAsMoney(p.subtotal, locale)}
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-foreground font-medium">
+                    {formatNumberAsMoney(p.subtotal, locale)}
+                  </span>
+                )}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+/**
+ * One expandable row inside a Plan card showing a single billing cadence
+ * (Monthly / Biannual / Annual). Collapsed view shows the headline
+ * revenue rate; expanded view shows the per-sub cost breakdown that
+ * actually feeds the projection: Product COGS (from the selected
+ * reference package, if any), Shipping + Handling and Payment
+ * Processing (per-tier from the SubscriptionTier table). Apparel
+ * budget and free trial are intentionally absent — they don't
+ * participate in the projection's cost math.
+ *
+ * Cost components are PER MONTH:
+ * - productCOGS / shipping / handling are inherently monthly (the
+ *   customer still receives monthly fulfillment regardless of how
+ *   they paid).
+ * - Payment processing is per-TRANSACTION. We amortize: a biannual
+ *   transaction = `ratePerMonth × 6` charged once every 6 months, so
+ *   the monthly equivalent is `(rate × 6 × pct + flat) / 6`. That
+ *   matches what the engine bakes into blended revenue.
+ */
+function PlanVariationRow({
+  label,
+  months,
+  ratePerMonth,
+  tier,
+  globalFulfillment,
+  globalShipping,
+  locale,
+}: {
+  label: string;
+  months: 1 | 6 | 12;
+  ratePerMonth: number;
+  tier: import("@/lib/financial-engine").TierFinancialInput;
+  globalFulfillment: number;
+  globalShipping: number;
+  locale: Locale;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const productCOGS = tier.packageCOGSPerSub ?? tier.apparelCOGSPerMonth ?? 0;
+  // Mirror the engine's fallback: prefer per-tier shipping+handling from
+  // the SubscriptionTier table when present, otherwise fall back to the
+  // scenario-level global values. Without this fallback, legacy snapshots
+  // (saved before per-tier costs were captured) would show $0 here even
+  // though the engine actually charges global fulfillment+shipping.
+  const hasPerTierShippingHandling =
+    tier.avgShippingCost != null && tier.avgHandlingCost != null;
+  const shippingHandling = hasPerTierShippingHandling
+    ? (tier.avgShippingCost ?? 0) + (tier.avgHandlingCost ?? 0)
+    : globalFulfillment + globalShipping;
+
+  // Per-transaction processing fee: rate × cadence-months × pct + flat
+  // (paid once per cycle). Amortize across the cycle for the monthly view.
+  const transactionRevenue = ratePerMonth * months;
+  const processingPerTransaction =
+    transactionRevenue * ((tier.processingFeePct ?? 0) / 100) +
+    (tier.processingFeeFlat ?? 0);
+  const processingPerMonth = processingPerTransaction / months;
+
+  const totalCostPerMonth = productCOGS + shippingHandling + processingPerMonth;
+  const profitPerMonth = ratePerMonth - totalCostPerMonth;
+  const marginPercent =
+    ratePerMonth > 0 ? (profitPerMonth / ratePerMonth) * 100 : 0;
+
+  const totalPrepaid = ratePerMonth * months;
+
+  return (
+    <div className="rounded bg-background/60">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between gap-2 px-2 py-1 text-xs"
+      >
+        <span className="flex items-center gap-1 min-w-0">
+          {open ? (
+            <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
+          ) : (
+            <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground" />
+          )}
+          <span className="text-foreground font-medium">{label}</span>
+        </span>
+        <span className="tabular-nums shrink-0 text-muted-foreground">
+          <span className="text-foreground font-medium">
+            {formatNumberAsMoney(ratePerMonth, locale)}
+          </span>
+          /mo
+          {months > 1 && (
+            <>
+              {" · "}
+              {formatNumberAsMoney(totalPrepaid, locale)}/{months}mo
+            </>
+          )}
+        </span>
+      </button>
+      {open && (
+        <div className="border-t border-border/30 px-2 py-1.5 space-y-0.5 text-[10px]">
+          <BreakdownLine
+            label="Revenue"
+            value={ratePerMonth}
+            locale={locale}
+            sign="positive"
+          />
+          {productCOGS > 0 && (
+            <BreakdownLine
+              label="Product COGS"
+              value={-productCOGS}
+              locale={locale}
+            />
+          )}
+          {shippingHandling > 0 && (
+            <BreakdownLine
+              label="Shipping + Handling"
+              value={-shippingHandling}
+              locale={locale}
+            />
+          )}
+          {processingPerMonth > 0 && (
+            <BreakdownLine
+              label="Payment Processing"
+              value={-processingPerMonth}
+              locale={locale}
+            />
+          )}
+          <div className="flex items-center justify-between gap-2 border-t border-border/30 pt-0.5 mt-0.5">
+            <span className="text-muted-foreground font-medium">Profit</span>
+            <span
+              className={cn(
+                "tabular-nums font-semibold",
+                profitPerMonth >= 0 ? "text-emerald-600" : "text-red-500",
+              )}
+            >
+              {formatNumberAsMoney(profitPerMonth, locale)}/mo
+              <span className="text-muted-foreground font-normal ml-1.5">
+                ({marginPercent.toFixed(1)}%)
+              </span>
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Single label/amount row inside a PlanVariationRow expansion. Negative
+ * values are tinted to read as deductions; positive (revenue) reads as
+ * neutral foreground. Keeps the breakdown lines compact and consistent.
+ */
+function BreakdownLine({
+  label,
+  value,
+  locale,
+  sign,
+}: {
+  label: string;
+  value: number;
+  locale: Locale;
+  sign?: "positive";
+}) {
+  const isNegative = value < 0;
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <span className="text-muted-foreground">{label}</span>
+      <span
+        className={cn(
+          "tabular-nums",
+          isNegative ? "text-muted-foreground" : sign === "positive" ? "text-foreground" : "",
+        )}
+      >
+        {isNegative ? "-" : ""}
+        {formatNumberAsMoney(Math.abs(value), locale)}
+      </span>
     </div>
   );
 }

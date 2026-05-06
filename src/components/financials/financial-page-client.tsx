@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useFinancialStore } from "@/stores/financial-store";
+import { useUIStore } from "@/stores/ui-store";
 import type {
   TierFinancialInput,
   PartnerKickbackInput,
@@ -14,7 +15,7 @@ import type {
   FullyLoadedCommissionInput,
 } from "@/lib/financial-engine";
 import type { OpexCategoryData } from "@/lib/opex-resolver";
-import type { DataSourceMeta, TierDisplayMeta } from "@/app/admin/financials/data";
+import type { DataSourceMeta, TierDisplayMeta, PackageCatalogEntry } from "@/app/admin/financials/data";
 import { ScenarioBuilder } from "./scenario-builder";
 import { ExecutiveSummary } from "./executive-summary";
 import { MetricsPanel } from "./metrics-panel";
@@ -59,6 +60,7 @@ import {
   Trash2,
   Maximize2,
   Minimize2,
+  PanelLeftOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/locale-context";
@@ -146,6 +148,8 @@ interface FinancialPageClientProps {
   dataSourceMeta?: DataSourceMeta;
   // New: tier display metadata for read-only plan structure display
   tierDisplayMeta?: TierDisplayMeta[];
+  // Reference packages catalog (for COGS-from-package selector in Plans card).
+  packagesCatalog?: PackageCatalogEntry[];
   // 1.5.6a-bis: required for locale-aware formatting in children
   locale: Locale;
 }
@@ -168,6 +172,7 @@ export function FinancialPageClient({
   fullyLoadedCommissionData,
   dataSourceMeta,
   tierDisplayMeta,
+  packagesCatalog,
   locale,
 }: FinancialPageClientProps) {
   const router = useRouter();
@@ -181,6 +186,13 @@ export function FinancialPageClient({
 
   // Time period for projection
   const [timePeriod, setTimePeriod] = useState<TimePeriod>("month");
+  // Track the active projection tab so we can hide controls that don't
+  // apply to certain views — e.g. the time-period selector is meaningless
+  // on the Summary tab (which shows a single point-in-time snapshot)
+  // and on the Cohort tab (which has its own per-month / per-cohort
+  // axis). Showing it there made it look like changing the period
+  // affected those views, when it didn't.
+  const [activeProjectionTab, setActiveProjectionTab] = useState("summary");
   const [customMonths, setCustomMonths] = useState(6);
 
   // Remix modal state
@@ -201,17 +213,52 @@ export function FinancialPageClient({
   // Full-screen projection view
   const [fullScreen, setFullScreen] = useState(false);
 
-  if (initialized.current == null) {
+  // Seed the financial store on first mount. Doing this in useEffect (not
+  // synchronously during render) prevents the React warning "Cannot update
+  // a component while rendering a different component" — Zustand's `set()`
+  // would otherwise notify every subscriber (including sibling panels) in
+  // the middle of FinancialPageClient's render. The `initialized` ref
+  // guards against re-running on re-mounts (e.g. fast refresh).
+  useEffect(() => {
+    if (initialized.current) return;
     initialized.current = true;
     if (initialInputs) {
-      // For existing models, inject current OPEX data if the model uses milestone-scaled mode
+      // For existing models, inject current OPEX data if the model uses milestone-scaled mode.
       const migratedInputs = { ...initialInputs };
       if (migratedInputs.operationalOverhead?.mode === "milestone-scaled" && opexData.length > 0) {
         migratedInputs.operationalOverhead = { ...migratedInputs.operationalOverhead, opexData };
       }
+      // Refresh per-tier PLAN STRUCTURE from the current SubscriptionTier
+      // table — pricing, credits, per-tier shipping/handling/processing
+      // are immutable inputs (controlled by the plan admin, not the
+      // projection editor). Saved snapshots from before any of these
+      // fields existed (or saved when the engine had a different
+      // `biannualPrice` interpretation) would otherwise display stale
+      // values that disagree with the live plan detail page. The
+      // EDITABLE projection fields (subscriberPercent, churnRateMonthly,
+      // billingDistribution overrides, addOns, packageCOGSPerSub) are
+      // preserved from the snapshot.
+      const tierByName = new Map(tierData.map((t) => [t.tierId, t]));
+      migratedInputs.tiers = migratedInputs.tiers.map((saved) => {
+        const current = tierByName.get(saved.tierId);
+        if (!current) return saved;
+        return {
+          ...saved,
+          // Pull immutable plan-structure fields from current DB.
+          monthlyPrice: current.monthlyPrice,
+          biannualPricePerMonth: current.biannualPricePerMonth,
+          annualPricePerMonth: current.annualPricePerMonth,
+          monthlyCredits: current.monthlyCredits,
+          apparelCOGSPerMonth: current.apparelCOGSPerMonth,
+          avgShippingCost: current.avgShippingCost,
+          avgHandlingCost: current.avgHandlingCost,
+          processingFeePct: current.processingFeePct,
+          processingFeeFlat: current.processingFeeFlat,
+        };
+      });
       loadInputs(migratedInputs, initialName);
     } else {
-      // New model: initialize with all available structured data
+      // New model: initialize with all available structured data.
       setInputs({
         tiers: tierData,
         commissionStructure: commissionData,
@@ -225,7 +272,10 @@ export function FinancialPageClient({
         ...(productShippingCost != null && { shippingCostPerOrder: productShippingCost }),
       });
     }
-  }
+    // Intentionally only on mount — props above are server-rendered initial
+    // values; we don't want to reseed if the parent re-renders.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSave = useCallback(async () => {
     if (!modelName.trim()) {
@@ -371,16 +421,31 @@ export function FinancialPageClient({
   }, [modelId, router, t]);
 
   const isNewModel = !modelId;
+  const subPanelId = useUIStore((s) => s.subPanelId);
+  const subPanelCollapsed = useUIStore((s) => s.subPanelCollapsed);
+  const setSubPanelCollapsed = useUIStore((s) => s.setSubPanelCollapsed);
+  const showExpandButton = !!subPanelId && subPanelCollapsed;
 
   const periodMultiplier = getTimePeriodMultiplier(timePeriod, customMonths);
   const periodLabel = getTimePeriodLabel(timePeriod, customMonths, t);
 
   return (
-    <div className="flex flex-col -m-6 h-[100vh] overflow-hidden">
-      {/* Header — breadcrumb + buttons, with border underneath */}
+    <div className="flex flex-col h-[100vh] overflow-hidden">
+      {/* Header — breadcrumb + buttons. Border-b spans the full width
+          touching the sidebar (no horizontal padding on this row). */}
       <div className="flex items-center justify-between shrink-0 border-b py-4 px-4">
-        {/* Left: breadcrumb */}
+        {/* Left: expand-panel button (when sub-panel is collapsed) + breadcrumb */}
         <nav className="flex items-center gap-2 text-base">
+          {showExpandButton && (
+            <button
+              type="button"
+              onClick={() => setSubPanelCollapsed(false)}
+              className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-accent"
+              title="Expand panel"
+            >
+              <PanelLeftOpen className="h-[18px] w-[18px]" />
+            </button>
+          )}
           <Link
             href="/admin/operation/finances/projections"
             className="text-muted-foreground hover:text-foreground transition-colors"
@@ -476,10 +541,12 @@ export function FinancialPageClient({
         </div>
       </div>
 
-      {/* Main content: 50/50 split (or full-width when fullScreen) */}
+      {/* Main content: 400px assumptions / projection takes the rest.
+          When fullScreen, the projection overlays the entire viewport
+          (covering the admin sidebar/header) via `fixed inset-0 z-50`. */}
       <div className={cn(
         "gap-4 flex-1 min-h-0 p-4",
-        fullScreen ? "flex" : "grid grid-cols-2"
+        fullScreen ? "flex" : "grid grid-cols-[400px_minmax(0,1fr)]"
       )}>
         {/* Left: Assumptions */}
         {!fullScreen && (
@@ -496,6 +563,7 @@ export function FinancialPageClient({
                 defaultOpen={editing || isNewModel}
                 dataSourceMeta={dataSourceMeta}
                 tierDisplayMeta={tierDisplayMeta}
+                packagesCatalog={packagesCatalog}
                 locale={locale}
               />
             </div>
@@ -503,100 +571,128 @@ export function FinancialPageClient({
         )}
 
         {/* Right: Projection */}
-        <Tabs defaultValue="summary" className={cn("flex flex-col min-h-0", fullScreen && "flex-1")}>
+        <Tabs
+          value={activeProjectionTab}
+          onValueChange={setActiveProjectionTab}
+          className={cn(
+            "flex flex-col min-h-0",
+            fullScreen
+              ? "fixed inset-0 z-50 bg-background p-4"
+              : "flex-1",
+          )}
+        >
           <div className="rounded-xl border bg-card flex flex-col min-h-0 flex-1">
-            <div className="px-4 flex items-center justify-between shrink-0" style={{ height: 68 }}>
-              <div className="flex items-center gap-3">
-                <h2 className="text-sm font-semibold">
-                  {t("financials.toolbar.projection_title")}
-                </h2>
-                <div className="flex items-center gap-2">
-                  <Select
-                    value={timePeriod}
-                    onValueChange={(v) => setTimePeriod(v as TimePeriod)}
-                  >
-                    <SelectTrigger className="h-7 w-[110px] text-xs border-dashed capitalize">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="month" className="text-xs">
-                        {t("financials.toolbar.time_period.month")}
-                      </SelectItem>
-                      <SelectItem value="quarter" className="text-xs">
-                        {t("financials.toolbar.time_period.quarter")}
-                      </SelectItem>
-                      <SelectItem value="semester" className="text-xs">
-                        {t("financials.toolbar.time_period.semester")}
-                      </SelectItem>
-                      <SelectItem value="year" className="text-xs">
-                        {t("financials.toolbar.time_period.year")}
-                      </SelectItem>
-                      <SelectItem value="custom" className="text-xs">
-                        {t("financials.toolbar.time_period.custom")}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {timePeriod === "custom" && (
-                    <div className="flex items-center gap-1">
-                      <Input
-                        type="number"
-                        min={1}
-                        max={60}
-                        value={customMonths}
-                        onChange={(e) =>
-                          setCustomMonths(
-                            Math.max(1, Math.min(60, parseInt(e.target.value) || 1))
-                          )
-                        }
-                        className="h-7 w-14 text-xs text-center border-dashed"
-                      />
-                      <span className="text-[10px] text-muted-foreground">
-                        {t("financials.toolbar.time_period.month_short")}
-                      </span>
+            {/* Header: when the projection panel is narrow, title + period +
+                tabs scroll horizontally INSIDE the header so nothing falls
+                off the screen. The minimize/maximize button is absolutely
+                positioned on the right and always reachable, with a fade
+                gradient masking content that scrolls under it. */}
+            <div className="relative shrink-0 border-b" style={{ height: 68 }}>
+              <div className="absolute inset-0 pl-4 pr-14 flex items-center gap-3 overflow-x-auto scrollbar-thin">
+                <div className="flex items-center gap-3 shrink-0">
+                  <h2 className="text-sm font-semibold">
+                    {t("financials.toolbar.projection_title")}
+                  </h2>
+                  {/* Time period applies only to views that scale a
+                      headline figure by period (Statement). Summary is a
+                      point-in-time snapshot; Spreadsheet/Cohort/Metrics/
+                      Charts have their own time axes. Hiding the selector
+                      on those tabs prevents users from thinking it
+                      controls something it doesn't. */}
+                  {activeProjectionTab === "statement" && (
+                    <div className="flex items-center gap-2">
+                      <Select
+                        value={timePeriod}
+                        onValueChange={(v) => setTimePeriod(v as TimePeriod)}
+                      >
+                        <SelectTrigger className="h-7 w-[110px] text-xs border-dashed capitalize">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="month" className="text-xs">
+                            {t("financials.toolbar.time_period.month")}
+                          </SelectItem>
+                          <SelectItem value="quarter" className="text-xs">
+                            {t("financials.toolbar.time_period.quarter")}
+                          </SelectItem>
+                          <SelectItem value="semester" className="text-xs">
+                            {t("financials.toolbar.time_period.semester")}
+                          </SelectItem>
+                          <SelectItem value="year" className="text-xs">
+                            {t("financials.toolbar.time_period.year")}
+                          </SelectItem>
+                          <SelectItem value="custom" className="text-xs">
+                            {t("financials.toolbar.time_period.custom")}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {timePeriod === "custom" && (
+                        <div className="flex items-center gap-1">
+                          <Input
+                            type="number"
+                            min={1}
+                            max={60}
+                            value={customMonths}
+                            onChange={(e) =>
+                              setCustomMonths(
+                                Math.max(1, Math.min(60, parseInt(e.target.value) || 1))
+                              )
+                            }
+                            className="h-7 w-14 text-xs text-center border-dashed"
+                          />
+                          <span className="text-[10px] text-muted-foreground">
+                            {t("financials.toolbar.time_period.month_short")}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <TabsList className="h-8">
-                  <TabsTrigger value="summary" className="text-xs px-3 h-6">
+                <TabsList className="h-8 shrink-0 ml-auto">
+                  <TabsTrigger value="summary" className="text-xs px-3 h-6 shrink-0">
                     {t("financials.toolbar.tab.summary")}
                   </TabsTrigger>
-                  <TabsTrigger value="statement" className="text-xs px-3 h-6">
+                  <TabsTrigger value="statement" className="text-xs px-3 h-6 shrink-0">
                     {t("financials.toolbar.tab.statement")}
                   </TabsTrigger>
-                  <TabsTrigger value="spreadsheet" className="text-xs px-3 h-6">
+                  <TabsTrigger value="spreadsheet" className="text-xs px-3 h-6 shrink-0">
                     {t("financials.toolbar.tab.spreadsheet")}
                   </TabsTrigger>
-                  <TabsTrigger value="cohort" className="text-xs px-3 h-6">
+                  <TabsTrigger value="cohort" className="text-xs px-3 h-6 shrink-0">
                     {t("financials.toolbar.tab.cohort")}
                   </TabsTrigger>
-                  <TabsTrigger value="metrics" className="text-xs px-3 h-6">
+                  <TabsTrigger value="metrics" className="text-xs px-3 h-6 shrink-0">
                     {t("financials.toolbar.tab.metrics")}
                   </TabsTrigger>
-                  <TabsTrigger value="charts" className="text-xs px-3 h-6">
+                  <TabsTrigger value="charts" className="text-xs px-3 h-6 shrink-0">
                     {t("financials.toolbar.tab.charts")}
                   </TabsTrigger>
                 </TabsList>
-                <button
-                  type="button"
-                  onClick={() => setFullScreen(!fullScreen)}
-                  className="inline-flex items-center justify-center rounded-md h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                  title={
-                    fullScreen
-                      ? t("financials.toolbar.button.exit_full_screen")
-                      : t("financials.toolbar.button.full_screen")
-                  }
-                >
-                  {fullScreen ? (
-                    <Minimize2 className="h-3.5 w-3.5" />
-                  ) : (
-                    <Maximize2 className="h-3.5 w-3.5" />
-                  )}
-                </button>
               </div>
+              {/* Fade gradient to hint there's more content scrolling under
+                  the minimize button. */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute right-12 top-0 bottom-0 w-6 bg-gradient-to-l from-card to-transparent"
+              />
+              {/* Minimize/maximize — anchored to the right, always reachable. */}
+              <button
+                type="button"
+                onClick={() => setFullScreen(!fullScreen)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center rounded-md h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors bg-card"
+                title={
+                  fullScreen
+                    ? t("financials.toolbar.button.exit_full_screen")
+                    : t("financials.toolbar.button.full_screen")
+                }
+              >
+                {fullScreen ? (
+                  <Minimize2 className="h-3.5 w-3.5" />
+                ) : (
+                  <Maximize2 className="h-3.5 w-3.5" />
+                )}
+              </button>
             </div>
-            <div className="border-t" />
             <div className="flex-1 overflow-y-auto p-4 scrollbar-thin">
               <TabsContent value="summary" className="mt-0">
                 <ExecutiveSummary locale={locale} />

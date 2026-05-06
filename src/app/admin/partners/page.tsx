@@ -32,7 +32,7 @@ export default async function PartnersPage() {
       tier: {
         ...a.tier,
         monthlyPrice: toNumber(a.tier.monthlyPrice),
-        quarterlyPrice: toNumber(a.tier.quarterlyPrice),
+        biannualPrice: toNumber(a.tier.biannualPrice),
         annualPrice: toNumber(a.tier.annualPrice),
         monthlyCredits: toNumber(a.tier.monthlyCredits),
         partnerDiscountPercent: toNumber(a.tier.partnerDiscountPercent),
@@ -44,7 +44,7 @@ export default async function PartnersPage() {
   const serializedTiers = tiers.map((tier) => ({
     ...tier,
     monthlyPrice: toNumber(tier.monthlyPrice),
-    quarterlyPrice: toNumber(tier.quarterlyPrice),
+    biannualPrice: toNumber(tier.biannualPrice),
     annualPrice: toNumber(tier.annualPrice),
     monthlyCredits: toNumber(tier.monthlyCredits),
     partnerDiscountPercent: toNumber(tier.partnerDiscountPercent),

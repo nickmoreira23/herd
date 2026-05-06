@@ -4,8 +4,10 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -209,36 +211,67 @@ export function PackageDetailClient({
       <div className="space-y-4">
         <div className="flex items-start gap-4">
           <div className="flex-1 space-y-3">
-            <div className="flex items-center gap-2">
-              <Input
-                className="text-xl font-bold border-none px-0 h-auto focus-visible:ring-0 shadow-none"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                onBlur={() => {
-                  if (name !== pkg.name) {
-                    saveField("name", name);
-                    setPkg((p) => ({ ...p, name }));
-                  }
-                }}
-              />
-              <Badge className={GOAL_COLORS[pkg.fitnessGoal]}>
-                {GOAL_LABELS[pkg.fitnessGoal]}
-              </Badge>
+            {/* Package Name — editable. Surfaces as a real input with a
+                visible label and standard form-field affordances so the
+                user knows immediately it can be edited. (The previous
+                borderless heading look made it read like static text.) */}
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="package-name"
+                className="text-xs font-medium text-muted-foreground uppercase tracking-wider"
+              >
+                Package Name
+              </Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="package-name"
+                  className="text-xl font-bold h-auto py-2"
+                  placeholder="Name this package…"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onBlur={() => {
+                    const trimmed = name.trim();
+                    // Empty name would erase the package's title — refuse
+                    // and snap back to the saved value rather than save garbage.
+                    if (!trimmed) {
+                      setName(pkg.name);
+                      toast.error("Package name can't be empty");
+                      return;
+                    }
+                    if (trimmed !== pkg.name) {
+                      saveField("name", trimmed);
+                      setPkg((p) => ({ ...p, name: trimmed }));
+                    }
+                  }}
+                />
+                <Badge className={cn("shrink-0", GOAL_COLORS[pkg.fitnessGoal])}>
+                  {GOAL_LABELS[pkg.fitnessGoal]}
+                </Badge>
+              </div>
             </div>
 
-            <Textarea
-              placeholder="Package description..."
-              className="text-sm resize-none"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              onBlur={() => {
-                if (description !== (pkg.description || "")) {
-                  saveField("description", description || null);
-                  setPkg((p) => ({ ...p, description }));
-                }
-              }}
-              rows={2}
-            />
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="package-description"
+                className="text-xs font-medium text-muted-foreground uppercase tracking-wider"
+              >
+                Description
+              </Label>
+              <Textarea
+                id="package-description"
+                placeholder="Describe what this package includes and who it's for…"
+                className="text-sm resize-none"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                onBlur={() => {
+                  if (description !== (pkg.description || "")) {
+                    saveField("description", description || null);
+                    setPkg((p) => ({ ...p, description }));
+                  }
+                }}
+                rows={2}
+              />
+            </div>
           </div>
 
           <div className="flex flex-col items-end gap-2">

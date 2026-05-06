@@ -91,6 +91,14 @@ interface PackageWizardState {
   name: string;
   description: string;
   imageUrl: string | null;
+  /**
+   * Tracks whether the AI identity generator has already run for the
+   * current package. Once `true`, the auto-generator on Step 6
+   * (Identity) is skipped on every remount — preventing the AI from
+   * clobbering a name the user already typed when they navigate back to
+   * the step (e.g., via "Edit Identity" from Review).
+   */
+  aiIdentityRan: boolean;
 
   // Package created after Step 2 → 3 transition
   packageId: string | null;
@@ -118,6 +126,7 @@ interface PackageWizardState {
   setName: (name: string) => void;
   setDescription: (desc: string) => void;
   setImageUrl: (url: string | null) => void;
+  setAiIdentityRan: (v: boolean) => void;
   setPackageCreated: (id: string, tiers: TierInfo[]) => void;
   setActiveTier: (tierId: string) => void;
   addProduct: (tierId: string, product: LocalProduct) => void;
@@ -162,6 +171,7 @@ const INITIAL_STATE = {
   name: "",
   description: "",
   imageUrl: null as string | null,
+  aiIdentityRan: false,
   packageId: null as string | null,
   tiers: [] as TierInfo[],
   activeTierId: null as string | null,
@@ -191,6 +201,7 @@ export const usePackageWizardStore = create<PackageWizardState>()(
       setName: (name) => set({ name }),
       setDescription: (description) => set({ description }),
       setImageUrl: (imageUrl) => set({ imageUrl }),
+      setAiIdentityRan: (aiIdentityRan) => set({ aiIdentityRan }),
 
       setPackageCreated: (id, tiers) => {
         const tierProducts: Record<string, TierState> = {};
@@ -202,6 +213,10 @@ export const usePackageWizardStore = create<PackageWizardState>()(
           tiers,
           activeTierId: tiers[0]?.id ?? null,
           tierProducts,
+          // New package → arm the AI identity generator again. Without
+          // this, sessionStorage may carry a stale `aiIdentityRan: true`
+          // from a prior package and silently skip generation here.
+          aiIdentityRan: false,
         });
       },
 
@@ -325,6 +340,7 @@ export const usePackageWizardStore = create<PackageWizardState>()(
         name: state.name,
         description: state.description,
         imageUrl: state.imageUrl,
+        aiIdentityRan: state.aiIdentityRan,
         packageId: state.packageId,
         tiers: state.tiers,
         activeTierId: state.activeTierId,

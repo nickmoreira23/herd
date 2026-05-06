@@ -69,7 +69,7 @@ export function TierCreateSheet({ open, onOpenChange, onCreated }: TierCreateShe
           slug,
           status,
           monthlyPrice: price,
-          quarterlyPrice: price, // default same as monthly
+          biannualPrice: price, // default same as monthly
           annualPrice: price, // default same as monthly
           monthlyCredits: 0,
           partnerDiscountPercent: 0,

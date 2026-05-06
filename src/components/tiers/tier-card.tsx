@@ -406,6 +406,18 @@ export function TierCard({ tier, onDuplicate, onArchive, onDelete }: TierCardPro
           </PillarSection>
         </div>
       </div>
+
+      {/* Footer */}
+      <div className="shrink-0 border-t bg-muted/30 px-5 py-3">
+        <Link
+          href={`/subscribe/${tier.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center w-full h-8 rounded-md border border-input bg-background text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+        >
+          View Subscription Page
+        </Link>
+      </div>
     </div>
   );
 }

@@ -22,7 +22,7 @@ interface FinancialState {
 
 const DEFAULT_INPUTS: FinancialInputs = {
   tiers: [],
-  billingCycleDistribution: { monthly: 60, quarterly: 25, annual: 15 },
+  billingCycleDistribution: { monthly: 60, biannual: 25, annual: 15 },
   creditRedemptionRate: 0.65,
   avgCOGSToMemberPriceRatio: 0.2,
   breakageRate: 0.35,
@@ -31,12 +31,18 @@ const DEFAULT_INPUTS: FinancialInputs = {
   commissionStructure: {
     upfrontType: "flat",
     flatBonusPerSale: 50,
-    upfrontPercent: 100,
+    // 15% of plan price is a sane starting point for "% of Plan" upfront.
+    // The previous default of 100% silently turned commission into the full
+    // plan price whenever the user toggled to percent mode without changing
+    // the value — a CFO-grade footgun.
+    upfrontPercent: 15,
     residualPercent: 5,
     residualDelayMonths: 0,
     tierBonuses: [],
     percentHittingAccelerator: 20,
     acceleratorMultiplier: 1.5,
+    acceleratorThreshold: 1.5,
+    clawbackWindowDays: 60,
     payoutDelayMonths: 0,
   },
   salesRepChannel: {
@@ -55,6 +61,12 @@ const DEFAULT_INPUTS: FinancialInputs = {
   profitSplitParties: [],
   chargebackPercent: 0,
   chargebackFee: 15,
+  // Buck platform fees — flat per-sub/mo + estimated AI token usage cost.
+  buckPlatformFeePerSub: 5,
+  buckTokenCostPerSub: 2,
+  // Welcome Kit — one-time cost shipped to every new subscriber. Default
+  // to 0 (the user has to set the actual cost; we don't presume).
+  welcomeKitCostPerSub: 0,
 };
 
 export const useFinancialStore = create<FinancialState>((set, get) => ({
@@ -147,12 +159,100 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
       migrated.chargebackFee = 15;
     }
 
-    // Migrate tiers missing minimumCommitMonths
+    // Migrate old snapshots missing Buck platform fees.
+    if (migrated.buckPlatformFeePerSub == null) {
+      migrated.buckPlatformFeePerSub = 5;
+    }
+    if (migrated.buckTokenCostPerSub == null) {
+      migrated.buckTokenCostPerSub = 2;
+    }
+
+    // Migrate old snapshots missing Welcome Kit cost (default to free).
+    if (migrated.welcomeKitCostPerSub == null) {
+      migrated.welcomeKitCostPerSub = 0;
+    }
+
+    // Migrate `quarterly` → `biannual` across BillingDistribution and per-tier
+    // billing fields. Old snapshots (saved before the rename) have:
+    //   billingCycleDistribution: { monthly, quarterly, annual }
+    //   tier.quarterlyPricePerMonth
+    //   tier.billingDistribution: { monthly, quarterly, annual }
+    // The engine now expects `biannual`. Without this migration the engine
+    // gets `undefined` for the biannual share and the projection NaNs out.
+    const billing = migrated.billingCycleDistribution as
+      | { monthly: number; quarterly?: number; biannual?: number; annual: number }
+      | undefined;
+    if (billing && billing.biannual == null && billing.quarterly != null) {
+      migrated.billingCycleDistribution = {
+        monthly: billing.monthly,
+        biannual: billing.quarterly,
+        annual: billing.annual,
+      };
+    }
+
+    // Migrate tiers — minimumCommitMonths defaults + quarterly→biannual rename.
     if (migrated.tiers) {
-      migrated.tiers = migrated.tiers.map((t) => ({
-        ...t,
-        minimumCommitMonths: t.minimumCommitMonths ?? 1,
-      }));
+      migrated.tiers = migrated.tiers.map((t) => {
+        const tt = t as typeof t & {
+          quarterlyPricePerMonth?: number;
+          billingDistribution?: {
+            monthly: number;
+            quarterly?: number;
+            biannual?: number;
+            annual: number;
+          };
+        };
+        const next: typeof t = {
+          ...t,
+          minimumCommitMonths: t.minimumCommitMonths ?? 1,
+        };
+        // Rename `quarterlyPricePerMonth` → `biannualPricePerMonth`.
+        if (
+          (next as typeof tt).biannualPricePerMonth == null &&
+          tt.quarterlyPricePerMonth != null
+        ) {
+          (next as typeof tt).biannualPricePerMonth = tt.quarterlyPricePerMonth;
+        }
+        // Rename per-tier billingDistribution.quarterly → .biannual.
+        if (
+          tt.billingDistribution &&
+          tt.billingDistribution.biannual == null &&
+          tt.billingDistribution.quarterly != null
+        ) {
+          next.billingDistribution = {
+            monthly: tt.billingDistribution.monthly,
+            biannual: tt.billingDistribution.quarterly,
+            annual: tt.billingDistribution.annual,
+          };
+        }
+        // Migrate Path Scale add-on: legacy `mode: "sale"` (with
+        // `payoutAmount` / `payoutMonth`) → new `mode: "purchase"`
+        // (with `purchaseAmount`, paid at acquisition). The
+        // `payoutMonth` field is dropped; purchase is always at Mo 1
+        // since we pay the supplier on delivery, not later.
+        const legacyAddOns = (t as typeof t & {
+          addOns?: {
+            pathScale?: {
+              mode: "sale" | "purchase" | "lease";
+              payoutAmount?: number;
+              payoutMonth?: number;
+              purchaseAmount?: number;
+              monthlyFee?: number;
+              leaseMonths?: number;
+            };
+          };
+        }).addOns;
+        if (legacyAddOns?.pathScale?.mode === ("sale" as string)) {
+          const legacy = legacyAddOns.pathScale;
+          next.addOns = {
+            pathScale: {
+              mode: "purchase",
+              purchaseAmount: legacy.payoutAmount ?? legacy.purchaseAmount ?? 100,
+            },
+          };
+        }
+        return next;
+      });
     }
 
     set({

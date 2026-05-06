@@ -453,11 +453,16 @@ model SubscriptionTier {
   isFeatured Boolean                @default(false)
 
   // Pricing
-  monthlyPrice     Decimal       @db.Decimal(10, 2)
-  quarterlyPrice   Decimal       @db.Decimal(10, 2)
-  annualPrice      Decimal       @db.Decimal(10, 2)
-  quarterlyDisplay Decimal?      @db.Decimal(10, 2) // per-month equivalent shown to customer
-  annualDisplay    Decimal?      @db.Decimal(10, 2) // per-month equivalent shown to customer
+  // Each rate represents the DISCOUNTED PER-MONTH price the customer pays
+  // when committing to that billing cadence. The customer prepays the full
+  // cycle: biannual = rate × 6 charged once every 6 months; annual = rate
+  // × 12 charged once a year. Monthly is billed monthly with no discount.
+  // "Quarterly" billing does not exist in this product.
+  monthlyPrice    Decimal  @db.Decimal(10, 2)
+  biannualPrice   Decimal  @db.Decimal(10, 2)
+  annualPrice     Decimal  @db.Decimal(10, 2)
+  biannualDisplay Decimal? @db.Decimal(10, 2) // optional strikethrough price for marketing
+  annualDisplay   Decimal? @db.Decimal(10, 2) // optional strikethrough price for marketing
   setupFee         Decimal       @default(0) @db.Decimal(10, 2)
   trialDays        Int           @default(0)
   billingAnchor    BillingAnchor @default(SIGNUP_DATE)
@@ -638,8 +643,10 @@ model FinancialSnapshot {
 model TierPricingSnapshot {
   id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   subscriptionTierId String   @db.Uuid
+  // Per-month rates at the time of snapshot (see SubscriptionTier.biannualPrice
+  // and .annualPrice for semantics — the customer prepays rate × cycle).
   monthlyPrice       Decimal  @db.Decimal(10, 2)
-  quarterlyPrice     Decimal? @db.Decimal(10, 2)
+  biannualPrice      Decimal? @db.Decimal(10, 2)
   annualPrice        Decimal? @db.Decimal(10, 2)
   changedBy          String?
   reason             String?

@@ -8,6 +8,7 @@ import { getBlockLabel, getCategoryLabel } from "@/lib/blocks/block-labels";
 import { useLocale } from "@/lib/i18n/locale-context";
 import type { BlockCategory } from "@/lib/blocks/block-categories";
 import { DEFAULT_CATEGORY_COLOR, hexToRgba } from "@/lib/blocks/block-categories";
+import { PageHeader } from "@/components/layout/page-header";
 
 interface AllBlocksPageProps {
   initialCategories: BlockCategory[];
@@ -22,13 +23,10 @@ export function AllBlocksPage({ initialCategories, counts }: AllBlocksPageProps)
 
   return (
     <div className="space-y-8 p-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">All Blocks</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {totalBlocks} blocks across {categories.length} categories
-        </p>
-      </div>
+      <PageHeader
+        title="All Blocks"
+        description={`${totalBlocks} blocks across ${categories.length} categories`}
+      />
 
       {/* Category sections */}
       {categories.map((category) => {

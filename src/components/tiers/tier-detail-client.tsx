@@ -87,9 +87,9 @@ export interface TierFormState {
   isFeatured: boolean;
   // Pricing
   monthlyPrice: string;
-  quarterlyPrice: string;
+  biannualPrice: string;
   annualPrice: string;
-  quarterlyDisplay: string;
+  biannualDisplay: string;
   annualDisplay: string;
   setupFee: string;
   trialDays: string;
@@ -145,7 +145,7 @@ export interface TierPricingSnapshotSerialized {
   id: string;
   subscriptionTierId: string;
   monthlyPrice: number;
-  quarterlyPrice: number | null;
+  biannualPrice: number | null;
   annualPrice: number | null;
   changedBy: string | null;
   reason: string | null;
@@ -224,9 +224,9 @@ function tierToForm(tier: SubscriptionTier): TierFormState {
     visibility: (t.visibility as string) || "PUBLIC",
     isFeatured: tier.isFeatured,
     monthlyPrice: String(tier.monthlyPrice),
-    quarterlyPrice: String(tier.quarterlyPrice),
+    biannualPrice: String(tier.biannualPrice),
     annualPrice: String(tier.annualPrice),
-    quarterlyDisplay: t.quarterlyDisplay != null ? String(t.quarterlyDisplay) : "",
+    biannualDisplay: t.biannualDisplay != null ? String(t.biannualDisplay) : "",
     annualDisplay: t.annualDisplay != null ? String(t.annualDisplay) : "",
     setupFee: String(t.setupFee ?? 0),
     trialDays: String(t.trialDays ?? 0),
@@ -287,9 +287,9 @@ function formToPayload(form: TierFormState) {
     isActive: form.status === "ACTIVE",
     isFeatured: form.isFeatured,
     monthlyPrice: parseFloat(form.monthlyPrice) || 0,
-    quarterlyPrice: parseFloat(form.quarterlyPrice) || 0,
+    biannualPrice: parseFloat(form.biannualPrice) || 0,
     annualPrice: parseFloat(form.annualPrice) || 0,
-    quarterlyDisplay: form.quarterlyDisplay ? parseFloat(form.quarterlyDisplay) : undefined,
+    biannualDisplay: form.biannualDisplay ? parseFloat(form.biannualDisplay) : undefined,
     annualDisplay: form.annualDisplay ? parseFloat(form.annualDisplay) : undefined,
     setupFee: parseFloat(form.setupFee) || 0,
     trialDays: parseInt(form.trialDays) || 0,
@@ -1089,9 +1089,9 @@ const DEFAULT_FORM: TierFormState = {
   visibility: "PUBLIC",
   isFeatured: false,
   monthlyPrice: "",
-  quarterlyPrice: "",
+  biannualPrice: "",
   annualPrice: "",
-  quarterlyDisplay: "",
+  biannualDisplay: "",
   annualDisplay: "",
   setupFee: "0",
   trialDays: "0",

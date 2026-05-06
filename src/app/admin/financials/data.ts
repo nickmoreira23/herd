@@ -47,8 +47,8 @@ export interface TierDisplayMeta {
   setupFee: number;
   trialDays: number;
   apparelCadence: string; // "NONE" | "QUARTERLY" | "MONTHLY"
-  quarterlyPriceTotal: number; // raw quarterly price (not per-month)
-  annualPriceTotal: number; // raw annual price (not per-month)
+  biannualPriceTotal: number; // total prepayment for the 6-month commitment (rate × 6)
+  annualPriceTotal: number;   // total prepayment for the 12-month commitment (rate × 12)
 }
 
 // ─── Main data fetcher ──────────────────────────────────────────────
@@ -63,6 +63,7 @@ export const getFinancialDefaults = cache(async function getFinancialDefaults() 
     partners,
     opexCategories,
     products,
+    packages,
   ] = await Promise.all([
     prisma.subscriptionTier.findMany({ orderBy: { sortOrder: "asc" } }),
     prisma.commissionPlan.findFirst({
@@ -98,6 +99,27 @@ export const getFinancialDefaults = cache(async function getFinancialDefaults() 
         costOfGoods: true,
         handlingCost: true,
         shippingCost: true,
+      },
+    }),
+    prisma.package.findMany({
+      where: { status: { not: "ARCHIVED" } },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      include: {
+        variants: {
+          include: {
+            products: {
+              orderBy: { sortOrder: "asc" },
+              include: {
+                // Pull product name in addition to COGS so the
+                // Reference Package UI can show a per-tier line-item
+                // breakdown (qty × cost-each) and not just the lump
+                // total — that breakdown is how the CFO double-checks
+                // the cost figure feeding the projection.
+                product: { select: { id: true, name: true, costOfGoods: true } },
+              },
+            },
+          },
+        },
       },
     }),
   ]);
@@ -163,10 +185,21 @@ export const getFinancialDefaults = cache(async function getFinancialDefaults() 
   const tierData: TierFinancialInput[] = tiers.map((t) => ({
     tierId: t.name,
     monthlyPrice: toNumber(t.monthlyPrice),
-    quarterlyPricePerMonth:
-      Math.round((toNumber(t.quarterlyPrice) / 3) * 100) / 100,
-    annualPricePerMonth:
-      Math.round((toNumber(t.annualPrice) / 12) * 100) / 100,
+    // CRITICAL: `biannualPrice` and `annualPrice` in the SubscriptionTier
+    // table store the DISCOUNTED PER-MONTH rate the customer pays when
+    // prepaying — NOT the total prepayment amount.
+    //
+    // Example for Starter:
+    //   monthlyPrice  = $49 (no discount, billed monthly)
+    //   biannualPrice = $44 → customer pays $44/mo × 6 = $264 every 6 months
+    //   annualPrice    = $39 → customer pays $39/mo × 12 = $468 every 12 months
+    //
+    // The previous `biannualPrice / 6` collapsed $44/mo to $7.33/mo (a
+    // phantom 85% discount) — the root cause of projection gross margin
+    // sitting ~20pp below the per-tier package detail card. The fields
+    // are already per-month, so just pass them through.
+    biannualPricePerMonth: toNumber(t.biannualPrice),
+    annualPricePerMonth: toNumber(t.annualPrice),
     monthlyCredits: toNumber(t.monthlyCredits),
     apparelCOGSPerMonth: t.apparelBudget
       ? Math.round(toNumber(t.apparelBudget) * 0.4 * 100) / 100
@@ -175,6 +208,14 @@ export const getFinancialDefaults = cache(async function getFinancialDefaults() 
       tiers.length > 0 ? Math.round(100 / tiers.length) : 25,
     churnRateMonthly: 6,
     minimumCommitMonths: t.minimumCommitMonths ?? 1,
+    // Per-tier costs — drive the package profitability card AND, with this
+    // wire-through, the projection's per-tier COGS. Without these the
+    // engine would fall back to a flat global shipping/fulfillment that
+    // misrepresents what each tier actually costs to fulfill.
+    avgShippingCost: toNumber(t.avgShippingCost),
+    avgHandlingCost: toNumber(t.avgHandlingCost),
+    processingFeePct: toNumber(t.processingFeePct),
+    processingFeeFlat: toNumber(t.processingFeeFlat),
   }));
 
   // ─── Tier display metadata (read-only plan structure context) ──
@@ -185,8 +226,14 @@ export const getFinancialDefaults = cache(async function getFinancialDefaults() 
     setupFee: toNumber(t.setupFee),
     trialDays: t.trialDays,
     apparelCadence: t.apparelCadence,
-    quarterlyPriceTotal: toNumber(t.quarterlyPrice),
-    annualPriceTotal: toNumber(t.annualPrice),
+    // True prepayment totals — the customer pays the per-month rate
+    // multiplied by the number of months locked in. (`biannualPrice`
+    // and `annualPrice` in the DB are per-month values, so the total is
+    // rate × 6 for biannual and rate × 12 for annual.)
+    biannualPriceTotal:
+      Math.round(toNumber(t.biannualPrice) * 6 * 100) / 100,
+    annualPriceTotal:
+      Math.round(toNumber(t.annualPrice) * 12 * 100) / 100,
   }));
 
   // ─── Commission data ───────────────────────────────────────────
@@ -196,12 +243,16 @@ export const getFinancialDefaults = cache(async function getFinancialDefaults() 
   const commissionData: CommissionCalcInput = {
     upfrontType: "flat",
     flatBonusPerSale: 50,
-    upfrontPercent: 100,
+    // 15% — sane default for "% of Plan" mode (was 100% which silently
+    // pegged commission to full plan price on toggle).
+    upfrontPercent: 15,
     residualPercent: 5,
     residualDelayMonths: 0,
     tierBonuses: [],
     percentHittingAccelerator: 20,
     acceleratorMultiplier: 1.5,
+    acceleratorThreshold: 1.5,
+    clawbackWindowDays: 60,
     payoutDelayMonths: 0,
   };
   const hasCommissionPlan = false; // temporarily unlinked
@@ -325,6 +376,48 @@ export const getFinancialDefaults = cache(async function getFinancialDefaults() 
     },
   };
 
+  // ─── Reference packages catalog ────────────────────────────────
+  // Build a lookup of packages → per-tier total product COGS, keyed by
+  // tier NAME (matching `tierData[].tierId` which uses the tier's name).
+  // The CFO can pick a reference package and the projection's COGS per
+  // sub will use the REAL catalog data instead of the apparelBudget guess.
+  //
+  // We also surface the per-product line items (`perTierProducts`) so the
+  // Reference Package UI can render a drilldown per plan — letting the
+  // CFO see exactly which products and quantities make up the COGS
+  // figure. The drilldown isn't used by the engine (which only needs the
+  // total per tier) but it's critical for trust in the number.
+  const tierIdToName = new Map(tiers.map((t) => [t.id, t.name]));
+  const packagesCatalog: PackageCatalogEntry[] = packages.map((p) => {
+    const perTier: Record<string, number> = {};
+    const perTierProducts: Record<string, PackageProductBreakdown[]> = {};
+    for (const v of p.variants) {
+      const name = tierIdToName.get(v.subscriptionTierId);
+      if (!name) continue;
+      const items: PackageProductBreakdown[] = v.products.map((pp) => {
+        const costEach = toNumber(pp.product.costOfGoods);
+        const subtotal = Math.round(costEach * pp.quantity * 100) / 100;
+        return {
+          productId: pp.product.id,
+          name: pp.product.name,
+          quantity: pp.quantity,
+          costEach: Math.round(costEach * 100) / 100,
+          subtotal,
+        };
+      });
+      const totalCOGS = items.reduce((sum, it) => sum + it.subtotal, 0);
+      perTier[name] = Math.round(totalCOGS * 100) / 100;
+      perTierProducts[name] = items;
+    }
+    return {
+      id: p.id,
+      name: p.name,
+      slug: p.slug,
+      perTierCOGS: perTier,
+      perTierProducts,
+    };
+  });
+
   return {
     tierData,
     commissionData,
@@ -340,5 +433,27 @@ export const getFinancialDefaults = cache(async function getFinancialDefaults() 
     fullyLoadedCommissionData,
     dataSourceMeta,
     tierDisplayMeta,
+    packagesCatalog,
   };
 });
+
+export interface PackageProductBreakdown {
+  productId: string;
+  name: string;
+  quantity: number;
+  costEach: number;   // unit cost-of-goods
+  subtotal: number;   // costEach × quantity (what feeds the tier total)
+}
+
+export interface PackageCatalogEntry {
+  id: string;
+  name: string;
+  slug: string;
+  /** Total product COGS per active subscriber for each tier, keyed by tier
+   * NAME (matching `TierFinancialInput.tierId`). */
+  perTierCOGS: Record<string, number>;
+  /** Per-tier line-item breakdown (qty × cost) — feeds the drilldown UI
+   * inside the Reference Package selector. Same key (tier name) as
+   * `perTierCOGS`; absent tiers have no variant in the package. */
+  perTierProducts: Record<string, PackageProductBreakdown[]>;
+}

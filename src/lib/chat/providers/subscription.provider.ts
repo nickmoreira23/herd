@@ -25,10 +25,10 @@ function renderTier(t: any): string {
   if (t.tagline) lines.push(t.tagline);
   lines.push(`Status: ${t.status} · Visibility: ${t.visibility}`);
   const monthly = fmtPrice(t.monthlyPrice);
-  const quarterly = fmtPrice(t.quarterlyPrice);
+  const biannual = fmtPrice(t.biannualPrice);
   const annual = fmtPrice(t.annualPrice);
   if (monthly) lines.push(`Monthly: ${monthly}`);
-  if (quarterly) lines.push(`Quarterly: ${quarterly}`);
+  if (biannual) lines.push(`Biannual: ${biannual}`);
   if (annual) lines.push(`Annual: ${annual}`);
   const credits = fmtPrice(t.monthlyCredits);
   if (credits) lines.push(`Monthly credits: ${credits}`);
@@ -125,7 +125,7 @@ export class SubscriptionProvider implements DataProvider {
         visibility: t.visibility,
         colorAccent: t.colorAccent,
         monthlyPrice: t.monthlyPrice.toString(),
-        quarterlyPrice: t.quarterlyPrice.toString(),
+        biannualPrice: t.biannualPrice.toString(),
         annualPrice: t.annualPrice.toString(),
         monthlyCredits: t.monthlyCredits.toString(),
         trialDays: t.trialDays,

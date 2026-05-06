@@ -8,7 +8,7 @@ export const subscriptionsBlock: BlockManifest = {
   name: "subscriptions",
   displayName: "Subscriptions",
   description:
-    "Subscription plans (tiers) the organization offers — the catalog of recurring memberships customers can subscribe to. Each plan has pricing across billing cycles (monthly/quarterly/annual), monthly credits, included perks, agent access, partner discounts, status & visibility controls, lifecycle policies (trials, pauses, cancellations), and a set of benefit blocks attached to it. The block also owns the discount redemption rules (Members Store / Members Rate) that govern product pricing for plan members. Lives in the Commerce category.",
+    "Subscription plans (tiers) the organization offers — the catalog of recurring memberships customers can subscribe to. Each plan has pricing across billing cycles (monthly/biannual/annual), monthly credits, included perks, agent access, partner discounts, status & visibility controls, lifecycle policies (trials, pauses, cancellations), and a set of benefit blocks attached to it. The block also owns the discount redemption rules (Members Store / Members Rate) that govern product pricing for plan members. Lives in the Commerce category.",
   types: ["subscription_tier", "redemption_rule"],
   capabilities: ["read", "create", "update", "delete"],
   models: ["SubscriptionTier", "SubscriptionRedemptionRule"],
@@ -57,7 +57,7 @@ export const subscriptionsBlock: BlockManifest = {
     {
       name: "create_subscription",
       description:
-        "Create a new subscription plan (tier). At minimum needs a name, slug and the three pricing fields (monthly/quarterly/annual).",
+        "Create a new subscription plan (tier). At minimum needs a name, slug and the three pricing fields (monthly/biannual/annual).",
       method: "POST",
       endpoint: "/api/tiers",
       parametersSchema: {
@@ -69,7 +69,7 @@ export const subscriptionsBlock: BlockManifest = {
           status: { type: "string", enum: STATUS_ENUM },
           visibility: { type: "string", enum: VISIBILITY_ENUM },
           monthlyPrice: { type: "number" },
-          quarterlyPrice: { type: "number" },
+          biannualPrice: { type: "number" },
           annualPrice: { type: "number" },
           monthlyCredits: { type: "number" },
         },

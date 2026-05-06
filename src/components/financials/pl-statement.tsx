@@ -46,7 +46,13 @@ export function PLStatement({ multiplier, periodLabel, locale }: PLStatementProp
   const commissionExpense = results.totalCommissionExpense * m;
   const overheadMonthly = resolveOverhead(inputs.operationalOverhead, 0);
   const overhead = overheadMonthly * m;
-  const totalOpEx = (results.totalCommissionExpense + overheadMonthly) * m;
+  // Welcome Kit — one-time per-acquisition spend. Engine emits it per
+  // month; we scale by the same multiplier as everything else for the
+  // chosen reporting period.
+  const welcomeKitMonthly = results.welcomeKitCostPerMonth ?? 0;
+  const welcomeKit = welcomeKitMonthly * m;
+  const totalOpEx =
+    (results.totalCommissionExpense + welcomeKitMonthly + overheadMonthly) * m;
   const kickbackRevenue = results.totalKickbackRevenue * m;
   const totalOtherIncome = results.totalKickbackRevenue * m;
   const netIncome = results.netMarginDollars * m;
@@ -115,6 +121,9 @@ export function PLStatement({ multiplier, periodLabel, locale }: PLStatementProp
         locale={locale}
       >
         <LineItem label={t("financials.pl.sales_commissions")} value={-commissionExpense} locale={locale} />
+        {welcomeKitMonthly > 0 && (
+          <LineItem label="Welcome Kit" value={-welcomeKit} locale={locale} />
+        )}
         <LineItem
           label={
             inputs.operationalOverhead.mode === "milestone-scaled"
@@ -146,7 +155,8 @@ export function PLStatement({ multiplier, periodLabel, locale }: PLStatementProp
           <span>
             {t("financials.pl.breakage_note", {
               value: formatNumberAsMoney(results.totalBreakageProfit * m, locale),
-              percent: formatNumber((100 - inputs.creditRedemptionRate * 100) / 100, locale, "percent"),
+              // creditRedemptionRate is already a 0–1 ratio; breakage = 1 − redemption.
+              percent: formatNumber(1 - inputs.creditRedemptionRate, locale, "percent"),
             })}
           </span>
         </div>
@@ -192,6 +202,11 @@ export function PLStatement({ multiplier, periodLabel, locale }: PLStatementProp
                 value={netIncome > 0 ? netIncome * (results.profitSplit.undistributedPercent / 100) : 0}
                 locale={locale}
               />
+            )}
+            {results.profitSplit.status === "over" && (
+              <div className="px-3 py-2 mt-1 rounded-md border border-rose-300 bg-rose-50 text-rose-700 text-xs">
+                <strong>Over-allocated:</strong> profit-split shares total {results.profitSplit.totalDistributedPercent.toFixed(1)}% — exceeds 100% by {results.profitSplit.overAllocatedPercent.toFixed(1)}%. The configured shares cannot all be paid; reduce one or more party percentages.
+              </div>
             )}
           </PLSection>
         </>

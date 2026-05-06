@@ -181,8 +181,8 @@ ${scenarioList}
 
 === FINANCIAL MODEL STRUCTURE ===
 The projections tool models a subscription box business with these key inputs:
-- **Tiers**: Multiple subscription plans with monthly/quarterly/annual pricing, credits, and apparel costs
-- **Billing Distribution**: % of subscribers on monthly vs quarterly vs annual billing
+- **Tiers**: Multiple subscription plans with monthly/biannual/annual pricing, credits, and apparel costs
+- **Billing Distribution**: % of subscribers on monthly vs biannual vs annual billing
 - **Product Costs**: Credit redemption rate, COGS ratio, fulfillment, shipping
 - **Commission**: Upfront bonuses, residual %, residual delay (months before residual starts), accelerators for sales reps
 - **Sales Channels**: D2D sales reps (starting count, sales/rep, growth rate) and sampler marketing (spend, cost, conversion, growth)
@@ -473,7 +473,7 @@ ${JSON.stringify(results, null, 2)}`;
 
         return `=== CURRENT SYSTEM DEFAULTS ===
 Tiers: ${defaults.tierData.length} plans configured
-${defaults.tierData.map((t) => `  - ${t.tierId}: $${t.monthlyPrice}/mo, $${t.quarterlyPricePerMonth}/qtr/mo, $${t.annualPricePerMonth}/yr/mo, ${t.monthlyCredits} credits`).join("\n")}
+${defaults.tierData.map((t) => `  - ${t.tierId}: $${t.monthlyPrice}/mo, $${t.biannualPricePerMonth}/mo (biannual), $${t.annualPricePerMonth}/mo (annual), ${t.monthlyCredits} credits`).join("\n")}
 
 Commission: Flat $${defaults.commissionData.flatBonusPerSale}/sale, ${defaults.commissionData.residualPercent}% residual
 Sales Reps: ${defaults.salesRepData.startingReps} starting, ${defaults.salesRepData.salesPerRepPerMonth} sales/rep/mo, ${defaults.salesRepData.monthlyGrowthRate}% growth
@@ -491,7 +491,7 @@ ${JSON.stringify(defaults.dataSourceMeta, null, 2)}
 Use these as the base for calculate_projection or save_scenario:
 ${JSON.stringify({
   tiers: defaults.tierData,
-  billingCycleDistribution: { monthly: 70, quarterly: 20, annual: 10 },
+  billingCycleDistribution: { monthly: 70, biannual: 20, annual: 10 },
   creditRedemptionRate: 0.75,
   avgCOGSToMemberPriceRatio: defaults.productCOGSRatio,
   breakageRate: 0.25,

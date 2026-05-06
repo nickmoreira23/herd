@@ -39,9 +39,9 @@ export default async function EditTierPage({
   const serialized = {
     ...tier,
     monthlyPrice: toNumber(tier.monthlyPrice),
-    quarterlyPrice: toNumber(tier.quarterlyPrice),
+    biannualPrice: toNumber(tier.biannualPrice),
     annualPrice: toNumber(tier.annualPrice),
-    quarterlyDisplay: tier.quarterlyDisplay ? toNumber(tier.quarterlyDisplay) : null,
+    biannualDisplay: tier.biannualDisplay ? toNumber(tier.biannualDisplay) : null,
     annualDisplay: tier.annualDisplay ? toNumber(tier.annualDisplay) : null,
     setupFee: toNumber(tier.setupFee),
     avgShippingCost: toNumber(tier.avgShippingCost),
@@ -58,7 +58,7 @@ export default async function EditTierPage({
     pricingSnapshots: tier.pricingSnapshots.map((s) => ({
       ...s,
       monthlyPrice: toNumber(s.monthlyPrice),
-      quarterlyPrice: s.quarterlyPrice ? toNumber(s.quarterlyPrice) : null,
+      biannualPrice: s.biannualPrice ? toNumber(s.biannualPrice) : null,
       annualPrice: s.annualPrice ? toNumber(s.annualPrice) : null,
     })),
   };

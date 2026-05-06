@@ -24,7 +24,7 @@ export default async function PartnersPage() {
       tier: {
         ...a.tier,
         monthlyPrice: toNumber(a.tier.monthlyPrice),
-        quarterlyPrice: toNumber(a.tier.quarterlyPrice),
+        biannualPrice: toNumber(a.tier.biannualPrice),
         annualPrice: toNumber(a.tier.annualPrice),
         monthlyCredits: toNumber(a.tier.monthlyCredits),
         partnerDiscountPercent: toNumber(a.tier.partnerDiscountPercent),

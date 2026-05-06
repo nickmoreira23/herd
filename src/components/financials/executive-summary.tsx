@@ -349,7 +349,7 @@ function ValidationPlaceholder({
 
   const billingSum =
     inputs.billingCycleDistribution.monthly +
-    inputs.billingCycleDistribution.quarterly +
+    inputs.billingCycleDistribution.biannual +
     inputs.billingCycleDistribution.annual;
   if (Math.abs(billingSum - 100) > 0.1) {
     warnings.push(t("financials.summary.validation.billing_distribution", { value: billingSum }));

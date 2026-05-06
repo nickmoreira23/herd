@@ -99,5 +99,24 @@ export const salesCategory: ToolCategoryManifest = {
         page: "src/app/admin/tools/performance/",
       },
     },
+    {
+      kind: "tool",
+      name: "subscriptions",
+      displayName: "Subscriptions",
+      description:
+        "Subscription plans — define tiers (Starter, Performance, Elite, Legend) with pricing rules, credit allocations, and partner commissions.",
+      icon: "CreditCard",
+      color: "#10b981",
+      status: "active",
+      hasSubRoutes: true,
+      blocks: [
+        { blockName: "subscriptions", usage: "manage", purpose: "Plan catalog and tier configuration" },
+      ],
+      actions: [],
+      area: "transaction",
+      paths: {
+        page: "src/app/admin/tools/subscriptions/",
+      },
+    },
   ],
 };

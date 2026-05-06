@@ -33,9 +33,9 @@ export default async function TiersPage() {
   const serialized = tiers.map((t) => ({
     ...t,
     monthlyPrice: toNumber(t.monthlyPrice),
-    quarterlyPrice: toNumber(t.quarterlyPrice),
+    biannualPrice: toNumber(t.biannualPrice),
     annualPrice: toNumber(t.annualPrice),
-    quarterlyDisplay: t.quarterlyDisplay ? toNumber(t.quarterlyDisplay) : null,
+    biannualDisplay: t.biannualDisplay ? toNumber(t.biannualDisplay) : null,
     annualDisplay: t.annualDisplay ? toNumber(t.annualDisplay) : null,
     setupFee: toNumber(t.setupFee),
     avgShippingCost: toNumber(t.avgShippingCost),

@@ -49,9 +49,20 @@ import {
   Wallet,
   Blocks,
   ShoppingBag,
+  Dumbbell,
+  CalendarDays,
+  History,
+  UtensilsCrossed,
+  ChefHat,
+  ListChecks,
+  GraduationCap,
+  BookMarked,
+  Newspaper,
+  PlayCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
+import { useProfileView } from "@/lib/core/profile-view/hook";
 import { BLOCK_ICON_MAP, BLOCK_LABEL_MAP } from "@/lib/blocks/block-meta";
 import { getBlockLabel, getCategoryLabel } from "@/lib/blocks/block-labels";
 import { useLocale, useT } from "@/lib/i18n/locale-context";
@@ -228,6 +239,34 @@ export const subPanelRegistry: Record<string, SubPanelConfig> = {
     label: "Handbook",
     links: [], // Dynamically rendered by HandbookSubPanel
   },
+  exercise: {
+    id: "exercise",
+    label: "Exercise",
+    links: [
+      { href: "/admin/spaces/exercise/workouts", label: "Workouts", icon: Dumbbell },
+      { href: "/admin/spaces/exercise/schedule", label: "Schedule", icon: CalendarDays },
+      { href: "/admin/spaces/exercise/history", label: "History", icon: History },
+    ],
+  },
+  nutrition: {
+    id: "nutrition",
+    label: "Nutrition",
+    links: [
+      { href: "/admin/spaces/nutrition/meal-plan", label: "Meal Plan", icon: UtensilsCrossed },
+      { href: "/admin/spaces/nutrition/recipes", label: "Recipes", icon: ChefHat },
+      { href: "/admin/spaces/nutrition/food-log", label: "Food Log", icon: ListChecks },
+    ],
+  },
+  learn: {
+    id: "learn",
+    label: "Learn",
+    links: [
+      { href: "/admin/learn/courses", label: "Courses", icon: GraduationCap },
+      { href: "/admin/learn/guides", label: "Guides", icon: BookMarked },
+      { href: "/admin/learn/articles", label: "Articles", icon: Newspaper },
+      { href: "/admin/learn/videos", label: "Videos", icon: PlayCircle },
+    ],
+  },
 };
 
 // Map a sidebar href to a sub-panel ID (if it should open one)
@@ -242,6 +281,9 @@ export const hrefToSubPanel: Record<string, string> = {
   "/admin/marketplace": "marketplace",
   "/admin/ledger": "ledger",
   "/admin/handbook": "handbook",
+  "/admin/spaces/exercise": "exercise",
+  "/admin/spaces/nutrition": "nutrition",
+  "/admin/learn": "learn",
 };
 
 // All hrefs that belong to a sub-panel (used to auto-detect active panel from pathname)
@@ -255,6 +297,9 @@ export function getSubPanelIdForPath(pathname: string): string | null {
   if (pathname.startsWith("/admin/network")) return "network";
   if (pathname.startsWith("/admin/knowledge")) return "knowledge";
   if (pathname.startsWith("/admin/organization")) return "organization";
+  if (pathname.startsWith("/admin/spaces/exercise")) return "exercise";
+  if (pathname.startsWith("/admin/spaces/nutrition")) return "nutrition";
+  if (pathname.startsWith("/admin/learn")) return "learn";
 
   for (const [, config] of Object.entries(subPanelRegistry)) {
     if (config.links.some((link) => pathname.startsWith(link.href))) {
@@ -555,10 +600,31 @@ function ToolsSubPanel() {
   const pathname = usePathname();
   const { setSubPanelCollapsed } = useUIStore();
   const t = useT();
-  const categories = getAllToolCategories();
+  const allCategories = getAllToolCategories();
+
+  // When on /admin/tools/{slug}[/...] focus the sub-panel on that one
+  // category. The slug can either be a category name (e.g. /admin/tools/sales)
+  // or a single tool name (e.g. /admin/tools/projections) — in the latter
+  // case we look up the tool's parent category.
+  const segments = pathname.split("/").filter(Boolean); // ["admin","tools",...]
+  const slug = segments[1] === "tools" ? segments[2] : undefined;
+  let focusedCategory = slug
+    ? allCategories.find((c) => c.name === slug)
+    : undefined;
+  if (!focusedCategory && slug) {
+    const parent = allCategories.find((c) =>
+      c.tools.some((t) => t.name === slug),
+    );
+    if (parent) focusedCategory = parent;
+  }
+  const categories = focusedCategory ? [focusedCategory] : allCategories;
+  const panelTitle = focusedCategory ? focusedCategory.displayName : "Tools";
+  const allToolsHref = focusedCategory
+    ? `/admin/tools/${focusedCategory.name}`
+    : "/admin/tools";
 
   const isActive = (href: string) => {
-    if (href === "/admin/tools") return pathname === "/admin/tools";
+    if (href === allToolsHref) return pathname === allToolsHref;
     return pathname.startsWith(href);
   };
 
@@ -569,7 +635,7 @@ function ToolsSubPanel() {
     >
       {/* Header */}
       <div className="flex items-center justify-between pt-6 pb-4">
-        <h2 className="text-[16px] font-semibold truncate pl-6">Tools</h2>
+        <h2 className="text-[16px] font-semibold truncate pl-6">{panelTitle}</h2>
         <button
           onClick={() => setSubPanelCollapsed(true)}
           className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-accent mr-4"
@@ -583,10 +649,10 @@ function ToolsSubPanel() {
       <nav className="flex-1 pb-4 overflow-y-auto overscroll-contain px-3">
         {/* All Tools link */}
         <Link
-          href="/admin/tools"
+          href={allToolsHref}
           className={cn(
             "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-            pathname === "/admin/tools"
+            pathname === allToolsHref
               ? "bg-primary/10 text-primary dark:bg-brand/10 dark:text-brand"
               : "text-muted-foreground hover:bg-accent hover:text-foreground"
           )}
@@ -605,7 +671,7 @@ function ToolsSubPanel() {
               </p>
               {category.tools.map((tool) => {
                 const ToolIcon = TOOL_ICON_MAP[tool.icon];
-                const href = `/admin/tools/${category.name}/${tool.name}`;
+                const href = `/admin/tools/${tool.name}`;
                 const active = isActive(href);
                 return (
                   <Link
@@ -668,6 +734,8 @@ function MarketplaceSubPanel() {
   const pathname = usePathname();
   const { setSubPanelCollapsed } = useUIStore();
   const t = useT();
+  const { view: profileView } = useProfileView();
+  const marketplaceTitle = profileView === "member" ? "Explore" : "Marketplace";
   // Hydrate state from cache on first render so we don't flash an empty
   // panel before the network responds. `loaded` differentiates "still
   // fetching for the first time" (show skeleton) from "fetched, empty"
@@ -722,7 +790,7 @@ function MarketplaceSubPanel() {
     >
       {/* Header */}
       <div className="flex items-center justify-between pt-6 pb-4">
-        <h2 className="text-[16px] font-semibold truncate pl-6">Marketplace</h2>
+        <h2 className="text-[16px] font-semibold truncate pl-6">{marketplaceTitle}</h2>
         <button
           onClick={() => setSubPanelCollapsed(true)}
           className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-accent mr-4"

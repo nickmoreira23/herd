@@ -1,6 +1,8 @@
 import type { Tool } from "@/lib/tools/manifest";
 import { TOOL_ICON_MAP } from "@/lib/tools/category-meta";
 import { Wrench } from "lucide-react";
+import { PageHeader, type Crumb } from "@/components/layout/page-header";
+import { toolToCategory } from "@/lib/tools/registry";
 
 interface ToolComingSoonProps {
   tool: Tool;
@@ -8,15 +10,22 @@ interface ToolComingSoonProps {
 
 export function ToolComingSoon({ tool }: ToolComingSoonProps) {
   const Icon = TOOL_ICON_MAP[tool.icon] || Wrench;
+  const parent = toolToCategory.get(tool.name);
+  const crumbs: Crumb[] = [{ label: "Tools", href: "/admin/tools" }];
+  if (parent) {
+    crumbs.push({
+      label: parent.category.displayName,
+      href: `/admin/tools/${parent.category.name}`,
+    });
+  }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">{tool.displayName}</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {tool.description}
-        </p>
-      </div>
+      <PageHeader
+        crumbs={crumbs}
+        title={tool.displayName}
+        description={tool.description}
+      />
 
       <div className="rounded-xl border bg-card">
         <div className="flex flex-col items-center justify-center py-16 px-6 text-center">

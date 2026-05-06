@@ -3,6 +3,7 @@ import { toNumber, formatCurrency, formatPercent } from "@/lib/utils";
 import { calculateBlendedRevenue } from "@/lib/financial-engine";
 import { Badge } from "@/components/ui/badge";
 import { connection } from "next/server";
+import { PageHeader } from "@/components/layout/page-header";
 
 export default async function DashboardPage() {
   await connection();
@@ -30,13 +31,15 @@ export default async function DashboardPage() {
     prisma.financialSnapshot.count(),
   ]);
 
-  const billing = { monthly: 60, quarterly: 25, annual: 15 };
+  const billing = { monthly: 60, biannual: 25, annual: 15 };
 
   const tierSummaries = tiers.map((t) => {
     const monthly = toNumber(t.monthlyPrice);
-    const quarterly = toNumber(t.quarterlyPrice) / 3;
-    const annual = toNumber(t.annualPrice) / 12;
-    const blended = calculateBlendedRevenue(monthly, quarterly, annual, billing);
+    // `biannualPrice` and `annualPrice` are already the discounted
+    // per-month rate the customer pays — no division needed.
+    const biannual = toNumber(t.biannualPrice);
+    const annual = toNumber(t.annualPrice);
+    const blended = calculateBlendedRevenue(monthly, biannual, annual, billing);
     const credits = toNumber(t.monthlyCredits);
     return {
       name: t.name,
@@ -51,12 +54,10 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          HERD OS overview — key metrics across your subscription business.
-        </p>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        description="HERD OS overview — key metrics across your subscription business."
+      />
 
       {/* Top-level stats */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">

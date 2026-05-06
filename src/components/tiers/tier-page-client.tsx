@@ -3,6 +3,7 @@
 import { useState, useCallback, useMemo, useRef } from "react";
 import type { SubscriptionTier } from "@/types";
 import { TierCard } from "./tier-card";
+import { useProfileView } from "@/lib/core/profile-view/hook";
 import { TierComparison } from "./tier-comparison";
 import { TierCreateSheet } from "./tier-create-sheet";
 import { Button } from "@/components/ui/button";
@@ -161,6 +162,13 @@ function TierCarousel({
 export function TierPageClient({ initialTiers, enabledBenefitBlocks }: TierPageClientProps) {
   const [tiers, setTiers] = useState<SubscriptionTier[]>(initialTiers);
   const [showCreate, setShowCreate] = useState(false);
+  const { view: profileView } = useProfileView();
+  const isMember = profileView === "member";
+  const headerTitle = isMember ? "Subscriptions" : "Plans";
+  const headerDescription = isMember
+    ? "Browse and manage your subscriptions."
+    : "Manage your subscription plans and their configuration.";
+  const newButtonLabel = isMember ? "New Subscription" : "New Plan";
 
   // Benefit blocks settings
   const [benefitBlocks, setBenefitBlocks] = useState<Set<string>>(
@@ -228,9 +236,9 @@ export function TierPageClient({ initialTiers, enabledBenefitBlocks }: TierPageC
           colorAccent: t.colorAccent || "#6B7280",
           // Pricing
           monthlyPrice: tier.monthlyPrice,
-          quarterlyPrice: tier.quarterlyPrice,
+          biannualPrice: tier.biannualPrice,
           annualPrice: tier.annualPrice,
-          quarterlyDisplay: t.quarterlyDisplay ?? null,
+          biannualDisplay: t.biannualDisplay ?? null,
           annualDisplay: t.annualDisplay ?? null,
           setupFee: t.setupFee ?? 0,
           trialDays: t.trialDays ?? 0,
@@ -323,9 +331,9 @@ export function TierPageClient({ initialTiers, enabledBenefitBlocks }: TierPageC
       {/* Header */}
       <div className="flex items-center justify-between shrink-0">
         <div>
-          <h1 className="text-2xl font-bold">Plans</h1>
+          <h1 className="text-2xl font-bold">{headerTitle}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage your subscription plans and their configuration.
+            {headerDescription}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -335,7 +343,7 @@ export function TierPageClient({ initialTiers, enabledBenefitBlocks }: TierPageC
             onClick={() => setShowCreate(true)}
           >
             <Plus className="mr-1.5 h-3.5 w-3.5" />
-            New Plan
+            {newButtonLabel}
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md border border-input bg-background px-2.5 h-8 text-sm hover:bg-accent hover:text-accent-foreground transition-colors">
