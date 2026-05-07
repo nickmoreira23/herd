@@ -1136,11 +1136,19 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
   // KPI-style summaries: the per-cohort and aggregate Cohort tables
   // already show the exact monthly figures, and the visuals are
   // operating-performance summaries, not cash forecasts.
-  const welcomeKitCostPerMonth = month1GrossNewSubs * welcomeKitCostPerSub;
+  // `welcomeKitCostPerMonth` USED to be declared here as
+  // `month1GrossNewSubs × welcomeKitCostPerSub` — only Mo 1's
+  // acquisitions, frozen at the lowest point. Same anti-pattern as
+  // overhead-at-zero (Thread A.1): in growth scenarios Mo 1 is the
+  // smallest acquisition month, so consumers doing `× multiplier`
+  // under-reported by up to 1,655% in Year 3 of the stressed scenario
+  // (~$3.29M cumulative under-report). Moved to AFTER the projection
+  // loop alongside `operationalOverheadMonthly` (Thread A.3.2 fix).
   // `netMarginDollars` and `netMarginPercent` are computed AFTER the
   // cohort projection loop (see "KPI scalars derived from cohortProjection"
-  // block) — they depend on `operationalOverheadMonthly`, which is now
-  // averaged from the loop's per-month overhead. Thread A.1 fix.
+  // block) — they depend on `operationalOverheadMonthly` and
+  // `welcomeKitCostPerMonth`, both averaged from the per-month series
+  // emitted by the loop. Thread A.1 + A.3.2 fixes.
 
   // Revenue by tier
   const revenueByTier = tierDetails.map((t) => ({
@@ -1657,6 +1665,22 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
   const operationalOverheadMonthly =
     cohortProjection.length > 0
       ? cohortProjection.reduce((sum, m) => sum + m.operationalOverhead, 0) /
+        cohortProjection.length
+      : 0;
+
+  // `welcomeKitCostPerMonth` follows the SAME pattern as
+  // `operationalOverheadMonthly` above — see the meta-lesson doc block
+  // attached to it. Pre-A.3.2 was `month1GrossNewSubs × welcomeKitCostPerSub`
+  // (Mo 1 acquisitions only, frozen at the lowest point of any growth
+  // scenario). Now it averages the per-month welcome-kit series the
+  // projection loop already emits at `cohortProjection[i].welcomeKitCost`
+  // (= `monthGrossNewSubs[i] × welcomeKitCostPerSub`, line ~1520).
+  // Same KPI semantics as overhead: "typical monthly cost in steady
+  // state." In default-seed scenarios with `welcomeKitCostPerSub: 0`,
+  // every month is 0 → average is 0 → behavior matches pre-fix.
+  const welcomeKitCostPerMonth =
+    cohortProjection.length > 0
+      ? cohortProjection.reduce((sum, m) => sum + (m.welcomeKitCost ?? 0), 0) /
         cohortProjection.length
       : 0;
 

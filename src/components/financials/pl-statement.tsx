@@ -52,13 +52,21 @@ export function PLStatement({ multiplier, periodLabel, locale }: PLStatementProp
   const overhead = results.cohortProjection
     .slice(0, m)
     .reduce((sum, mo) => sum + mo.operationalOverhead, 0);
-  // Welcome Kit — one-time per-acquisition spend. Engine emits it per
-  // month; we scale by the same multiplier as everything else for the
-  // chosen reporting period.
-  const welcomeKitMonthly = results.welcomeKitCostPerMonth ?? 0;
-  const welcomeKit = welcomeKitMonthly * m;
+  // Welcome Kit — sum of the first `m` months of `cohortProjection
+  // .welcomeKitCost` (= `monthGrossNewSubs[i] × welcomeKitCostPerSub`).
+  // Same Thread A.1 anti-pattern fix as overhead above: legacy was
+  // `welcomeKitMonthly × m` where `welcomeKitMonthly` was Mo 1's
+  // acquisitions frozen — under-reported up to 1,655% in Year 3 of
+  // growth scenarios. See Thread A.3.2 + the meta-lesson doc block
+  // attached to `operationalOverheadMonthly` in financial-engine.ts.
+  const welcomeKit = results.cohortProjection
+    .slice(0, m)
+    .reduce((sum, mo) => sum + (mo.welcomeKitCost ?? 0), 0);
+  // Display flag — drives whether the Welcome Kit row renders at all.
+  // True when ANY month in the visible window has welcome-kit cost > 0.
+  const hasWelcomeKit = welcomeKit > 0;
   const totalOpEx =
-    (results.totalCommissionExpense + welcomeKitMonthly) * m + overhead;
+    results.totalCommissionExpense * m + welcomeKit + overhead;
   const kickbackRevenue = results.totalKickbackRevenue * m;
   const totalOtherIncome = results.totalKickbackRevenue * m;
   const netIncome = results.netMarginDollars * m;
@@ -129,7 +137,7 @@ export function PLStatement({ multiplier, periodLabel, locale }: PLStatementProp
         locale={locale}
       >
         <LineItem label={t("financials.pl.sales_commissions")} value={-commissionExpense} locale={locale} />
-        {welcomeKitMonthly > 0 && (
+        {hasWelcomeKit && (
           <LineItem label="Welcome Kit" value={-welcomeKit} locale={locale} />
         )}
         <LineItem
