@@ -88,6 +88,7 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
   const addOns: number[] = [];
   const welcomeKit: number[] = [];
   const overhead: number[] = [];
+  const overheadByCategoryArr: { id: string; name: string; monthly: number }[][] = [];
   const totalOpEx: number[] = [];
   const netProfit: number[] = [];
   const cumulativeProfit: number[] = [];
@@ -146,6 +147,10 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
     welcomeKit.push(monthWelcomeKit);
 
     overhead.push(curr.operationalOverhead);
+    // Build per-category overhead arrays alongside the headline. Each
+    // category gets a sub-row in the OpEx section so the user can see
+    // "Marketing $5k · Tech $12k · Ops $4k" rolling up to the total.
+    overheadByCategoryArr.push(curr.operationalOverheadByCategory ?? []);
 
     const monthTotalOpEx =
       monthCommissions +
@@ -236,6 +241,26 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
         { label: "Add-ons (Path Scale)", type: "currency", totalMode: "sum", values: addOns },
         { label: "Welcome Kit", type: "currency", totalMode: "sum", values: welcomeKit },
         { label: t("financials.projection.row.overhead"), type: "currency", totalMode: "sum", values: overhead },
+        // Per-category overhead breakdown — one row per category (e.g.
+        // Marketing, Tech, Operations). The engine resolves each per
+        // month by looking up the highest milestone ≤ active subscriber
+        // count, so the rows step up at the configured thresholds.
+        ...(() => {
+          // Collect the union of category ids across the projection
+          // window (a category that's only present in some months still
+          // needs a row; missing entries read as 0).
+          const ids = new Map<string, string>();
+          for (const arr of overheadByCategoryArr)
+            for (const c of arr) if (!ids.has(c.id)) ids.set(c.id, c.name);
+          return Array.from(ids.entries()).map(([id, name]) => ({
+            label: t("financials.projection.tier_indent", { tier: name }),
+            type: "currency" as const,
+            totalMode: "sum" as const,
+            values: overheadByCategoryArr.map(
+              (arr) => arr.find((c) => c.id === id)?.monthly ?? 0,
+            ),
+          }));
+        })(),
         { label: t("financials.projection.row.total_opex"), type: "currency", totalMode: "sum", values: totalOpEx, bold: true },
       ],
     },
@@ -259,23 +284,33 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
 
   const monthLabels = projection.map((_, i) => t("financials.charts.month_label", { month: i + 1 }));
 
+  // The wrapper itself scrolls (both axes) and caps at ~75% of the
+  // viewport height — sticky thead inside pins to the top of THIS
+  // scroll viewport, so column labels stay visible while rows scroll
+  // behind them. Without a maxH, the wrapper grows to fit and the
+  // sticky header has nothing to anchor to.
   return (
-    <div className="overflow-x-auto border rounded-lg">
+    <div className="overflow-auto border rounded-lg max-h-[75vh]">
       <table className="w-full border-collapse text-xs">
         <thead>
-          <tr className="border-b bg-muted/50">
-            <th className="sticky left-0 z-10 bg-muted/50 w-[180px] min-w-[180px] px-3 py-2 text-left font-medium">
+          {/* Header sticky on Y so column labels stay visible when the
+              user scrolls down. The metric (left-most) cell is sticky on
+              both axes — highest z-index in the table; month headers sit
+              just below at z-20; section headers (sticky-left only) stay
+              at z-10. */}
+          <tr className="border-b bg-muted">
+            <th className="sticky left-0 top-0 z-30 bg-muted w-[180px] min-w-[180px] px-3 py-2 text-left font-medium">
               &nbsp;
             </th>
             {monthLabels.map((label) => (
               <th
                 key={label}
-                className="w-[100px] min-w-[100px] px-2 py-2 text-right font-medium tabular-nums"
+                className="sticky top-0 z-20 bg-muted w-[100px] min-w-[100px] px-2 py-2 text-right font-medium tabular-nums"
               >
                 {label}
               </th>
             ))}
-            <th className="w-[100px] min-w-[100px] px-2 py-2 text-right font-medium border-l">
+            <th className="sticky top-0 z-20 bg-muted w-[100px] min-w-[100px] px-2 py-2 text-right font-medium border-l">
               {t("financials.projection.column.total_avg")}
             </th>
           </tr>
@@ -294,10 +329,10 @@ function SectionGroup({ section, months, locale }: { section: SectionDef; months
   return (
     <>
       {/* Section header row */}
-      <tr className="bg-muted/30">
+      <tr className="bg-muted">
         <td
           colSpan={months + 2}
-          className="sticky left-0 z-10 bg-muted/30 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground"
+          className="sticky left-0 z-10 bg-muted px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground"
         >
           {section.header}
         </td>

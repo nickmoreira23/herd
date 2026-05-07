@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ChevronRight } from "lucide-react";
 import { useFinancialStore } from "@/stores/financial-store";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/locale-context";
@@ -60,6 +61,19 @@ export function CohortSpreadsheet({ months = 12, locale }: CohortSpreadsheetProp
     </div>
   );
 
+  // Per-tier billing distribution — used by both the per-cohort and the
+  // aggregate views so the "Active by Plan & Cycle" rows can show
+  // each tier's actual cycle mix in the row label.
+  const tierBillingDistributions = new Map<
+    string,
+    { monthly: number; biannual: number; annual: number }
+  >(
+    (inputs?.tiers ?? []).map((t) => [
+      t.tierId,
+      t.billingDistribution ?? inputs.billingCycleDistribution,
+    ]),
+  );
+
   if (view !== "base") {
     const lifecycle = cohortLifecycles.find((c) => c.acquisitionMonth === view);
     if (!lifecycle) {
@@ -78,478 +92,40 @@ export function CohortSpreadsheet({ months = 12, locale }: CohortSpreadsheetProp
         <CohortLifecycleTable
           lifecycle={lifecycle}
           profitSplitParties={results.profitSplit?.parties ?? []}
+          cohortProjection={results.cohortProjection}
+          tierBillingDistributions={tierBillingDistributions}
           locale={locale}
         />
       </div>
     );
   }
 
-  const data = results.cohortProjection.slice(0, months);
-  const costPerSub = results.costPerSubscriber;
-
-  // Collect unique tier IDs for per-tier breakdown
-  const tierIds = data[0]?.newSubsByTier?.map((tier) => tier.tierId) ?? inputs?.tiers?.map((tier) => tier.tierId) ?? [];
-
-  // Derived row values for each month — same shape the Spreadsheet view
-  // builds, so the Cohort aggregate can render identical sections.
-  const rows = data.map((mo, i) => {
-    const grossNewSales = mo.newSubsFromReps + (mo.chargebacks ?? 0);
-    const netNewSubs = mo.newSubsFromReps;
-    const prevSubs = i > 0 ? data[i - 1].subscribers : 0;
-    const churnedSubs = Math.max(0, prevSubs + netNewSubs - mo.subscribers);
-    // Engine-emitted figures preferred (same source the Spreadsheet uses).
-    // Fallback keeps backward compatibility with older snapshots.
-    const productFulfillment = mo.cogsExpense ?? mo.subscribers * costPerSub;
-    const chargebackCost = mo.chargebackCost ?? (mo.chargebacks ?? 0) * costPerSub;
-    const welcomeKitCost = mo.welcomeKitCost ?? 0;
-    const buckPlatform = mo.buckPlatformCost ?? 0;
-    const buckLicense = mo.buckLicenseCost ?? 0;
-    const buckTokens = mo.buckTokenCost ?? 0;
-    const addOnCost = mo.addOnCost ?? 0;
-    const commissions =
-      mo.commissionExpense ??
-      mo.costs -
-        productFulfillment -
-        mo.operationalOverhead -
-        chargebackCost -
-        welcomeKitCost -
-        buckPlatform -
-        addOnCost;
-    const grossProfit = mo.revenue - productFulfillment;
-    const grossMarginPct = mo.revenue > 0 ? (grossProfit / mo.revenue) * 100 : 0;
-    const totalOpEx =
-      commissions + buckPlatform + addOnCost + welcomeKitCost + mo.operationalOverhead;
-    const netMarginPct = mo.revenue > 0 ? (mo.netProfit / mo.revenue) * 100 : 0;
-    return {
-      ...mo,
-      grossNewSales,
-      netNewSubs,
-      churnedSubs,
-      productFulfillment,
-      grossProfit,
-      grossMarginPct,
-      commissions,
-      buckPlatform,
-      buckLicense,
-      buckTokens,
-      addOnCost,
-      welcomeKitCost,
-      totalOpEx,
-      netMarginPct,
-    };
-  });
-
-  // Running cumulative revenue
-  const cumulativeRevenues = rows.reduce<number[]>((acc, r) => {
-    const prev = acc.length > 0 ? acc[acc.length - 1] : 0;
-    acc.push(prev + r.revenue);
-    return acc;
-  }, []);
-
-  // Totals column — same shape the Spreadsheet view's totals row uses.
-  const totals = {
-    activeReps: rows[rows.length - 1]?.activeReps ?? 0,
-    grossNewSales: rows.reduce((s, r) => s + r.grossNewSales, 0),
-    chargebacks: rows.reduce((s, r) => s + (r.chargebacks ?? 0), 0),
-    netNewSubs: rows.reduce((s, r) => s + r.netNewSubs, 0),
-    churnedSubs: rows.reduce((s, r) => s + r.churnedSubs, 0),
-    subscribers: rows[rows.length - 1]?.subscribers ?? 0,
-    revenue: rows.reduce((s, r) => s + r.revenue, 0),
-    cumulativeRevenue: cumulativeRevenues[cumulativeRevenues.length - 1] ?? 0,
-    productFulfillment: rows.reduce((s, r) => s + r.productFulfillment, 0),
-    grossProfit: rows.reduce((s, r) => s + r.grossProfit, 0),
-    grossMarginPct: 0, // averaged across months below
-    commissions: rows.reduce((s, r) => s + r.commissions, 0),
-    buckPlatform: rows.reduce((s, r) => s + r.buckPlatform, 0),
-    buckLicense: rows.reduce((s, r) => s + r.buckLicense, 0),
-    buckTokens: rows.reduce((s, r) => s + r.buckTokens, 0),
-    addOnCost: rows.reduce((s, r) => s + r.addOnCost, 0),
-    welcomeKitCost: rows.reduce((s, r) => s + r.welcomeKitCost, 0),
-    operationalOverhead: rows.reduce((s, r) => s + r.operationalOverhead, 0),
-    totalOpEx: rows.reduce((s, r) => s + r.totalOpEx, 0),
-    costs: rows.reduce((s, r) => s + r.costs, 0),
-    netProfit: rows.reduce((s, r) => s + r.netProfit, 0),
-    cumulativeProfit: rows[rows.length - 1]?.cumulativeProfit ?? 0,
-    netMarginPct: 0, // averaged across months below
-  };
-  totals.grossMarginPct =
-    totals.revenue > 0 ? (totals.grossProfit / totals.revenue) * 100 : 0;
-  totals.netMarginPct =
-    totals.revenue > 0 ? (totals.netProfit / totals.revenue) * 100 : 0;
-
-  // Row definitions
-  type RowDef = {
-    label: string;
-    getValue: (idx: number) => number;
-    getTotal: () => number;
-    format: "currency" | "number" | "percent";
-    bold?: boolean;
-    profitColor?: boolean;
-    lossColor?: boolean; // show in red when value > 0 (indicates a loss)
-  };
-
-  type SectionDef = {
-    section: string;
-    rows: RowDef[];
-  };
-
-  // Per-tier new subs breakdown rows
-  const perTierNewSubsRows: RowDef[] = tierIds.length > 1 ? tierIds.map((tierId) => ({
-    label: t("financials.projection.tier_indent", { tier: tierId }),
-    getValue: (i: number) => {
-      const entry = rows[i].newSubsByTier?.find((tier) => tier.tierId === tierId);
-      return entry?.count ?? 0;
-    },
-    getTotal: () => rows.reduce((s, r) => {
-      const entry = r.newSubsByTier?.find((tier) => tier.tierId === tierId);
-      return s + (entry?.count ?? 0);
-    }, 0),
-    format: "number" as const,
-  })) : [];
-
-  // Per-billing-cycle revenue breakdown rows
-  const hasBillingBreakdown = data[0]?.revenueByBillingCycle != null;
-  const billingCycleRevenueRows: RowDef[] = hasBillingBreakdown ? [
-    {
-      label: t("financials.projection.row.monthly_billing"),
-      getValue: (i: number) => rows[i].revenueByBillingCycle?.monthly ?? 0,
-      getTotal: () => rows.reduce((s, r) => s + (r.revenueByBillingCycle?.monthly ?? 0), 0),
-      format: "currency" as const,
-    },
-    {
-      label: t("financials.projection.row.biannual_billing"),
-      getValue: (i: number) => rows[i].revenueByBillingCycle?.biannual ?? 0,
-      getTotal: () => rows.reduce((s, r) => s + (r.revenueByBillingCycle?.biannual ?? 0), 0),
-      format: "currency" as const,
-    },
-    {
-      label: t("financials.projection.row.annual_billing"),
-      getValue: (i: number) => rows[i].revenueByBillingCycle?.annual ?? 0,
-      getTotal: () => rows.reduce((s, r) => s + (r.revenueByBillingCycle?.annual ?? 0), 0),
-      format: "currency" as const,
-    },
-  ] : [];
-
-  // Profit Split rows — one row per configured party. The party's share
-  // of the month's net profit (only when profit is positive; losses
-  // aren't distributed). Mirrors how the Spreadsheet view renders the
-  // section.
-  const profitSplitRows = (results.profitSplit?.parties ?? []).map((party) => ({
-    label: t("financials.pl.party_label", { name: party.name, percent: party.percent }),
-    getValue: (i: number) => {
-      const np = rows[i].netProfit;
-      return np > 0 ? np * (party.percent / 100) : 0;
-    },
-    getTotal: () => {
-      return rows.reduce(
-        (s, r) => s + (r.netProfit > 0 ? r.netProfit * (party.percent / 100) : 0),
-        0,
-      );
-    },
-    format: "currency" as const,
-    profitColor: true,
-  }));
-
-  // Sections mirror the Spreadsheet view's structure (Subscribers /
-  // Revenue / COGS / OpEx / Bottom Line / Profit Split) so the CFO
-  // reads both tabs the same way — only the time axis differs.
-  const sections: SectionDef[] = [
-    {
-      section: t("financials.projection.section.subscribers"),
-      rows: [
-        {
-          label: t("financials.cohort.row.active_reps"),
-          getValue: (i) => rows[i].activeReps,
-          getTotal: () => totals.activeReps,
-          format: "number",
-        },
-        {
-          label: t("financials.projection.row.gross_new_sales"),
-          getValue: (i) => rows[i].grossNewSales,
-          getTotal: () => totals.grossNewSales,
-          format: "number",
-        },
-        ...perTierNewSubsRows,
-        ...(totals.chargebacks > 0 ? [{
-          label: t("financials.projection.row.chargebacks"),
-          getValue: (i: number) => rows[i].chargebacks ?? 0,
-          getTotal: () => totals.chargebacks,
-          format: "number" as const,
-          lossColor: true,
-        }] : []),
-        {
-          label: t("financials.projection.row.net_new_subs"),
-          getValue: (i) => rows[i].netNewSubs,
-          getTotal: () => totals.netNewSubs,
-          format: "number",
-          bold: true,
-        },
-        {
-          label: t("financials.projection.row.lost_to_churn"),
-          getValue: (i) => rows[i].churnedSubs,
-          getTotal: () => totals.churnedSubs,
-          format: "number",
-          lossColor: true,
-        },
-        {
-          label: t("financials.projection.row.total_active"),
-          getValue: (i) => rows[i].subscribers,
-          getTotal: () => totals.subscribers,
-          format: "number",
-          bold: true,
-        },
-      ],
-    },
-    {
-      section: t("financials.projection.section.revenue"),
-      rows: [
-        {
-          label: t("financials.projection.row.subscription_revenue"),
-          getValue: (i) => rows[i].revenue,
-          getTotal: () => totals.revenue,
-          format: "currency",
-          bold: true,
-        },
-        ...billingCycleRevenueRows,
-      ],
-    },
-    {
-      section: t("financials.projection.section.cogs"),
-      rows: [
-        {
-          label: t("financials.projection.row.product_fulfillment"),
-          getValue: (i) => rows[i].productFulfillment,
-          getTotal: () => totals.productFulfillment,
-          format: "currency",
-        },
-        {
-          label: t("financials.projection.row.gross_profit"),
-          getValue: (i) => rows[i].grossProfit,
-          getTotal: () => totals.grossProfit,
-          format: "currency",
-          bold: true,
-          profitColor: true,
-        },
-        {
-          label: t("financials.projection.row.gross_margin_pct"),
-          getValue: (i) => rows[i].grossMarginPct,
-          getTotal: () => totals.grossMarginPct,
-          format: "percent",
-        },
-      ],
-    },
-    {
-      section: t("financials.projection.section.opex"),
-      rows: [
-        {
-          label: t("financials.projection.row.commissions"),
-          getValue: (i) => rows[i].commissions,
-          getTotal: () => totals.commissions,
-          format: "currency",
-        },
-        {
-          label: t("financials.projection.row.buck_license"),
-          getValue: (i) => rows[i].buckLicense,
-          getTotal: () => totals.buckLicense,
-          format: "currency",
-        },
-        {
-          label: t("financials.projection.row.buck_tokens"),
-          getValue: (i) => rows[i].buckTokens,
-          getTotal: () => totals.buckTokens,
-          format: "currency",
-        },
-        {
-          label: "Add-ons (Path Scale)",
-          getValue: (i) => rows[i].addOnCost,
-          getTotal: () => totals.addOnCost,
-          format: "currency",
-        },
-        {
-          label: "Welcome Kit",
-          getValue: (i) => rows[i].welcomeKitCost,
-          getTotal: () => totals.welcomeKitCost,
-          format: "currency",
-        },
-        {
-          label: t("financials.projection.row.overhead"),
-          getValue: (i) => rows[i].operationalOverhead,
-          getTotal: () => totals.operationalOverhead,
-          format: "currency",
-        },
-        {
-          label: t("financials.projection.row.total_opex"),
-          getValue: (i) => rows[i].totalOpEx,
-          getTotal: () => totals.totalOpEx,
-          format: "currency",
-          bold: true,
-        },
-      ],
-    },
-    {
-      section: t("financials.projection.section.bottom_line"),
-      rows: [
-        {
-          label: t("financials.projection.row.net_profit"),
-          getValue: (i) => rows[i].netProfit,
-          getTotal: () => totals.netProfit,
-          format: "currency",
-          bold: true,
-          profitColor: true,
-        },
-        {
-          label: t("financials.projection.row.cumulative_profit"),
-          getValue: (i) => rows[i].cumulativeProfit,
-          getTotal: () => totals.cumulativeProfit,
-          format: "currency",
-          bold: true,
-          profitColor: true,
-        },
-        {
-          label: t("financials.projection.row.net_margin_pct"),
-          getValue: (i) => rows[i].netMarginPct,
-          getTotal: () => totals.netMarginPct,
-          format: "percent",
-        },
-      ],
-    },
-    ...(profitSplitRows.length > 0
-      ? [{
-          section: t("financials.projection.section.profit_split"),
-          rows: profitSplitRows,
-        }]
-      : []),
-  ];
-
-  function formatValue(value: number, format: "currency" | "number" | "percent"): string {
-    switch (format) {
-      case "currency":
-        return formatNumberAsMoney(value, locale);
-      case "number":
-        return formatNumber(Math.round(value), locale, "integer");
-      case "percent":
-        return formatNumber(value / 100, locale, "percent");
-    }
-  }
-
-  function valueCellClass(value: number, _format: string, profitColor?: boolean, lossColor?: boolean): string {
-    const classes: string[] = ["tabular-nums text-right whitespace-nowrap px-2 py-1.5"];
-    if (lossColor && value > 0) {
-      classes.push("text-red-500");
-    } else if (value < 0) {
-      classes.push("text-red-500");
-    } else if (profitColor && value > 0) {
-      classes.push("text-green-600");
-    } else if (profitColor && value === 0) {
-      classes.push("text-muted-foreground");
-    }
-    return classes.join(" ");
-  }
-
+  // Aggregate view — same visual structure as the per-cohort lifecycle
+  // (collapsible sections, parent/child rows, "Active by Plan & Cycle"
+  // detail block, COGS broken into Product/Shipping/Processing,
+  // cash-flow lumps for biannual/annual revenue + Buck license). Built
+  // by SUMMING per-cohort lifecycles by calendar month — that
+  // construction guarantees the Mo 1 aggregate equals Cohort-1's Mo-of-life
+  // 1 (since only Cohort-1 contributes at calendar Mo 1), giving the user
+  // a clean reconciliation benchmark across the two tabs.
   return (
     <div className="space-y-2">
       {Selector}
-      <div className="overflow-x-auto border rounded-md">
-        <table className="w-full text-xs border-collapse">
-          <thead>
-            <tr className="border-b bg-muted/50">
-              <th className="sticky left-0 z-10 bg-muted/50 min-w-[160px] px-3 py-2 text-left font-medium text-muted-foreground">
-                {t("financials.cohort.column.metric")}
-              </th>
-              {rows.map((_, i) => (
-                <th
-                  key={i}
-                  className="min-w-[100px] px-2 py-2 text-right font-medium text-muted-foreground whitespace-nowrap"
-                >
-                  {t("financials.cohort.column.month_long", { month: i + 1 })}
-                </th>
-              ))}
-              <th className="min-w-[100px] px-2 py-2 text-right font-semibold text-foreground whitespace-nowrap border-l-2 border-border">
-                {t("financials.cohort.column.total")}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {sections.map((section) => (
-              <SectionBlock key={section.section} section={section} months={months} formatValue={formatValue} valueCellClass={valueCellClass} />
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <AggregateCohortTable
+        cohortLifecycles={cohortLifecycles}
+        cohortProjection={results.cohortProjection}
+        profitSplitParties={results.profitSplit?.parties ?? []}
+        scenarioTierIds={inputs?.tiers?.map((t) => t.tierId) ?? []}
+        tierBillingDistributions={tierBillingDistributions}
+        months={months}
+        locale={locale}
+      />
     </div>
   );
 }
 
-function SectionBlock({
-  section,
-  months,
-  formatValue,
-  valueCellClass,
-}: {
-  section: { section: string; rows: { label: string; getValue: (i: number) => number; getTotal: () => number; format: "currency" | "number" | "percent"; bold?: boolean; profitColor?: boolean; lossColor?: boolean }[] };
-  months: number;
-  formatValue: (value: number, format: "currency" | "number" | "percent") => string;
-  valueCellClass: (value: number, format: string, profitColor?: boolean, lossColor?: boolean) => string;
-}) {
-  return (
-    <>
-      {/* Section header */}
-      <tr className="bg-muted/30">
-        <td
-          colSpan={months + 2}
-          className="sticky left-0 z-10 bg-muted/30 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground"
-        >
-          {section.section}
-        </td>
-      </tr>
-      {/* Data rows */}
-      {section.rows.map((row) => {
-        const monthIndices = Array.from({ length: months }, (_, i) => i);
-        const totalValue = row.getTotal();
-
-        return (
-          <tr key={row.label} className="border-b border-border/40 hover:bg-muted/10 transition-colors">
-            <td
-              className={cn(
-                "sticky left-0 z-10 bg-background min-w-[160px] px-3 py-1.5 text-muted-foreground whitespace-nowrap",
-                row.bold && "font-semibold text-foreground"
-              )}
-            >
-              {row.label}
-            </td>
-            {monthIndices.map((i) => {
-              const value = row.getValue(i);
-              return (
-                <td
-                  key={i}
-                  className={cn(
-                    valueCellClass(value, row.format, row.profitColor, row.lossColor),
-                    row.bold && "font-semibold"
-                  )}
-                >
-                  {formatValue(value, row.format)}
-                </td>
-              );
-            })}
-            {/* Total column */}
-            <td
-              className={cn(
-                valueCellClass(totalValue, row.format, row.profitColor, row.lossColor),
-                "border-l-2 border-border",
-                row.bold && "font-semibold"
-              )}
-            >
-              {formatValue(totalValue, row.format)}
-            </td>
-          </tr>
-        );
-      })}
-    </>
-  );
-}
-
 /**
- * Renders ONE acquisition cohort's lifetime in the 24-month window —
+ * Renders ONE acquisition cohort's lifetime in the projection window —
  * each column is a "month of life" (1 = acquisition month, 2 = first
  * month after, …) for the same starting group of subscribers, NOT a
  * calendar month with shifting active counts.
@@ -562,6 +138,8 @@ function SectionBlock({
 function CohortLifecycleTable({
   lifecycle,
   profitSplitParties,
+  cohortProjection,
+  tierBillingDistributions,
   locale,
 }: {
   lifecycle: NonNullable<
@@ -570,6 +148,19 @@ function CohortLifecycleTable({
   profitSplitParties: NonNullable<
     ReturnType<typeof useFinancialStore.getState>["results"]
   >["profitSplit"]["parties"];
+  /** Aggregate cohort projection — used to look up the active-rep count
+   *  at each calendar month the cohort touches (reps grow scenario-level,
+   *  not cohort-level, so we read them from the central series). */
+  cohortProjection: NonNullable<
+    ReturnType<typeof useFinancialStore.getState>["results"]
+  >["cohortProjection"];
+  /** Per-tier billing distribution (same source the scenario builder
+   *  shows). Drives the "(X%)" suffix in the "Active by Plan & Cycle"
+   *  rows so the user reads each tier's mix without leaving the table. */
+  tierBillingDistributions: Map<
+    string,
+    { monthly: number; biannual: number; annual: number }
+  >;
   locale: Locale;
 }) {
   const t = useT();
@@ -582,6 +173,50 @@ function CohortLifecycleTable({
     chargebacks,
     grossNewSubsByTier,
   } = lifecycle;
+
+  // Collapse state — sections and parent rows are independently
+  // collapsible. Default state matches the user's "overview-first"
+  // mental model: parent rows that have detail children start
+  // collapsed; sections start expanded EXCEPT the dense
+  // "Active by Plan & Cycle" detail block which starts collapsed.
+  // Click any chevron to toggle.
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
+    () => new Set(["active-by-plan-cycle"]),
+  );
+  const [collapsedRows, setCollapsedRows] = useState<Set<string>>(() => {
+    const base = new Set([
+      "subscribers-gross", // hide per-tier breakdown of gross signups
+      "monthly-billing", // hide per-tier breakdown of monthly revenue
+      "biannual-billing",
+      "annual-billing",
+      "commissions", // hide per-tier commission spend behind the headline
+      "buck", // hide license/tokens behind the Buck rollup
+      "addons", // hide individual add-ons behind the Add-Ons rollup
+    ]);
+    // Active by Plan & Cycle parents AND per-tier commission parents —
+    // one of each per tier. Both start collapsed so the user sees plan-
+    // level totals first and drills into cycle / upfront-residual detail
+    // only when needed.
+    for (const t of grossNewSubsByTier ?? []) {
+      base.add(`active-by-plan-cycle--${t.tierId}`);
+      base.add(`commissions--${t.tierId}`);
+    }
+    return base;
+  });
+  const toggleSection = (id: string) =>
+    setCollapsedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const toggleRow = (id: string) =>
+    setCollapsedRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   // Header summary chips — give the cohort a one-line identity above
   // the table so the user always sees what "this safra" is.
@@ -640,16 +275,30 @@ function CohortLifecycleTable({
   );
 
   type RowDef = {
+    /** Unique within the section. Required when this row is a parent
+     *  (referenced by other rows' parentId) OR when this row is a
+     *  child (so visibility logic can look up its parent). */
+    id?: string;
+    /** Reference to another row's id in the same section. When that
+     *  parent is collapsed, this row is hidden. */
+    parentId?: string;
     label: string;
     getValue: (m: typeof months[number]) => number;
     getTotal: () => number;
-    format: "currency" | "number" | "percent";
+    format: "currency" | "number" | "percent" | "decimal";
     bold?: boolean;
     profitColor?: boolean;
     lossColor?: boolean;
   };
 
-  type SectionDef = { section: string; rows: RowDef[] };
+  type SectionDef = {
+    /** Unique section id — also serves as the collapse-state key. */
+    id: string;
+    section: string;
+    rows: RowDef[];
+    /** Section starts collapsed when true. Default false (expanded). */
+    defaultCollapsed?: boolean;
+  };
 
   // Per-month derived values: gross profit, gross margin, total opex,
   // net margin %. Same shape the aggregate (and Spreadsheet view) uses,
@@ -706,17 +355,42 @@ function CohortLifecycleTable({
   // (Only meaningful when split parties are configured at the scenario
   // level. Per-cohort attribution is informational: the actual split
   // distributes scenario-level monthly margin, not cohort-by-cohort.)
-  const profitSplitRows = (profitSplitParties ?? []).map((party) => ({
-    label: t("financials.pl.party_label", { name: party.name, percent: party.percent }),
-    getValue: (m: CohortMonth) => (m.netProfit > 0 ? m.netProfit * (party.percent / 100) : 0),
-    getTotal: () =>
-      months.reduce(
-        (s, m) => s + (m.netProfit > 0 ? m.netProfit * (party.percent / 100) : 0),
-        0,
-      ),
-    format: "currency" as const,
-    profitColor: true,
-  }));
+  // Two rows per party: monthly distribution and the running cumulative.
+  // The cumulative row tells the user "how much has this party earned
+  // through month K" — useful for partner / payout reporting.
+  const profitSplitRows = (profitSplitParties ?? []).flatMap((party) => {
+    const partyShare = (m: CohortMonth) =>
+      m.netProfit > 0 ? m.netProfit * (party.percent / 100) : 0;
+    return [
+      {
+        label: t("financials.pl.party_label", {
+          name: party.name,
+          percent: party.percent,
+        }),
+        getValue: (m: CohortMonth) => partyShare(m),
+        getTotal: () => months.reduce((s, m) => s + partyShare(m), 0),
+        format: "currency" as const,
+        profitColor: true,
+      },
+      {
+        // Per user preference, the percent goes AFTER "Cumulative"
+        // (e.g. "Bucked Up — Cumulative (55%)") so the qualifier reads
+        // as a parenthetical share rather than tagging onto the name.
+        label: `${party.name} — Cumulative (${party.percent}%)`,
+        getValue: (m: CohortMonth) => {
+          let acc = 0;
+          for (const x of months) {
+            acc += partyShare(x);
+            if (x.monthOfLife === m.monthOfLife) return acc;
+          }
+          return acc;
+        },
+        getTotal: () => months.reduce((s, m) => s + partyShare(m), 0),
+        format: "currency" as const,
+        profitColor: true,
+      },
+    ];
+  });
 
   // Index lookup so the lifecycle's derived rows can be read by month
   // index in the existing CohortSectionBlock signature.
@@ -727,8 +401,12 @@ function CohortLifecycleTable({
   // Per-tier rows under "Subscribers" — show how the cohort's gross
   // acquisitions distribute across plans. Label carries the
   // structural tier % so the user sees both quantity and share
-  // without an extra row per tier.
+  // without an extra row per tier. Each row is a CHILD of the
+  // "subscribers-gross" parent so the user can collapse the per-tier
+  // detail and just see the headline 150.
   const perTierSubsRows: {
+    id: string;
+    parentId: string;
     label: string;
     getValue: (m: CohortMonth) => number;
     getTotal: () => number;
@@ -736,6 +414,8 @@ function CohortLifecycleTable({
   }[] =
     grossNewSubsByTier && grossNewSubsByTier.length > 1
       ? grossNewSubsByTier.map((entry) => ({
+          id: `subscribers-gross--${entry.tierId}`,
+          parentId: "subscribers-gross",
           label: t("financials.projection.tier_indent_with_pct", {
             tier: entry.tierId,
             percent: formatNumber(entry.subscriberPercent / 100, locale, "percent"),
@@ -755,6 +435,8 @@ function CohortLifecycleTable({
   const buildCyclePerTierRows = (
     cycle: "monthly" | "biannual" | "annual",
   ): {
+    id: string;
+    parentId: string;
     label: string;
     getValue: (m: CohortMonth) => number;
     getTotal: () => number;
@@ -762,6 +444,8 @@ function CohortLifecycleTable({
   }[] => {
     if (!grossNewSubsByTier || grossNewSubsByTier.length <= 1) return [];
     return grossNewSubsByTier.map((tierEntry) => ({
+      id: `${cycle}-billing--${tierEntry.tierId}`,
+      parentId: `${cycle}-billing`,
       // Subscriber count alongside the plan name lets the user audit
       // each cycle's revenue: e.g. "Legend (34 subs)" + $X annual reads
       // as "34 Legend subs prepaid annual at $X/year". Counts come from
@@ -789,12 +473,30 @@ function CohortLifecycleTable({
 
   const sections: SectionDef[] = [
     {
+      id: "subscribers",
       section: t("financials.projection.section.subscribers"),
       rows: [
+        // Sales Reps — total reps active scenario-wide at each calendar
+        // month this cohort touches. Reps grow at a scenario-level rate
+        // (not per-cohort), so we read from the central cohortProjection
+        // series and look up by the cohort's monthIndex. Total column
+        // shows the rep count at the cohort's last month.
+        {
+          label: t("financials.cohort.row.active_reps"),
+          getValue: (m) =>
+            cohortProjection[m.monthIndex - 1]?.activeReps ?? 0,
+          getTotal: () =>
+            cohortProjection[months[months.length - 1]?.monthIndex - 1]
+              ?.activeReps ?? 0,
+          format: "number",
+        },
         // Subscribers — the cohort's gross acquisitions. Static row:
         // the cohort's size at signup is `grossNewSubs`, shown in Mo 1
         // and zero everywhere after (no new subs join an existing cohort).
+        // Parent of `perTierSubsRows`: when collapsed, the per-plan
+        // breakdown hides under the "Subscribers: 150" headline.
         {
+          id: "subscribers-gross",
           label: "Subscribers",
           getValue: (m) => (m.monthOfLife === 1 ? grossNewSubs : 0),
           getTotal: () => grossNewSubs,
@@ -833,7 +535,100 @@ function CohortLifecycleTable({
         },
       ],
     },
+    // Active subs broken down by (plan × billing cycle) — answers
+    // "where are these N active subs?" so the user can audit any
+    // revenue lump in the section below. The 12 rows (4 plans × 3
+    // cycles) hold the surviving sub population each month-of-life,
+    // fractional (no rounding) so revenue × rate × cycle-months
+    // reconciles exactly with the cycle-revenue sub-rows in REVENUE.
+    // Suppressed when there's only one tier configured.
+    ...(grossNewSubsByTier && grossNewSubsByTier.length > 1
+      ? [
+          {
+            id: "active-by-plan-cycle",
+            // Section starts collapsed — the per-tier parent rows show
+            // the tier total, and each tier expands into its three cycle
+            // children (Monthly / Biannual / Annual) so the user can
+            // drill down only when they need the cycle breakdown.
+            defaultCollapsed: true,
+            section: "Active by Plan & Cycle",
+            rows: grossNewSubsByTier.flatMap((tierEntry) => {
+              const cycles: ("monthly" | "biannual" | "annual")[] = [
+                "monthly",
+                "biannual",
+                "annual",
+              ];
+              const cycleLabels: Record<typeof cycles[number], string> = {
+                monthly: "Monthly",
+                biannual: "Biannual",
+                annual: "Annual",
+              };
+              const tierBilling = tierBillingDistributions.get(tierEntry.tierId);
+              const parentId = `active-by-plan-cycle--${tierEntry.tierId}`;
+              // Tier total (sum across cycles) — the parent row.
+              const tierParent: RowDef = {
+                id: parentId,
+                label: t("financials.projection.tier_indent", {
+                  tier: tierEntry.tierId,
+                }),
+                getValue: (m: CohortMonth) => {
+                  const e = m.subscribersByTierAndCycle?.find(
+                    (x) => x.tierId === tierEntry.tierId,
+                  );
+                  return e ? e.monthly + e.biannual + e.annual : 0;
+                },
+                getTotal: () => {
+                  const monthCount = months.length || 1;
+                  const total = months.reduce((s, m) => {
+                    const e = m.subscribersByTierAndCycle?.find(
+                      (x) => x.tierId === tierEntry.tierId,
+                    );
+                    return (
+                      s + (e ? e.monthly + e.biannual + e.annual : 0)
+                    );
+                  }, 0);
+                  return total / monthCount;
+                },
+                format: "decimal" as const,
+              };
+              // Per-cycle children — only visible when the tier parent
+              // is expanded. Cycle % suffix preserved so the user can
+              // still audit which slice of the tier each row represents.
+              const cycleChildren: RowDef[] = cycles.map((cycle) => ({
+                id: `${parentId}--${cycle}`,
+                parentId,
+                label: t("financials.projection.tier_subindent", {
+                  tier: `${cycleLabels[cycle]} (${formatNumber(
+                    (tierBilling?.[cycle] ?? 0) / 100,
+                    locale,
+                    "percent",
+                  )})`,
+                }),
+                getValue: (m: CohortMonth) => {
+                  const e = m.subscribersByTierAndCycle?.find(
+                    (x) => x.tierId === tierEntry.tierId,
+                  );
+                  return e ? e[cycle] : 0;
+                },
+                getTotal: () => {
+                  const monthCount = months.length || 1;
+                  const total = months.reduce((s, m) => {
+                    const e = m.subscribersByTierAndCycle?.find(
+                      (x) => x.tierId === tierEntry.tierId,
+                    );
+                    return s + (e ? e[cycle] : 0);
+                  }, 0);
+                  return total / monthCount;
+                },
+                format: "decimal" as const,
+              }));
+              return [tierParent, ...cycleChildren];
+            }),
+          },
+        ]
+      : []),
     {
+      id: "revenue",
       section: t("financials.projection.section.revenue"),
       rows: [
         {
@@ -848,10 +643,10 @@ function CohortLifecycleTable({
         // (subs prepay 6 months at signup and again every 6 months);
         // annual lumps at Mo 1/13. Outside lump months these sub-rows
         // read $0.00 — that's the correct cash-flow truth, not a bug.
-        // Each cycle row is followed by per-tier sub-rows showing
-        // which plan generated each chunk of revenue (suppressed when
-        // there's only one tier).
+        // Each cycle row is the parent of per-tier sub-rows; collapse
+        // a cycle to hide its plan breakdown.
         {
+          id: "monthly-billing",
           label: t("financials.projection.row.monthly_billing"),
           getValue: (m) => m.revenueByBillingCycle.monthly,
           getTotal: () => totals.revenueByBillingCycle.monthly,
@@ -859,6 +654,7 @@ function CohortLifecycleTable({
         },
         ...buildCyclePerTierRows("monthly"),
         {
+          id: "biannual-billing",
           label: t("financials.projection.row.biannual_billing"),
           getValue: (m) => m.revenueByBillingCycle.biannual,
           getTotal: () => totals.revenueByBillingCycle.biannual,
@@ -866,6 +662,7 @@ function CohortLifecycleTable({
         },
         ...buildCyclePerTierRows("biannual"),
         {
+          id: "annual-billing",
           label: t("financials.projection.row.annual_billing"),
           getValue: (m) => m.revenueByBillingCycle.annual,
           getTotal: () => totals.revenueByBillingCycle.annual,
@@ -875,21 +672,28 @@ function CohortLifecycleTable({
       ],
     },
     {
+      id: "cogs",
       section: t("financials.projection.section.cogs"),
       rows: [
         // Three-line breakdown — product COGS and shipping/handling
         // recur every month with the active base; payment processing
         // lumps with the cash inflows (per-transaction fee).
         {
-          label: "Product cost",
+          label: "Product Cost",
           getValue: (m) => m.productCogsCost,
           getTotal: () => totals.productCogsCost,
           format: "currency",
         },
         {
-          label: "Shipping + Handling",
-          getValue: (m) => m.shippingHandlingCost,
-          getTotal: () => totals.shippingHandlingCost,
+          label: "Shipping",
+          getValue: (m) => m.shippingCost,
+          getTotal: () => totals.shippingCost,
+          format: "currency",
+        },
+        {
+          label: "Handling",
+          getValue: (m) => m.handlingCost,
+          getTotal: () => totals.handlingCost,
           format: "currency",
         },
         {
@@ -915,52 +719,147 @@ function CohortLifecycleTable({
       ],
     },
     {
+      id: "opex",
       section: t("financials.projection.section.opex"),
       rows: [
-        {
-          label: t("financials.projection.row.commissions"),
-          getValue: (m) => lifecycleByMonthOfLife.get(m.monthOfLife)?.commissions ?? 0,
-          getTotal: () => lifetimeTotals.commissions,
-          format: "currency",
-        },
-        {
-          // License — Buck receives the full billing window upfront.
-          // Monthly subs contribute every month; biannual subs lump at
-          // Mo 1/7/13/19 (6× monthly license at signup and renewal);
-          // annual subs lump at Mo 1/13. The lump pattern mirrors the
-          // revenue rows above so audits reconcile cleanly.
-          label: t("financials.projection.row.buck_license"),
-          getValue: (m) => m.buckLicenseCost,
-          getTotal: () => totals.buckLicenseCost,
-          format: "currency",
-        },
-        {
-          // Tokens — AI consumption accrues continuously, so the
-          // platform charges per active sub every month regardless of
-          // billing cycle.
-          label: t("financials.projection.row.buck_tokens"),
-          getValue: (m) => m.buckTokenCost,
-          getTotal: () => totals.buckTokenCost,
-          format: "currency",
-        },
-        {
-          label: "Add-ons (Path Scale)",
-          getValue: (m) => m.addOnCost,
-          getTotal: () => totals.addOnCost,
-          format: "currency",
-        },
-        {
-          label: "Welcome Kit",
-          getValue: (m) => m.welcomeKitCost,
-          getTotal: () => totals.welcomeKitCost,
-          format: "currency",
-        },
+        // OpEx ordering: structural / "ground floor" costs first
+        // (Overhead, Welcome Kit), then variable platform/add-on costs
+        // (Buck, Add-Ons), then commissions last since they're the
+        // most active line for the user to drill into.
+        // ── Overhead ──────────────────────────────────────────────
+        // Per-cohort overhead is intentionally $0 — it's a scenario-
+        // level fixed cost not attributable to any single cohort. The
+        // line stays visible so the row order matches the aggregate
+        // and Spreadsheet views.
         {
           label: t("financials.projection.row.overhead"),
           getValue: () => 0,
           getTotal: () => 0,
           format: "currency",
         },
+        // ── Welcome Kit ───────────────────────────────────────────
+        {
+          label: "Welcome Kit",
+          getValue: (m) => m.welcomeKitCost,
+          getTotal: () => totals.welcomeKitCost,
+          format: "currency",
+        },
+        // ── Buck (parent) → Licenses + Tokens ─────────────────────
+        // Single rollup so the user sees the platform cost as one
+        // line; expand to inspect license vs token split (different
+        // cash patterns: license lumps with billing, tokens recur).
+        {
+          id: "buck",
+          label: "Buck",
+          getValue: (m) => m.buckCost,
+          getTotal: () => totals.buckCost,
+          format: "currency",
+        },
+        {
+          id: "buck--license",
+          parentId: "buck",
+          label: t("financials.projection.tier_indent", {
+            tier: t("financials.projection.row.buck_license"),
+          }),
+          getValue: (m) => m.buckLicenseCost,
+          getTotal: () => totals.buckLicenseCost,
+          format: "currency",
+        },
+        {
+          id: "buck--tokens",
+          parentId: "buck",
+          label: t("financials.projection.tier_indent", {
+            tier: t("financials.projection.row.buck_tokens"),
+          }),
+          getValue: (m) => m.buckTokenCost,
+          getTotal: () => totals.buckTokenCost,
+          format: "currency",
+        },
+        // ── Add-Ons (parent) → Path Scale ─────────────────────────
+        // Add-Ons is the catch-all for tier-attached extras. Today
+        // there's a single child (Path Scale); future add-ons would
+        // each get their own child row.
+        {
+          id: "addons",
+          label: "Add-Ons",
+          getValue: (m) => m.addOnCost,
+          getTotal: () => totals.addOnCost,
+          format: "currency",
+        },
+        {
+          id: "addons--path-scale",
+          parentId: "addons",
+          label: t("financials.projection.tier_indent", { tier: "Path Scale" }),
+          getValue: (m) => m.addOnCost,
+          getTotal: () => totals.addOnCost,
+          format: "currency",
+        },
+        // ── Commissions (parent) → tier (parent) → upfront/residual
+        // Three levels of detail: the headline total, then per-plan
+        // spend, then the upfront vs residual split inside each plan.
+        // Lets the user audit exactly what makes up "Legend $14k"
+        // without leaving the table.
+        {
+          id: "commissions",
+          label: t("financials.projection.row.commissions"),
+          getValue: (m) => lifecycleByMonthOfLife.get(m.monthOfLife)?.commissions ?? 0,
+          getTotal: () => lifetimeTotals.commissions,
+          format: "currency",
+        },
+        ...(grossNewSubsByTier && grossNewSubsByTier.length > 1
+          ? grossNewSubsByTier.flatMap<RowDef>((tierEntry) => {
+              const tierParentId = `commissions--${tierEntry.tierId}`;
+              const tierParent: RowDef = {
+                id: tierParentId,
+                parentId: "commissions",
+                label: t("financials.projection.tier_indent", {
+                  tier: tierEntry.tierId,
+                }),
+                getValue: (m) => {
+                  const e = m.commissionByTier?.find(
+                    (x) => x.tierId === tierEntry.tierId,
+                  );
+                  return e ? e.upfront + e.residual : 0;
+                },
+                getTotal: () => {
+                  const e = totals.commissionByTier?.find(
+                    (x) => x.tierId === tierEntry.tierId,
+                  );
+                  return e ? e.upfront + e.residual : 0;
+                },
+                format: "currency",
+              };
+              const upfront: RowDef = {
+                id: `${tierParentId}--upfront`,
+                parentId: tierParentId,
+                label: t("financials.projection.tier_subindent", {
+                  tier: "Upfront",
+                }),
+                getValue: (m) =>
+                  m.commissionByTier?.find((x) => x.tierId === tierEntry.tierId)?.upfront ??
+                  0,
+                getTotal: () =>
+                  totals.commissionByTier?.find((x) => x.tierId === tierEntry.tierId)
+                    ?.upfront ?? 0,
+                format: "currency",
+              };
+              const residual: RowDef = {
+                id: `${tierParentId}--residual`,
+                parentId: tierParentId,
+                label: t("financials.projection.tier_subindent", {
+                  tier: "Residual",
+                }),
+                getValue: (m) =>
+                  m.commissionByTier?.find((x) => x.tierId === tierEntry.tierId)?.residual ??
+                  0,
+                getTotal: () =>
+                  totals.commissionByTier?.find((x) => x.tierId === tierEntry.tierId)
+                    ?.residual ?? 0,
+                format: "currency",
+              };
+              return [tierParent, upfront, residual];
+            })
+          : []),
         {
           label: t("financials.projection.row.total_opex"),
           getValue: (m) => lifecycleByMonthOfLife.get(m.monthOfLife)?.totalOpEx ?? 0,
@@ -971,6 +870,7 @@ function CohortLifecycleTable({
       ],
     },
     {
+      id: "bottom-line",
       section: t("financials.projection.section.bottom_line"),
       rows: [
         {
@@ -999,18 +899,24 @@ function CohortLifecycleTable({
     },
     ...(profitSplitRows.length > 0
       ? [{
+          id: "profit-split",
           section: t("financials.projection.section.profit_split"),
           rows: profitSplitRows,
         }]
       : []),
   ];
 
-  function formatValue(v: number, fmt: "currency" | "number" | "percent"): string {
+  function formatValue(v: number, fmt: "currency" | "number" | "percent" | "decimal"): string {
     switch (fmt) {
       case "currency":
         return formatNumberAsMoney(v, locale);
       case "number":
         return formatNumber(Math.round(v), locale, "integer");
+      case "decimal":
+        // Fractional sub counts — use 2 decimals so 0.18 reads as
+        // "0.18" instead of being rounded away. Whole numbers still
+        // show as e.g. "9.00".
+        return formatNumber(v, locale, "decimal");
       case "percent":
         return formatNumber(v / 100, locale, "percent");
     }
@@ -1032,23 +938,34 @@ function CohortLifecycleTable({
   return (
     <div className="space-y-2">
       {summaryRow}
-      <div className="overflow-x-auto border rounded-md">
+      {/* The wrapper has to be a real scroll viewport (both axes, capped
+          via maxH) so sticky thead anchors to its top edge. With just
+          `overflow-x-auto` and no height limit, the wrapper grows to
+          fit the table and the sticky header has nothing to stick to —
+          it follows the page scroll up and out of view. */}
+      <div className="overflow-auto border rounded-md max-h-[75vh]">
         <table className="w-full text-xs border-collapse">
           <thead>
-            <tr className="border-b bg-muted/50">
-              <th className="sticky left-0 z-10 bg-muted/50 min-w-[200px] px-3 py-2 text-left font-medium text-muted-foreground">
+            {/* Header row sticky on the Y axis so column labels stay
+                visible as the user scrolls the table downward. The
+                metric (left-most) cell is sticky on BOTH axes — it has
+                to outrank everything else, so it gets the highest
+                z-index in the table; month headers sit just below at
+                z-20; section headers (sticky left only) stay at z-10. */}
+            <tr className="border-b bg-muted">
+              <th className="sticky left-0 top-0 z-30 bg-muted min-w-[200px] px-3 py-2 text-left font-medium text-muted-foreground">
                 {t("financials.cohort.column.metric")}
               </th>
               {months.map((m) => (
                 <th
                   key={m.monthOfLife}
-                  className="min-w-[90px] px-2 py-2 text-right font-medium text-muted-foreground whitespace-nowrap"
+                  className="sticky top-0 z-20 bg-muted min-w-[90px] px-2 py-2 text-right font-medium text-muted-foreground whitespace-nowrap"
                   title={`Calendar Month ${m.monthIndex}`}
                 >
                   Mo {m.monthOfLife}
                 </th>
               ))}
-              <th className="min-w-[100px] px-2 py-2 text-right font-semibold text-foreground whitespace-nowrap border-l-2 border-border">
+              <th className="sticky top-0 z-20 bg-muted min-w-[100px] px-2 py-2 text-right font-semibold text-foreground whitespace-nowrap border-l-2 border-border">
                 Lifetime
               </th>
             </tr>
@@ -1056,11 +973,15 @@ function CohortLifecycleTable({
           <tbody>
             {sections.map((section) => (
               <CohortSectionBlock
-                key={section.section}
+                key={section.id}
                 section={section}
                 months={months}
                 formatValue={formatValue}
                 valueCellClass={valueCellClass}
+                isSectionCollapsed={collapsedSections.has(section.id)}
+                collapsedRows={collapsedRows}
+                onToggleSection={() => toggleSection(section.id)}
+                onToggleRow={toggleRow}
               />
             ))}
           </tbody>
@@ -1079,74 +1000,1279 @@ function CohortSectionBlock({
   months,
   formatValue,
   valueCellClass,
+  isSectionCollapsed,
+  collapsedRows,
+  onToggleSection,
+  onToggleRow,
 }: {
   section: {
+    id: string;
     section: string;
     rows: {
+      id?: string;
+      parentId?: string;
       label: string;
       getValue: (m: CohortMonth) => number;
       getTotal: () => number;
-      format: "currency" | "number" | "percent";
+      format: "currency" | "number" | "percent" | "decimal";
       bold?: boolean;
       profitColor?: boolean;
       lossColor?: boolean;
     }[];
   };
   months: CohortMonth[];
-  formatValue: (v: number, f: "currency" | "number" | "percent") => string;
+  formatValue: (v: number, f: "currency" | "number" | "percent" | "decimal") => string;
   valueCellClass: (v: number, profitColor?: boolean, lossColor?: boolean) => string;
+  isSectionCollapsed: boolean;
+  collapsedRows: Set<string>;
+  onToggleSection: () => void;
+  onToggleRow: (id: string) => void;
 }) {
+  // Build a map of which rows have children — a row is a parent iff
+  // some other row in the same section has parentId === row.id. Used
+  // to decide whether to render a chevron (parents only).
+  const rowsWithChildren = new Set<string>();
+  for (const r of section.rows) {
+    if (r.parentId) rowsWithChildren.add(r.parentId);
+  }
+
+  // Walk a row's ancestor chain — if any ancestor is collapsed, the
+  // row is hidden. Cheap O(depth) lookup; rows here have at most one
+  // level of nesting today, but the loop handles deeper trees if we
+  // add them later.
+  const rowsById = new Map(section.rows.filter((r) => r.id).map((r) => [r.id!, r]));
+  const isRowVisible = (row: { parentId?: string }): boolean => {
+    let parentId = row.parentId;
+    while (parentId) {
+      if (collapsedRows.has(parentId)) return false;
+      parentId = rowsById.get(parentId)?.parentId;
+    }
+    return true;
+  };
+
   return (
     <>
-      <tr className="bg-muted/30">
+      {/* Section header — clickable across the full row; chevron
+          rotates to indicate collapsed/expanded. The section's data
+          rows are skipped entirely when collapsed (header still
+          visible so the user can re-open). Click handler on the
+          <tr> so any cell inside the header counts as a toggle. */}
+      <tr
+        className="bg-muted cursor-pointer select-none hover:bg-muted/80 transition-colors"
+        onClick={onToggleSection}
+      >
         <td
           colSpan={months.length + 2}
-          className="sticky left-0 z-10 bg-muted/30 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground"
+          className="sticky left-0 z-10 bg-muted px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground"
         >
-          {section.section}
+          <span className="inline-flex items-center gap-1">
+            <ChevronRight
+              className={cn(
+                "h-3 w-3 transition-transform",
+                !isSectionCollapsed && "rotate-90",
+              )}
+            />
+            {section.section}
+          </span>
         </td>
       </tr>
-      {section.rows.map((row) => {
-        const totalValue = row.getTotal();
-        return (
-          <tr
-            key={row.label}
-            className="border-b border-border/40 hover:bg-muted/10 transition-colors"
-          >
-            <td
+      {!isSectionCollapsed &&
+        section.rows.map((row) => {
+          if (!isRowVisible(row)) return null;
+          const totalValue = row.getTotal();
+          const hasChildren = !!row.id && rowsWithChildren.has(row.id);
+          const isCollapsed = !!row.id && collapsedRows.has(row.id);
+          const handleRowClick = hasChildren && row.id
+            ? () => onToggleRow(row.id!)
+            : undefined;
+          return (
+            <tr
+              key={row.id ?? row.label}
               className={cn(
-                "sticky left-0 z-10 bg-background min-w-[200px] px-3 py-1.5 text-muted-foreground whitespace-nowrap",
-                row.bold && "font-semibold text-foreground",
+                "border-b border-border/40 hover:bg-muted/10 transition-colors",
+                hasChildren && "cursor-pointer select-none",
               )}
+              onClick={handleRowClick}
             >
-              {row.label}
-            </td>
-            {months.map((m) => {
-              const value = row.getValue(m);
-              return (
-                <td
-                  key={m.monthOfLife}
-                  className={cn(
-                    valueCellClass(value, row.profitColor, row.lossColor),
-                    row.bold && "font-semibold",
+              <td
+                className={cn(
+                  "sticky left-0 z-10 bg-background min-w-[200px] px-3 py-1.5 text-muted-foreground whitespace-nowrap",
+                  row.bold && "font-semibold text-foreground",
+                )}
+              >
+                <span className="inline-flex items-center gap-1">
+                  {hasChildren ? (
+                    <ChevronRight
+                      className={cn(
+                        "h-3 w-3 shrink-0 transition-transform",
+                        !isCollapsed && "rotate-90",
+                      )}
+                    />
+                  ) : (
+                    <span className="w-3 shrink-0" />
                   )}
-                >
-                  {formatValue(value, row.format)}
-                </td>
-              );
-            })}
-            <td
-              className={cn(
-                valueCellClass(totalValue, row.profitColor, row.lossColor),
-                "border-l-2 border-border",
-                row.bold && "font-semibold",
-              )}
-            >
-              {formatValue(totalValue, row.format)}
-            </td>
-          </tr>
-        );
-      })}
+                  {row.label}
+                </span>
+              </td>
+              {months.map((m) => {
+                const value = row.getValue(m);
+                return (
+                  <td
+                    key={m.monthOfLife}
+                    className={cn(
+                      valueCellClass(value, row.profitColor, row.lossColor),
+                      row.bold && "font-semibold",
+                    )}
+                  >
+                    {formatValue(value, row.format)}
+                  </td>
+                );
+              })}
+              <td
+                className={cn(
+                  valueCellClass(totalValue, row.profitColor, row.lossColor),
+                  "border-l-2 border-border",
+                  row.bold && "font-semibold",
+                )}
+              >
+                {formatValue(totalValue, row.format)}
+              </td>
+            </tr>
+          );
+        })}
     </>
   );
 }
+
+/**
+ * Aggregate cohort table — same visual structure as CohortLifecycleTable
+ * but indexed by CALENDAR MONTH and summed across all cohorts. Built by
+ * adding `cohortLifecycles[c].months[K - c.acquisitionMonth]` for every
+ * cohort c that's active at calendar month K.
+ *
+ * By construction:
+ *   - Calendar Mo 1 ≡ Cohort-1's Mo-of-life 1 (only cohort 1 is active).
+ *     Use this as the user's primary reconciliation benchmark across the
+ *     two views — every per-line value matches.
+ *   - Calendar Mo K ≡ Σ across cohorts c≤K of cohort_c.months[K-c+1].
+ *
+ * Operational overhead is the only line NOT computed by summing cohorts —
+ * it's a scenario-level fixed cost, pulled from the engine's existing
+ * aggregate `cohortProjection[K-1].operationalOverhead` and added on top.
+ */
+function AggregateCohortTable({
+  cohortLifecycles,
+  cohortProjection,
+  profitSplitParties,
+  scenarioTierIds,
+  tierBillingDistributions,
+  months,
+  locale,
+}: {
+  cohortLifecycles: NonNullable<
+    ReturnType<typeof useFinancialStore.getState>["results"]
+  >["cohortLifecycles"];
+  cohortProjection: NonNullable<
+    ReturnType<typeof useFinancialStore.getState>["results"]
+  >["cohortProjection"];
+  profitSplitParties: NonNullable<
+    ReturnType<typeof useFinancialStore.getState>["results"]
+  >["profitSplit"]["parties"];
+  scenarioTierIds: string[];
+  /** Per-tier billing distribution — drives the "(X%)" suffix in the
+   *  Active by Plan & Cycle row labels. */
+  tierBillingDistributions: Map<
+    string,
+    { monthly: number; biannual: number; annual: number }
+  >;
+  months: number;
+  locale: Locale;
+}) {
+  const t = useT();
+
+  // Collapse state — same defaults as the per-cohort lifecycle so the
+  // two tabs read identically. Active by Plan & Cycle starts collapsed
+  // (12 dense detail rows), per-tier sub-breakdowns start collapsed
+  // under their parents.
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
+    () => new Set(["active-by-plan-cycle"]),
+  );
+  const [collapsedRows, setCollapsedRows] = useState<Set<string>>(() => {
+    const base = new Set([
+      "subscribers-gross",
+      "monthly-billing",
+      "biannual-billing",
+      "annual-billing",
+      "commissions",
+      "overhead",
+      "buck",
+      "addons",
+    ]);
+    // Active by Plan & Cycle parents AND per-tier commission parents —
+    // one of each per tier. Collapsed by default; expand to drill in.
+    for (const tid of scenarioTierIds) {
+      base.add(`active-by-plan-cycle--${tid}`);
+      base.add(`commissions--${tid}`);
+    }
+    return base;
+  });
+  const toggleSection = (id: string) =>
+    setCollapsedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const toggleRow = (id: string) =>
+    setCollapsedRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  // Tier id list — pulled from any cohort's grossNewSubsByTier (all
+  // cohorts share the same tier shape) with a fallback to the scenario
+  // input. Determines the per-tier breakdown rows.
+  const tierIds: string[] =
+    cohortLifecycles[0]?.grossNewSubsByTier?.map((e) => e.tierId) ??
+    scenarioTierIds;
+  const hasMultipleTiers = tierIds.length > 1;
+
+  // Per-tier subscriber-percent map (used in row labels — read once from
+  // any cohort, since the scenario distribution is invariant across cohorts).
+  const tierSharePct = new Map<string, number>(
+    (cohortLifecycles[0]?.grossNewSubsByTier ?? []).map((e) => [
+      e.tierId,
+      e.subscriberPercent,
+    ]),
+  );
+
+  // ── Build aggregate-by-calendar-month from cohortLifecycles ─────────
+  // For each calendar month K in [1..months], sum the matching
+  // month-of-life entry from every cohort active at K.
+  type AggMonth = {
+    monthIndex: number;
+    // Aggregate-only: cohort-K's gross/net/chargebacks (only one cohort
+    // starts each calendar month, so these are that cohort's values).
+    grossNewSubs: number;
+    netNewSubs: number;
+    chargebacks: number;
+    grossNewSubsByTier: { tierId: string; count: number }[];
+    // Active subscribers at calendar K (sum of surviving subs across cohorts).
+    survivingSubs: number;
+    churned: number;
+    // Cohort-attributed lines (sum across cohorts active at K).
+    revenue: number;
+    revenueByBillingCycle: { monthly: number; biannual: number; annual: number };
+    revenueByTierAndCycle: { tierId: string; monthly: number; biannual: number; annual: number }[];
+    subscribersByTierAndCycle: { tierId: string; monthly: number; biannual: number; annual: number }[];
+    productCogsCost: number;
+    shippingCost: number;
+    handlingCost: number;
+    shippingHandlingCost: number;
+    paymentProcessingCost: number;
+    productCost: number;
+    buckLicenseCost: number;
+    buckTokenCost: number;
+    buckCost: number;
+    welcomeKitCost: number;
+    chargebackCost: number;
+    commissionUpfront: number;
+    commissionResidual: number;
+    commissionByTier: { tierId: string; upfront: number; residual: number }[];
+    addOnCost: number;
+    // Scenario-level only (NOT a cohort sum): pulled from the engine's
+    // existing aggregate cohortProjection.
+    operationalOverhead: number;
+    operationalOverheadByCategory: { id: string; name: string; monthly: number }[];
+    netProfit: number;
+  };
+
+  const aggMonths: AggMonth[] = [];
+  let cumulativeProfit = 0;
+  for (let K = 1; K <= months; K++) {
+    const empty: AggMonth = {
+      monthIndex: K,
+      grossNewSubs: 0,
+      netNewSubs: 0,
+      chargebacks: 0,
+      grossNewSubsByTier: tierIds.map((tierId) => ({ tierId, count: 0 })),
+      survivingSubs: 0,
+      churned: 0,
+      revenue: 0,
+      revenueByBillingCycle: { monthly: 0, biannual: 0, annual: 0 },
+      revenueByTierAndCycle: tierIds.map((tierId) => ({
+        tierId,
+        monthly: 0,
+        biannual: 0,
+        annual: 0,
+      })),
+      subscribersByTierAndCycle: tierIds.map((tierId) => ({
+        tierId,
+        monthly: 0,
+        biannual: 0,
+        annual: 0,
+      })),
+      productCogsCost: 0,
+      shippingCost: 0,
+      handlingCost: 0,
+      shippingHandlingCost: 0,
+      paymentProcessingCost: 0,
+      productCost: 0,
+      buckLicenseCost: 0,
+      buckTokenCost: 0,
+      buckCost: 0,
+      welcomeKitCost: 0,
+      chargebackCost: 0,
+      commissionUpfront: 0,
+      commissionResidual: 0,
+      commissionByTier: tierIds.map((tierId) => ({
+        tierId,
+        upfront: 0,
+        residual: 0,
+      })),
+      addOnCost: 0,
+      operationalOverhead: 0,
+      operationalOverheadByCategory: [],
+      netProfit: 0,
+    };
+
+    // Sum every cohort that has an entry at calendar month K.
+    for (const cohort of cohortLifecycles) {
+      const entry = cohort.months.find((m) => m.monthIndex === K);
+      if (!entry) continue;
+
+      empty.survivingSubs += entry.survivingSubs;
+      empty.churned += entry.churned;
+      empty.revenue += entry.revenue;
+      empty.revenueByBillingCycle.monthly += entry.revenueByBillingCycle.monthly;
+      empty.revenueByBillingCycle.biannual += entry.revenueByBillingCycle.biannual;
+      empty.revenueByBillingCycle.annual += entry.revenueByBillingCycle.annual;
+      for (const e of entry.revenueByTierAndCycle) {
+        const slot = empty.revenueByTierAndCycle.find((s) => s.tierId === e.tierId);
+        if (slot) {
+          slot.monthly += e.monthly;
+          slot.biannual += e.biannual;
+          slot.annual += e.annual;
+        }
+      }
+      for (const e of entry.subscribersByTierAndCycle) {
+        const slot = empty.subscribersByTierAndCycle.find((s) => s.tierId === e.tierId);
+        if (slot) {
+          slot.monthly += e.monthly;
+          slot.biannual += e.biannual;
+          slot.annual += e.annual;
+        }
+      }
+      empty.productCogsCost += entry.productCogsCost;
+      empty.shippingCost += entry.shippingCost;
+      empty.handlingCost += entry.handlingCost;
+      empty.shippingHandlingCost += entry.shippingHandlingCost;
+      empty.paymentProcessingCost += entry.paymentProcessingCost;
+      empty.productCost += entry.productCost;
+      empty.buckLicenseCost += entry.buckLicenseCost;
+      empty.buckTokenCost += entry.buckTokenCost;
+      empty.buckCost += entry.buckCost;
+      empty.welcomeKitCost += entry.welcomeKitCost;
+      empty.chargebackCost += entry.chargebackCost;
+      empty.commissionUpfront += entry.commissionUpfront;
+      empty.commissionResidual += entry.commissionResidual;
+      for (const tc of entry.commissionByTier ?? []) {
+        const slot = empty.commissionByTier.find((s) => s.tierId === tc.tierId);
+        if (slot) {
+          slot.upfront += tc.upfront;
+          slot.residual += tc.residual;
+        }
+      }
+      empty.addOnCost += entry.addOnCost;
+
+      // Mo-of-life 1 only contributes acquisitions (the cohort that
+      // STARTED at calendar K).
+      if (entry.monthOfLife === 1) {
+        empty.grossNewSubs += cohort.grossNewSubs;
+        empty.netNewSubs += cohort.netNewSubs;
+        empty.chargebacks += cohort.chargebacks;
+        for (const e of cohort.grossNewSubsByTier) {
+          const slot = empty.grossNewSubsByTier.find((s) => s.tierId === e.tierId);
+          if (slot) slot.count += e.count;
+        }
+      }
+    }
+
+    // Scenario-level overhead — not attributed per cohort, but it's a
+    // real OpEx line on the aggregate. Pull from the existing engine
+    // output (already accounts for milestone scaling on subscriber count).
+    const projEntry = cohortProjection[K - 1];
+    empty.operationalOverhead = projEntry?.operationalOverhead ?? 0;
+    empty.operationalOverheadByCategory =
+      projEntry?.operationalOverheadByCategory ?? [];
+
+    // Aggregate net profit — revenue minus every cost line we attributed
+    // (matches the per-cohort definition plus overhead).
+    empty.netProfit =
+      empty.revenue -
+      empty.productCost -
+      empty.buckCost -
+      empty.welcomeKitCost -
+      empty.chargebackCost -
+      empty.commissionUpfront -
+      empty.commissionResidual -
+      empty.addOnCost -
+      empty.operationalOverhead;
+
+    cumulativeProfit += empty.netProfit;
+    (empty as AggMonth & { cumulativeProfit: number }).cumulativeProfit =
+      cumulativeProfit;
+
+    aggMonths.push(empty);
+  }
+
+  // Total column — sum each line across the months in view.
+  const sum = (pick: (m: AggMonth) => number) =>
+    aggMonths.reduce((s, m) => s + pick(m), 0);
+  const totals = {
+    grossNewSubs: sum((m) => m.grossNewSubs),
+    netNewSubs: sum((m) => m.netNewSubs),
+    chargebacks: sum((m) => m.chargebacks),
+    survivingSubsLast: aggMonths[aggMonths.length - 1]?.survivingSubs ?? 0,
+    churned: sum((m) => m.churned),
+    revenue: sum((m) => m.revenue),
+    revenueByBillingCycle: {
+      monthly: sum((m) => m.revenueByBillingCycle.monthly),
+      biannual: sum((m) => m.revenueByBillingCycle.biannual),
+      annual: sum((m) => m.revenueByBillingCycle.annual),
+    },
+    revenueByTierAndCycle: tierIds.map((tierId) => ({
+      tierId,
+      monthly: aggMonths.reduce(
+        (s, m) =>
+          s +
+          (m.revenueByTierAndCycle.find((e) => e.tierId === tierId)?.monthly ?? 0),
+        0,
+      ),
+      biannual: aggMonths.reduce(
+        (s, m) =>
+          s +
+          (m.revenueByTierAndCycle.find((e) => e.tierId === tierId)?.biannual ?? 0),
+        0,
+      ),
+      annual: aggMonths.reduce(
+        (s, m) =>
+          s +
+          (m.revenueByTierAndCycle.find((e) => e.tierId === tierId)?.annual ?? 0),
+        0,
+      ),
+    })),
+    productCogsCost: sum((m) => m.productCogsCost),
+    shippingCost: sum((m) => m.shippingCost),
+    handlingCost: sum((m) => m.handlingCost),
+    shippingHandlingCost: sum((m) => m.shippingHandlingCost),
+    paymentProcessingCost: sum((m) => m.paymentProcessingCost),
+    productCost: sum((m) => m.productCost),
+    buckLicenseCost: sum((m) => m.buckLicenseCost),
+    buckTokenCost: sum((m) => m.buckTokenCost),
+    buckCost: sum((m) => m.buckCost),
+    welcomeKitCost: sum((m) => m.welcomeKitCost),
+    chargebackCost: sum((m) => m.chargebackCost),
+    commissionUpfront: sum((m) => m.commissionUpfront),
+    commissionResidual: sum((m) => m.commissionResidual),
+    addOnCost: sum((m) => m.addOnCost),
+    operationalOverhead: sum((m) => m.operationalOverhead),
+    netProfit: sum((m) => m.netProfit),
+    cumulativeProfit: aggMonths[aggMonths.length - 1]
+      ? (aggMonths[aggMonths.length - 1] as AggMonth & { cumulativeProfit: number }).cumulativeProfit
+      : 0,
+  };
+  const totalsGrossProfit = totals.revenue - totals.productCost;
+  const totalsGrossMarginPct =
+    totals.revenue > 0 ? (totalsGrossProfit / totals.revenue) * 100 : 0;
+  const totalsCommissions = totals.commissionUpfront + totals.commissionResidual;
+  const totalsTotalOpEx =
+    totalsCommissions +
+    totals.buckCost +
+    totals.addOnCost +
+    totals.welcomeKitCost +
+    totals.operationalOverhead;
+  const totalsNetMarginPct =
+    totals.revenue > 0 ? (totals.netProfit / totals.revenue) * 100 : 0;
+
+  // Header summary chips — same shape the per-cohort table uses, but
+  // showing projection-window totals across all cohorts.
+  const summaryRow = (
+    <div className="flex flex-wrap items-center gap-3 px-3 py-2 bg-muted/30 rounded-md text-xs">
+      <span className="font-semibold">All Cohorts (Aggregate)</span>
+      <span className="text-muted-foreground">·</span>
+      <span>
+        <span className="text-muted-foreground">Active (last):</span>{" "}
+        <span className="font-semibold tabular-nums">
+          {formatNumber(totals.survivingSubsLast, locale, "integer")}
+        </span>
+      </span>
+      <span className="text-muted-foreground">·</span>
+      <span>
+        <span className="text-muted-foreground">Window revenue:</span>{" "}
+        <span className="font-semibold tabular-nums">
+          {formatNumberAsMoney(totals.revenue, locale)}
+        </span>
+      </span>
+      <span className="text-muted-foreground">·</span>
+      <span>
+        <span className="text-muted-foreground">Window profit:</span>{" "}
+        <span
+          className={cn(
+            "font-semibold tabular-nums",
+            totals.netProfit >= 0 ? "text-emerald-600" : "text-red-500",
+          )}
+        >
+          {formatNumberAsMoney(totals.netProfit, locale)}
+        </span>
+      </span>
+    </div>
+  );
+
+  // Per-tier rows under "Subscribers" — gross acquisitions distributed
+  // across plans (only at the cohort's first month-of-life). Children
+  // of the `subscribers-gross` parent so the user can collapse the
+  // detail and just see the headline total.
+  type AggRow = {
+    id?: string;
+    parentId?: string;
+    label: string;
+    getValue: (m: AggMonth) => number;
+    getTotal: () => number;
+    format: "currency" | "number" | "percent" | "decimal";
+    bold?: boolean;
+    profitColor?: boolean;
+    lossColor?: boolean;
+  };
+
+  const perTierGrossSubsRows: AggRow[] = hasMultipleTiers
+    ? tierIds.map((tierId) => ({
+        id: `subscribers-gross--${tierId}`,
+        parentId: "subscribers-gross",
+        label: t("financials.projection.tier_indent_with_pct", {
+          tier: tierId,
+          percent: formatNumber(
+            (tierSharePct.get(tierId) ?? 0) / 100,
+            locale,
+            "percent",
+          ),
+        }),
+        getValue: (m) =>
+          m.grossNewSubsByTier.find((e) => e.tierId === tierId)?.count ?? 0,
+        getTotal: () =>
+          aggMonths.reduce(
+            (s, m) =>
+              s + (m.grossNewSubsByTier.find((e) => e.tierId === tierId)?.count ?? 0),
+            0,
+          ),
+        format: "number",
+      }))
+    : [];
+
+  const buildCyclePerTierRows = (
+    cycle: "monthly" | "biannual" | "annual",
+  ): AggRow[] => {
+    if (!hasMultipleTiers) return [];
+    return tierIds.map((tierId) => ({
+      id: `${cycle}-billing--${tierId}`,
+      parentId: `${cycle}-billing`,
+      label: t("financials.projection.tier_subindent", { tier: tierId }),
+      getValue: (m) =>
+        m.revenueByTierAndCycle.find((e) => e.tierId === tierId)?.[cycle] ?? 0,
+      getTotal: () =>
+        totals.revenueByTierAndCycle.find((e) => e.tierId === tierId)?.[cycle] ?? 0,
+      format: "currency",
+    }));
+  };
+
+  // Profit Split — distribute aggregate net profit (only when positive
+  // for that calendar month).
+  // Two rows per party: monthly distribution and a running cumulative.
+  // The cumulative row makes it easy to read "how much has this party
+  // received through calendar month K" without manual tally.
+  const profitSplitRows: AggRow[] = (profitSplitParties ?? []).flatMap(
+    (party) => {
+      const partyShare = (m: AggMonth) =>
+        m.netProfit > 0 ? m.netProfit * (party.percent / 100) : 0;
+      return [
+        {
+          label: t("financials.pl.party_label", {
+            name: party.name,
+            percent: party.percent,
+          }),
+          getValue: (m: AggMonth) => partyShare(m),
+          getTotal: () => aggMonths.reduce((s, m) => s + partyShare(m), 0),
+          format: "currency" as const,
+          profitColor: true,
+        },
+        {
+          // Percent moves AFTER "Cumulative" — see CohortLifecycleTable
+          // for the same convention. Reads "Bucked Up — Cumulative (55%)".
+          label: `${party.name} — Cumulative (${party.percent}%)`,
+          getValue: (m: AggMonth) => {
+            let acc = 0;
+            for (const x of aggMonths) {
+              acc += partyShare(x);
+              if (x.monthIndex === m.monthIndex) return acc;
+            }
+            return acc;
+          },
+          getTotal: () => aggMonths.reduce((s, m) => s + partyShare(m), 0),
+          format: "currency" as const,
+          profitColor: true,
+        },
+      ];
+    },
+  );
+
+  const sections: {
+    id: string;
+    section: string;
+    rows: AggRow[];
+    defaultCollapsed?: boolean;
+  }[] = [
+    {
+      id: "subscribers",
+      section: t("financials.projection.section.subscribers"),
+      rows: [
+        // Sales Reps — read directly from the engine's cohortProjection
+        // (the rep count grows monthly per the salesRepChannel growth
+        // rate). Total column = reps at the last month in view.
+        {
+          label: t("financials.cohort.row.active_reps"),
+          getValue: (m) =>
+            cohortProjection[m.monthIndex - 1]?.activeReps ?? 0,
+          getTotal: () =>
+            cohortProjection[aggMonths.length - 1]?.activeReps ?? 0,
+          format: "number",
+        },
+        // Headline gross signups for the calendar month — parent of the
+        // per-tier breakdown so the user can collapse details.
+        {
+          id: "subscribers-gross",
+          label: t("financials.projection.row.gross_new_sales"),
+          getValue: (m) => m.grossNewSubs,
+          getTotal: () => totals.grossNewSubs,
+          format: "number",
+          bold: true,
+        },
+        ...perTierGrossSubsRows,
+        ...(totals.chargebacks > 0
+          ? [
+              {
+                label: t("financials.projection.row.chargebacks"),
+                getValue: (m: AggMonth) => m.chargebacks,
+                getTotal: () => totals.chargebacks,
+                format: "number" as const,
+                lossColor: true,
+              },
+            ]
+          : []),
+        {
+          label: t("financials.projection.row.net_new_subs"),
+          getValue: (m) => m.netNewSubs,
+          getTotal: () => totals.netNewSubs,
+          format: "number",
+          bold: true,
+        },
+        {
+          label: t("financials.projection.row.lost_to_churn"),
+          getValue: (m) => m.churned,
+          getTotal: () => totals.churned,
+          format: "number",
+          lossColor: true,
+        },
+        {
+          label: t("financials.projection.row.total_active"),
+          getValue: (m) => m.survivingSubs,
+          getTotal: () => totals.survivingSubsLast,
+          format: "number",
+          bold: true,
+        },
+      ],
+    },
+    // Active by Plan & Cycle — same audit block the per-cohort uses.
+    // Sums across cohorts of (tier, cycle) sub counts at calendar K.
+    // Helps reconcile any biannual/annual revenue lump back to a count.
+    ...(hasMultipleTiers
+      ? [
+          {
+            id: "active-by-plan-cycle",
+            defaultCollapsed: true,
+            section: "Active by Plan & Cycle",
+            // Two-level: tier parents (Starter / Performance / …) +
+            // cycle children (Monthly / Biannual / Annual) per tier.
+            // Click the chevron on a tier to drill into its cycle mix.
+            rows: tierIds.flatMap((tierId) => {
+              const cycles: ("monthly" | "biannual" | "annual")[] = [
+                "monthly",
+                "biannual",
+                "annual",
+              ];
+              const cycleLabels: Record<typeof cycles[number], string> = {
+                monthly: "Monthly",
+                biannual: "Biannual",
+                annual: "Annual",
+              };
+              const tierBilling = tierBillingDistributions.get(tierId);
+              const parentId = `active-by-plan-cycle--${tierId}`;
+              const parent: AggRow = {
+                id: parentId,
+                label: t("financials.projection.tier_indent", { tier: tierId }),
+                getValue: (m) => {
+                  const e = m.subscribersByTierAndCycle.find(
+                    (x) => x.tierId === tierId,
+                  );
+                  return e ? e.monthly + e.biannual + e.annual : 0;
+                },
+                getTotal: () => {
+                  const monthCount = aggMonths.length || 1;
+                  const total = aggMonths.reduce((s, m) => {
+                    const e = m.subscribersByTierAndCycle.find(
+                      (x) => x.tierId === tierId,
+                    );
+                    return s + (e ? e.monthly + e.biannual + e.annual : 0);
+                  }, 0);
+                  return total / monthCount;
+                },
+                format: "decimal",
+              };
+              const children: AggRow[] = cycles.map((cycle) => ({
+                id: `${parentId}--${cycle}`,
+                parentId,
+                label: t("financials.projection.tier_subindent", {
+                  tier: `${cycleLabels[cycle]} (${formatNumber(
+                    (tierBilling?.[cycle] ?? 0) / 100,
+                    locale,
+                    "percent",
+                  )})`,
+                }),
+                getValue: (m) =>
+                  m.subscribersByTierAndCycle.find((e) => e.tierId === tierId)?.[cycle] ??
+                  0,
+                getTotal: () => {
+                  const monthCount = aggMonths.length || 1;
+                  const total = aggMonths.reduce(
+                    (s, m) =>
+                      s +
+                      (m.subscribersByTierAndCycle.find((e) => e.tierId === tierId)?.[cycle] ??
+                        0),
+                    0,
+                  );
+                  return total / monthCount;
+                },
+                format: "decimal",
+              }));
+              return [parent, ...children];
+            }),
+          },
+        ]
+      : []),
+    {
+      id: "revenue",
+      section: t("financials.projection.section.revenue"),
+      rows: [
+        {
+          label: t("financials.projection.row.subscription_revenue"),
+          getValue: (m) => m.revenue,
+          getTotal: () => totals.revenue,
+          format: "currency",
+          bold: true,
+        },
+        // Cash-flow lump pattern — biannual/annual concentrate on the
+        // months when cohorts renew (each cohort lumps Mo 1/7/13/19 of
+        // its OWN life, so at calendar K several cohorts' lumps stack
+        // and others read $0).
+        {
+          id: "monthly-billing",
+          label: t("financials.projection.row.monthly_billing"),
+          getValue: (m) => m.revenueByBillingCycle.monthly,
+          getTotal: () => totals.revenueByBillingCycle.monthly,
+          format: "currency",
+        },
+        ...buildCyclePerTierRows("monthly"),
+        {
+          id: "biannual-billing",
+          label: t("financials.projection.row.biannual_billing"),
+          getValue: (m) => m.revenueByBillingCycle.biannual,
+          getTotal: () => totals.revenueByBillingCycle.biannual,
+          format: "currency",
+        },
+        ...buildCyclePerTierRows("biannual"),
+        {
+          id: "annual-billing",
+          label: t("financials.projection.row.annual_billing"),
+          getValue: (m) => m.revenueByBillingCycle.annual,
+          getTotal: () => totals.revenueByBillingCycle.annual,
+          format: "currency",
+        },
+        ...buildCyclePerTierRows("annual"),
+      ],
+    },
+    {
+      id: "cogs",
+      section: t("financials.projection.section.cogs"),
+      rows: [
+        {
+          label: "Product Cost",
+          getValue: (m) => m.productCogsCost,
+          getTotal: () => totals.productCogsCost,
+          format: "currency",
+        },
+        {
+          label: "Shipping",
+          getValue: (m) => m.shippingCost,
+          getTotal: () => totals.shippingCost,
+          format: "currency",
+        },
+        {
+          label: "Handling",
+          getValue: (m) => m.handlingCost,
+          getTotal: () => totals.handlingCost,
+          format: "currency",
+        },
+        {
+          label: "Payment Processing",
+          getValue: (m) => m.paymentProcessingCost,
+          getTotal: () => totals.paymentProcessingCost,
+          format: "currency",
+        },
+        {
+          label: t("financials.projection.row.gross_profit"),
+          getValue: (m) => m.revenue - m.productCost,
+          getTotal: () => totalsGrossProfit,
+          format: "currency",
+          bold: true,
+          profitColor: true,
+        },
+        {
+          label: t("financials.projection.row.gross_margin_pct"),
+          getValue: (m) =>
+            m.revenue > 0 ? ((m.revenue - m.productCost) / m.revenue) * 100 : 0,
+          getTotal: () => totalsGrossMarginPct,
+          format: "percent",
+        },
+      ],
+    },
+    {
+      id: "opex",
+      section: t("financials.projection.section.opex"),
+      rows: [
+        // Order: Overhead → Welcome Kit → Buck → Add-Ons → Commissions.
+        // Structural floor first, then variable platform/add-on costs,
+        // then commissions (the most frequently inspected detail) last.
+        // ── Overhead (parent) → per-category children ─────────────
+        {
+          id: "overhead",
+          label: t("financials.projection.row.overhead"),
+          getValue: (m) => m.operationalOverhead,
+          getTotal: () => totals.operationalOverhead,
+          format: "currency",
+        },
+        ...(() => {
+          const ids = new Map<string, string>();
+          for (const m of aggMonths)
+            for (const c of m.operationalOverheadByCategory)
+              if (!ids.has(c.id)) ids.set(c.id, c.name);
+          return Array.from(ids.entries()).map<AggRow>(([id, name]) => ({
+            id: `overhead--${id}`,
+            parentId: "overhead",
+            label: t("financials.projection.tier_indent", { tier: name }),
+            getValue: (m) =>
+              m.operationalOverheadByCategory.find((c) => c.id === id)?.monthly ?? 0,
+            getTotal: () =>
+              aggMonths.reduce(
+                (s, m) =>
+                  s +
+                  (m.operationalOverheadByCategory.find((c) => c.id === id)?.monthly ?? 0),
+                0,
+              ),
+            format: "currency",
+          }));
+        })(),
+        // ── Welcome Kit ───────────────────────────────────────────
+        {
+          label: "Welcome Kit",
+          getValue: (m) => m.welcomeKitCost,
+          getTotal: () => totals.welcomeKitCost,
+          format: "currency",
+        },
+        // ── Buck (parent) → Licenses + Tokens ─────────────────────
+        {
+          id: "buck",
+          label: "Buck",
+          getValue: (m) => m.buckCost,
+          getTotal: () => totals.buckCost,
+          format: "currency",
+        },
+        {
+          id: "buck--license",
+          parentId: "buck",
+          label: t("financials.projection.tier_indent", {
+            tier: t("financials.projection.row.buck_license"),
+          }),
+          getValue: (m) => m.buckLicenseCost,
+          getTotal: () => totals.buckLicenseCost,
+          format: "currency",
+        },
+        {
+          id: "buck--tokens",
+          parentId: "buck",
+          label: t("financials.projection.tier_indent", {
+            tier: t("financials.projection.row.buck_tokens"),
+          }),
+          getValue: (m) => m.buckTokenCost,
+          getTotal: () => totals.buckTokenCost,
+          format: "currency",
+        },
+        // ── Add-Ons (parent) → Path Scale (child) ─────────────────
+        {
+          id: "addons",
+          label: "Add-Ons",
+          getValue: (m) => m.addOnCost,
+          getTotal: () => totals.addOnCost,
+          format: "currency",
+        },
+        {
+          id: "addons--path-scale",
+          parentId: "addons",
+          label: t("financials.projection.tier_indent", { tier: "Path Scale" }),
+          getValue: (m) => m.addOnCost,
+          getTotal: () => totals.addOnCost,
+          format: "currency",
+        },
+        // ── Commissions (parent) → tier (parent) → upfront/residual
+        {
+          id: "commissions",
+          label: t("financials.projection.row.commissions"),
+          getValue: (m) => m.commissionUpfront + m.commissionResidual,
+          getTotal: () => totalsCommissions,
+          format: "currency",
+        },
+        ...(hasMultipleTiers
+          ? tierIds.flatMap<AggRow>((tierId) => {
+              const tierParentId = `commissions--${tierId}`;
+              const tierParent: AggRow = {
+                id: tierParentId,
+                parentId: "commissions",
+                label: t("financials.projection.tier_indent", { tier: tierId }),
+                getValue: (m) => {
+                  const e = m.commissionByTier.find((x) => x.tierId === tierId);
+                  return e ? e.upfront + e.residual : 0;
+                },
+                getTotal: () =>
+                  aggMonths.reduce((s, m) => {
+                    const e = m.commissionByTier.find((x) => x.tierId === tierId);
+                    return s + (e ? e.upfront + e.residual : 0);
+                  }, 0),
+                format: "currency",
+              };
+              const upfront: AggRow = {
+                id: `${tierParentId}--upfront`,
+                parentId: tierParentId,
+                label: t("financials.projection.tier_subindent", { tier: "Upfront" }),
+                getValue: (m) =>
+                  m.commissionByTier.find((x) => x.tierId === tierId)?.upfront ?? 0,
+                getTotal: () =>
+                  aggMonths.reduce(
+                    (s, m) =>
+                      s + (m.commissionByTier.find((x) => x.tierId === tierId)?.upfront ?? 0),
+                    0,
+                  ),
+                format: "currency",
+              };
+              const residual: AggRow = {
+                id: `${tierParentId}--residual`,
+                parentId: tierParentId,
+                label: t("financials.projection.tier_subindent", { tier: "Residual" }),
+                getValue: (m) =>
+                  m.commissionByTier.find((x) => x.tierId === tierId)?.residual ?? 0,
+                getTotal: () =>
+                  aggMonths.reduce(
+                    (s, m) =>
+                      s +
+                      (m.commissionByTier.find((x) => x.tierId === tierId)?.residual ?? 0),
+                    0,
+                  ),
+                format: "currency",
+              };
+              return [tierParent, upfront, residual];
+            })
+          : []),
+        {
+          label: t("financials.projection.row.total_opex"),
+          getValue: (m) =>
+            m.commissionUpfront +
+            m.commissionResidual +
+            m.buckCost +
+            m.addOnCost +
+            m.welcomeKitCost +
+            m.operationalOverhead,
+          getTotal: () => totalsTotalOpEx,
+          format: "currency",
+          bold: true,
+        },
+      ],
+    },
+    {
+      id: "bottom-line",
+      section: t("financials.projection.section.bottom_line"),
+      rows: [
+        {
+          label: t("financials.projection.row.net_profit"),
+          getValue: (m) => m.netProfit,
+          getTotal: () => totals.netProfit,
+          format: "currency",
+          bold: true,
+          profitColor: true,
+        },
+        {
+          label: t("financials.projection.row.cumulative_profit"),
+          getValue: (m) =>
+            (m as AggMonth & { cumulativeProfit: number }).cumulativeProfit,
+          getTotal: () => totals.cumulativeProfit,
+          format: "currency",
+          bold: true,
+          profitColor: true,
+        },
+        {
+          label: t("financials.projection.row.net_margin_pct"),
+          getValue: (m) => (m.revenue > 0 ? (m.netProfit / m.revenue) * 100 : 0),
+          getTotal: () => totalsNetMarginPct,
+          format: "percent",
+        },
+      ],
+    },
+    ...(profitSplitRows.length > 0
+      ? [
+          {
+            id: "profit-split",
+            section: t("financials.projection.section.profit_split"),
+            rows: profitSplitRows,
+          },
+        ]
+      : []),
+  ];
+
+  function formatValue(
+    v: number,
+    fmt: "currency" | "number" | "percent" | "decimal",
+  ): string {
+    switch (fmt) {
+      case "currency":
+        return formatNumberAsMoney(v, locale);
+      case "number":
+        return formatNumber(Math.round(v), locale, "integer");
+      case "decimal":
+        return formatNumber(v, locale, "decimal");
+      case "percent":
+        return formatNumber(v / 100, locale, "percent");
+    }
+  }
+
+  function valueCellClass(
+    value: number,
+    profitColor?: boolean,
+    lossColor?: boolean,
+  ): string {
+    const classes = ["tabular-nums text-right whitespace-nowrap px-2 py-1.5"];
+    if (lossColor && value > 0) classes.push("text-red-500");
+    else if (value < 0) classes.push("text-red-500");
+    else if (profitColor && value > 0) classes.push("text-emerald-600");
+    else if (profitColor && value === 0) classes.push("text-muted-foreground");
+    return classes.join(" ");
+  }
+
+  return (
+    <div className="space-y-2">
+      {summaryRow}
+      {/* The wrapper has to be a real scroll viewport (both axes, capped
+          via maxH) so sticky thead anchors to its top edge. With just
+          `overflow-x-auto` and no height limit, the wrapper grows to
+          fit the table and the sticky header has nothing to stick to —
+          it follows the page scroll up and out of view. */}
+      <div className="overflow-auto border rounded-md max-h-[75vh]">
+        <table className="w-full text-xs border-collapse">
+          <thead>
+            {/* See CohortLifecycleTable thead for the z-index rationale. */}
+            <tr className="border-b bg-muted">
+              <th className="sticky left-0 top-0 z-30 bg-muted min-w-[200px] px-3 py-2 text-left font-medium text-muted-foreground">
+                {t("financials.cohort.column.metric")}
+              </th>
+              {aggMonths.map((m) => (
+                <th
+                  key={m.monthIndex}
+                  className="sticky top-0 z-20 bg-muted min-w-[100px] px-2 py-2 text-right font-medium text-muted-foreground whitespace-nowrap"
+                >
+                  {t("financials.cohort.column.month_long", { month: m.monthIndex })}
+                </th>
+              ))}
+              <th className="sticky top-0 z-20 bg-muted min-w-[100px] px-2 py-2 text-right font-semibold text-foreground whitespace-nowrap border-l-2 border-border">
+                {t("financials.cohort.column.total")}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {sections.map((section) => (
+              <AggSectionBlock
+                key={section.id}
+                section={section}
+                aggMonths={aggMonths}
+                formatValue={formatValue}
+                valueCellClass={valueCellClass}
+                isSectionCollapsed={collapsedSections.has(section.id)}
+                collapsedRows={collapsedRows}
+                onToggleSection={() => toggleSection(section.id)}
+                onToggleRow={toggleRow}
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Section block for the aggregate table — same chevron-driven collapse
+ * UX as `CohortSectionBlock` but typed for the aggregate's calendar-
+ * month entries. Kept as a small mirror (rather than generalizing the
+ * cohort variant) to avoid churning the per-cohort component while
+ * adding this view.
+ */
+function AggSectionBlock<M extends { monthIndex: number }>({
+  section,
+  aggMonths,
+  formatValue,
+  valueCellClass,
+  isSectionCollapsed,
+  collapsedRows,
+  onToggleSection,
+  onToggleRow,
+}: {
+  section: {
+    id: string;
+    section: string;
+    rows: {
+      id?: string;
+      parentId?: string;
+      label: string;
+      getValue: (m: M) => number;
+      getTotal: () => number;
+      format: "currency" | "number" | "percent" | "decimal";
+      bold?: boolean;
+      profitColor?: boolean;
+      lossColor?: boolean;
+    }[];
+  };
+  aggMonths: M[];
+  formatValue: (v: number, f: "currency" | "number" | "percent" | "decimal") => string;
+  valueCellClass: (v: number, profitColor?: boolean, lossColor?: boolean) => string;
+  isSectionCollapsed: boolean;
+  collapsedRows: Set<string>;
+  onToggleSection: () => void;
+  onToggleRow: (id: string) => void;
+}) {
+  // Parent set & ancestor lookup — same logic as CohortSectionBlock.
+  const rowsWithChildren = new Set<string>();
+  for (const r of section.rows) if (r.parentId) rowsWithChildren.add(r.parentId);
+  const rowsById = new Map(section.rows.filter((r) => r.id).map((r) => [r.id!, r]));
+  const isRowVisible = (row: { parentId?: string }): boolean => {
+    let parentId = row.parentId;
+    while (parentId) {
+      if (collapsedRows.has(parentId)) return false;
+      parentId = rowsById.get(parentId)?.parentId;
+    }
+    return true;
+  };
+
+  return (
+    <>
+      <tr
+        className="bg-muted cursor-pointer select-none hover:bg-muted/80 transition-colors"
+        onClick={onToggleSection}
+      >
+        <td
+          colSpan={aggMonths.length + 2}
+          className="sticky left-0 z-10 bg-muted px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground"
+        >
+          <span className="inline-flex items-center gap-1">
+            <ChevronRight
+              className={cn(
+                "h-3 w-3 transition-transform",
+                !isSectionCollapsed && "rotate-90",
+              )}
+            />
+            {section.section}
+          </span>
+        </td>
+      </tr>
+      {!isSectionCollapsed &&
+        section.rows.map((row) => {
+          if (!isRowVisible(row)) return null;
+          const totalValue = row.getTotal();
+          const hasChildren = !!row.id && rowsWithChildren.has(row.id);
+          const isCollapsed = !!row.id && collapsedRows.has(row.id);
+          const handleRowClick =
+            hasChildren && row.id ? () => onToggleRow(row.id!) : undefined;
+          return (
+            <tr
+              key={row.id ?? row.label}
+              className={cn(
+                "border-b border-border/40 hover:bg-muted/10 transition-colors",
+                hasChildren && "cursor-pointer select-none",
+              )}
+              onClick={handleRowClick}
+            >
+              <td
+                className={cn(
+                  "sticky left-0 z-10 bg-background min-w-[200px] px-3 py-1.5 text-muted-foreground whitespace-nowrap",
+                  row.bold && "font-semibold text-foreground",
+                )}
+              >
+                <span className="inline-flex items-center gap-1">
+                  {hasChildren ? (
+                    <ChevronRight
+                      className={cn(
+                        "h-3 w-3 shrink-0 transition-transform",
+                        !isCollapsed && "rotate-90",
+                      )}
+                    />
+                  ) : (
+                    <span className="w-3 shrink-0" />
+                  )}
+                  {row.label}
+                </span>
+              </td>
+              {aggMonths.map((m) => {
+                const value = row.getValue(m);
+                return (
+                  <td
+                    key={m.monthIndex}
+                    className={cn(
+                      valueCellClass(value, row.profitColor, row.lossColor),
+                      row.bold && "font-semibold",
+                    )}
+                  >
+                    {formatValue(value, row.format)}
+                  </td>
+                );
+              })}
+              <td
+                className={cn(
+                  valueCellClass(totalValue, row.profitColor, row.lossColor),
+                  "border-l-2 border-border",
+                  row.bold && "font-semibold",
+                )}
+              >
+                {formatValue(totalValue, row.format)}
+              </td>
+            </tr>
+          );
+        })}
+    </>
+  );
+}
+
