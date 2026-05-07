@@ -1,7 +1,6 @@
 "use client";
 
 import { useFinancialStore } from "@/stores/financial-store";
-import { resolveOverhead } from "@/lib/financial-engine";
 import { Card, CardContent } from "@/components/ui/card";
 import { BarChart3 } from "lucide-react";
 import { formatNumberAsMoney } from "@/lib/money/format";
@@ -65,6 +64,14 @@ export function FinancialCharts({ multiplier, periodLabel, locale }: FinancialCh
 
   // Margin waterfall data (scaled by period)
   const productOnlyCost = results.totalProductCost - results.totalFulfillmentCost;
+  // Overhead — sum of the first `m` months from the projection, which
+  // already honors milestone-based scaling. The legacy
+  // `resolveOverhead(.., 0) × m` always read the pre-launch baseline
+  // and under-reported in growth scenarios. See Thread A.1 + A.2.
+  const overheadForPeriod = results.cohortProjection
+    .slice(0, m)
+    .reduce((sum, mo) => sum + mo.operationalOverhead, 0);
+
   const waterfallData = [
     { name: t("financials.charts.bar_revenue"), value: Math.round(results.mrr * m) },
     { name: t("financials.charts.bar_product"), value: -Math.round(productOnlyCost * m) },
@@ -73,7 +80,7 @@ export function FinancialCharts({ multiplier, periodLabel, locale }: FinancialCh
     ...(results.totalKickbackRevenue > 0
       ? [{ name: t("financials.charts.bar_kickbacks"), value: Math.round(results.totalKickbackRevenue * m) }]
       : []),
-    { name: t("financials.charts.bar_overhead"), value: -Math.round(resolveOverhead(inputs.operationalOverhead, 0) * m) },
+    { name: t("financials.charts.bar_overhead"), value: -Math.round(overheadForPeriod) },
     { name: t("financials.charts.bar_net"), value: Math.round(results.netMarginDollars * m) },
   ];
 
@@ -98,8 +105,9 @@ export function FinancialCharts({ multiplier, periodLabel, locale }: FinancialCh
     { name: t("financials.charts.pie_cogs"), value: Math.round(results.totalProductCost * m) },
     { name: t("financials.charts.pie_commissions"), value: Math.round(results.totalCommissionExpense * m) },
     {
+      // Reuses `overheadForPeriod` from above — same Thread A.1 fix.
       name: t("financials.charts.pie_overhead"),
-      value: Math.round(resolveOverhead(inputs.operationalOverhead, 0) * m),
+      value: Math.round(overheadForPeriod),
     },
   ].filter((d) => d.value > 0);
 

@@ -891,8 +891,14 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
   const buckCostPerSub = buckPlatformFeePerSub + buckTokenCostPerSub;
   const welcomeKitCostPerSub = inputs.welcomeKitCostPerSub ?? 0;
 
-  // Resolve month-1 overhead for static calculations
-  const operationalOverheadMonthly = resolveOverhead(operationalOverhead, 0);
+  // `operationalOverheadMonthly` USED to be computed here as
+  // `resolveOverhead(operationalOverhead, 0)`. That call always returned
+  // the pre-launch baseline regardless of how the scenario evolved —
+  // a $1.27M/36mo under-report bug in scenarios with multi-milestone
+  // categories (Thread A.1 diagnostic). Moved to AFTER the cohort
+  // projection loop, where it derives from the per-month overhead
+  // that already accounts for growing subscriber counts via line 1461's
+  // `resolveOverheadBreakdown(overhead, currentSubs)`.
 
   // --- Month 1 acquisition ---
   // Month 1: use the structural defaults (no quarter overrides apply
@@ -1131,14 +1137,10 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
   // already show the exact monthly figures, and the visuals are
   // operating-performance summaries, not cash forecasts.
   const welcomeKitCostPerMonth = month1GrossNewSubs * welcomeKitCostPerSub;
-  const netMarginDollars =
-    grossMarginDollars -
-    totalCommissionExpense +
-    totalKickbackRevenue -
-    chargebackCostPerMonth -
-    welcomeKitCostPerMonth -
-    operationalOverheadMonthly;
-  const netMarginPercent = mrr > 0 ? (netMarginDollars / mrr) * 100 : 0;
+  // `netMarginDollars` and `netMarginPercent` are computed AFTER the
+  // cohort projection loop (see "KPI scalars derived from cohortProjection"
+  // block) — they depend on `operationalOverheadMonthly`, which is now
+  // averaged from the loop's per-month overhead. Thread A.1 fix.
 
   // Revenue by tier
   const revenueByTier = tierDetails.map((t) => ({
@@ -1598,6 +1600,74 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
   if (operationBreakevenMonth === 0 && cumulativeProfit <= 0) {
     operationBreakevenMonth = Infinity;
   }
+
+  // ── KPI scalars derived from cohortProjection ────────────────────
+  // `operationalOverheadMonthly` is the "typical month" overhead used
+  // by `netMarginDollars` and downstream KPIs (Net Margin %, Profit
+  // Split distribution). It aggregates from `cohortProjection` —
+  // `cohortProjection[i].operationalOverhead` already honors the
+  // user's milestone schedule via line ~1461
+  // (`resolveOverheadBreakdown(overhead, currentSubs)`).
+  //
+  // ── META-LESSON (Thread A.1 + A.2, 2026-05) ──────────────────────
+  //
+  // The scalar pattern that produced the original bug was:
+  //
+  //   const x = expensiveLookup(state, 0);   // "0" or any constant
+  //   const total = x * periodLength;         // scaled by multiplier
+  //
+  // This pattern under-reports whenever `state` evolves over time
+  // and `expensiveLookup`'s output depends on that evolution. In
+  // overhead's case: subs grow → milestones cross → overhead steps
+  // up. Multiplying the FROZEN-AT-ZERO value by the period length
+  // produces "what overhead would be if nothing happened" — exactly
+  // what the bug was reporting.
+  //
+  // The fix pattern is: aggregate from the per-month series the
+  // engine already computes. Sum it for "P&L of period X", average
+  // it for "typical monthly KPI", take the last value for
+  // "steady-state snapshot". The per-month series is the source of
+  // truth; scalars are derivations of it, never parallel computations.
+  //
+  // RULE: before adding ANY scalar KPI derived from subscriber count
+  // (or any other projection-state variable), ask "does this value
+  // already exist aggregable in `cohortProjection`?" If yes —
+  // aggregate from there. If no — add it to the projection loop
+  // first, THEN aggregate. Do NOT create a standalone scalar
+  // computation that ignores projection state.
+  //
+  // ── UNIVERSALIZED ────────────────────────────────────────────────
+  //
+  // Thread A.2's pause-and-report itself proved the rule applies
+  // beyond code: the spec for this fix asserted "year 1 = $684k",
+  // computed mentally as `$57k × 12` — committing the same anti-
+  // pattern (steady-state value × periodLength, ignoring the ramp).
+  // The actual year 1 is $445k because subs cross milestones during
+  // the year. The rule extends to mental estimates during code
+  // review and spec authoring: when reasoning about "value × period",
+  // ask whether the value is constant over that period. If not,
+  // sum the actual per-period series — don't multiply.
+  //
+  // Semantics chosen: AVERAGE of the projection window. Represents
+  // "typical monthly overhead in steady state." In degenerate
+  // scenarios (single milestone @ 0 subs), avg == baseline ==
+  // legacy behavior — fix is invisible. In growth scenarios with
+  // multi-milestone categories, avg correctly reflects the user's
+  // configured schedule weighted by time.
+  const operationalOverheadMonthly =
+    cohortProjection.length > 0
+      ? cohortProjection.reduce((sum, m) => sum + m.operationalOverhead, 0) /
+        cohortProjection.length
+      : 0;
+
+  const netMarginDollars =
+    grossMarginDollars -
+    totalCommissionExpense +
+    totalKickbackRevenue -
+    chargebackCostPerMonth -
+    welcomeKitCostPerMonth -
+    operationalOverheadMonthly;
+  const netMarginPercent = mrr > 0 ? (netMarginDollars / mrr) * 100 : 0;
 
   // --- Scenario-level blended constants for cohort lifecycle math ---
   // These compute the structural cohort numbers used by the per-safra
