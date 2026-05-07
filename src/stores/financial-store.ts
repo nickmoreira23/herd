@@ -104,6 +104,32 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
       };
       delete (migrated as Record<string, unknown>).salesTeam;
     }
+    // Migrate legacy `quarterlyOverrides` → unified `override` with
+    // frequency='quarterly'. Old shape allowed missing fields per
+    // quarter (engine fell back to scalars); new shape requires both
+    // fields per period, so we fill missing values from the scalar
+    // defaults at migration time. This preserves the resolved value at
+    // every month; the user can edit any period afterward.
+    if (migrated.salesRepChannel) {
+      const ch = migrated.salesRepChannel as typeof migrated.salesRepChannel & {
+        quarterlyOverrides?: {
+          quarter: number;
+          monthlyGrowthRate?: number;
+          salesPerRepPerMonth?: number;
+        }[];
+      };
+      if (ch.quarterlyOverrides && ch.quarterlyOverrides.length > 0 && !ch.override) {
+        ch.override = {
+          frequency: "quarterly",
+          periods: ch.quarterlyOverrides.map((o) => ({
+            period: o.quarter,
+            monthlyGrowthRate: o.monthlyGrowthRate ?? ch.monthlyGrowthRate,
+            salesPerRepPerMonth: o.salesPerRepPerMonth ?? ch.salesPerRepPerMonth,
+          })),
+        };
+      }
+      delete ch.quarterlyOverrides;
+    }
     if (!migrated.samplerChannel) {
       migrated.samplerChannel = {
         monthlyMarketingSpend: 5000,
@@ -223,6 +249,14 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
             monthly: tt.billingDistribution.monthly,
             biannual: tt.billingDistribution.quarterly,
             annual: tt.billingDistribution.annual,
+          };
+        }
+        // Per-tier commission structure: if a tier doesn't carry its own
+        // structure, inherit the scenario-level default. This keeps old
+        // saved snapshots correct after the move from global → per-tier.
+        if ((next as typeof t & { commissionStructure?: unknown }).commissionStructure == null) {
+          (next as typeof t & { commissionStructure?: unknown }).commissionStructure = {
+            ...migrated.commissionStructure,
           };
         }
         // Migrate Path Scale add-on: legacy `mode: "sale"` (with
