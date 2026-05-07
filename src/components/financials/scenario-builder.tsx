@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/tooltip";
 import type { DataSourceMeta, TierDisplayMeta } from "@/app/admin/financials/data";
 import {
-  Users,
   DollarSign,
   Building2,
   Layers,
@@ -81,119 +80,27 @@ export function ScenarioBuilder({
     <ReadOnlyContext.Provider value={readOnly}>
     <TooltipProvider>
       <div className="space-y-3">
-        {/* Overhead */}
+        {/* Overhead — category-based with subscriber milestones. Each
+            category (Marketing, Tech, Operations, …) carries one or more
+            milestones; the engine picks the highest milestone whose
+            threshold ≤ active subscribers and uses that monthly cost.
+            Total overhead at any month = sum across categories. */}
         <InputCard
           icon={<Building2 className="h-3.5 w-3.5" />}
           title={t("financials.builder.overhead.title")}
-          description={
-            inputs.operationalOverhead.mode === "milestone-scaled"
-              ? t("financials.builder.overhead.description_auto_scaled")
-              : t("financials.builder.overhead.description_fixed")
-          }
+          description={t("financials.builder.overhead.description_fixed")}
           tooltip={t("financials.builder.overhead.tooltip")}
           defaultOpen={defaultOpen}
-          linkedBadge={
-            dataSourceMeta?.linked.opexMilestones &&
-            inputs.operationalOverhead.mode === "milestone-scaled" ? (
-              <LinkedBadge label={t("financials.builder.linked_badge.expenses")} />
-            ) : undefined
-          }
         >
-          <div className="space-y-2">
-            {/* Mode toggle */}
-            {!readOnly && (
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setInputs({
-                    operationalOverhead: { ...inputs.operationalOverhead, mode: "fixed" },
-                  })}
-                  className={cn(
-                    "text-[11px] px-2.5 py-1 rounded-md border transition-colors",
-                    inputs.operationalOverhead.mode === "fixed"
-                      ? "bg-foreground text-background border-foreground font-semibold"
-                      : "bg-background text-muted-foreground border-input hover:bg-muted/50"
-                  )}
-                >
-                  {t("financials.builder.overhead.mode_fixed")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setInputs({
-                    operationalOverhead: { ...inputs.operationalOverhead, mode: "milestone-scaled" },
-                  })}
-                  disabled={!inputs.operationalOverhead.opexData?.length}
-                  className={cn(
-                    "text-[11px] px-2.5 py-1 rounded-md border transition-colors",
-                    inputs.operationalOverhead.mode === "milestone-scaled"
-                      ? "bg-foreground text-background border-foreground font-semibold"
-                      : "bg-background text-muted-foreground border-input hover:bg-muted/50",
-                    !inputs.operationalOverhead.opexData?.length && "opacity-50 cursor-not-allowed"
-                  )}
-                >
-                  {t("financials.builder.overhead.mode_auto_scaled")}
-                </button>
-              </div>
-            )}
-            {inputs.operationalOverhead.mode === "fixed" ? (
-              <NumberField
-                label={t("financials.builder.overhead.field_monthly_overhead")}
-                tooltip={t("financials.builder.overhead.field_monthly_overhead_tooltip")}
-                value={inputs.operationalOverhead.fixedMonthly}
-                step={1000}
-                onChange={(v) => setInputs({
-                  operationalOverhead: { ...inputs.operationalOverhead, fixedMonthly: v },
-                })}
-              />
-            ) : (
-              <div className="space-y-1.5">
-                {inputs.operationalOverhead.opexData && inputs.operationalOverhead.opexData.length > 0 ? (
-                  <>
-                    <div className="rounded-lg bg-muted/30 px-2.5 py-2 space-y-1">
-                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                        {t("financials.builder.overhead.operations_categories")}
-                      </p>
-                      {inputs.operationalOverhead.opexData.map((cat) => {
-                        const catTotal = cat.items.reduce((sum, item) => {
-                          const lowest = item.milestones.length > 0
-                            ? item.milestones.reduce((min, ms) => ms.memberCount < min.memberCount ? ms : min, item.milestones[0])
-                            : null;
-                          return sum + (lowest ? lowest.monthlyCost : 0);
-                        }, 0);
-                        return (
-                          <div key={cat.id} className="flex items-center justify-between text-[11px]">
-                            <span className="text-muted-foreground">{cat.name}</span>
-                            <span className="font-medium tabular-nums">
-                              {t("financials.builder.overhead.per_month_amount", {
-                                amount: formatNumberAsMoney(catTotal, locale),
-                              })}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <div className="rounded-lg bg-muted/30 px-2.5 py-1.5 text-[11px] text-muted-foreground flex items-center gap-1.5">
-                      <Building2 className="h-3 w-3 shrink-0" />
-                      <span>
-                        {t("financials.builder.overhead.scale_note_prefix")}{" "}
-                        <a href="/admin/operation" className="text-foreground underline underline-offset-2 hover:no-underline">
-                          {t("financials.builder.overhead.operations_page_link")}
-                        </a>
-                      </span>
-                    </div>
-                  </>
-                ) : (
-                  <div className="rounded-lg bg-muted/30 px-2.5 py-2 text-[11px] text-muted-foreground">
-                    {t("financials.builder.overhead.no_opex_prefix")}{" "}
-                    <a href="/admin/operation" className="text-foreground underline underline-offset-2 hover:no-underline">
-                      {t("financials.builder.overhead.operations_page_link")}
-                    </a>{" "}
-                    {t("financials.builder.overhead.no_opex_suffix")}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+          <OverheadCategoriesEditor
+            overhead={inputs.operationalOverhead}
+            onChange={(updates) =>
+              setInputs({
+                operationalOverhead: { ...inputs.operationalOverhead, ...updates },
+              })
+            }
+            locale={locale}
+          />
         </InputCard>
 
         {/* Sales Representatives */}
@@ -217,11 +124,15 @@ export function ScenarioBuilder({
                   })
                 }
               />
+              {/* Sales/rep + monthly growth — disabled when an override
+                  is active (the schedule below replaces them entirely
+                  for both projection math AND the headline summary). */}
               <NumberField
                 label={t("financials.builder.sales_reps.field_sales_per_rep")}
                 tooltip={t("financials.builder.sales_reps.field_sales_per_rep_tooltip")}
                 value={inputs.salesRepChannel.salesPerRepPerMonth}
                 step={1}
+                readOnly={!!inputs.salesRepChannel.override}
                 onChange={(v) =>
                   setInputs({
                     salesRepChannel: { ...inputs.salesRepChannel, salesPerRepPerMonth: v },
@@ -234,6 +145,7 @@ export function ScenarioBuilder({
                 value={inputs.salesRepChannel.monthlyGrowthRate}
                 step={1}
                 max={100}
+                readOnly={!!inputs.salesRepChannel.override}
                 onChange={(v) =>
                   setInputs({
                     salesRepChannel: { ...inputs.salesRepChannel, monthlyGrowthRate: v },
@@ -241,260 +153,32 @@ export function ScenarioBuilder({
                 }
               />
             </div>
-            <div className="rounded-lg bg-muted/30 px-2.5 py-1.5 text-[11px] text-muted-foreground flex items-center gap-1.5">
-              <Users className="h-3 w-3 shrink-0" />
-              <span>
-                {t("financials.builder.sales_reps.summary_mo1", {
-                  reps: formatNumber(inputs.salesRepChannel.startingReps, locale, "integer"),
-                  sales: formatNumber(inputs.salesRepChannel.salesPerRepPerMonth, locale, "integer"),
-                })}{" "}
-                <strong className="text-foreground">
-                  {t("financials.builder.sales_reps.summary_new_subs", {
-                    count: formatNumber(
-                      inputs.salesRepChannel.startingReps *
-                        inputs.salesRepChannel.salesPerRepPerMonth,
-                      locale,
-                      "integer",
-                    ),
-                  })}
-                </strong>
-                {inputs.salesRepChannel.monthlyGrowthRate > 0 && (
-                  <span>
-                    {" · "}
-                    {t("financials.builder.sales_reps.summary_mo12_prefix")}{" "}
-                    <strong className="text-foreground">
-                      {t("financials.builder.sales_reps.summary_mo12_value", {
-                        reps: formatNumber(
-                          Math.round(
-                            inputs.salesRepChannel.startingReps *
-                              Math.pow(1 + inputs.salesRepChannel.monthlyGrowthRate / 100, 11),
-                          ),
-                          locale,
-                          "integer",
-                        ),
-                        subs: formatNumber(
-                          Math.round(
-                            inputs.salesRepChannel.startingReps *
-                              Math.pow(1 + inputs.salesRepChannel.monthlyGrowthRate / 100, 11) *
-                              inputs.salesRepChannel.salesPerRepPerMonth,
-                          ),
-                          locale,
-                          "integer",
-                        ),
-                      })}
-                    </strong>
-                  </span>
-                )}
-              </span>
-            </div>
+            {/* The legacy "Mo 1 / Mo 12" example was removed — the
+                Override editor below already previews the rep count at
+                the end of each period, which is more useful and
+                matches whichever frequency the user has chosen. */}
+            {/* Override — when active, replaces the two scalars above
+                with a per-period schedule. Frequency picks the period
+                length (quarterly = 3 mo · biannual = 6 mo · annual =
+                12 mo); the engine compounds reps iteratively so the
+                ramp can step at every period boundary. */}
+            <SalesRepOverride
+              channel={inputs.salesRepChannel}
+              onChange={(updates) =>
+                setInputs({
+                  salesRepChannel: { ...inputs.salesRepChannel, ...updates },
+                })
+              }
+              locale={locale}
+            />
           </div>
         </InputCard>
 
-        {/* Commission Structure */}
-        <InputCard
-          icon={<DollarSign className="h-3.5 w-3.5" />}
-          title={t("financials.builder.commission.title")}
-          description={t("financials.builder.commission.description")}
-          tooltip={t("financials.builder.commission.tooltip")}
-          defaultOpen={defaultOpen}
-        >
-          <div className="space-y-3">
-            {/* Upfront Commission */}
-            <div className="space-y-2">
-              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                {t("financials.builder.commission.upfront_section")}
-              </span>
-              {/* Type toggle */}
-              {!readOnly && (
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setInputs({
-                      commissionStructure: { ...inputs.commissionStructure, upfrontType: "flat" as const },
-                    })}
-                    className={cn(
-                      "text-[11px] px-2.5 py-1 rounded-md border transition-colors",
-                      (inputs.commissionStructure.upfrontType ?? "flat") === "flat"
-                        ? "bg-foreground text-background border-foreground font-semibold"
-                        : "bg-background text-muted-foreground border-input hover:bg-muted/50"
-                    )}
-                  >
-                    {t("financials.builder.commission.type_flat")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setInputs({
-                      commissionStructure: { ...inputs.commissionStructure, upfrontType: "percent" as const },
-                    })}
-                    className={cn(
-                      "text-[11px] px-2.5 py-1 rounded-md border transition-colors",
-                      inputs.commissionStructure.upfrontType === "percent"
-                        ? "bg-foreground text-background border-foreground font-semibold"
-                        : "bg-background text-muted-foreground border-input hover:bg-muted/50"
-                    )}
-                  >
-                    {t("financials.builder.commission.type_percent")}
-                  </button>
-                </div>
-              )}
-              <div className="grid grid-cols-2 gap-2">
-                {(inputs.commissionStructure.upfrontType ?? "flat") === "flat" ? (
-                  <NumberField
-                    label={t("financials.builder.commission.field_bonus_per_sale")}
-                    tooltip={t("financials.builder.commission.field_bonus_per_sale_tooltip")}
-                    value={inputs.commissionStructure.flatBonusPerSale}
-                    step={5}
-                    onChange={(v) =>
-                      setInputs({
-                        commissionStructure: { ...inputs.commissionStructure, flatBonusPerSale: v },
-                      })
-                    }
-                  />
-                ) : (
-                  <NumberField
-                    label={t("financials.builder.commission.field_percent_of_plan")}
-                    tooltip={t("financials.builder.commission.field_percent_of_plan_tooltip")}
-                    value={inputs.commissionStructure.upfrontPercent ?? 100}
-                    step={5}
-                    max={500}
-                    onChange={(v) =>
-                      setInputs({
-                        commissionStructure: { ...inputs.commissionStructure, upfrontPercent: v },
-                      })
-                    }
-                  />
-                )}
-                <NumberField
-                  label={t("financials.builder.commission.field_payout_delay")}
-                  tooltip={t("financials.builder.commission.field_payout_delay_tooltip")}
-                  value={inputs.commissionStructure.payoutDelayMonths ?? 0}
-                  step={1}
-                  max={12}
-                  onChange={(v) =>
-                    setInputs({
-                      commissionStructure: { ...inputs.commissionStructure, payoutDelayMonths: v },
-                    })
-                  }
-                />
-              </div>
-            </div>
-            {/* Residual */}
-            <div className="space-y-1.5">
-              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                {t("financials.builder.commission.residual_section")}
-              </span>
-              <div className="grid grid-cols-2 gap-2">
-                <NumberField
-                  label={t("financials.builder.commission.field_residual_percent")}
-                  tooltip={t("financials.builder.commission.field_residual_percent_tooltip")}
-                  value={inputs.commissionStructure.residualPercent}
-                  step={0.5}
-                  max={100}
-                  onChange={(v) =>
-                    setInputs({
-                      commissionStructure: { ...inputs.commissionStructure, residualPercent: v },
-                    })
-                  }
-                />
-                <NumberField
-                  label={t("financials.builder.commission.field_residual_delay")}
-                  tooltip={t("financials.builder.commission.field_residual_delay_tooltip")}
-                  value={inputs.commissionStructure.residualDelayMonths ?? 0}
-                  step={1}
-                  max={12}
-                  onChange={(v) =>
-                    setInputs({
-                      commissionStructure: { ...inputs.commissionStructure, residualDelayMonths: v },
-                    })
-                  }
-                />
-              </div>
-            </div>
-            {/* Accelerator */}
-            <div className="space-y-1.5">
-              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                {t("financials.builder.commission.accelerator_section")}
-              </span>
-              <div className="grid grid-cols-2 gap-2">
-                <NumberField
-                  label={t("financials.builder.commission.field_percent_hitting")}
-                  tooltip={t("financials.builder.commission.field_percent_hitting_tooltip")}
-                  value={inputs.commissionStructure.percentHittingAccelerator}
-                  step={5}
-                  max={100}
-                  onChange={(v) =>
-                    setInputs({
-                      commissionStructure: { ...inputs.commissionStructure, percentHittingAccelerator: v },
-                    })
-                  }
-                />
-                <NumberField
-                  label={t("financials.builder.commission.field_multiplier")}
-                  tooltip={t("financials.builder.commission.field_multiplier_tooltip")}
-                  value={inputs.commissionStructure.acceleratorMultiplier}
-                  step={0.1}
-                  onChange={(v) =>
-                    setInputs({
-                      commissionStructure: { ...inputs.commissionStructure, acceleratorMultiplier: v },
-                    })
-                  }
-                />
-              </div>
-            </div>
-            {/* Summary */}
-            {(() => {
-              const isPercent = inputs.commissionStructure.upfrontType === "percent";
-              const upfrontLabel = isPercent
-                ? t("financials.builder.commission.summary_upfront_percent", {
-                    percent: formatNumber(
-                      (inputs.commissionStructure.upfrontPercent ?? 100) / 100,
-                      locale,
-                      "percent",
-                    ),
-                  })
-                : t("financials.builder.commission.summary_upfront_flat", {
-                    amount: formatNumberAsMoney(
-                      inputs.commissionStructure.flatBonusPerSale,
-                      locale,
-                    ),
-                  });
-              const delay = inputs.commissionStructure.payoutDelayMonths ?? 0;
-              const delayLabel =
-                delay === 0
-                  ? t("financials.builder.commission.summary_paid_immediately")
-                  : t("financials.builder.commission.summary_paid_after", { months: delay });
-              const residual = inputs.commissionStructure.residualPercent;
-              const resDelay = inputs.commissionStructure.residualDelayMonths ?? 0;
-              const resDelayLabel =
-                resDelay === 0
-                  ? ""
-                  : t("financials.builder.commission.summary_residual_delay", {
-                      months: resDelay,
-                    });
-              return (
-                <div className="rounded-lg bg-muted/30 px-2.5 py-1.5 text-[11px] text-muted-foreground flex items-center gap-1.5">
-                  <DollarSign className="h-3 w-3 shrink-0" />
-                  <span>
-                    {t("financials.builder.commission.summary_upfront_label")}:{" "}
-                    <strong className="text-foreground">{upfrontLabel}</strong> ({delayLabel})
-                    {residual > 0 && (
-                      <>
-                        {" + "}
-                        <strong className="text-foreground">
-                          {t("financials.builder.commission.summary_residual_value", {
-                            percent: formatNumber(residual / 100, locale, "percent"),
-                          })}
-                        </strong>{" "}
-                        {t("financials.builder.commission.summary_residual_word")}
-                        {resDelayLabel}
-                      </>
-                    )}
-                  </span>
-                </div>
-              );
-            })()}
-          </div>
-        </InputCard>
+        {/* Commission Structure has moved to PER-PLAN. Each tier card
+            below carries its own commission editor (upfront, residual,
+            accelerator, payout delay). The scenario-level fallback
+            (`inputs.commissionStructure`) remains as a default seed for
+            new tiers but is no longer surfaced here. */}
 
         {/* Plans */}
         {inputs.tiers.length > 0 && (
@@ -724,6 +408,19 @@ export function ScenarioBuilder({
                         />
                       </div>
                     </div>
+                    {/* Commission Structure — per-plan (each tier can pay
+                        a different upfront / residual / payout). Engine
+                        resolves commission per-tier; this is the single
+                        source of truth for editing it. */}
+                    <TierCommission
+                      tier={tier}
+                      locale={locale}
+                      onUpdateTier={(updates) => {
+                        const newTiers = [...inputs.tiers];
+                        newTiers[idx] = { ...newTiers[idx], ...updates };
+                        setInputs({ tiers: newTiers });
+                      }}
+                    />
                     {/* Add-ons — collapsible, above Overrides */}
                     <TierAddOns
                       tier={tier}
@@ -1185,6 +882,190 @@ function TierAddOns({
   );
 }
 
+// Per-tier Commission Structure. Each plan can pay a different upfront
+// (flat or % of plan), residual, payout delay, and accelerator. The
+// projection engine resolves commission per-tier; this component is the
+// single source of truth for editing it.
+function TierCommission({
+  tier,
+  onUpdateTier,
+  locale,
+}: {
+  tier: import("@/lib/financial-engine").TierFinancialInput;
+  onUpdateTier: (
+    updates: Partial<import("@/lib/financial-engine").TierFinancialInput>,
+  ) => void;
+  locale: Locale;
+}) {
+  const t = useT();
+  const readOnly = useContext(ReadOnlyContext);
+  const [open, setOpen] = useState(false);
+  // Defaults if a tier somehow lacks the structure (older snapshots
+  // missed by migration). Keeps the UI editable without crashing.
+  const cs = tier.commissionStructure ?? {
+    upfrontType: "flat" as const,
+    flatBonusPerSale: 50,
+    upfrontPercent: 15,
+    residualPercent: 5,
+    residualDelayMonths: 0,
+    tierBonuses: [],
+    percentHittingAccelerator: 20,
+    acceleratorMultiplier: 1.5,
+    acceleratorThreshold: 1.5,
+    clawbackWindowDays: 60,
+    payoutDelayMonths: 0,
+  };
+  const update = (
+    patch: Partial<import("@/lib/financial-engine").CommissionCalcInput>,
+  ) => onUpdateTier({ commissionStructure: { ...cs, ...patch } });
+
+  const isPercent = (cs.upfrontType ?? "flat") === "percent";
+
+  return (
+    <div className="space-y-1.5">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1 w-full text-left hover:opacity-80 transition-opacity"
+      >
+        {open ? (
+          <ChevronDown className="h-3 w-3 text-muted-foreground" />
+        ) : (
+          <ChevronRight className="h-3 w-3 text-muted-foreground" />
+        )}
+        <DollarSign className="h-3 w-3 text-muted-foreground" />
+        <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          {t("financials.builder.commission.title")}
+        </span>
+        <span className="text-[10px] text-muted-foreground/70 ml-auto">
+          {isPercent
+            ? formatNumber((cs.upfrontPercent ?? 15) / 100, locale, "percent")
+            : formatNumberAsMoney(cs.flatBonusPerSale, locale)}
+          {cs.residualPercent > 0 && (
+            <>
+              {" + "}
+              {formatNumber(cs.residualPercent / 100, locale, "percent")}
+            </>
+          )}
+        </span>
+      </button>
+      {open && (
+        <div className="rounded-md bg-muted/30 px-2.5 py-2 space-y-2.5">
+          {/* Upfront */}
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              {t("financials.builder.commission.upfront_section")}
+            </span>
+            {!readOnly && (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => update({ upfrontType: "flat" })}
+                  className={cn(
+                    "text-[11px] px-2.5 py-1 rounded-md border transition-colors",
+                    !isPercent
+                      ? "bg-foreground text-background border-foreground font-semibold"
+                      : "bg-background text-muted-foreground border-input hover:bg-muted/50",
+                  )}
+                >
+                  {t("financials.builder.commission.type_flat")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => update({ upfrontType: "percent" })}
+                  className={cn(
+                    "text-[11px] px-2.5 py-1 rounded-md border transition-colors",
+                    isPercent
+                      ? "bg-foreground text-background border-foreground font-semibold"
+                      : "bg-background text-muted-foreground border-input hover:bg-muted/50",
+                  )}
+                >
+                  {t("financials.builder.commission.type_percent")}
+                </button>
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-1.5">
+              {!isPercent ? (
+                <NumberField
+                  label={t("financials.builder.commission.field_bonus_per_sale")}
+                  tooltip={t("financials.builder.commission.field_bonus_per_sale_tooltip")}
+                  value={cs.flatBonusPerSale}
+                  step={5}
+                  onChange={(v) => update({ flatBonusPerSale: v })}
+                />
+              ) : (
+                <NumberField
+                  label={t("financials.builder.commission.field_percent_of_plan")}
+                  tooltip={t("financials.builder.commission.field_percent_of_plan_tooltip")}
+                  value={cs.upfrontPercent ?? 15}
+                  step={5}
+                  max={500}
+                  onChange={(v) => update({ upfrontPercent: v })}
+                />
+              )}
+              <NumberField
+                label={t("financials.builder.commission.field_payout_delay")}
+                tooltip={t("financials.builder.commission.field_payout_delay_tooltip")}
+                value={cs.payoutDelayMonths ?? 0}
+                step={1}
+                max={12}
+                onChange={(v) => update({ payoutDelayMonths: v })}
+              />
+            </div>
+          </div>
+          {/* Residual */}
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              {t("financials.builder.commission.residual_section")}
+            </span>
+            <div className="grid grid-cols-2 gap-1.5">
+              <NumberField
+                label={t("financials.builder.commission.field_residual_percent")}
+                tooltip={t("financials.builder.commission.field_residual_percent_tooltip")}
+                value={cs.residualPercent}
+                step={0.5}
+                max={100}
+                onChange={(v) => update({ residualPercent: v })}
+              />
+              <NumberField
+                label={t("financials.builder.commission.field_residual_delay")}
+                tooltip={t("financials.builder.commission.field_residual_delay_tooltip")}
+                value={cs.residualDelayMonths ?? 0}
+                step={1}
+                max={12}
+                onChange={(v) => update({ residualDelayMonths: v })}
+              />
+            </div>
+          </div>
+          {/* Accelerator */}
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              {t("financials.builder.commission.accelerator_section")}
+            </span>
+            <div className="grid grid-cols-2 gap-1.5">
+              <NumberField
+                label={t("financials.builder.commission.field_percent_hitting")}
+                tooltip={t("financials.builder.commission.field_percent_hitting_tooltip")}
+                value={cs.percentHittingAccelerator}
+                step={5}
+                max={100}
+                onChange={(v) => update({ percentHittingAccelerator: v })}
+              />
+              <NumberField
+                label={t("financials.builder.commission.field_multiplier")}
+                tooltip={t("financials.builder.commission.field_multiplier_tooltip")}
+                value={cs.acceleratorMultiplier}
+                step={0.1}
+                onChange={(v) => update({ acceleratorMultiplier: v })}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Suppress unused-var warning — `tierIdx` kept on the prop list for future use.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function TierAdvancedOverrides({
@@ -1340,6 +1221,545 @@ function TierAdvancedOverrides({
               />
             </div>
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Quarterly schedule editor for the Sales Rep channel. Renders 12 rows
+ * (Q1 → Q12, covering months 1-3 through 34-36). Each row carries an
+ * optional growth-rate and sales/rep override; empty cells inherit the
+ * scenario-level defaults shown above the schedule.
+ *
+ * The editor is collapsed by default — most users start with a flat
+ * ramp and only steer per-quarter once they're stress-testing year 2/3
+ * realism.
+ */
+function SalesRepOverride({
+  channel,
+  onChange,
+  locale,
+}: {
+  channel: import("@/lib/financial-engine").SalesRepChannel;
+  onChange: (
+    updates: Partial<import("@/lib/financial-engine").SalesRepChannel>,
+  ) => void;
+  locale: Locale;
+}) {
+  const readOnly = useContext(ReadOnlyContext);
+  const override = channel.override;
+  const active = !!override;
+
+  // Period length per frequency. Drives both the row count (window /
+  // periodMonths) and the engine's lookup; the two MUST agree.
+  const periodMonthsByFreq: Record<
+    import("@/lib/financial-engine").SalesRepOverrideFrequency,
+    number
+  > = { quarterly: 3, biannual: 6, annual: 12 };
+  const PROJECTION_MONTHS = 36;
+
+  // Build (or rebuild) a fully-populated periods array for a frequency.
+  // Behavior depends on what we're transitioning from:
+  //   • OFF → ON: seed each period with a PERIOD-rate equivalent of the
+  //     scalar's per-month rate, so the projection is preserved at the
+  //     moment of toggling. periodRate = (1 + monthly)^periodMonths − 1.
+  //   • ON → ON (different freq): keep period values as-is — the user
+  //     wants the math to change (10% biannual ≠ 10% annual once the
+  //     period rate semantic is in play).
+  const buildPeriods = (
+    freq: import("@/lib/financial-engine").SalesRepOverrideFrequency,
+    existing: import("@/lib/financial-engine").SalesRepChannel["override"],
+  ) => {
+    const periodMonths = periodMonthsByFreq[freq];
+    const count = Math.ceil(PROJECTION_MONTHS / periodMonths);
+    const existingByPeriod = new Map(
+      (existing?.periods ?? []).map((p) => [p.period, p]),
+    );
+    // Seed-from-scalar conversion (used only when there's no prior
+    // override entry). Compound the monthly scalar across the period
+    // so growth math stays equivalent at toggle time.
+    const monthlyScalar = channel.monthlyGrowthRate / 100;
+    const seededPeriodRate =
+      (Math.pow(1 + monthlyScalar, periodMonths) - 1) * 100;
+    return Array.from({ length: count }, (_, i) => {
+      const period = i + 1;
+      const prior = existingByPeriod.get(period);
+      return {
+        period,
+        monthlyGrowthRate:
+          prior?.monthlyGrowthRate ??
+          Math.round(seededPeriodRate * 100) / 100,
+        salesPerRepPerMonth:
+          prior?.salesPerRepPerMonth ?? channel.salesPerRepPerMonth,
+      };
+    });
+  };
+
+  const turnOn = (
+    freq: import("@/lib/financial-engine").SalesRepOverrideFrequency,
+  ) => {
+    onChange({
+      override: {
+        frequency: freq,
+        periods: buildPeriods(freq, override),
+      },
+    });
+  };
+
+  const turnOff = () => {
+    onChange({ override: undefined });
+  };
+
+  const switchFrequency = (
+    freq: import("@/lib/financial-engine").SalesRepOverrideFrequency,
+  ) => {
+    onChange({
+      override: { frequency: freq, periods: buildPeriods(freq, override) },
+    });
+  };
+
+  const updatePeriod = (
+    periodIdx: number, // 1-based
+    field: "monthlyGrowthRate" | "salesPerRepPerMonth",
+    value: number,
+  ) => {
+    if (!override) return;
+    const next = override.periods.map((p) =>
+      p.period === periodIdx ? { ...p, [field]: value } : p,
+    );
+    onChange({ override: { ...override, periods: next } });
+  };
+
+  // Compute the rep count at the END of each period, mirroring the
+  // engine's iterative compounding so the user sees what the schedule
+  // actually projects without leaving the card. Walks month-by-month,
+  // applying each period's PER-PERIOD rate compounded down to monthly
+  // (matches the engine's resolveGrowth formula).
+  const repsByPeriodEnd: number[] = (() => {
+    if (!override) return [];
+    const periodMonths = periodMonthsByFreq[override.frequency];
+    const out: number[] = [];
+    let reps = channel.startingReps;
+    for (let m = 1; m <= PROJECTION_MONTHS; m++) {
+      if (m > 1) {
+        const period = Math.floor((m - 1) / periodMonths) + 1;
+        const entry = override.periods.find((p) => p.period === period);
+        const periodRate =
+          (entry?.monthlyGrowthRate ?? channel.monthlyGrowthRate) / 100;
+        const monthlyRate = Math.pow(1 + periodRate, 1 / periodMonths) - 1;
+        reps = reps * (1 + monthlyRate);
+      }
+      // Push at the end of each period.
+      if (m % periodMonths === 0) out.push(Math.round(reps));
+    }
+    // Handle a window that doesn't divide evenly (won't happen at 36 mo
+    // / 3-6-12, but defensive).
+    if (out.length < Math.ceil(PROJECTION_MONTHS / periodMonths)) {
+      out.push(Math.round(reps));
+    }
+    return out;
+  })();
+
+  // Frequency label helpers — consistent shorthand throughout.
+  const periodLabel = (
+    freq: import("@/lib/financial-engine").SalesRepOverrideFrequency,
+    period: number,
+  ) => {
+    if (freq === "annual") return `Y${period}`;
+    if (freq === "biannual") return `H${period}`;
+    return `Q${period}`;
+  };
+  const monthRange = (
+    freq: import("@/lib/financial-engine").SalesRepOverrideFrequency,
+    period: number,
+  ) => {
+    const len = periodMonthsByFreq[freq];
+    const start = (period - 1) * len + 1;
+    const end = Math.min(period * len, PROJECTION_MONTHS);
+    return `Months ${start}–${end}`;
+  };
+
+  return (
+    <div className="space-y-1.5">
+      {/* Header — title row + a dedicated toggle row beneath. The
+          toggle is always rendered (so the user can SEE which mode
+          they're in even in read-only); buttons are simply disabled
+          and not clickable when readOnly is true. */}
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          Override
+        </span>
+        <span className="text-[10px] text-muted-foreground/70">
+          {!active
+            ? "Using defaults above"
+            : `${override.frequency} · ${override.periods.length} periods`}
+        </span>
+      </div>
+      <div className="flex items-center gap-1 flex-wrap">
+        <button
+          type="button"
+          onClick={turnOff}
+          disabled={readOnly}
+          className={cn(
+            "text-[11px] px-2 py-0.5 rounded-md border transition-colors",
+            !active
+              ? "bg-foreground text-background border-foreground font-semibold"
+              : "bg-background text-muted-foreground border-input hover:bg-muted/50",
+            readOnly && "opacity-60 cursor-not-allowed",
+          )}
+        >
+          Off
+        </button>
+        {(["annual", "biannual", "quarterly"] as const).map((freq) => {
+          const isOn = active && override.frequency === freq;
+          return (
+            <button
+              key={freq}
+              type="button"
+              disabled={readOnly}
+              onClick={() =>
+                isOn ? turnOff() : active ? switchFrequency(freq) : turnOn(freq)
+              }
+              className={cn(
+                "text-[11px] px-2 py-0.5 rounded-md border transition-colors capitalize",
+                isOn
+                  ? "bg-foreground text-background border-foreground font-semibold"
+                  : "bg-background text-muted-foreground border-input hover:bg-muted/50",
+                readOnly && "opacity-60 cursor-not-allowed",
+              )}
+            >
+              {freq}
+            </button>
+          );
+        })}
+      </div>
+      {active && (
+        <div className="rounded-md bg-muted/30 px-2.5 py-2 space-y-1">
+          <div className="grid grid-cols-[60px_1fr_1fr_80px] gap-1.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wider px-1">
+            <span>Period</span>
+            <span title="% growth across the whole period — the engine compounds it into a per-month rate based on the frequency.">
+              Growth / period (%)
+            </span>
+            <span>Sales / rep</span>
+            <span className="text-right">Reps end</span>
+          </div>
+          {override.periods.map((p) => (
+            <div
+              key={p.period}
+              className="grid grid-cols-[60px_1fr_1fr_80px] gap-1.5 items-center"
+            >
+              <span
+                className="text-[11px] text-muted-foreground tabular-nums"
+                title={monthRange(override.frequency, p.period)}
+              >
+                {periodLabel(override.frequency, p.period)}
+              </span>
+              <input
+                type="number"
+                step={1}
+                min={0}
+                max={100}
+                disabled={readOnly}
+                defaultValue={p.monthlyGrowthRate}
+                onBlur={(e) =>
+                  updatePeriod(p.period, "monthlyGrowthRate", Number(e.target.value) || 0)
+                }
+                className="text-[11px] tabular-nums px-1.5 py-0.5 rounded border bg-background hover:bg-muted/30 transition-colors w-full"
+              />
+              <input
+                type="number"
+                step={1}
+                min={0}
+                disabled={readOnly}
+                defaultValue={p.salesPerRepPerMonth}
+                onBlur={(e) =>
+                  updatePeriod(p.period, "salesPerRepPerMonth", Number(e.target.value) || 0)
+                }
+                className="text-[11px] tabular-nums px-1.5 py-0.5 rounded border bg-background hover:bg-muted/30 transition-colors w-full"
+              />
+              <span className="text-[11px] tabular-nums text-muted-foreground text-right">
+                {formatNumber(repsByPeriodEnd[p.period - 1] ?? 0, locale, "integer")}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Overhead editor — category list, each with subscriber-milestone-based
+ * monthly costs. The engine picks the highest milestone whose threshold
+ * is ≤ active subscribers, so a category like "Tech: $6k @ 0 subs,
+ * $12k @ 1k subs" reads as "we run on $6k until we cross 1,000 active
+ * subscribers, then jump to $12k."
+ *
+ * Each category is collapsible (we usually have 3-5 of them and don't
+ * want every milestone list visible at once).
+ */
+function OverheadCategoriesEditor({
+  overhead,
+  onChange,
+  locale,
+}: {
+  overhead: import("@/lib/financial-engine").OperationalOverhead;
+  onChange: (
+    updates: Partial<import("@/lib/financial-engine").OperationalOverhead>,
+  ) => void;
+  locale: Locale;
+}) {
+  const readOnly = useContext(ReadOnlyContext);
+  const categories = overhead.categories ?? [];
+
+  const updateCategories = (
+    next: import("@/lib/financial-engine").OverheadCategoryInput[],
+  ) => onChange({ categories: next, mode: "categories" });
+
+  const addCategory = () => {
+    const id = `cat-${Math.random().toString(36).slice(2, 8)}`;
+    updateCategories([
+      ...categories,
+      {
+        id,
+        name: "New category",
+        milestones: [{ memberCount: 0, monthlyCost: 0 }],
+      },
+    ]);
+  };
+
+  const removeCategory = (id: string) => {
+    updateCategories(categories.filter((c) => c.id !== id));
+  };
+
+  const updateCategory = (
+    id: string,
+    patch: Partial<import("@/lib/financial-engine").OverheadCategoryInput>,
+  ) => {
+    updateCategories(categories.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+  };
+
+  // Total at 0 subscribers (pre-launch baseline). Helps the user sanity-
+  // check the headline before scaling kicks in.
+  const baselineMonthly = categories.reduce((s, c) => {
+    const sorted = [...c.milestones].sort((a, b) => a.memberCount - b.memberCount);
+    return s + (sorted[0]?.monthlyCost ?? 0);
+  }, 0);
+
+  return (
+    <div className="space-y-2">
+      {categories.length === 0 ? (
+        <div className="rounded-md bg-muted/30 px-2.5 py-3 text-[11px] text-muted-foreground">
+          No overhead categories yet. Add one to start tracking monthly OpEx.
+        </div>
+      ) : (
+        categories.map((cat) => (
+          <OverheadCategoryRow
+            key={cat.id}
+            category={cat}
+            onUpdate={(patch) => updateCategory(cat.id, patch)}
+            onRemove={() => removeCategory(cat.id)}
+            readOnly={readOnly}
+            locale={locale}
+          />
+        ))
+      )}
+      {!readOnly && (
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={addCategory}
+            className="text-[11px] inline-flex items-center gap-1 px-2 py-1 rounded-md border border-dashed text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-colors"
+          >
+            <Plus className="h-3 w-3" />
+            Add category
+          </button>
+          {categories.length > 0 && (
+            <span className="text-[11px] text-muted-foreground">
+              Pre-launch baseline:{" "}
+              <strong className="text-foreground tabular-nums">
+                {formatNumberAsMoney(baselineMonthly, locale)}
+              </strong>{" "}
+              / mo
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * A single overhead category — header (name + total + remove) plus a
+ * collapsible list of (memberCount, monthlyCost) milestones. The lowest
+ * milestone is the pre-launch budget; each next milestone replaces it
+ * once active subs cross its threshold.
+ */
+function OverheadCategoryRow({
+  category,
+  onUpdate,
+  onRemove,
+  readOnly,
+  locale,
+}: {
+  category: import("@/lib/financial-engine").OverheadCategoryInput;
+  onUpdate: (
+    patch: Partial<import("@/lib/financial-engine").OverheadCategoryInput>,
+  ) => void;
+  onRemove: () => void;
+  readOnly: boolean;
+  locale: Locale;
+}) {
+  const [open, setOpen] = useState(false);
+  const sortedMilestones = [...category.milestones].sort(
+    (a, b) => a.memberCount - b.memberCount,
+  );
+  const baseline = sortedMilestones[0]?.monthlyCost ?? 0;
+  const top = sortedMilestones[sortedMilestones.length - 1]?.monthlyCost ?? 0;
+
+  const setMilestones = (
+    ms: { memberCount: number; monthlyCost: number }[],
+  ) => onUpdate({ milestones: ms });
+
+  const updateMilestone = (
+    idx: number,
+    patch: Partial<{ memberCount: number; monthlyCost: number }>,
+  ) => {
+    const next = [...category.milestones];
+    next[idx] = { ...next[idx], ...patch };
+    setMilestones(next);
+  };
+
+  const addMilestone = () => {
+    // Default new milestone to a step above the highest current threshold.
+    const lastSubs = sortedMilestones[sortedMilestones.length - 1]?.memberCount ?? 0;
+    const lastCost = sortedMilestones[sortedMilestones.length - 1]?.monthlyCost ?? 0;
+    setMilestones([
+      ...category.milestones,
+      { memberCount: lastSubs > 0 ? lastSubs * 2 : 1000, monthlyCost: lastCost },
+    ]);
+  };
+
+  const removeMilestone = (idx: number) => {
+    if (category.milestones.length <= 1) return; // keep at least one
+    setMilestones(category.milestones.filter((_, i) => i !== idx));
+  };
+
+  return (
+    <div className="rounded-md border bg-background">
+      <div className="flex items-center gap-1.5 px-2 py-1.5">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="flex items-center gap-1 hover:opacity-80 transition-opacity flex-1 min-w-0"
+        >
+          {open ? (
+            <ChevronDown className="h-3 w-3 text-muted-foreground shrink-0" />
+          ) : (
+            <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
+          )}
+          <input
+            type="text"
+            value={category.name}
+            onChange={(e) => onUpdate({ name: e.target.value })}
+            disabled={readOnly}
+            onClick={(e) => e.stopPropagation()}
+            className="text-[12px] font-medium bg-transparent border-0 outline-none focus:bg-muted/50 px-1 py-0.5 rounded min-w-0 flex-1"
+          />
+        </button>
+        <span className="text-[11px] text-muted-foreground tabular-nums whitespace-nowrap">
+          {formatNumberAsMoney(baseline, locale)}
+          {top !== baseline && (
+            <>
+              {" → "}
+              <span className="text-foreground">{formatNumberAsMoney(top, locale)}</span>
+            </>
+          )}
+          <span className="text-muted-foreground"> / mo</span>
+        </span>
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={onRemove}
+            title="Remove category"
+            className="text-muted-foreground hover:text-red-500 transition-colors p-1"
+          >
+            <Trash2 className="h-3 w-3" />
+          </button>
+        )}
+      </div>
+      {open && (
+        <div className="border-t bg-muted/20 px-2 py-2 space-y-1.5">
+          <div className="grid grid-cols-[1fr_1fr_24px] gap-1.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wider px-1">
+            <span>At ≥ subs</span>
+            <span>Monthly cost</span>
+            <span />
+          </div>
+          {category.milestones
+            .map((m, idx) => ({ m, idx }))
+            // Stable ascending order by memberCount for display, but
+            // mutate via the original idx so duplicates don't collide.
+            .sort((a, b) => a.m.memberCount - b.m.memberCount)
+            .map(({ m, idx: sourceIdx }) => (
+              <div
+                key={sourceIdx}
+                className="grid grid-cols-[1fr_1fr_24px] gap-1.5 items-center"
+              >
+                <input
+                  type="number"
+                  step={100}
+                  min={0}
+                  disabled={readOnly}
+                  defaultValue={m.memberCount}
+                  onBlur={(e) =>
+                    updateMilestone(sourceIdx, {
+                      memberCount: Number(e.target.value) || 0,
+                    })
+                  }
+                  className="text-[11px] tabular-nums px-1.5 py-0.5 rounded border bg-background hover:bg-muted/30 transition-colors w-full"
+                />
+                <input
+                  type="number"
+                  step={500}
+                  min={0}
+                  disabled={readOnly}
+                  defaultValue={m.monthlyCost}
+                  onBlur={(e) =>
+                    updateMilestone(sourceIdx, {
+                      monthlyCost: Number(e.target.value) || 0,
+                    })
+                  }
+                  className="text-[11px] tabular-nums px-1.5 py-0.5 rounded border bg-background hover:bg-muted/30 transition-colors w-full"
+                />
+                {!readOnly && (
+                  <button
+                    type="button"
+                    onClick={() => removeMilestone(sourceIdx)}
+                    disabled={category.milestones.length <= 1}
+                    title={
+                      category.milestones.length <= 1
+                        ? "At least one milestone is required"
+                        : "Remove milestone"
+                    }
+                    className="text-muted-foreground hover:text-red-500 transition-colors p-1 disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            ))}
+          {!readOnly && (
+            <button
+              type="button"
+              onClick={addMilestone}
+              className="text-[11px] inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-dashed text-muted-foreground hover:bg-background hover:text-foreground transition-colors"
+            >
+              <Plus className="h-3 w-3" />
+              Add milestone
+            </button>
+          )}
         </div>
       )}
     </div>

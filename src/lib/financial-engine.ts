@@ -87,6 +87,15 @@ export interface TierFinancialInput {
   avgHandlingCost?: number;
   processingFeePct?: number;   // e.g. 2.9 → 2.9% of revenue
   processingFeeFlat?: number;  // $ per transaction
+  /**
+   * Per-tier commission structure. When set, OVERRIDES the scenario-
+   * level `inputs.commissionStructure` for this tier — used for
+   * upfront bonus, residual %, payout/residual delays, accelerator,
+   * clawback. Lets each plan pay reps differently (Starter might pay
+   * a flat $50 while Legend pays 15% of plan price). When undefined,
+   * the engine falls back to the scenario-level commission.
+   */
+  commissionStructure?: CommissionCalcInput;
 }
 
 export interface CommissionCalcInput {
@@ -109,10 +118,49 @@ export interface CommissionCalcInput {
   tierBonuses: { tierId: string; flatBonus: number }[];
 }
 
+/** Period length, in months, for a sales-rep schedule override. */
+export type SalesRepOverrideFrequency = "quarterly" | "biannual" | "annual";
+
+export const SALES_REP_OVERRIDE_PERIOD_MONTHS: Record<
+  SalesRepOverrideFrequency,
+  number
+> = { quarterly: 3, biannual: 6, annual: 12 };
+
 export interface SalesRepChannel {
   startingReps: number;
   salesPerRepPerMonth: number;
   monthlyGrowthRate: number; // percentage 0-100 (e.g., 10 = 10% more reps each month)
+  /**
+   * Schedule override. When set, the engine IGNORES `salesPerRepPerMonth`
+   * and `monthlyGrowthRate` above and reads both values per period from
+   * the schedule. Period length is `quarterly` (3 mo), `biannual` (6 mo),
+   * or `annual` (12 mo) — the user picks the one that matches how they
+   * actually plan the team.
+   *
+   * Growth-rate semantics: `monthlyGrowthRate` is the % growth across
+   * the WHOLE PERIOD (e.g. "Y1 = 10%" means reps grow 10% over Y1, NOT
+   * 10% every month within Y1). The engine compounds this into a
+   * per-month rate via (1 + periodRate)^(1/periodMonths) - 1 so growth
+   * is smooth within the period. Switching frequencies therefore
+   * meaningfully changes the projection: the same "10%" applied across
+   * 3 months (quarterly) is much steeper than 10% across 12 months
+   * (annual).
+   *
+   * `periods[i]` covers months `i*L+1 .. (i+1)*L` where L is the period
+   * length. Periods are indexed from 1; missing entries fall back to
+   * the scalar defaults at the SCALAR level — but the UI always renders
+   * every period, so missing entries are an edge case.
+   */
+  override?: {
+    frequency: SalesRepOverrideFrequency;
+    periods: {
+      period: number;             // 1 = first period, … N = last period in window
+      /** % growth across the whole period (NOT per-month). The engine
+       *  compounds it into a per-month rate based on the frequency. */
+      monthlyGrowthRate: number;
+      salesPerRepPerMonth: number;
+    }[];
+  };
 }
 
 export interface SamplerChannel {
@@ -129,10 +177,32 @@ export interface PartnerKickbackInput {
   kickbackValue: number;
 }
 
+/**
+ * One overhead category (e.g. Marketing, Technology, Operations) — the
+ * monthly budget steps up as the company grows past subscriber
+ * milestones. The lowest-`memberCount` entry is the pre-launch /
+ * low-volume budget; each next entry replaces the budget once active
+ * subs cross its threshold. Milestones are stored sorted ascending by
+ * `memberCount`.
+ */
+export interface OverheadCategoryInput {
+  id: string;
+  name: string;
+  milestones: { memberCount: number; monthlyCost: number }[];
+}
+
 export interface OperationalOverhead {
-  mode: "fixed" | "milestone-scaled";
+  /**
+   * "fixed" — single flat monthly cost, irrespective of subscribers.
+   * "milestone-scaled" — legacy: opexData (3-level: category > item > milestones).
+   * "categories" — current model: overhead split into named categories,
+   *   each scaling on subscriber milestones. This is the canonical shape
+   *   for new scenarios; the others stay for backward compatibility.
+   */
+  mode: "fixed" | "milestone-scaled" | "categories";
   fixedMonthly: number;
-  opexData?: OpexCategoryData[];
+  opexData?: OpexCategoryData[];          // legacy
+  categories?: OverheadCategoryInput[];   // new
 }
 
 export interface ProfitSplitParty {
@@ -440,11 +510,71 @@ export function calculateLTV(
 
 // --- Operational overhead resolution ---
 
-export function resolveOverhead(overhead: OperationalOverhead, memberCount: number): number {
-  if (overhead.mode === "milestone-scaled" && overhead.opexData) {
-    return resolveOpexForMemberCount(overhead.opexData, memberCount).total;
+/**
+ * For a single category, return the monthly cost given an active
+ * subscriber count. Picks the highest milestone with `memberCount` ≤
+ * `memberCount`; if none qualifies, returns the lowest milestone (the
+ * pre-launch budget). Empty milestones list yields 0.
+ */
+function resolveCategoryMonthlyCost(
+  category: OverheadCategoryInput,
+  memberCount: number,
+): number {
+  const sorted = [...category.milestones].sort(
+    (a, b) => a.memberCount - b.memberCount,
+  );
+  if (sorted.length === 0) return 0;
+  let active = sorted[0]; // start at the lowest (pre-launch) budget
+  for (const m of sorted) {
+    if (memberCount >= m.memberCount) active = m;
+    else break;
   }
-  return overhead.fixedMonthly;
+  return active.monthlyCost;
+}
+
+/**
+ * Resolve total overhead and per-category breakdown for a given member
+ * count. Used by the engine's projection loop to compute monthly
+ * overhead AND emit a breakdown the UI can render.
+ */
+export function resolveOverheadBreakdown(
+  overhead: OperationalOverhead,
+  memberCount: number,
+): {
+  total: number;
+  byCategory: { id: string; name: string; monthly: number }[];
+} {
+  if (overhead.mode === "categories" && overhead.categories) {
+    const byCategory = overhead.categories.map((c) => ({
+      id: c.id,
+      name: c.name,
+      monthly: resolveCategoryMonthlyCost(c, memberCount),
+    }));
+    return {
+      total: byCategory.reduce((s, c) => s + c.monthly, 0),
+      byCategory,
+    };
+  }
+  if (overhead.mode === "milestone-scaled" && overhead.opexData) {
+    const r = resolveOpexForMemberCount(overhead.opexData, memberCount);
+    return {
+      total: r.total,
+      byCategory: r.byCategory.map((c) => ({
+        id: c.categoryId,
+        name: c.categoryName,
+        monthly: c.total,
+      })),
+    };
+  }
+  // Fixed mode — single bucket labeled "Overhead".
+  return {
+    total: overhead.fixedMonthly,
+    byCategory: [{ id: "fixed", name: "Overhead", monthly: overhead.fixedMonthly }],
+  };
+}
+
+export function resolveOverhead(overhead: OperationalOverhead, memberCount: number): number {
+  return resolveOverheadBreakdown(overhead, memberCount).total;
 }
 
 // --- Full scenario calculation ---
@@ -519,7 +649,8 @@ export interface ScenarioResults {
     ltv: number;
   }[];
 
-  // Cohort projection (24 months)
+  // Cohort projection — one entry per month in the projection window
+  // (length = PROJECTION_MONTHS).
   cohortProjection: {
     month: number;
     subscribers: number;
@@ -527,6 +658,9 @@ export interface ScenarioResults {
     newSubsFromSamplers: number;
     chargebacks: number;
     activeReps: number;
+    /** Per-category overhead breakdown — populated by the engine's
+     *  resolver. Rolls up to the `operationalOverhead` total. */
+    operationalOverheadByCategory?: { id: string; name: string; monthly: number }[];
     samplerSpend: number;
     revenue: number;
     costs: number;
@@ -546,13 +680,17 @@ export interface ScenarioResults {
     welcomeKitCost?: number;    // monthGrossNewSubs × welcomeKitCostPerSub (acquisition spend)
     // Per-tier breakdown of new subscribers this month
     newSubsByTier?: { tierId: string; count: number }[];
+    // Per-tier breakdown of commission expense this month (upfront +
+    // residual split since they fire on different bases). Sums to the
+    // aggregate `commissionExpense` field.
+    commissionByTier?: { tierId: string; upfront: number; residual: number }[];
     // Per-billing-cycle revenue breakdown this month
     revenueByBillingCycle?: { monthly: number; biannual: number; annual: number };
   }[];
 
   /**
    * Per-acquisition-month cohort lifecycles. Each entry is a single
-   * "safra" (acquisition month) followed forward through the 24-month
+   * "safra" (acquisition month) followed forward through the 36-month
    * window — answering "if 150 subs joined in month M, how do *those
    * specific 150* evolve over time?" Distinct from `cohortProjection`,
    * which sums every active cohort each month.
@@ -585,12 +723,12 @@ export interface ScenarioResults {
        * largest-remainder rounding so the three values sum exactly to
        * `count`. Cycle mix is constant across the cohort's lifetime —
        * the engine doesn't model differential churn rates per cycle —
-       * so these counts are good for the entire 24-month window.
+       * so these counts are good for the entire 36-month window.
        */
       subsByCycle: { monthly: number; biannual: number; annual: number };
     }[];
     months: {
-      monthIndex: number;         // calendar month within the 24-month window
+      monthIndex: number;         // calendar month within the 36-month window
       monthOfLife: number;        // 1 = acquisition month, 2 = first month after, …
       survivingSubs: number;      // remaining active subs from this cohort
       churned: number;            // subs lost since previous month-of-life
@@ -614,11 +752,26 @@ export interface ScenarioResults {
        */
       revenueByTierAndCycle: { tierId: string; monthly: number; biannual: number; annual: number }[];
       /**
+       * Per-tier × per-cycle ACTIVE SUB COUNTS (not revenue). Lets the
+       * user audit any month: "$X of biannual revenue at Mo 7 came
+       * from N biannual Starter subs × $rate × 6". These counts are
+       * NOT zeroed in lump-off months — they're the surviving
+       * population in that (tier, cycle) bucket, fractional, every
+       * month. Multiply by the cycle rate to get expected revenue at
+       * lump months.
+       */
+      subscribersByTierAndCycle: { tierId: string; monthly: number; biannual: number; annual: number }[];
+      /**
        * Cost-of-goods broken out into the three pieces the projection
        * actually pays for. Sum is the legacy `productCost` field.
        */
       productCogsCost: number;        // package products / apparel COGS, recurring per active sub
-      shippingHandlingCost: number;   // per-tier shipping + handling, recurring per active sub
+      /** Per-tier shipping cost, recurring per active sub. Split out
+       *  from handling so the UI can render them as separate lines.
+       *  Sum equals the legacy `shippingHandlingCost` field. */
+      shippingCost: number;
+      handlingCost: number;
+      shippingHandlingCost: number;   // shippingCost + handlingCost (kept for backwards compat)
       paymentProcessingCost: number;  // pct + flat fee per transaction — lumps with cash inflow above
       productCost: number;        // sum of the three above (kept for backwards compat)
       /**
@@ -643,16 +796,23 @@ export interface ScenarioResults {
       chargebackCost: number;     // one-time, only on month-of-life 1
       commissionUpfront: number;  // applied at acquisition (or after payoutDelay)
       commissionResidual: number; // ongoing, after residualDelay
+      // Per-tier commission split — same upfront/residual breakdown but
+      // attributed to the tier whose plan structure paid it. Sums to the
+      // `commissionUpfront` / `commissionResidual` totals above.
+      commissionByTier: { tierId: string; upfront: number; residual: number }[];
       addOnCost: number;          // Path Scale lease/sale per cohort lifecycle
       netProfit: number;          // revenue − all attributed costs above
       cumulativeProfit: number;   // running total within this lifecycle
     }[];
-    /** Lifetime totals across all months in this lifecycle (≤ 24). */
+    /** Lifetime totals across all months in this lifecycle (≤ PROJECTION_MONTHS). */
     totals: {
       revenue: number;
       revenueByBillingCycle: { monthly: number; biannual: number; annual: number };
       revenueByTierAndCycle: { tierId: string; monthly: number; biannual: number; annual: number }[];
+      subscribersByTierAndCycle: { tierId: string; monthly: number; biannual: number; annual: number }[];
       productCogsCost: number;
+      shippingCost: number;
+      handlingCost: number;
       shippingHandlingCost: number;
       paymentProcessingCost: number;
       productCost: number;
@@ -663,6 +823,7 @@ export interface ScenarioResults {
       chargebackCost: number;
       commissionUpfront: number;
       commissionResidual: number;
+      commissionByTier: { tierId: string; upfront: number; residual: number }[];
       addOnCost: number;
       netProfit: number;
       paybackMonth: number | null; // month-of-life when cumulativeProfit first ≥ 0; null = not yet paid back
@@ -699,6 +860,14 @@ export interface ScenarioResults {
   };
 }
 
+/**
+ * Length of the projection window, in months. The engine emits exactly
+ * this many entries in `cohortProjection` and one cohort lifecycle per
+ * acquisition month inside this window. UI views (Spreadsheet, Cohort)
+ * may render fewer columns by slicing — they cannot ask for more.
+ */
+export const PROJECTION_MONTHS = 36;
+
 export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
   const {
     tiers,
@@ -726,8 +895,17 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
   const operationalOverheadMonthly = resolveOverhead(operationalOverhead, 0);
 
   // --- Month 1 acquisition ---
+  // Month 1: use the structural defaults (no quarter overrides apply
+  // before month 1 begins; Q1 entry — if any — is captured below by
+  // resolveSalesPerRep on the precomputed array, but at this point in
+  // the engine that array isn't built yet).
   const month1Reps = salesRepChannel.startingReps;
-  const month1GrossNewSubs = Math.round(month1Reps * salesRepChannel.salesPerRepPerMonth);
+  // Month 1 sales/rep — when an override is active, period 1's rate
+  // covers month 1; otherwise the scalar applies.
+  const month1SalesPerRep =
+    salesRepChannel.override?.periods.find((p) => p.period === 1)
+      ?.salesPerRepPerMonth ?? salesRepChannel.salesPerRepPerMonth;
+  const month1GrossNewSubs = Math.round(month1Reps * month1SalesPerRep);
   const month1Chargebacks = Math.round(month1GrossNewSubs * chargebackRate);
   const month1NewSubsFromReps = month1GrossNewSubs - month1Chargebacks;
 
@@ -821,33 +999,74 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
   const blendedRevenuePerSub =
     totalSubscribers > 0 ? mrr / totalSubscribers : 0;
 
-  // Resolve upfront bonus based on commission type
-  const resolvedUpfrontBonus =
-    (commissionStructure.upfrontType ?? "flat") === "percent"
-      ? blendedRevenuePerSub * ((commissionStructure.upfrontPercent ?? 0) / 100)
-      : commissionStructure.flatBonusPerSale > 0
-        ? commissionStructure.flatBonusPerSale
-        : commissionStructure.tierBonuses.length > 0
-          ? commissionStructure.tierBonuses.reduce((s, b) => s + b.flatBonus, 0) /
-            commissionStructure.tierBonuses.length
-          : 0;
+  // --- Per-tier commission resolution ---
+  // Each tier may have its own `commissionStructure` override; absent
+  // tiers fall back to the scenario-level default. The engine computes
+  // commissions PER TIER and aggregates — so a Legend customer can
+  // generate a different upfront bonus than a Starter customer.
+  // `resolvedUpfront` is the upfront $ per new sub for that tier
+  // (with percent-type math applied against the tier's own blended
+  // revenue, not the scenario blend); `effectiveFlatBonus` adds the
+  // accelerator weighting.
+  type ResolvedTierCommission = CommissionCalcInput & {
+    resolvedUpfront: number;
+    effectiveFlatBonus: number;
+    payoutDelay: number;
+    residualDelay: number;
+    clawbackWindow: number;
+  };
+  const tierCommissions: ResolvedTierCommission[] = tiers.map((tier, i) => {
+    const c = tier.commissionStructure ?? commissionStructure;
+    const tierBlendedRev = tierDetails[i].revenuePerSub;
+    const resolvedUpfront =
+      (c.upfrontType ?? "flat") === "percent"
+        ? tierBlendedRev * ((c.upfrontPercent ?? 0) / 100)
+        : c.flatBonusPerSale > 0
+          ? c.flatBonusPerSale
+          : c.tierBonuses.length > 0
+            ? c.tierBonuses.reduce((s, b) => s + b.flatBonus, 0) /
+              c.tierBonuses.length
+            : 0;
+    const effectiveFlatBonus = calculateCommissionPerNewSub(
+      resolvedUpfront,
+      c.percentHittingAccelerator,
+      c.acceleratorMultiplier,
+      c.acceleratorThreshold,
+    );
+    return {
+      ...c,
+      resolvedUpfront,
+      effectiveFlatBonus,
+      payoutDelay: c.payoutDelayMonths ?? 0,
+      residualDelay: c.residualDelayMonths ?? 0,
+      clawbackWindow: c.clawbackWindowDays ?? 60,
+    };
+  });
 
-  // Static month-1 commission: if residualDelay > 0, no subscribers have cleared
-  // the delay yet (they were all just acquired), so residual is 0 in month 1.
-  const month1ResidualPercent =
-    (commissionStructure.residualDelayMonths ?? 0) > 0
-      ? 0
-      : commissionStructure.residualPercent;
-  const totalCommissionExpense = calculateTotalMonthlyCommission(
-    month1NewSubsFromReps, // only rep sales get commission
-    resolvedUpfrontBonus,
-    totalSubscribers,
-    blendedRevenuePerSub,
-    month1ResidualPercent,
-    commissionStructure.percentHittingAccelerator,
-    commissionStructure.acceleratorMultiplier,
-    commissionStructure.acceleratorThreshold,
-  );
+  // --- Month-1 total commission expense (across all tiers) ---
+  // Aggregates the upfront commission paid on new subs THIS month plus
+  // the residual on tiers whose residualDelay has elapsed (always 0
+  // residual in month 1 unless the tier has residualDelay = 0).
+  let totalCommissionExpense = 0;
+  for (let i = 0; i < tiers.length; i++) {
+    const tc = tierCommissions[i];
+    const tier = tiers[i];
+    const tierShare = tier.subscriberPercent / 100;
+    const tierNewSubs = month1NewSubsFromReps * tierShare;
+    const tierActiveSubs = totalSubscribers * tierShare;
+    const tierBlendedRev = tierDetails[i].revenuePerSub;
+    // Upfront — only fires on tiers whose payoutDelay is 0 (otherwise
+    // commission is deferred beyond month 1). Accelerator-weighted.
+    if (tc.payoutDelay === 0) {
+      totalCommissionExpense += tierNewSubs * tc.effectiveFlatBonus;
+    }
+    // Residual — month 1 only contributes if residualDelay = 0
+    // (subscribers acquired this month haven't cleared longer delays).
+    if (tc.residualDelay === 0) {
+      totalCommissionExpense +=
+        tierActiveSubs * tierBlendedRev * (tc.residualPercent / 100);
+    }
+  }
   const commissionPerSubscriber =
     totalSubscribers > 0 ? totalCommissionExpense / totalSubscribers : 0;
   const commissionPercentOfRevenue =
@@ -884,6 +1103,14 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
   // NOTE: totalProductCost already includes reduced COGS from breakage (credit
   // COGS uses redemptionRate). Breakage profit is NOT added to net margin — it's
   // already captured in the lower COGS. It's reported separately for visibility.
+  //
+  // Sub-etapa 3b clarification: the COGS line shown in P&L Statement /
+  // Metrics / Charts is the NET figure (after breakage savings).
+  // `totalBreakageProfit` is exposed as an *informational* note — adding
+  // it to net margin would double-count. Both representations are
+  // correct; the breakage line answers the CFO's "how much did
+  // unredeemed credits save us this period?" question without
+  // disturbing the margin math.
   const grossMarginDollars = mrr - totalProductCost;
   const grossMarginPercent = mrr > 0 ? (grossMarginDollars / mrr) * 100 : 0;
   // Chargeback cost: lost COGS on shipped product + processor fee
@@ -892,6 +1119,17 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
   // subs because the kit ships before any chargeback can occur (the spend
   // is sunk regardless). Folds into the month-1 P&L as an acquisition
   // cost that hits net margin.
+  //
+  // Period-scaling caveat (sub-etapa 3b): the visual tabs render this
+  // as `welcomeKitCostPerMonth × multiplier` (P&L Statement, Metrics,
+  // Charts). That assumes acquisitions are LINEAR over the period —
+  // the same number of new subs each month. Reality differs once the
+  // user activates the quarterly sales-rep override (sub-etapa 6),
+  // where rep growth and sales-per-rep can step at quarter boundaries.
+  // We accept the linearisation as a reasonable approximation for
+  // KPI-style summaries: the per-cohort and aggregate Cohort tables
+  // already show the exact monthly figures, and the visuals are
+  // operating-performance summaries, not cash forecasts.
   const welcomeKitCostPerMonth = month1GrossNewSubs * welcomeKitCostPerSub;
   const netMarginDollars =
     grossMarginDollars -
@@ -910,13 +1148,9 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
   }));
 
   // --- LTV / CAC per tier ---
-  const effectiveFlatBonus = calculateCommissionPerNewSub(
-    resolvedUpfrontBonus,
-    commissionStructure.percentHittingAccelerator,
-    commissionStructure.acceleratorMultiplier,
-    commissionStructure.acceleratorThreshold,
-  );
-
+  // Each tier uses its OWN commission (resolved with global fallback
+  // above). CAC reflects the tier's specific upfront + accelerator;
+  // residualPerSub reflects the tier's specific residual % and delay.
   const avgChurn =
     tiers.length > 0
       ? tiers.reduce(
@@ -927,6 +1161,7 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
 
   const ltvCacPerTier = tiers.map((tier, idx) => {
     const td = tierDetails[idx];
+    const tc = tierCommissions[idx];
     const churnDecimal = tier.churnRateMonthly / 100;
     // With minimum commitment: subscriber is locked in for commitMonths, then churn starts.
     // Expected lifetime = commitMonths + (1/churnRate) for the post-commitment period.
@@ -936,22 +1171,25 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
       ? Infinity
       : (tierCommit - 1) + postCommitLifetime; // commitMonths guaranteed + expected churn period
 
-    // CAC = upfront commission + first-month COGS + welcome kit (one-time
-    // freebie shipped at acquisition). Welcome kit is the same scalar for
-    // every tier (it's the kit's retail-cost cap, not tier-specific), so
-    // the same `welcomeKitCostPerSub` applies across the loop.
-    const cac = effectiveFlatBonus + td.cogsPerSub + welcomeKitCostPerSub;
+    // CAC = upfront commission (THIS TIER's accelerator-weighted bonus)
+    // + first-month COGS + welcome kit (one-time freebie shipped at
+    // acquisition; same scalar for every tier — it's the kit's
+    // retail-cost cap, not tier-specific).
+    const cac = tc.effectiveFlatBonus + td.cogsPerSub + welcomeKitCostPerSub;
 
     // Residual cost per sub — adjusted for delay. During the delay period the rep
     // earns nothing, so effective residual across the subscriber's lifetime is reduced.
-    const resDelay = commissionStructure.residualDelayMonths ?? 0;
+    const resDelay = tc.residualDelay;
     let residualPerSub: number;
     if (resDelay === 0 || avgLifetimeMonths === Infinity) {
-      residualPerSub = td.revenuePerSub * (commissionStructure.residualPercent / 100);
+      residualPerSub = td.revenuePerSub * (tc.residualPercent / 100);
     } else {
       // Effective residual = residual% × (lifetime - delay) / lifetime
       const residualMonths = Math.max(0, avgLifetimeMonths - resDelay);
-      residualPerSub = td.revenuePerSub * (commissionStructure.residualPercent / 100) * (residualMonths / avgLifetimeMonths);
+      residualPerSub =
+        td.revenuePerSub *
+        (tc.residualPercent / 100) *
+        (residualMonths / avgLifetimeMonths);
     }
     // NOTE: breakage savings are already captured in td.cogsPerSub (reduced COGS from
     // partial redemption). Do NOT add breakageProfit here — it would double-count.
@@ -988,13 +1226,66 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
       }, 0)
     : Infinity;
 
-  // --- 24-month cohort projection with true cohort tracking ---
+  // --- 36-month cohort projection with true cohort tracking ---
   // Each month's acquisitions are tracked as a separate cohort. Churn only starts
   // AFTER the minimum commitment period expires. Chargebacks reduce new subs immediately.
   const cohortProjection: ScenarioResults["cohortProjection"] = [];
   let cumulativeProfit = 0;
   let operationBreakevenMonth = 0;
-  const repGrowth = salesRepChannel.monthlyGrowthRate / 100;
+
+  // Precompute the rep count and sales-per-rep value for every month in
+  // the projection window. When a schedule `override` is set, the engine
+  // ignores the scalar `salesPerRepPerMonth` / `monthlyGrowthRate` and
+  // reads both from the matching period (quarterly = 3 mo, biannual = 6
+  // mo, annual = 12 mo). Without an override, the scalars apply uniformly.
+  // Compounding is iterative because growth can step at period boundaries.
+  // Index 0 = month 1, … Index 35 = month 36 (length = PROJECTION_MONTHS).
+  const repsByMonth: number[] = [];
+  const salesPerRepByMonth: number[] = [];
+  const override = salesRepChannel.override;
+  const overridePeriodMonths = override
+    ? SALES_REP_OVERRIDE_PERIOD_MONTHS[override.frequency]
+    : 0;
+  const overrideByPeriod = new Map<
+    number,
+    NonNullable<typeof override>["periods"][number]
+  >((override?.periods ?? []).map((p) => [p.period, p]));
+  const resolveSalesPerRep = (m: number) => {
+    if (override) {
+      const period = Math.floor((m - 1) / overridePeriodMonths) + 1;
+      const entry = overrideByPeriod.get(period);
+      // Fall back to the scalar if a period entry is somehow missing
+      // (shouldn't happen if the UI always renders all periods, but
+      // keeps the engine defensive).
+      return entry?.salesPerRepPerMonth ?? salesRepChannel.salesPerRepPerMonth;
+    }
+    return salesRepChannel.salesPerRepPerMonth;
+  };
+  const resolveGrowth = (m: number) => {
+    if (override) {
+      const period = Math.floor((m - 1) / overridePeriodMonths) + 1;
+      const entry = overrideByPeriod.get(period);
+      // Override stores a PERIOD rate (% growth across the period).
+      // Compound it into a per-month rate so growth is smooth within
+      // the period: monthly = (1 + periodRate)^(1/L) - 1, L = months.
+      const periodRate =
+        (entry?.monthlyGrowthRate ?? salesRepChannel.monthlyGrowthRate) / 100;
+      return Math.pow(1 + periodRate, 1 / overridePeriodMonths) - 1;
+    }
+    return salesRepChannel.monthlyGrowthRate / 100;
+  };
+  for (let m = 1; m <= PROJECTION_MONTHS; m++) {
+    if (m === 1) {
+      repsByMonth.push(salesRepChannel.startingReps);
+    } else {
+      // Growth applied at month m takes the rate from m's period — so a
+      // Q2 / H2 / Y2 override kicks in starting at the period's first
+      // month. Reps[m] is Reps[m-1] grown by that month's rate.
+      const g = resolveGrowth(m);
+      repsByMonth.push(repsByMonth[m - 2] * (1 + g));
+    }
+    salesPerRepByMonth.push(resolveSalesPerRep(m));
+  }
 
   // Weighted average minimum commitment months across tiers
   const blendedCommitMonths = tiers.length > 0
@@ -1006,7 +1297,6 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
   // Track per-month net new subscribers (after chargebacks) for cohort survival
   const netNewSubsByMonth: number[] = [];
   const grossNewSubsByMonth: number[] = [];
-  const residualDelay = commissionStructure.residualDelayMonths ?? 0;
 
   // ─── Billing-cycle revenue shares ─────────────────────────────────
   // Precompute the share of subscription revenue that flows through each
@@ -1039,10 +1329,12 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
     annual: totalCycleRev > 0 ? blendedRevenuePerCycleAcrossTiers.annual / totalCycleRev : 0,
   };
 
-  for (let month = 1; month <= 24; month++) {
-    // Reps compound: startingReps × (1 + growthRate)^(month-1)
-    const monthReps = salesRepChannel.startingReps * Math.pow(1 + repGrowth, month - 1);
-    const monthGrossNewSubs = Math.round(monthReps * salesRepChannel.salesPerRepPerMonth);
+  for (let month = 1; month <= PROJECTION_MONTHS; month++) {
+    // Rep count and sales per rep — both honor the optional quarterly
+    // overrides via the precomputed `repsByMonth` / `salesPerRepByMonth`
+    // arrays (constant over the quarter, can step at quarter boundaries).
+    const monthReps = repsByMonth[month - 1];
+    const monthGrossNewSubs = Math.round(monthReps * salesPerRepByMonth[month - 1]);
     const monthChargebacks = Math.round(monthGrossNewSubs * chargebackRate);
     const monthNetNewSubs = monthGrossNewSubs - monthChargebacks;
     const monthChargebackCost = monthChargebacks * (costPerSubscriber + chargebackFeePerIncident);
@@ -1063,48 +1355,111 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
     }
     currentSubs = Math.round(currentSubs);
 
+    // ── Accounting basis: ACCRUAL ─────────────────────────────────────
+    // The main projection loop (this `cohortProjection` series) reports
+    // revenue on the ACCRUAL basis — recognized as the service is
+    // delivered, smoothed monthly via `blendedRevenuePerSub`. The
+    // per-cohort lifecycle loop further down emits the same scenario on
+    // a CASH-FLOW basis (biannual/annual prepayments lump at billing
+    // months). Both representations are correct and intentional.
+    //
+    // ── Final post-audit state of the financial UI (sub-etapas 1–3b) ──
+    // Seven financial tabs, each labelled with `<AccountingBasisBadge>`:
+    //   • Spreadsheet, Summary, Statement, Metrics, Charts → ACCRUAL
+    //     (consume `cohortProjection.*` and derived KPIs: MRR, ARR,
+    //      LTV, CAC, margins, profit split).
+    //   • Cohort Individual, Cohort Aggregate          → CASH FLOW
+    //     (consume `cohortLifecycles[c].months[*]`, lumped at billing
+    //      months for biannual/annual subs).
+    //
+    // The `<AccountingBasisReconciliation>` numeric card lives on the
+    // three detailed tables (Spreadsheet, Cohort Individual, Cohort
+    // Aggregate) — not on the visual panels. Deferred revenue is
+    // purely derived: `cashTotal − accrualTotal`. No engine logic
+    // computes it independently.
+    //
+    // Audit benchmark scenario (50 acquisitions/mo, 30/10/10 split,
+    // 36 months) pinned in
+    // `src/components/financials/accounting-basis-reconciliation.test.ts`:
+    //   accrual = $879,956 · cash = $990,498 · deferred = $110,542.
+    //
+    // Threads opened in parallel after the regime audit closed:
+    //   A (P0) — `resolveOverhead(..., memberCount=0)` always reads
+    //            the pre-launch baseline regardless of period.
+    //   B (P1) — visual UI bugs bundle: `monthsToShow` capped at 24
+    //            vs PROJECTION_MONTHS=36 in `financial-charts.tsx`;
+    //            overhead line conditional on `milestone-scaled` mode;
+    //            profit-split over-allocation warning missing in
+    //            `metrics-panel.tsx`.
+    //   C (debt) — pre-existing build failure in
+    //            `src/components/earnings/earnings-client.tsx:145`.
     const monthRevenue = currentSubs * blendedRevenuePerSub;
 
-    // Commission only on rep-acquired subs
-    // Payout delay: upfront commission from N months ago hits this month's costs
-    const payoutDelay = commissionStructure.payoutDelayMonths ?? 0;
-    const delayedMonth = month - payoutDelay;
+    // Commission — computed per-tier so each tier can have its own
+    // payoutDelay / residualDelay / clawback / accelerator structure.
+    // We capture each tier's contribution alongside the totals so the UI
+    // can render per-plan commission spend.
     let monthUpfrontCommission = 0;
-    if (delayedMonth >= 1) {
-      const delayedMonthReps = salesRepChannel.startingReps * Math.pow(1 + repGrowth, delayedMonth - 1);
-      const delayedMonthGrossSales = Math.round(delayedMonthReps * salesRepChannel.salesPerRepPerMonth);
-      // Apply clawback policy: when the structure has a clawback window
-      // (default 60 days), upfront commission paid on charged-back sales is
-      // reversed. Since this engine models chargebacks as occurring within
-      // the same month as the acquisition (always inside any realistic
-      // window), the cleanest treatment is to pay upfront on the NET
-      // (post-chargeback) sales. Setting clawbackWindowDays = 0 turns the
-      // clawback off and reverts to paying on gross sales.
-      const clawbackWindow = commissionStructure.clawbackWindowDays ?? 60;
-      const commissionableSales =
-        clawbackWindow > 0
-          ? Math.round(delayedMonthGrossSales * (1 - chargebackRate))
-          : delayedMonthGrossSales;
-      monthUpfrontCommission = commissionableSales * effectiveFlatBonus;
-    }
+    let monthResidualCommission = 0;
+    const monthCommissionByTier: { tierId: string; upfront: number; residual: number }[] = [];
+    for (let i = 0; i < tiers.length; i++) {
+      const tc = tierCommissions[i];
+      const tier = tiers[i];
+      const tierShare = tier.subscriberPercent / 100;
+      const tierBlendedRev = tierDetails[i].revenuePerSub;
+      let tierUpfront = 0;
+      let tierResidual = 0;
 
-    // Residual commission — only on subscribers past the residual delay period.
-    let residualEligibleSubs = 0;
-    for (let m = 0; m < month; m++) {
-      const acquisitionMonth = m + 1;
-      const monthsSinceAcquisition = month - acquisitionMonth;
-      if (monthsSinceAcquisition >= residualDelay) {
-        const churnPeriods = Math.max(0, monthsSinceAcquisition - commitMonths + 1);
-        residualEligibleSubs += netNewSubsByMonth[m] * Math.pow(1 - avgChurn, churnPeriods);
+      // Upfront — payoutDelay months after the cohort sale date.
+      // Reps and sales-per-rep at the delayed (acquisition) month are
+      // pulled from the precomputed arrays so quarterly overrides flow
+      // through here too.
+      const delayedMonth = month - tc.payoutDelay;
+      if (delayedMonth >= 1) {
+        const delayedMonthReps = repsByMonth[delayedMonth - 1];
+        const delayedMonthGrossSales =
+          delayedMonthReps * salesPerRepByMonth[delayedMonth - 1];
+        // Apply clawback policy: when the structure has a clawback window
+        // (default 60 days), upfront commission on charged-back sales is
+        // reversed. Since this engine models chargebacks within the
+        // acquisition month, we pay upfront on net (post-chargeback) sales.
+        // Setting clawbackWindowDays = 0 turns clawback off (pays on gross).
+        const commissionableSales =
+          tc.clawbackWindow > 0
+            ? delayedMonthGrossSales * (1 - chargebackRate)
+            : delayedMonthGrossSales;
+        tierUpfront = commissionableSales * tierShare * tc.effectiveFlatBonus;
       }
-    }
-    residualEligibleSubs = Math.round(residualEligibleSubs);
 
-    const monthResidualCommission = residualEligibleSubs * blendedRevenuePerSub * (commissionStructure.residualPercent / 100);
+      // Residual — only on this tier's subs past its residualDelay.
+      let tierResidualEligibleSubs = 0;
+      for (let m = 0; m < month; m++) {
+        const acquisitionMonth = m + 1;
+        const monthsSinceAcquisition = month - acquisitionMonth;
+        if (monthsSinceAcquisition >= tc.residualDelay) {
+          const churnPeriods = Math.max(0, monthsSinceAcquisition - commitMonths + 1);
+          tierResidualEligibleSubs += netNewSubsByMonth[m] * tierShare * Math.pow(1 - avgChurn, churnPeriods);
+        }
+      }
+      tierResidual = tierResidualEligibleSubs * tierBlendedRev * (tc.residualPercent / 100);
+
+      monthUpfrontCommission += tierUpfront;
+      monthResidualCommission += tierResidual;
+      monthCommissionByTier.push({
+        tierId: tier.tierId,
+        upfront: Math.round(tierUpfront),
+        residual: Math.round(tierResidual),
+      });
+    }
+    monthUpfrontCommission = Math.round(monthUpfrontCommission);
+    monthResidualCommission = Math.round(monthResidualCommission);
     const monthTotalCommission = monthUpfrontCommission + monthResidualCommission;
 
-    // Resolve overhead dynamically based on current subscriber count
-    const monthOverhead = resolveOverhead(operationalOverhead, currentSubs);
+    // Resolve overhead dynamically based on current subscriber count;
+    // capture the per-category breakdown so the UI can show "Marketing
+    // $5k · Tech $12k · Ops $4k" when the user is in categories mode.
+    const monthOverheadResolved = resolveOverheadBreakdown(operationalOverhead, currentSubs);
+    const monthOverhead = monthOverheadResolved.total;
 
     // Buck platform fees — per-active-subscriber monthly cost (flat license
     // + estimated AI token consumption). Applied every month to every
@@ -1219,9 +1574,11 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
       revenue: monthRevenue,
       costs: monthCosts,
       operationalOverhead: monthOverhead,
+      operationalOverheadByCategory: monthOverheadResolved.byCategory,
       netProfit: monthProfit,
       cumulativeProfit,
       commissionExpense: monthTotalCommission,
+      commissionByTier: monthCommissionByTier,
       chargebackCost: monthChargebackCost,
       cogsExpense: currentSubs * costPerSubscriber,
       buckPlatformCost: monthBuckCost,
@@ -1255,7 +1612,10 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
   let biannualRateWeighted = 0;
   let annualRateWeighted = 0;
   let blendedProductCogsPerSub = 0;
-  let blendedShippingHandlingPerSub = 0;
+  // Split shipping vs handling so the UI can render two separate
+  // COGS lines. Sum still equals the legacy combined blend.
+  let blendedShippingPerSub = 0;
+  let blendedHandlingPerSub = 0;
   let blendedProcessingPct = 0;
   let blendedProcessingFlat = 0;
   for (const tier of tiers) {
@@ -1285,11 +1645,17 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
     const tierProductCogs = tier.packageCOGSPerSub ?? tier.apparelCOGSPerMonth;
     const hasPerTierShipping =
       tier.avgShippingCost != null && tier.avgHandlingCost != null;
-    const tierShippingHandling = hasPerTierShipping
-      ? (tier.avgShippingCost ?? 0) + (tier.avgHandlingCost ?? 0)
-      : fulfillmentCostPerOrder + shippingCostPerOrder;
+    // Per-tier values when set, else fall back to the scenario-level
+    // shipping/fulfillment fields (handling ≈ fulfillment).
+    const tierShipping = hasPerTierShipping
+      ? tier.avgShippingCost ?? 0
+      : shippingCostPerOrder;
+    const tierHandling = hasPerTierShipping
+      ? tier.avgHandlingCost ?? 0
+      : fulfillmentCostPerOrder;
     blendedProductCogsPerSub += sf * (tierCreditCogs + tierProductCogs);
-    blendedShippingHandlingPerSub += sf * tierShippingHandling;
+    blendedShippingPerSub += sf * tierShipping;
+    blendedHandlingPerSub += sf * tierHandling;
     blendedProcessingPct += sf * (tier.processingFeePct ?? 0);
     blendedProcessingFlat += sf * (tier.processingFeeFlat ?? 0);
   }
@@ -1307,14 +1673,14 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
 
   // --- Per-cohort lifecycle tracking ---
   // For each acquisition month (the "safra"), project that specific
-  // group of subs forward to the end of the 24-month window. Revenue
+  // group of subs forward to the end of the 36-month window. Revenue
   // is modeled in CASH-FLOW view: monthly subs pay every month;
   // biannual subs lump-pay 6 months at Mo 1, 7, 13, 19; annual subs
   // lump-pay 12 months at Mo 1, 13. Costs split into the recurring
   // pieces (product COGS, shipping+handling, Buck) and the lump pieces
   // (payment processing, which fires when revenue does).
   const cohortLifecycles: ScenarioResults["cohortLifecycles"] = [];
-  for (let acqM = 1; acqM <= 24; acqM++) {
+  for (let acqM = 1; acqM <= PROJECTION_MONTHS; acqM++) {
     const grossNewSubs = grossNewSubsByMonth[acqM - 1];
     const netNewSubs = netNewSubsByMonth[acqM - 1];
     const chargebacks = grossNewSubs - netNewSubs;
@@ -1324,7 +1690,7 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
     let cohortCumulativeProfit = 0;
     let paybackMonth: number | null = null;
 
-    // Cumulative totals for the cohort lifetime (capped at month 24).
+    // Cumulative totals for the cohort lifetime (capped at PROJECTION_MONTHS).
     let totalRevenue = 0;
     let totalRevByMonthly = 0;
     let totalRevByBiannual = 0;
@@ -1336,7 +1702,18 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
       biannual: 0,
       annual: 0,
     }));
+    // Per-tier × per-cycle SUB-COUNT accumulators for the totals row
+    // (sums of fractional sub-months — useful as a check, not as a
+    // standalone metric).
+    const totalSubsByTierAndCycle = tiers.map((tier) => ({
+      tierId: tier.tierId,
+      monthly: 0,
+      biannual: 0,
+      annual: 0,
+    }));
     let totalProductCogsCost = 0;
+    let totalShippingCost = 0;
+    let totalHandlingCost = 0;
     let totalShippingHandlingCost = 0;
     let totalPaymentProcessingCost = 0;
     let totalBuckLicenseCost = 0;
@@ -1346,11 +1723,13 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
     let totalChargeback = 0;
     let totalCommissionUpfront = 0;
     let totalCommissionResidual = 0;
+    const totalCommissionByTier: { tierId: string; upfront: number; residual: number }[] =
+      tiers.map((t) => ({ tierId: t.tierId, upfront: 0, residual: 0 }));
     let totalAddOnCost = 0;
     let totalNetProfit = 0;
 
     let prevSurviving = netNewSubs;
-    for (let calM = acqM; calM <= 24; calM++) {
+    for (let calM = acqM; calM <= PROJECTION_MONTHS; calM++) {
       const monthOfLife = calM - acqM + 1;
       const monthsActive = monthOfLife - 1; // 0 in acquisition month
       const churnPeriods = Math.max(0, monthsActive - commitMonths + 1);
@@ -1383,10 +1762,18 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
         : 0;
       const revenue = revenueByMonthly + revenueByBiannual + revenueByAnnual;
 
-      // Per-tier × per-cycle breakdown — sum reconciles exactly with the
-      // blended totals above (each tier's contribution to monthly is
-      // `survivingSubs × tierShare × tb.monthly/100 × monthlyPrice`,
-      // which sums to `subsMonthly × avgMonthlyRate`).
+      // Per-tier × per-cycle SUB COUNTS + REVENUE — both derived from
+      // the same `tierSurvivingSubs × cycle-share` math, so revenue at
+      // a lump month is exactly `count × rate × cycleMonths`. The user
+      // can audit any cell: count × rate × N = expected lump.
+      // Counts are FRACTIONAL (the engine doesn't round per-tier-per-
+      // cycle); rounding would break revenue reconciliation.
+      const subscribersByTierAndCycle: {
+        tierId: string;
+        monthly: number;
+        biannual: number;
+        annual: number;
+      }[] = [];
       const revenueByTierAndCycle = tiers.map((tier) => {
         const tb = tier.billingDistribution ?? billingCycleDistribution;
         const sf = tier.subscriberPercent / 100;
@@ -1394,6 +1781,12 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
         const tierMonthlySubs = tierSurvivingSubs * (tb.monthly / 100);
         const tierBiannualSubs = tierSurvivingSubs * (tb.biannual / 100);
         const tierAnnualSubs = tierSurvivingSubs * (tb.annual / 100);
+        subscribersByTierAndCycle.push({
+          tierId: tier.tierId,
+          monthly: tierMonthlySubs,
+          biannual: tierBiannualSubs,
+          annual: tierAnnualSubs,
+        });
         return {
           tierId: tier.tierId,
           monthly: tierMonthlySubs * tier.monthlyPrice,
@@ -1410,6 +1803,9 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
         totalRevByTierAndCycle[i].monthly += revenueByTierAndCycle[i].monthly;
         totalRevByTierAndCycle[i].biannual += revenueByTierAndCycle[i].biannual;
         totalRevByTierAndCycle[i].annual += revenueByTierAndCycle[i].annual;
+        totalSubsByTierAndCycle[i].monthly += subscribersByTierAndCycle[i].monthly;
+        totalSubsByTierAndCycle[i].biannual += subscribersByTierAndCycle[i].biannual;
+        totalSubsByTierAndCycle[i].annual += subscribersByTierAndCycle[i].annual;
       }
 
       // Cost-of-goods broken into 3 components.
@@ -1417,8 +1813,9 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
       // product every month to every active sub regardless of their
       // billing cycle.
       const productCogsCost = survivingSubs * blendedProductCogsPerSub;
-      const shippingHandlingCost =
-        survivingSubs * blendedShippingHandlingPerSub;
+      const shippingCost = survivingSubs * blendedShippingPerSub;
+      const handlingCost = survivingSubs * blendedHandlingPerSub;
+      const shippingHandlingCost = shippingCost + handlingCost;
 
       // Payment processing is PER-TRANSACTION — fires only when money
       // actually moves. So it lump-aligns with the revenue cash flow:
@@ -1476,24 +1873,38 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
           : 0;
 
       // Upfront commission lands on the payout-delay month for this
-      // cohort; clawback policy mirrors the main loop's rule (paid on
-      // net sales when window > 0, gross otherwise).
-      const payoutDelay = commissionStructure.payoutDelayMonths ?? 0;
-      const clawbackWindow = commissionStructure.clawbackWindowDays ?? 60;
-      const commissionableSales =
-        clawbackWindow > 0 ? netNewSubs : grossNewSubs;
-      const commissionUpfront =
-        monthOfLife === 1 + payoutDelay
-          ? commissionableSales * effectiveFlatBonus
-          : 0;
+      // cohort; clawback policy mirrors the main loop (paid on net sales
+      // when window > 0, gross otherwise). Computed per-tier so each plan
+      // can have its own structure; capture per-tier breakdown for the UI.
+      let commissionUpfront = 0;
+      let commissionResidual = 0;
+      const commissionByTier: { tierId: string; upfront: number; residual: number }[] = [];
+      for (let i = 0; i < tiers.length; i++) {
+        const tc = tierCommissions[i];
+        const tier = tiers[i];
+        const tierShare = tier.subscriberPercent / 100;
+        const tierBlendedRev = tierDetails[i].revenuePerSub;
+        let tierUpfront = 0;
+        let tierResidual = 0;
 
-      // Residual: kicks in after `residualDelay` months past acquisition.
-      const commissionResidual =
-        monthsActive >= residualDelay
-          ? survivingSubs *
-            blendedRevenuePerSub *
-            (commissionStructure.residualPercent / 100)
-          : 0;
+        if (monthOfLife === 1 + tc.payoutDelay) {
+          const commissionableSales =
+            tc.clawbackWindow > 0 ? netNewSubs : grossNewSubs;
+          tierUpfront = commissionableSales * tierShare * tc.effectiveFlatBonus;
+        }
+        if (monthsActive >= tc.residualDelay) {
+          tierResidual =
+            survivingSubs * tierShare * tierBlendedRev * (tc.residualPercent / 100);
+        }
+
+        commissionUpfront += tierUpfront;
+        commissionResidual += tierResidual;
+        commissionByTier.push({
+          tierId: tier.tierId,
+          upfront: tierUpfront,
+          residual: tierResidual,
+        });
+      }
 
       // Per-cohort add-on cost (Path Scale):
       //   purchase: one-time cost at Mo 1 of life on every NET NEW SUB
@@ -1537,6 +1948,8 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
       totalRevByBiannual += revenueByBiannual;
       totalRevByAnnual += revenueByAnnual;
       totalProductCogsCost += productCogsCost;
+      totalShippingCost += shippingCost;
+      totalHandlingCost += handlingCost;
       totalShippingHandlingCost += shippingHandlingCost;
       totalPaymentProcessingCost += paymentProcessingCost;
       totalBuckLicenseCost += buckLicenseCost;
@@ -1546,6 +1959,13 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
       totalChargeback += chargebackCost;
       totalCommissionUpfront += commissionUpfront;
       totalCommissionResidual += commissionResidual;
+      for (const tc of commissionByTier) {
+        const slot = totalCommissionByTier.find((s) => s.tierId === tc.tierId);
+        if (slot) {
+          slot.upfront += tc.upfront;
+          slot.residual += tc.residual;
+        }
+      }
       totalAddOnCost += cohortAddOnCost;
       totalNetProfit += netProfit;
 
@@ -1561,7 +1981,10 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
           annual: revenueByAnnual,
         },
         revenueByTierAndCycle,
+        subscribersByTierAndCycle,
         productCogsCost,
+        shippingCost,
+        handlingCost,
         shippingHandlingCost,
         paymentProcessingCost,
         productCost,
@@ -1572,6 +1995,7 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
         chargebackCost,
         commissionUpfront,
         commissionResidual,
+        commissionByTier,
         addOnCost: cohortAddOnCost,
         netProfit,
         cumulativeProfit: cohortCumulativeProfit,
@@ -1647,7 +2071,10 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
           annual: totalRevByAnnual,
         },
         revenueByTierAndCycle: totalRevByTierAndCycle,
+        subscribersByTierAndCycle: totalSubsByTierAndCycle,
         productCogsCost: totalProductCogsCost,
+        shippingCost: totalShippingCost,
+        handlingCost: totalHandlingCost,
         shippingHandlingCost: totalShippingHandlingCost,
         paymentProcessingCost: totalPaymentProcessingCost,
         productCost:
@@ -1661,6 +2088,7 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
         chargebackCost: totalChargeback,
         commissionUpfront: totalCommissionUpfront,
         commissionResidual: totalCommissionResidual,
+        commissionByTier: totalCommissionByTier,
         addOnCost: totalAddOnCost,
         netProfit: totalNetProfit,
         paybackMonth,

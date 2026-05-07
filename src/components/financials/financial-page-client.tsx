@@ -704,7 +704,7 @@ export function FinancialPageClient({
                 <ProjectionSpreadsheet months={12} locale={locale} />
               </TabsContent>
               <TabsContent value="cohort" className="mt-0">
-                <CohortSpreadsheet months={12} locale={locale} />
+                <CohortSpreadsheet months={36} locale={locale} />
               </TabsContent>
               <TabsContent value="metrics" className="mt-0">
                 <MetricsPanel multiplier={periodMultiplier} periodLabel={periodLabel} locale={locale} />

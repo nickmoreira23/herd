@@ -182,6 +182,22 @@ export const getFinancialDefaults = cache(async function getFinancialDefaults() 
 
   // ─── Tier data ─────────────────────────────────────────────────
 
+  // Per-tier commission default (each tier inherits a copy; the user can
+  // edit each plan independently in the scenario builder).
+  const defaultTierCommission: CommissionCalcInput = {
+    upfrontType: "flat",
+    flatBonusPerSale: 50,
+    upfrontPercent: 15,
+    residualPercent: 5,
+    residualDelayMonths: 0,
+    tierBonuses: [],
+    percentHittingAccelerator: 20,
+    acceleratorMultiplier: 1.5,
+    acceleratorThreshold: 1.5,
+    clawbackWindowDays: 60,
+    payoutDelayMonths: 0,
+  };
+
   const tierData: TierFinancialInput[] = tiers.map((t) => ({
     tierId: t.name,
     monthlyPrice: toNumber(t.monthlyPrice),
@@ -216,6 +232,7 @@ export const getFinancialDefaults = cache(async function getFinancialDefaults() 
     avgHandlingCost: toNumber(t.avgHandlingCost),
     processingFeePct: toNumber(t.processingFeePct),
     processingFeeFlat: toNumber(t.processingFeeFlat),
+    commissionStructure: { ...defaultTierCommission },
   }));
 
   // ─── Tier display metadata (read-only plan structure context) ──
