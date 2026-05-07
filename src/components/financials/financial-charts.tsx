@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { BarChart3 } from "lucide-react";
 import { formatNumberAsMoney } from "@/lib/money/format";
 import { useT } from "@/lib/i18n/locale-context";
+import { AccountingBasisBadge } from "./accounting-basis-reconciliation";
 import type { Locale } from "@/lib/i18n/locales";
 import {
   BarChart,
@@ -111,6 +112,12 @@ export function FinancialCharts({ multiplier, periodLabel, locale }: FinancialCh
 
   return (
     <div className="space-y-4">
+      {/* Accounting basis — all charts plot accrual series from the
+          engine's `cohortProjection` (smoothed monthly revenue, costs,
+          margins). No cash-flow data on this tab. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <AccountingBasisBadge basis="accrual" />
+      </div>
       <ChartCard
         title={t("financials.charts.revenue_by_tier_title", { label })}
         description={t("financials.charts.revenue_by_tier_description", { label })}

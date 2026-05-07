@@ -9,6 +9,7 @@ import { useT } from "@/lib/i18n/locale-context";
 import type { Locale } from "@/lib/i18n/locales";
 import { formatNumberAsMoney } from "@/lib/money/format";
 import { formatNumber } from "@/lib/i18n/format-number";
+import { AccountingBasisBadge } from "./accounting-basis-reconciliation";
 
 interface PLStatementProps {
   multiplier: number;
@@ -59,11 +60,13 @@ export function PLStatement({ multiplier, periodLabel, locale }: PLStatementProp
 
   return (
     <div className="space-y-3">
-      {/* Title */}
-      <div className="pb-1">
+      {/* Title + accounting-basis badge. P&L is a textbook accrual view —
+          revenue = `mrr × multiplier`, expenses scaled equivalently. */}
+      <div className="pb-1 flex items-center justify-between gap-2 flex-wrap">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           {t("financials.pl.title", { period: periodLabel })}
         </h3>
+        <AccountingBasisBadge basis="accrual" />
       </div>
 
       {/* Revenue Section */}
