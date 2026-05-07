@@ -6,6 +6,10 @@ import { useT } from "@/lib/i18n/locale-context";
 import type { Locale } from "@/lib/i18n/locales";
 import { formatNumberAsMoney } from "@/lib/money/format";
 import { formatNumber } from "@/lib/i18n/format-number";
+import {
+  AccountingBasisBadge,
+  AccountingBasisReconciliation,
+} from "./accounting-basis-reconciliation";
 interface ProjectionSpreadsheetProps {
   months?: number;
   locale: Locale;
@@ -284,13 +288,36 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
 
   const monthLabels = projection.map((_, i) => t("financials.charts.month_label", { month: i + 1 }));
 
+  // Reconciliation series — accrual is what this view displays
+  // (`cohortProjection.revenue`); cash is the calendar-month aggregate of
+  // the per-cohort lifecycle revenues (which carry biannual/annual lumps).
+  // Window matches the projection's visible months. Pure derivation —
+  // no engine logic, see sub-etapa 2 for the design.
+  const accrualSeries = projection.map((m) => m.revenue);
+  const cashSeries: number[] = projection.map((_, i) => {
+    const K = i + 1;
+    return (results.cohortLifecycles ?? []).reduce((sum, c) => {
+      const e = c.months.find((mm) => mm.monthIndex === K);
+      return sum + (e?.revenue ?? 0);
+    }, 0);
+  });
+
   // The wrapper itself scrolls (both axes) and caps at ~75% of the
   // viewport height — sticky thead inside pins to the top of THIS
   // scroll viewport, so column labels stay visible while rows scroll
   // behind them. Without a maxH, the wrapper grows to fit and the
   // sticky header has nothing to anchor to.
   return (
-    <div className="overflow-auto border rounded-lg max-h-[75vh]">
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <AccountingBasisBadge basis="accrual" />
+      </div>
+      <AccountingBasisReconciliation
+        accrualSeries={accrualSeries}
+        cashSeries={cashSeries}
+        locale={locale}
+      />
+      <div className="overflow-auto border rounded-lg max-h-[75vh]">
       <table className="w-full border-collapse text-xs">
         <thead>
           {/* Header sticky on Y so column labels stay visible when the
@@ -321,6 +348,7 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }
