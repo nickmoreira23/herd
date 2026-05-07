@@ -8,6 +8,10 @@ import { useT } from "@/lib/i18n/locale-context";
 import type { Locale } from "@/lib/i18n/locales";
 import { formatNumberAsMoney } from "@/lib/money/format";
 import { formatNumber } from "@/lib/i18n/format-number";
+import {
+  AccountingBasisBadge,
+  AccountingBasisReconciliation,
+} from "./accounting-basis-reconciliation";
 
 interface CohortSpreadsheetProps {
   months?: number;
@@ -61,6 +65,11 @@ export function CohortSpreadsheet({ months = 12, locale }: CohortSpreadsheetProp
     </div>
   );
 
+  // Blended revenue-per-sub (the engine's accrual rate). Threaded into
+  // both child tables so the per-cohort accrual line in the
+  // reconciliation card matches the engine's smoothed math exactly.
+  const blendedRevenuePerSub = deriveBlendedRevenuePerSub(results.cohortProjection);
+
   // Per-tier billing distribution — used by both the per-cohort and the
   // aggregate views so the "Active by Plan & Cycle" rows can show
   // each tier's actual cycle mix in the row label.
@@ -94,6 +103,7 @@ export function CohortSpreadsheet({ months = 12, locale }: CohortSpreadsheetProp
           profitSplitParties={results.profitSplit?.parties ?? []}
           cohortProjection={results.cohortProjection}
           tierBillingDistributions={tierBillingDistributions}
+          blendedRevenuePerSub={blendedRevenuePerSub}
           locale={locale}
         />
       </div>
@@ -125,6 +135,23 @@ export function CohortSpreadsheet({ months = 12, locale }: CohortSpreadsheetProp
 }
 
 /**
+ * Blended revenue-per-sub used by the engine's accrual smoothing. Derived
+ * from the first projection month so we don't duplicate the engine's
+ * weighting math here (zero new logic, just a divide). Falls back to
+ * 0 on cold-start scenarios where Mo 1 has no subs yet.
+ */
+function deriveBlendedRevenuePerSub(
+  cohortProjection: NonNullable<
+    ReturnType<typeof useFinancialStore.getState>["results"]
+  >["cohortProjection"],
+): number {
+  const m1 = cohortProjection[0];
+  if (!m1 || m1.subscribers <= 0) return 0;
+  return m1.revenue / m1.subscribers;
+}
+
+
+/**
  * Renders ONE acquisition cohort's lifetime in the projection window —
  * each column is a "month of life" (1 = acquisition month, 2 = first
  * month after, …) for the same starting group of subscribers, NOT a
@@ -140,6 +167,7 @@ function CohortLifecycleTable({
   profitSplitParties,
   cohortProjection,
   tierBillingDistributions,
+  blendedRevenuePerSub,
   locale,
 }: {
   lifecycle: NonNullable<
@@ -161,6 +189,10 @@ function CohortLifecycleTable({
     string,
     { monthly: number; biannual: number; annual: number }
   >;
+  /** Engine's blended revenue per active sub (the accrual rate). Used
+   *  to derive this cohort's accrual series for the reconciliation
+   *  card. Pure derivation — no engine logic duplicated. */
+  blendedRevenuePerSub: number;
   locale: Locale;
 }) {
   const t = useT();
@@ -935,9 +967,25 @@ function CohortLifecycleTable({
     return classes.join(" ");
   }
 
+  // Reconciliation series for this cohort. Cash = the lifecycle's own
+  // monthly revenue (already cash-flow with biannual/annual lumps).
+  // Accrual = `survivingSubs × blendedRevenuePerSub` per month-of-life,
+  // mirroring how the engine smooths revenue at the aggregate level.
+  // Range covers the cohort's lifetime within the projection window.
+  const accrualSeries = lifecycle.months.map((m) => m.survivingSubs * blendedRevenuePerSub);
+  const cashSeries = lifecycle.months.map((m) => m.revenue);
+
   return (
     <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <AccountingBasisBadge basis="cash" />
+      </div>
       {summaryRow}
+      <AccountingBasisReconciliation
+        accrualSeries={accrualSeries}
+        cashSeries={cashSeries}
+        locale={locale}
+      />
       {/* The wrapper has to be a real scroll viewport (both axes, capped
           via maxH) so sticky thead anchors to its top edge. With just
           `overflow-x-auto` and no height limit, the wrapper grows to
@@ -2085,9 +2133,28 @@ function AggregateCohortTable({
     return classes.join(" ");
   }
 
+  // Reconciliation series for the aggregate. Accrual = the engine's
+  // per-month smoothed revenue (`cohortProjection[i].revenue`); cash =
+  // the calendar-month aggregate of cohort lifecycle revenues (already
+  // computed for the table). Window matches the visible months. By
+  // construction these two series MATCH the Spreadsheet's reconciliation
+  // exactly when the same projection window is used.
+  const accrualSeriesAgg = cohortProjection
+    .slice(0, months)
+    .map((m) => m.revenue);
+  const cashSeriesAgg = aggMonths.map((m) => m.revenue);
+
   return (
     <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <AccountingBasisBadge basis="cash" />
+      </div>
       {summaryRow}
+      <AccountingBasisReconciliation
+        accrualSeries={accrualSeriesAgg}
+        cashSeries={cashSeriesAgg}
+        locale={locale}
+      />
       {/* The wrapper has to be a real scroll viewport (both axes, capped
           via maxH) so sticky thead anchors to its top edge. With just
           `overflow-x-auto` and no height limit, the wrapper grows to

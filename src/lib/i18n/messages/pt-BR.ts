@@ -1014,6 +1014,20 @@ export const messages = {
   "financials.cohort.column.month_long": "Mês {month}",
   "financials.cohort.column.total": "Total",
 
+  // Accounting basis — regime contábil (sub-etapa 2: differentiation
+  // between accrual and cash flow across the three financial tabs).
+  "financials.basis.badge.accrual": "Regime de competência (Accrual)",
+  "financials.basis.badge.cash": "Regime de caixa (Cash flow)",
+  "financials.basis.tooltip.accrual":
+    "Receita reconhecida no mês em que o serviço é prestado. Reflete performance operacional, base para LTV:CAC e margem.",
+  "financials.basis.tooltip.cash":
+    "Receita reconhecida no mês em que o cliente paga. Planos biannual/annual aparecem como lump na cobrança. Base para tesouraria e runway.",
+  "financials.basis.reconciliation.accrual": "Receita reconhecida",
+  "financials.basis.reconciliation.cash": "Caixa coletado",
+  "financials.basis.reconciliation.deferred": "Receita diferida",
+  "financials.basis.reconciliation.tooltip":
+    "Caixa coletado menos receita reconhecida. Diferença é receita pré-paga ainda não entregue (planos biannual/annual cujo serviço se estende além do mês fechado).",
+
   // Toolbar — financial-page-client
   "financials.toolbar.breadcrumb_finances": "Finanças",
   "financials.toolbar.assumptions_title": "Premissas",

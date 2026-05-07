@@ -991,6 +991,20 @@ export const messages: Record<MessageKey, string> = {
   "financials.cohort.column.month_long": "Month {month}",
   "financials.cohort.column.total": "Total",
 
+  // Accounting basis — sub-etapa 2: explicit differentiation between
+  // accrual and cash flow across the three financial tabs.
+  "financials.basis.badge.accrual": "Accrual basis",
+  "financials.basis.badge.cash": "Cash flow basis",
+  "financials.basis.tooltip.accrual":
+    "Revenue recognized in the month service is delivered. Reflects operating performance, base for LTV:CAC and margin.",
+  "financials.basis.tooltip.cash":
+    "Revenue recognized in the month the customer pays. Biannual/annual plans appear as lumps at billing. Base for treasury and runway.",
+  "financials.basis.reconciliation.accrual": "Recognized revenue",
+  "financials.basis.reconciliation.cash": "Cash collected",
+  "financials.basis.reconciliation.deferred": "Deferred revenue",
+  "financials.basis.reconciliation.tooltip":
+    "Cash collected minus recognized revenue. Difference is prepaid revenue not yet delivered (biannual/annual plans whose service extends past the closed month).",
+
   // Toolbar — financial-page-client
   "financials.toolbar.breadcrumb_finances": "Finances",
   "financials.toolbar.assumptions_title": "Assumptions",
