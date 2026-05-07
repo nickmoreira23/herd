@@ -1,7 +1,6 @@
 "use client";
 
 import { useFinancialStore } from "@/stores/financial-store";
-import { resolveOverhead } from "@/lib/financial-engine";
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText } from "lucide-react";
 import { getMarginColorClass } from "@/lib/utils";
@@ -45,15 +44,21 @@ export function PLStatement({ multiplier, periodLabel, locale }: PLStatementProp
   const totalCOGS = results.totalProductCost * m; // already includes fulfillment
   const grossProfit = results.grossMarginDollars * m;
   const commissionExpense = results.totalCommissionExpense * m;
-  const overheadMonthly = resolveOverhead(inputs.operationalOverhead, 0);
-  const overhead = overheadMonthly * m;
+  // Overhead — sum of the first `m` months from `cohortProjection`,
+  // which already honors the user's milestone schedule. The legacy
+  // `resolveOverhead(.., 0) × m` always read the pre-launch baseline
+  // and under-reported by up to ~280%/mo in growth scenarios with
+  // multi-milestone categories. See Thread A.1 diagnostic + A.2 fix.
+  const overhead = results.cohortProjection
+    .slice(0, m)
+    .reduce((sum, mo) => sum + mo.operationalOverhead, 0);
   // Welcome Kit — one-time per-acquisition spend. Engine emits it per
   // month; we scale by the same multiplier as everything else for the
   // chosen reporting period.
   const welcomeKitMonthly = results.welcomeKitCostPerMonth ?? 0;
   const welcomeKit = welcomeKitMonthly * m;
   const totalOpEx =
-    (results.totalCommissionExpense + welcomeKitMonthly + overheadMonthly) * m;
+    (results.totalCommissionExpense + welcomeKitMonthly) * m + overhead;
   const kickbackRevenue = results.totalKickbackRevenue * m;
   const totalOtherIncome = results.totalKickbackRevenue * m;
   const netIncome = results.netMarginDollars * m;
