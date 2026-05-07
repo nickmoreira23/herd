@@ -57,7 +57,31 @@ const DEFAULT_INPUTS: FinancialInputs = {
     monthlyGrowthRate: 0,
   },
   partnerKickbacks: [],
-  operationalOverhead: { mode: "fixed", fixedMonthly: 25000 },
+  // Default scenario seeds three structural overhead categories
+  // (Marketing, Technology, Operations). Each starts with a single
+  // milestone at 0 subscribers so they read as flat budgets until the
+  // user adds further milestones (e.g. "at 1k subs Tech jumps to $12k").
+  operationalOverhead: {
+    mode: "categories",
+    fixedMonthly: 25000, // legacy fallback
+    categories: [
+      {
+        id: "cat-marketing",
+        name: "Marketing",
+        milestones: [{ memberCount: 0, monthlyCost: 8000 }],
+      },
+      {
+        id: "cat-tech",
+        name: "Technology",
+        milestones: [{ memberCount: 0, monthlyCost: 6000 }],
+      },
+      {
+        id: "cat-operations",
+        name: "Operations",
+        milestones: [{ memberCount: 0, monthlyCost: 11000 }],
+      },
+    ],
+  },
   profitSplitParties: [],
   chargebackPercent: 0,
   chargebackFee: 15,
@@ -170,6 +194,41 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
     }
     if (!migrated.operationalOverhead) {
       migrated.operationalOverhead = { mode: "fixed", fixedMonthly: 25000 };
+    }
+    // Migrate "fixed" / "milestone-scaled" snapshots → "categories" mode.
+    // We seed a single "Overhead" category at the legacy fixedMonthly so
+    // the resolved total is preserved; the user can split it into named
+    // buckets at their leisure.
+    {
+      const oh = migrated.operationalOverhead;
+      if (oh && oh.mode !== "categories" && !oh.categories) {
+        const seedMonthly =
+          oh.mode === "milestone-scaled" && oh.opexData
+            ? // sum the legacy first-milestone budgets to keep starting cost stable
+              oh.opexData.reduce((sum, cat) => {
+                if (!cat.isActive) return sum;
+                return (
+                  sum +
+                  cat.items.reduce((s, item) => {
+                    if (!item.isActive || item.milestones.length === 0) return s;
+                    const lowest = [...item.milestones].sort(
+                      (a, b) => a.memberCount - b.memberCount,
+                    )[0];
+                    return s + lowest.monthlyCost;
+                  }, 0)
+                );
+              }, 0)
+            : oh.fixedMonthly;
+        oh.categories = [
+          {
+            id: "cat-overhead",
+            name: "Overhead",
+            milestones: [{ memberCount: 0, monthlyCost: seedMonthly }],
+          },
+        ];
+        // Preserve legacy fields for round-trip; flip mode to categories.
+        oh.mode = "categories";
+      }
     }
 
     // Migrate old snapshots missing profitSplitParties
