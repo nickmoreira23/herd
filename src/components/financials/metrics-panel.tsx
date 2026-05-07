@@ -27,6 +27,7 @@ import { useT } from "@/lib/i18n/locale-context";
 import type { Locale } from "@/lib/i18n/locales";
 import { formatNumberAsMoney } from "@/lib/money/format";
 import { formatNumber } from "@/lib/i18n/format-number";
+import { AccountingBasisBadge } from "./accounting-basis-reconciliation";
 
 interface MetricsPanelProps {
   multiplier: number;
@@ -65,6 +66,11 @@ export function MetricsPanel({ multiplier: m, periodLabel, locale }: MetricsPane
   return (
     <TooltipProvider>
       <div className="space-y-3">
+        {/* Accounting basis — every metric on this panel (LTV, CAC,
+            margins, cost-per-sub, profit split) is accrual-derived. */}
+        <div className="flex flex-wrap items-center gap-2">
+          <AccountingBasisBadge basis="accrual" />
+        </div>
         {/* LTV / CAC Analysis */}
         <CollapsibleCard
           icon={<Target className="h-3.5 w-3.5" />}

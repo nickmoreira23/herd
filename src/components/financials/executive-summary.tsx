@@ -23,6 +23,7 @@ import { useT } from "@/lib/i18n/locale-context";
 import type { Locale } from "@/lib/i18n/locales";
 import { formatNumberAsMoney } from "@/lib/money/format";
 import { formatNumber } from "@/lib/i18n/format-number";
+import { AccountingBasisBadge } from "./accounting-basis-reconciliation";
 import Link from "next/link";
 
 interface ExecutiveSummaryProps {
@@ -79,6 +80,13 @@ export function ExecutiveSummary({ locale }: ExecutiveSummaryProps) {
 
   return (
     <div className="space-y-4">
+      {/* Accounting basis — sub-etapa 3b: this whole panel reads from
+          accrual-basis aggregates (`results.mrr`, `results.arr`,
+          `results.netMarginDollars`, `results.cohortProjection[].*`).
+          See engine doc block for the full categorization. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <AccountingBasisBadge basis="accrual" />
+      </div>
       {/* Verdict Cards */}
       <div className="grid grid-cols-3 gap-3">
         <VerdictCard
