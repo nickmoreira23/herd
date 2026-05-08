@@ -40,6 +40,20 @@ export function MetricsPanel({ multiplier: m, periodLabel, locale }: MetricsPane
   const t = useT();
   const results = useFinancialStore((s) => s.results);
 
+  // Thread D.2 — period totals derived from `cohortProjection` first
+  // `m` months. See engine doc block + pl-statement.tsx for the pattern.
+  // Helper closes over `results` so cards can call `period(field)`
+  // inline without re-deriving the slice each time. Defined defensively
+  // for the no-results return path below.
+  const sumOver = <K extends keyof NonNullable<typeof results>["cohortProjection"][number]>(
+    key: K,
+  ): number => {
+    if (!results) return 0;
+    return results.cohortProjection
+      .slice(0, m)
+      .reduce((s, mo) => s + (Number(mo[key]) || 0), 0);
+  };
+
   if (!results) {
     return (
       <Card>
@@ -214,7 +228,7 @@ export function MetricsPanel({ multiplier: m, periodLabel, locale }: MetricsPane
           tooltip={t("financials.metrics.revenue.tooltip")}
         >
           <div className="grid grid-cols-3 gap-2">
-            <MetricCard label={t("financials.metrics.revenue.label")} value={formatNumberAsMoney(results.mrr * m, locale)} accent="green" />
+            <MetricCard label={t("financials.metrics.revenue.label")} value={formatNumberAsMoney(sumOver("revenue"), locale)} accent="green" />
             <MetricCard label={t("financials.metrics.revenue.revenue_per_sub")} value={formatNumberAsMoney(results.mrr / totalSubs, locale)} />
             <MetricCard label={t("financials.metrics.revenue.arr")} value={formatNumberAsMoney(results.arr, locale)} accent="green" />
           </div>
@@ -228,8 +242,17 @@ export function MetricsPanel({ multiplier: m, periodLabel, locale }: MetricsPane
           tooltip={t("financials.metrics.cogs.tooltip")}
         >
           <div className="grid grid-cols-3 gap-2">
-            <MetricCard label={t("financials.metrics.cogs.total")} value={formatNumberAsMoney(results.totalProductCost * m, locale)} accent="amber" />
-            <MetricCard label={t("financials.metrics.cogs.fulfillment")} value={formatNumberAsMoney(results.totalFulfillmentCost * m, locale)} />
+            <MetricCard label={t("financials.metrics.cogs.total")} value={formatNumberAsMoney(sumOver("cogsExpense"), locale)} accent="amber" />
+            <MetricCard label={t("financials.metrics.cogs.fulfillment")} value={formatNumberAsMoney(
+              // Fulfillment derived proportionally from totalCOGS — see
+              // pl-statement.tsx for the same pattern (totalProductCost
+              // and totalFulfillmentCost are both averages now, ratio
+              // is time-invariant).
+              results.totalProductCost > 0
+                ? sumOver("cogsExpense") * (results.totalFulfillmentCost / results.totalProductCost)
+                : 0,
+              locale,
+            )} />
             <MetricCard label={t("financials.metrics.cogs.cost_per_sub")} value={formatNumberAsMoney(results.costPerSubscriber, locale)} />
           </div>
         </CollapsibleCard>
@@ -242,7 +265,7 @@ export function MetricsPanel({ multiplier: m, periodLabel, locale }: MetricsPane
           tooltip={t("financials.metrics.commissions.tooltip")}
         >
           <div className="grid grid-cols-3 gap-2">
-            <MetricCard label={t("financials.metrics.commissions.total")} value={formatNumberAsMoney(results.totalCommissionExpense * m, locale)} accent="purple" />
+            <MetricCard label={t("financials.metrics.commissions.total")} value={formatNumberAsMoney(sumOver("commissionExpense"), locale)} accent="purple" />
             <MetricCard label={t("financials.metrics.commissions.per_sub")} value={formatNumberAsMoney(results.commissionPerSubscriber, locale)} />
             <MetricCard
               label={t("financials.metrics.commissions.percent_of_revenue")}
@@ -273,13 +296,13 @@ export function MetricsPanel({ multiplier: m, periodLabel, locale }: MetricsPane
           tooltip={t("financials.metrics.margins.tooltip")}
         >
           <div className="grid grid-cols-2 gap-2">
-            <MetricCard label={t("financials.metrics.margins.gross")} value={formatNumberAsMoney(results.grossMarginDollars * m, locale)} />
+            <MetricCard label={t("financials.metrics.margins.gross")} value={formatNumberAsMoney(sumOver("revenue") - sumOver("cogsExpense"), locale)} />
             <MetricCard
               label={t("financials.metrics.margins.gross_percent")}
               value={formatNumber(results.grossMarginPercent / 100, locale, "percent")}
               valueClassName={getMarginColorClass(results.grossMarginPercent)}
             />
-            <MetricCard label={t("financials.metrics.margins.net")} value={formatNumberAsMoney(results.netMarginDollars * m, locale)} accent="green" highlight />
+            <MetricCard label={t("financials.metrics.margins.net")} value={formatNumberAsMoney(sumOver("netProfit"), locale)} accent="green" highlight />
             <MetricCard
               label={t("financials.metrics.margins.net_percent")}
               value={formatNumber(results.netMarginPercent / 100, locale, "percent")}
@@ -303,7 +326,22 @@ export function MetricsPanel({ multiplier: m, periodLabel, locale }: MetricsPane
                 <MetricCard
                   key={party.id}
                   label={`${party.name || t("financials.metrics.profit_split.unnamed")} (${party.percent}%)`}
-                  value={formatNumberAsMoney(party.monthlyAmount * m, locale)}
+                  value={formatNumberAsMoney(
+                    // Per-party distribution: sum (netProfit × percent)
+                    // over first `m` months. Same Thread D.2 fix as
+                    // pl-statement.tsx profit-split section.
+                    results.cohortProjection
+                      .slice(0, m)
+                      .reduce(
+                        (s, mo) =>
+                          s +
+                          (mo.netProfit > 0
+                            ? mo.netProfit * (party.percent / 100)
+                            : 0),
+                        0,
+                      ),
+                    locale,
+                  )}
                   accent="green"
                 />
               ))}
@@ -312,7 +350,7 @@ export function MetricsPanel({ multiplier: m, periodLabel, locale }: MetricsPane
                   label={t("financials.metrics.profit_split.undistributed_percent", { percent: results.profitSplit.undistributedPercent })}
                   value={formatNumberAsMoney(
                     results.netMarginDollars > 0
-                      ? results.netMarginDollars * m * (results.profitSplit.undistributedPercent / 100)
+                      ? sumOver("netProfit") * (results.profitSplit.undistributedPercent / 100)
                       : 0,
                     locale
                   )}

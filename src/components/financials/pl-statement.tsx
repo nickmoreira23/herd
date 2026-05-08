@@ -37,39 +37,47 @@ export function PLStatement({ multiplier, periodLabel, locale }: PLStatementProp
 
   const m = multiplier;
 
-  const totalRevenue = results.mrr * m;
-  // totalProductCost includes fulfillment+shipping, so break out the components
-  const fulfillmentCost = results.totalFulfillmentCost * m;
-  const productOnlyCost = (results.totalProductCost - results.totalFulfillmentCost) * m;
-  const totalCOGS = results.totalProductCost * m; // already includes fulfillment
-  const grossProfit = results.grossMarginDollars * m;
-  const commissionExpense = results.totalCommissionExpense * m;
-  // Overhead — sum of the first `m` months from `cohortProjection`,
-  // which already honors the user's milestone schedule. The legacy
-  // `resolveOverhead(.., 0) × m` always read the pre-launch baseline
-  // and under-reported by up to ~280%/mo in growth scenarios with
-  // multi-milestone categories. See Thread A.1 diagnostic + A.2 fix.
-  const overhead = results.cohortProjection
-    .slice(0, m)
-    .reduce((sum, mo) => sum + mo.operationalOverhead, 0);
-  // Welcome Kit — sum of the first `m` months of `cohortProjection
-  // .welcomeKitCost` (= `monthGrossNewSubs[i] × welcomeKitCostPerSub`).
-  // Same Thread A.1 anti-pattern fix as overhead above: legacy was
-  // `welcomeKitMonthly × m` where `welcomeKitMonthly` was Mo 1's
-  // acquisitions frozen — under-reported up to 1,655% in Year 3 of
-  // growth scenarios. See Thread A.3.2 + the meta-lesson doc block
-  // attached to `operationalOverheadMonthly` in financial-engine.ts.
-  const welcomeKit = results.cohortProjection
-    .slice(0, m)
-    .reduce((sum, mo) => sum + (mo.welcomeKitCost ?? 0), 0);
+  // Thread D.2 — every "period total" derives from `cohortProjection`
+  // summed over the first `m` months. The per-month series is the
+  // source of truth; the `results.<scalar>` values are now averages
+  // (consistent with `× m × period`) but for accurate partial-period
+  // displays we sum the actual months rather than `avg × m`. See engine
+  // doc block for the meta-rule.
+  const projection = results.cohortProjection.slice(0, m);
+  const sumOver = <K extends keyof (typeof results.cohortProjection)[number]>(
+    key: K,
+  ): number =>
+    projection.reduce((s, mo) => s + (Number(mo[key]) || 0), 0);
+
+  const totalRevenue = sumOver("revenue");
+  const totalCOGS = sumOver("cogsExpense");
+  // Fulfillment is recurring per-active-sub at scenario-level rate;
+  // `cohortProjection.cogsExpense` already includes it (per-sub blended
+  // unit cost). Derive the proportional split from the time-invariant
+  // ratios on `results` (`totalFulfillmentCost / totalProductCost` is
+  // constant — both averages scale with the same subs).
+  const fulfillmentRatio =
+    results.totalProductCost > 0
+      ? results.totalFulfillmentCost / results.totalProductCost
+      : 0;
+  const fulfillmentCost = totalCOGS * fulfillmentRatio;
+  const productOnlyCost = totalCOGS - fulfillmentCost;
+  const grossProfit = totalRevenue - totalCOGS;
+  const commissionExpense = sumOver("commissionExpense");
+  // Overhead — sum of the first `m` months from `cohortProjection`.
+  // Mirror of the A.2 / A.3.2 / D.2 pattern — see engine doc block.
+  const overhead = sumOver("operationalOverhead");
+  const welcomeKit = sumOver("welcomeKitCost");
   // Display flag — drives whether the Welcome Kit row renders at all.
   // True when ANY month in the visible window has welcome-kit cost > 0.
   const hasWelcomeKit = welcomeKit > 0;
-  const totalOpEx =
-    results.totalCommissionExpense * m + welcomeKit + overhead;
+  const totalOpEx = commissionExpense + welcomeKit + overhead;
+  // Kickback / breakage stay on `× m` until Thread D.3 audits them as
+  // MAYBE candidates (totalKickbackRevenue and totalBreakageProfit are
+  // not yet known to scale with subscriber count).
   const kickbackRevenue = results.totalKickbackRevenue * m;
   const totalOtherIncome = results.totalKickbackRevenue * m;
-  const netIncome = results.netMarginDollars * m;
+  const netIncome = sumOver("netProfit");
 
   return (
     <div className="space-y-3">
@@ -90,17 +98,25 @@ export function PLStatement({ multiplier, periodLabel, locale }: PLStatementProp
         variant="revenue"
         locale={locale}
       >
-        {results.revenueByTier.map((tier) => (
-          <LineItem
-            key={tier.tierId}
-            label={t("financials.pl.tier_subs", {
-              tier: tier.tierId,
-              count: formatNumber(tier.subscribers, locale, "integer"),
-            })}
-            value={tier.revenue * m}
-            locale={locale}
-          />
-        ))}
+        {results.revenueByTier.map((tier) => {
+          // Per-tier revenue summed over the first `m` months from
+          // `cohortProjection[i].revenueByTier` (added in Thread D.2 T1).
+          const tierRevenuePeriod = projection.reduce((s, mo) => {
+            const e = mo.revenueByTier?.find((rt) => rt.tierId === tier.tierId);
+            return s + (e?.revenue ?? 0);
+          }, 0);
+          return (
+            <LineItem
+              key={tier.tierId}
+              label={t("financials.pl.tier_subs", {
+                tier: tier.tierId,
+                count: formatNumber(tier.subscribers, locale, "integer"),
+              })}
+              value={tierRevenuePeriod}
+              locale={locale}
+            />
+          );
+        })}
       </PLSection>
 
       {/* COGS Section */}
@@ -196,7 +212,20 @@ export function PLStatement({ multiplier, periodLabel, locale }: PLStatementProp
         <>
           <PLSection
             label={t("financials.pl.profit_distribution")}
-            total={results.profitSplit.parties.reduce((s, p) => s + p.monthlyAmount * m, 0)}
+            // Profit-split distribution per party = sum of (netProfit × pct)
+            // across the first `m` months. `monthlyAmount × m` would use
+            // the avg netMargin × m which equals sum only when the netProfit
+            // series is constant. Sum-of-period preserves accuracy under
+            // ramp/growth (Thread D.2).
+            total={projection.reduce((rowSum, mo) => {
+              const monthDist = mo.netProfit > 0
+                ? results.profitSplit.parties.reduce(
+                    (s, p) => s + mo.netProfit * (p.percent / 100),
+                    0,
+                  )
+                : 0;
+              return rowSum + monthDist;
+            }, 0)}
             totalLabel={t("financials.pl.distributed", { percent: results.profitSplit.totalDistributedPercent })}
             variant="income"
             locale={locale}
@@ -208,7 +237,16 @@ export function PLStatement({ multiplier, periodLabel, locale }: PLStatementProp
                   name: party.name || t("financials.pl.unnamed"),
                   percent: party.percent,
                 })}
-                value={party.monthlyAmount * m}
+                // Per-party distribution: sum (netProfit × percent) over
+                // first `m` months. See Thread D.2 doc.
+                value={projection.reduce(
+                  (s, mo) =>
+                    s +
+                    (mo.netProfit > 0
+                      ? mo.netProfit * (party.percent / 100)
+                      : 0),
+                  0,
+                )}
                 locale={locale}
               />
             ))}
