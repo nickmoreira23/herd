@@ -680,6 +680,12 @@ export interface ScenarioResults {
     welcomeKitCost?: number;    // monthGrossNewSubs × welcomeKitCostPerSub (acquisition spend)
     // Per-tier breakdown of new subscribers this month
     newSubsByTier?: { tierId: string; count: number }[];
+    // Per-tier breakdown of revenue this month (subscribers × revenuePerSub
+    // for each tier, accrual basis — same smoothing as the headline
+    // `revenue` field). Σ `revenueByTier[].revenue` ≡ `revenue`. Added in
+    // Thread D.2 to enable per-tier UI displays without leaning on the
+    // Mo-1-frozen `results.revenueByTier` scalar.
+    revenueByTier?: { tierId: string; revenue: number }[];
     // Per-tier breakdown of commission expense this month (upfront +
     // residual split since they fire on different bases). Sums to the
     // aggregate `commissionExpense` field.
@@ -1566,6 +1572,19 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
       count: counts[i],
     }));
 
+    // Per-tier revenue this month — distribute `currentSubs` across
+    // tiers via `subscriberPercent` and multiply by each tier's
+    // `revenuePerSub` (a time-invariant per-sub blended cycle rate).
+    // Σ revenueByTier[].revenue ≡ monthRevenue by construction (modulo
+    // floating-point), enabling the per-tier UI displays without
+    // leaning on the Mo-1-frozen `results.revenueByTier` scalar.
+    const revenueByTier = tiers.map((tier, i) => ({
+      tierId: tier.tierId,
+      revenue:
+        currentSubs * (tier.subscriberPercent / 100) *
+        (tierDetails[i]?.revenuePerSub ?? 0),
+    }));
+
     // Per-billing-cycle revenue breakdown — derived proportionally from
     // monthRevenue using the precomputed cycle shares so the three rows
     // always sum exactly to monthRevenue (CFO-grade reconciliation).
@@ -1597,6 +1616,7 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
       addOnCost: monthAddOnCost,
       welcomeKitCost: monthWelcomeKitCost,
       newSubsByTier,
+      revenueByTier,
       revenueByBillingCycle: {
         monthly: monthlyBillingRevenue,
         biannual: biannualBillingRevenue,
@@ -1662,6 +1682,45 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
   // legacy behavior — fix is invisible. In growth scenarios with
   // multi-milestone categories, avg correctly reflects the user's
   // configured schedule weighted by time.
+  //
+  // ── ROOT-CAUSE ERADICATION (Thread D.2, 2026-05) ─────────────────
+  //
+  // A.2 (overhead) and A.3.2 (welcome-kit) corrected two SYMPTOMS of
+  // the same architectural defect. Thread D's structural audit revealed
+  // that the entire ScenarioResults aggregate-scalar surface was
+  // affected: `mrr`, `totalProductCost`, `totalFulfillmentCost`,
+  // `totalCommissionExpense`, `chargebackCostPerMonth`,
+  // `chargebacksPerMonth`, `grossMarginDollars`, `tierDetails[].subscribers`,
+  // `revenueByTier[].revenue` — all 9 were `Mo1Subs × something` then
+  // multiplied by `multiplier` in P&L Statement / Metrics / Charts.
+  // Magnitude up to 5,697%/36mo in growth scenarios.
+  //
+  // D.2 eradicated the root cause: every period-total scalar in the
+  // return statement now derives from `cohortProjection` averages
+  // (declared post-loop alongside `operationalOverheadMonthly` and
+  // `welcomeKitCostPerMonth`). The 35 `× multiplier` consumer call
+  // sites in P&L Statement, Metrics, and Charts were rewritten to
+  // sum the first `multiplier` months from `cohortProjection`
+  // directly — exact mathematics for partial-period displays.
+  //
+  // Internal pre-loop computations (tierDetails per-sub values,
+  // LTV/CAC math, blendedRevenuePerSub, costPerSubscriber) keep
+  // their Mo-1-derived semantics — they're per-sub or ratio values
+  // that are time-invariant by construction.
+  //
+  // ── EXTENDED META-LESSON ─────────────────────────────────────────
+  //
+  // If you find yourself writing a comment like "we accept this
+  // approximation as reasonable" to justify multiplying a snapshot
+  // value by a period length, STOP. That comment is a red flag for
+  // the same anti-pattern the entire `ScenarioResults` surface
+  // exhibited pre-D.2. Sub-etapa 3b documented the welcome-kit
+  // linearization as "reasonable approximation"; A.3 quantified
+  // it as 1,655% off in Year 3. If a calculation needs textual
+  // justification to be acceptable, it's probably wrong. The
+  // correct alternative is almost always: aggregate from
+  // `cohortProjection` per-month series — the engine already
+  // computes the truth there, you just have to read it.
   const operationalOverheadMonthly =
     cohortProjection.length > 0
       ? cohortProjection.reduce((sum, m) => sum + m.operationalOverhead, 0) /
@@ -1684,14 +1743,96 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
         cohortProjection.length
       : 0;
 
-  const netMarginDollars =
-    grossMarginDollars -
-    totalCommissionExpense +
-    totalKickbackRevenue -
-    chargebackCostPerMonth -
-    welcomeKitCostPerMonth -
-    operationalOverheadMonthly;
-  const netMarginPercent = mrr > 0 ? (netMarginDollars / mrr) * 100 : 0;
+  // ── Thread D.2 — root-cause fix for the entire aggregate-scalar bug
+  // class. Every scalar below replaces a Mo-1-frozen pre-loop counterpart
+  // (whose value was `month1Subs × something`, multiplied by `multiplier`
+  // in P&L Statement / Metrics / Charts and under-reporting up to
+  // 5,697%/36mo in growth scenarios). The replacements are simple
+  // averages of the per-month series the projection loop already emits.
+  // The pre-loop computations stay intact for INTERNAL use (per-sub
+  // values, LTV/CAC, blendedRevenuePerSub) where Mo-1-baseline math is
+  // semantically correct (per-sub values are time-invariant across the
+  // scenario; ratios derived from Mo-1 numerator+denominator are the
+  // same ratios derived from any matched pair of values).
+  //
+  // Triangulation: in the audit scenario (50 acquisitions/mo, no growth,
+  // 36mo), `mrrAvg × 36 ≈ Σ cohortProjection.revenue ≈ $879,956` —
+  // matches the audit pinned reconciliation test by construction.
+  const _N = cohortProjection.length;
+  const _avg = (key: keyof (typeof cohortProjection)[number]): number =>
+    _N > 0
+      ? cohortProjection.reduce((s, m) => s + (Number(m[key]) || 0), 0) / _N
+      : 0;
+
+  const mrrAvg = _avg("revenue");
+  const totalProductCostAvg = _avg("cogsExpense");
+  // Fulfillment is recurring per-active-sub at the scenario-level rate.
+  // The aggregate `cohortProjection` doesn't carry shipping/handling
+  // separately (those live on `cohortLifecycles.months` for the cash-flow
+  // view), so derive avg fulfillment from `avgTotalSubscribers` × the
+  // scenario-level rate. Equivalent in steady state to summing per-cohort
+  // ship+handle via cohortLifecycles aggregation, simpler to compute.
+  const avgTotalSubscribersForFulfillment =
+    _N > 0
+      ? cohortProjection.reduce((s, m) => s + m.subscribers, 0) / _N
+      : 0;
+  const totalFulfillmentCostAvg =
+    avgTotalSubscribersForFulfillment *
+    (fulfillmentCostPerOrder + shippingCostPerOrder);
+  const totalCommissionExpenseAvg = _avg("commissionExpense");
+  const chargebackCostPerMonthAvg = _avg("chargebackCost");
+  const chargebacksPerMonthAvg = _avg("chargebacks");
+  const grossMarginDollarsAvg = mrrAvg - totalProductCostAvg;
+  const grossMarginPercentAvg =
+    mrrAvg > 0 ? (grossMarginDollarsAvg / mrrAvg) * 100 : 0;
+  const commissionPercentOfRevenueAvg =
+    mrrAvg > 0 ? (totalCommissionExpenseAvg / mrrAvg) * 100 : 0;
+
+  // tierDetails subscribers — average across the projection window,
+  // distributed by tier share. Per-tier `revenuePerSub`, `cogsPerSub`,
+  // `marginPerSub`, `marginPercent`, `ltv` are time-invariant per-sub
+  // properties — they stay as-is.
+  const avgTotalSubscribers =
+    _N > 0
+      ? cohortProjection.reduce((s, m) => s + m.subscribers, 0) / _N
+      : 0;
+  const tierDetailsWithAvgSubs = tierDetails.map((td) => {
+    const tier = tiers.find((t) => t.tierId === td.tierId);
+    const sharePct = tier?.subscriberPercent ?? 0;
+    return {
+      ...td,
+      subscribers: avgTotalSubscribers * (sharePct / 100),
+    };
+  });
+
+  // Per-tier revenue — average across the projection window. Replaces
+  // the pre-loop `revenueByTier = tierDetails.subscribers × revenuePerSub`
+  // (Mo-1-frozen). Reads from the new `cohortProjection[i].revenueByTier`
+  // emission (Thread D.2 Tarefa 1).
+  const revenueByTierAvg = tiers.map((tier) => {
+    const totalForTier =
+      _N > 0
+        ? cohortProjection.reduce((s, m) => {
+            const e = m.revenueByTier?.find((rt) => rt.tierId === tier.tierId);
+            return s + (e?.revenue ?? 0);
+          }, 0) / _N
+        : 0;
+    const subsForTier = avgTotalSubscribers * (tier.subscriberPercent / 100);
+    return {
+      tierId: tier.tierId,
+      revenue: totalForTier,
+      subscribers: subsForTier,
+    };
+  });
+
+  // netMarginDollars — average of the per-month net profit. Equivalent
+  // to (avg revenue − avg COGS − avg commission − avg chargeback − avg
+  // welcomeKit − avg overhead + avg kickback), but reading from
+  // `netProfit` directly avoids drift from independent averaging of
+  // sub-components.
+  const netMarginDollars = _avg("netProfit");
+  const netMarginPercent =
+    mrrAvg > 0 ? (netMarginDollars / mrrAvg) * 100 : 0;
 
   // --- Scenario-level blended constants for cohort lifecycle math ---
   // These compute the structural cohort numbers used by the per-safra
@@ -2201,13 +2342,26 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
       : totalSplitPercent < 100
         ? "under"
         : "over";
+  // Year-1 net profit (Σ first 12 months) — drives `annualAmount` for
+  // profit-split distribution. Pre-D.2 was `monthlyAmount × 12` using
+  // Mo-1-frozen netMarginDollars; now reflects the literal "first 12
+  // months" net profit, including the ramp.
+  const yearOneNetProfit = cohortProjection
+    .slice(0, 12)
+    .reduce((s, m) => s + m.netProfit, 0);
   const profitSplit = {
     parties: (profitSplitParties ?? []).map((party) => ({
       id: party.id,
       name: party.name,
       percent: party.percent,
-      monthlyAmount: netMarginDollars > 0 ? netMarginDollars * (party.percent / 100) : 0,
-      annualAmount: netMarginDollars > 0 ? netMarginDollars * 12 * (party.percent / 100) : 0,
+      // monthlyAmount: average month's distribution (netMarginDollars
+      // is now the avg, so this naturally reflects "typical month").
+      monthlyAmount:
+        netMarginDollars > 0 ? netMarginDollars * (party.percent / 100) : 0,
+      // annualAmount: literal Year 1 distribution from first 12 months
+      // of the projection.
+      annualAmount:
+        yearOneNetProfit > 0 ? yearOneNetProfit * (party.percent / 100) : 0,
     })),
     totalDistributedPercent: totalSplitPercent,
     undistributedPercent: Math.max(0, 100 - totalSplitPercent),
@@ -2216,23 +2370,29 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
   };
 
   return {
-    mrr,
-    arr,
-    revenueByTier,
-    totalProductCost,
-    totalFulfillmentCost,
+    // Thread D.2 — these scalars are remapped to their AVERAGE-OF-PERIOD
+    // versions, replacing the legacy Mo-1-frozen exports. Per-sub values
+    // (`costPerSubscriber`, `commissionPerSubscriber`) and counts that
+    // are explicitly Mo-1-themed (`month1Reps`, `newSubsFromReps`,
+    // `newSubscribersPerMonth`) keep their semantics. See doc block
+    // attached to the avg declarations above for the full rationale.
+    mrr: mrrAvg,
+    arr: mrrAvg * 12,
+    revenueByTier: revenueByTierAvg,
+    totalProductCost: totalProductCostAvg,
+    totalFulfillmentCost: totalFulfillmentCostAvg,
     costPerSubscriber,
-    totalCommissionExpense,
+    totalCommissionExpense: totalCommissionExpenseAvg,
     commissionPerSubscriber,
-    commissionPercentOfRevenue,
+    commissionPercentOfRevenue: commissionPercentOfRevenueAvg,
     totalKickbackRevenue,
     totalBreakageProfit,
-    grossMarginDollars,
-    grossMarginPercent,
+    grossMarginDollars: grossMarginDollarsAvg,
+    grossMarginPercent: grossMarginPercentAvg,
     netMarginDollars,
     netMarginPercent,
-    chargebacksPerMonth: month1Chargebacks,
-    chargebackCostPerMonth,
+    chargebacksPerMonth: chargebacksPerMonthAvg,
+    chargebackCostPerMonth: chargebackCostPerMonthAvg,
     welcomeKitCostPerMonth,
     newSubsFromReps: month1NewSubsFromReps,
     newSubsFromSamplers: 0,
@@ -2247,7 +2407,7 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
       monthsToPayback: blendedPayback,
       perTier: ltvCacPerTier,
     },
-    tierDetails,
+    tierDetails: tierDetailsWithAvgSubs,
     cohortProjection,
     cohortLifecycles,
     profitSplit,

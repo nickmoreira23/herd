@@ -55,33 +55,50 @@ export function FinancialCharts({ multiplier, periodLabel, locale }: FinancialCh
   const label = periodLabel;
   const fmt = (v: number) => formatNumberAsMoney(v, locale);
 
-  // Revenue by tier data (scaled by period)
+  // Thread D.2 — period totals from `cohortProjection` first `m` months.
+  // See engine doc block + pl-statement.tsx for the universal pattern.
+  const projection = results.cohortProjection.slice(0, m);
+  const sumOver = <K extends keyof (typeof results.cohortProjection)[number]>(
+    key: K,
+  ): number => projection.reduce((s, mo) => s + (Number(mo[key]) || 0), 0);
+
+  // Per-tier revenue summed over the first `m` months from the new
+  // `cohortProjection[i].revenueByTier` field (Thread D.2 T1).
   const revenueByTierData = results.revenueByTier.map((tier) => ({
     name: tier.tierId,
-    revenue: Math.round(tier.revenue * m),
+    revenue: Math.round(
+      projection.reduce((s, mo) => {
+        const e = mo.revenueByTier?.find((rt) => rt.tierId === tier.tierId);
+        return s + (e?.revenue ?? 0);
+      }, 0),
+    ),
     subscribers: tier.subscribers,
   }));
 
-  // Margin waterfall data (scaled by period)
-  const productOnlyCost = results.totalProductCost - results.totalFulfillmentCost;
+  // COGS components — totalCOGS sums per-month directly; product-only
+  // and fulfillment derive proportionally (the ratio is time-invariant
+  // since both averages scale with subs).
+  const totalCOGS = sumOver("cogsExpense");
+  const fulfillmentRatio =
+    results.totalProductCost > 0
+      ? results.totalFulfillmentCost / results.totalProductCost
+      : 0;
+  const fulfillmentCost = totalCOGS * fulfillmentRatio;
+  const productOnlyCost = totalCOGS - fulfillmentCost;
   // Overhead — sum of the first `m` months from the projection, which
-  // already honors milestone-based scaling. The legacy
-  // `resolveOverhead(.., 0) × m` always read the pre-launch baseline
-  // and under-reported in growth scenarios. See Thread A.1 + A.2.
-  const overheadForPeriod = results.cohortProjection
-    .slice(0, m)
-    .reduce((sum, mo) => sum + mo.operationalOverhead, 0);
+  // already honors milestone-based scaling. See Thread A.1 + A.2.
+  const overheadForPeriod = sumOver("operationalOverhead");
 
   const waterfallData = [
-    { name: t("financials.charts.bar_revenue"), value: Math.round(results.mrr * m) },
-    { name: t("financials.charts.bar_product"), value: -Math.round(productOnlyCost * m) },
-    { name: t("financials.charts.bar_fulfillment"), value: -Math.round(results.totalFulfillmentCost * m) },
-    { name: t("financials.charts.bar_commission"), value: -Math.round(results.totalCommissionExpense * m) },
+    { name: t("financials.charts.bar_revenue"), value: Math.round(sumOver("revenue")) },
+    { name: t("financials.charts.bar_product"), value: -Math.round(productOnlyCost) },
+    { name: t("financials.charts.bar_fulfillment"), value: -Math.round(fulfillmentCost) },
+    { name: t("financials.charts.bar_commission"), value: -Math.round(sumOver("commissionExpense")) },
     ...(results.totalKickbackRevenue > 0
       ? [{ name: t("financials.charts.bar_kickbacks"), value: Math.round(results.totalKickbackRevenue * m) }]
       : []),
     { name: t("financials.charts.bar_overhead"), value: -Math.round(overheadForPeriod) },
-    { name: t("financials.charts.bar_net"), value: Math.round(results.netMarginDollars * m) },
+    { name: t("financials.charts.bar_net"), value: Math.round(sumOver("netProfit")) },
   ];
 
   const monthsToShow = Math.min(24, m <= 1 ? 12 : 24);
@@ -101,9 +118,9 @@ export function FinancialCharts({ multiplier, periodLabel, locale }: FinancialCh
   }));
 
   const marginPieData = [
-    { name: t("financials.charts.pie_net_margin"), value: Math.max(0, Math.round(results.netMarginDollars * m)) },
-    { name: t("financials.charts.pie_cogs"), value: Math.round(results.totalProductCost * m) },
-    { name: t("financials.charts.pie_commissions"), value: Math.round(results.totalCommissionExpense * m) },
+    { name: t("financials.charts.pie_net_margin"), value: Math.max(0, Math.round(sumOver("netProfit"))) },
+    { name: t("financials.charts.pie_cogs"), value: Math.round(totalCOGS) },
+    { name: t("financials.charts.pie_commissions"), value: Math.round(sumOver("commissionExpense")) },
     {
       // Reuses `overheadForPeriod` from above — same Thread A.1 fix.
       name: t("financials.charts.pie_overhead"),
