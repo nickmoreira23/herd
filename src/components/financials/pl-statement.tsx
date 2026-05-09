@@ -72,11 +72,14 @@ export function PLStatement({ multiplier, periodLabel, locale }: PLStatementProp
   // True when ANY month in the visible window has welcome-kit cost > 0.
   const hasWelcomeKit = welcomeKit > 0;
   const totalOpEx = commissionExpense + welcomeKit + overhead;
-  // Kickback / breakage stay on `× m` until Thread D.3 audits them as
-  // MAYBE candidates (totalKickbackRevenue and totalBreakageProfit are
-  // not yet known to scale with subscriber count).
+  // Kickback stays on `× m` — Thread D.3a confirmed it's a flat input
+  // (estimatedMonthlyReferrals × kickbackValue), not a function of
+  // subscriber count. Breakage moved to `sumOver` post-D.3.2 — it now
+  // tracks the per-month series the engine emits at
+  // `cohortProjection[i].breakageProfit`.
   const kickbackRevenue = results.totalKickbackRevenue * m;
   const totalOtherIncome = results.totalKickbackRevenue * m;
+  const breakageProfit = sumOver("breakageProfit");
   const netIncome = sumOver("netProfit");
 
   return (
@@ -181,12 +184,12 @@ export function PLStatement({ multiplier, periodLabel, locale }: PLStatementProp
       )}
 
       {/* Breakage note — informational, already reflected in reduced COGS */}
-      {results.totalBreakageProfit > 0 && (
+      {breakageProfit > 0 && (
         <div className="rounded-lg border bg-muted/20 px-4 py-2 text-[11px] text-muted-foreground flex items-center gap-2">
           <span className="text-muted-foreground/60">ℹ</span>
           <span>
             {t("financials.pl.breakage_note", {
-              value: formatNumberAsMoney(results.totalBreakageProfit * m, locale),
+              value: formatNumberAsMoney(breakageProfit, locale),
               // creditRedemptionRate is already a 0–1 ratio; breakage = 1 − redemption.
               percent: formatNumber(1 - inputs.creditRedemptionRate, locale, "percent"),
             })}
