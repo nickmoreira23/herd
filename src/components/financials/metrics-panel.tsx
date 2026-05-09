@@ -358,6 +358,16 @@ export function MetricsPanel({ multiplier: m, periodLabel, locale }: MetricsPane
                 />
               )}
             </div>
+            {/* B.3 (Thread B) — over-allocation warning. Mirrors the
+                identical guard in `pl-statement.tsx` (line ~261).
+                Pre-fix: Metrics rendered profit-split cards
+                summing >100% silently — user saw inflated
+                distributions with no flag. Now matches Statement. */}
+            {results.profitSplit.status === "over" && (
+              <div className="px-3 py-2 mt-3 rounded-md border border-rose-300 bg-rose-50 text-rose-700 text-xs">
+                <strong>Over-allocated:</strong> profit-split shares total {results.profitSplit.totalDistributedPercent.toFixed(1)}% — exceeds 100% by {results.profitSplit.overAllocatedPercent.toFixed(1)}%. The configured shares cannot all be paid; reduce one or more party percentages.
+              </div>
+            )}
           </CollapsibleCard>
         )}
 
