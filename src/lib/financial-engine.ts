@@ -678,6 +678,15 @@ export interface ScenarioResults {
     buckTokenCost?: number;     // currentSubs × buckTokenCostPerSub (monthly recurring)
     addOnCost?: number;         // per-tier add-ons (Path Scale sale/lease)
     welcomeKitCost?: number;    // monthGrossNewSubs × welcomeKitCostPerSub (acquisition spend)
+    /**
+     * Per-month breakage profit (informational disclosure only — does NOT
+     * roll into `costs`/`netProfit` because COGS already incorporates
+     * reduced spend via `creditRedemptionRate`). Computed as
+     * Σ_tier round(currentSubs × subscriberPercent/100) × per-sub-rate,
+     * where per-sub-rate uses the tier's effective breakage. Added in
+     * Thread D.3.2 (replaces Mo-1-frozen `totalBreakageProfit` scalar).
+     */
+    breakageProfit?: number;
     // Per-tier breakdown of new subscribers this month
     newSubsByTier?: { tierId: string; count: number }[];
     // Per-tier breakdown of revenue this month (subscribers × revenuePerSub
@@ -1095,21 +1104,24 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
   // there's nothing to save — breakage doesn't apply for that tier. Suppress
   // it to avoid an information line that misleads the CFO into thinking they
   // recover revenue they actually shipped against.
-  const totalBreakageProfit = tiers.reduce((sum, tier) => {
-    if (tier.packageCOGSPerSub != null) return sum;
-    const subs = Math.round(totalSubscribers * (tier.subscriberPercent / 100));
+  //
+  // Thread D.3.2: per-tier per-sub breakage rate is precomputed here
+  // (time-invariant), then applied per-month inside the projection loop
+  // against `currentSubs` (not Mo-1-frozen `totalSubscribers`). The
+  // aggregate `totalBreakageProfit` scalar is derived post-loop as the
+  // average of `cohortProjection[i].breakageProfit` — same pattern as
+  // `operationalOverheadMonthly` (A.2), `welcomeKitCostPerMonth` (A.3.2),
+  // and the D.2 scalars.
+  const tierBreakagePerSub = tiers.map((tier) => {
+    if (tier.packageCOGSPerSub != null) return 0;
     const tierRedemption = tier.creditRedemptionRate ?? creditRedemptionRate;
     const tierBreakageRate = 1 - tierRedemption;
-    return (
-      sum +
-      subs *
-        calculateBreakageProfit(
-          tier.monthlyCredits,
-          tierBreakageRate,
-          avgCOGSToMemberPriceRatio
-        )
+    return calculateBreakageProfit(
+      tier.monthlyCredits,
+      tierBreakageRate,
+      avgCOGSToMemberPriceRatio,
     );
-  }, 0);
+  });
 
   // Margins
   // NOTE: totalProductCost already includes reduced COGS from breakage (credit
@@ -1533,6 +1545,16 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
     // line so views can separate "recurring opex" from "acquisition spend."
     const monthWelcomeKitCost = monthGrossNewSubs * welcomeKitCostPerSub;
 
+    // Breakage profit (informational disclosure) — per-tier subs this
+    // month × per-sub breakage rate. Uses `currentSubs` so the figure
+    // tracks growth/churn correctly. Does NOT roll into `monthCosts` /
+    // `monthProfit`: COGS already incorporates the redemption discount
+    // (avoiding double-count). Thread D.3.2.
+    const monthBreakageProfit = tiers.reduce((sum, tier, i) => {
+      const tierSubs = Math.round(currentSubs * (tier.subscriberPercent / 100));
+      return sum + tierSubs * tierBreakagePerSub[i];
+    }, 0);
+
     const monthCosts =
       currentSubs * costPerSubscriber +
       monthTotalCommission +
@@ -1615,6 +1637,7 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
       buckTokenCost: monthBuckTokenCost,
       addOnCost: monthAddOnCost,
       welcomeKitCost: monthWelcomeKitCost,
+      breakageProfit: monthBreakageProfit,
       newSubsByTier,
       revenueByTier,
       revenueByBillingCycle: {
@@ -1740,6 +1763,20 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
   const welcomeKitCostPerMonth =
     cohortProjection.length > 0
       ? cohortProjection.reduce((sum, m) => sum + (m.welcomeKitCost ?? 0), 0) /
+        cohortProjection.length
+      : 0;
+
+  // `totalBreakageProfit` follows the same pattern as the scalars above
+  // (Thread A.2 overhead, A.3.2 welcome-kit, D.2 nine-scalar sweep). Pre-
+  // D.3.2 was Σ_tier round(Mo1Subs × pct) × per-sub-rate — frozen at the
+  // smallest acquisition month, then `× m` in the UI under-reported up to
+  // 5,797% over 36mo in growth scenarios. Now: average of the per-month
+  // series emitted above (`cohortProjection[i].breakageProfit`). Default
+  // seed (creditRedemptionRate=1 or monthlyCredits=0) → every month is 0
+  // → average is 0 → behavior matches pre-fix.
+  const totalBreakageProfit =
+    cohortProjection.length > 0
+      ? cohortProjection.reduce((sum, m) => sum + (m.breakageProfit ?? 0), 0) /
         cohortProjection.length
       : 0;
 

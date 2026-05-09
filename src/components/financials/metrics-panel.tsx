@@ -284,7 +284,7 @@ export function MetricsPanel({ multiplier: m, periodLabel, locale }: MetricsPane
         >
           <div className="grid grid-cols-2 gap-2">
             <MetricCard label={t("financials.metrics.partners.kickback_revenue")} value={formatNumberAsMoney(results.totalKickbackRevenue * m, locale)} accent="blue" />
-            <MetricCard label={t("financials.metrics.partners.breakage_savings")} value={formatNumberAsMoney(results.totalBreakageProfit * m, locale)} />
+            <MetricCard label={t("financials.metrics.partners.breakage_savings")} value={formatNumberAsMoney(sumOver("breakageProfit"), locale)} />
           </div>
         </CollapsibleCard>
 
