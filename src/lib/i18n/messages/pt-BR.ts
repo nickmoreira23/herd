@@ -736,7 +736,7 @@ export const messages = {
     "Receita recorrente total para o período selecionado, mais a receita média combinada por assinante em todas as faixas e ciclos de cobrança.",
   "financials.metrics.revenue.label": "Receita",
   "financials.metrics.revenue.revenue_per_sub": "Receita/Sub",
-  "financials.metrics.revenue.arr": "ARR",
+  "financials.metrics.revenue.arr": "ARR de Saída",
 
   "financials.metrics.cogs.title": "COGS",
   "financials.metrics.cogs.description":
@@ -849,7 +849,7 @@ export const messages = {
 
   "financials.summary.key_metrics.title": "Métricas-chave",
   "financials.summary.key_metrics.mrr": "MRR",
-  "financials.summary.key_metrics.arr": "ARR",
+  "financials.summary.key_metrics.arr": "ARR de Saída",
   "financials.summary.key_metrics.gross_margin": "Margem Bruta",
   "financials.summary.key_metrics.new_subs_per_mo": "Novos Subs/Mês",
   "financials.summary.key_metrics.commission_pct_revenue":
@@ -954,7 +954,7 @@ export const messages = {
   "financials.models.breakeven.month_long": "Mês {month}",
   "financials.models.column.model": "Modelo",
   "financials.models.column.mrr": "MRR",
-  "financials.models.column.arr": "ARR",
+  "financials.models.column.arr": "ARR de Saída",
   "financials.models.column.net_margin": "Margem Líquida",
   "financials.models.column.gross_margin": "Margem Bruta",
   "financials.models.column.new_subs_per_mo": "Novos Subs/Mês",

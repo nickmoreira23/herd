@@ -273,8 +273,10 @@ ${JSON.stringify(results, null, 2)}`;
           : "";
 
         return `=== PROJECTION RESULTS ===
-MRR: $${results.mrr.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-ARR: $${results.arr.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+MRR (period avg): $${results.mrr.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+Exit ARR (Mo 36 run-rate × 12): $${results.arrExit.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+Avg ARR (period avg × 12): $${results.arrAvg.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+Realized Y1 Revenue: $${results.revenueY1.toLocaleString(undefined, { maximumFractionDigits: 0 })}
 Gross Margin: ${results.grossMarginPercent.toFixed(1)}% ($${results.grossMarginDollars.toFixed(0)}/mo)
 Net Margin: ${results.netMarginPercent.toFixed(1)}% ($${results.netMarginDollars.toFixed(0)}/mo)
 
