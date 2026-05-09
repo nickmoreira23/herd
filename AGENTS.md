@@ -120,10 +120,74 @@ Cross-context communication uses an outbox pattern in the `domain_events` table.
 The Phase 1 etapa 1.8 establishes the infrastructure but leaves the registry
 empty — actual events start being emitted in Phase 2.
 
+# Financial engine: invariants and meta-rules
+
+The CFO-grade projection engine (`src/lib/financial-engine.ts`) and its
+visual consumers under `src/components/financials/` were audited across
+ten sub-threads (commits `91f163d` → `5b6c3ec`). The audit eradicated a
+recurring bug class and crystallized a small set of rules. Read the
+**procedure** in `.agents/skills/practice-financial-engine/SKILL.md`
+before changing engine code; read the **technical map** in
+`src/lib/financial-engine.README.md` for the per-field semantics. The
+principles below are the layer above both.
+
+## Aggregate scalars derive from `cohortProjection`
+
+Every period-total scalar exported in `ScenarioResults` (period MRR,
+COGS, commissions, overhead, welcome kit, breakage, …) is the
+**average** of the per-month series in `cohortProjection`. Standalone
+`Mo1Subs × something` computations multiplied by a UI multiplier are
+forbidden — that pattern under-reported up to 5,697% over 36 months in
+growth scenarios. UI consumers reading partial-period totals must
+`sumOver(key)` (sum the first `m` months from `cohortProjection`)
+instead of `scalar × m`.
+
+## Per-month series is the source of truth
+
+If a metric needs to scale with subscriber count, churn, or any
+projection-state variable, emit it inside the projection loop using
+`currentSubs` and add it to `cohortProjection[i]`. Do not compute it
+once pre-loop and multiply. The doc block above
+`const operationalOverheadMonthly = ...` in the engine carries the
+canonical meta-lesson.
+
+## "Approximation reasonable" comments are red flags
+
+Justifying a `value × period` computation in code with prose like
+"reasonable approximation for KPI summaries" usually rationalizes the
+same anti-pattern A.2 / A.3.2 / D.2 / D.3.2 fixed. When tempted to
+write that comment, aggregate from `cohortProjection` instead.
+
+## Audit pinned reconciliation is single-byte
+
+The audit scenario (50 acquisitions/mo, 5%/mo churn, 36mo) reconciles
+to **$879,956** accrual revenue and **$990,498** cash revenue (diff
+$110,542 = deferred biannual/annual prepayments). Any change that
+moves these numbers is a regression. Asserted by tests in
+`financial-engine.aggregate-scalars.test.ts` and
+`financial-engine.arr-semantics.test.ts`.
+
+## LTV/CAC is isolated from period aggregates
+
+`results.ltvCac.*` and `results.tierDetails[].ltv` use only
+per-subscriber steady-state math (`revenuePerSub`, `cogsPerSub`,
+residual delay, churn). Aggregate-scalar refactors must not touch
+this surface — if your change moves an LTV/CAC value beyond rounding,
+your refactor escaped its boundary.
+
+## Accrual and cash are dual, both correct
+
+`cohortProjection[].revenue` is **accrual** (smoothed across cycle).
+`cohortLifecycles[].months[].revenue` is **cash flow** (lumps at
+billing months for biannual/annual). Both are emitted; the
+`<AccountingBasisBadge>` and `<AccountingBasisReconciliation>`
+components surface the reconciliation. Neither is "more correct" than
+the other — they answer different CFO questions.
+
 # Skill references
 
-Two SKILL files codify the institutional knowledge accumulated during
-Phase 1:
+Three SKILL files codify the institutional knowledge accumulated during
+Phase 1 and the financial-engine audit:
 
 - `.agents/skills/ledger/SKILL.md` — invariants and conventions for the
   double-entry ledger (accounts, journal_entries, journal_lines).
@@ -131,6 +195,10 @@ Phase 1:
   the domain events outbox pattern. Canonical source has migrated to the
   Handbook (`docs/handbook/tools/infrastructure/domain-events/`); the SKILL
   file is preserved as a backward-compat shim.
+- `.agents/skills/practice-financial-engine/SKILL.md` — procedure for
+  any change touching the projection engine, its `ScenarioResults`
+  surface, or the `src/components/financials/` consumers. Companion to
+  the principles above and to `src/lib/financial-engine.README.md`.
 
 Read the relevant SKILL (or its Handbook equivalent) before making any
 change that touches the corresponding subsystem. The SKILLs are versioned
