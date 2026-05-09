@@ -1,6 +1,7 @@
 "use client";
 
 import { useFinancialStore } from "@/stores/financial-store";
+import { PROJECTION_MONTHS } from "@/lib/financial-engine";
 import { Card, CardContent } from "@/components/ui/card";
 import { BarChart3 } from "lucide-react";
 import { formatNumberAsMoney } from "@/lib/money/format";
@@ -35,7 +36,6 @@ interface FinancialChartsProps {
 export function FinancialCharts({ multiplier, periodLabel, locale }: FinancialChartsProps) {
   const t = useT();
   const results = useFinancialStore((s) => s.results);
-  const inputs = useFinancialStore((s) => s.inputs);
 
   if (!results) {
     return (
@@ -101,7 +101,12 @@ export function FinancialCharts({ multiplier, periodLabel, locale }: FinancialCh
     { name: t("financials.charts.bar_net"), value: Math.round(sumOver("netProfit")) },
   ];
 
-  const monthsToShow = Math.min(24, m <= 1 ? 12 : 24);
+  // B.1 (Thread B) — was hardcoded `Math.min(24, m <= 1 ? 12 : 24)`,
+  // capping at 24 from when PROJECTION_MONTHS was 24. Now 36, so the
+  // chart silently dropped Mo 25-36. Honor the engine's window: monthly
+  // view stays compact at 12 months, every other period shows the full
+  // projection.
+  const monthsToShow = m <= 1 ? 12 : PROJECTION_MONTHS;
   const cohortData = results.cohortProjection.slice(0, monthsToShow).map((mo) => ({
     month: t("financials.charts.month_label", { month: mo.month }),
     subscribers: mo.subscribers,
@@ -193,17 +198,23 @@ export function FinancialCharts({ multiplier, periodLabel, locale }: FinancialCh
             <Legend wrapperStyle={{ fontSize: 11 }} />
             <Line type="monotone" dataKey="revenue" stroke="#FF0000" strokeWidth={2} dot={false} />
             <Line type="monotone" dataKey="costs" stroke="#ef4444" strokeWidth={2} dot={false} />
-            {inputs.operationalOverhead.mode === "milestone-scaled" && (
-              <Line
-                type="stepAfter"
-                dataKey="overhead"
-                stroke="#f59e0b"
-                strokeWidth={1.5}
-                strokeDasharray="4 4"
-                dot={false}
-                name={t("financials.charts.opex_scaled_legend")}
-              />
-            )}
+            {/* B.2 (Thread B) — overhead line was conditional on
+                `mode === "milestone-scaled"`, written when that was the
+                only mode that emitted non-zero per-month overhead. Now
+                `categories` mode (default since 725b793) and `fixed`
+                mode also emit valid `cohortProjection.operationalOverhead`,
+                so the line should always render. Hiding it left users
+                thinking overhead was $0 in the chart while the rest of
+                the P&L showed it as a real cost. */}
+            <Line
+              type="stepAfter"
+              dataKey="overhead"
+              stroke="#f59e0b"
+              strokeWidth={1.5}
+              strokeDasharray="4 4"
+              dot={false}
+              name={t("financials.charts.opex_scaled_legend")}
+            />
             <Line type="monotone" dataKey="profit" stroke="#3b82f6" strokeWidth={2} dot={false} />
             <Line type="monotone" dataKey="cumulative" stroke="#8b5cf6" strokeWidth={2} strokeDasharray="5 5" dot={false} />
           </LineChart>
