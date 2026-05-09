@@ -582,7 +582,37 @@ export function resolveOverhead(overhead: OperationalOverhead, memberCount: numb
 export interface ScenarioResults {
   // Revenue
   mrr: number;
+  /**
+   * MRR of the LAST projected month (`cohortProjection[N-1].revenue`).
+   * Run-rate snapshot at the end of the horizon, used by `arrExit`.
+   * Thread D.3.3.
+   */
+  mrrExit: number;
+  /**
+   * ARR — by SaaS convention this is the CURRENT run-rate × 12, i.e.
+   * exit ARR. Aliased to `arrExit`. Renderers display this in the
+   * "ARR" KPI cards by default. Thread D.3.3.
+   */
   arr: number;
+  /**
+   * Avg-MRR-of-period × 12. Reflects the "12 × average over the
+   * projection horizon" reading (α). Useful for internal modeling and
+   * for comparing scenarios on a same-period basis. Thread D.3.3.
+   */
+  arrAvg: number;
+  /**
+   * Exit MRR × 12. SaaS-convention ARR — what investors and board
+   * decks mean by "ARR" in a forward-looking projection. Equal to
+   * `arr` (alias). Thread D.3.3.
+   */
+  arrExit: number;
+  /**
+   * Realized revenue across the first 12 months of projection
+   * (`Σ cohortProjection[0..11].revenue`). Useful for Y1 cash-flow
+   * forecasting; NOT to be labeled "ARR" — it's actual realized
+   * top-line, not annualized run-rate. Thread D.3.3.
+   */
+  revenueY1: number;
   revenueByTier: { tierId: string; revenue: number; subscribers: number }[];
 
   // COGS
@@ -1005,7 +1035,10 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
     (sum, t) => sum + t.subscribers * t.revenuePerSub,
     0
   );
-  const arr = mrr * 12;
+  // (Thread D.3.3 removed a stale `const arr = mrr * 12;` here — dead
+  // code from the D.2 sweep. The exported `arr` is computed post-loop
+  // from `mrrExit`. `mrr` on line above remains in use by
+  // `blendedRevenuePerSub` and per-tier LTV/CAC math below.)
 
   const totalProductCost = tierDetails.reduce(
     (sum, t) => sum + t.subscribers * t.cogsPerSub,
@@ -1780,6 +1813,7 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
         cohortProjection.length
       : 0;
 
+
   // ── Thread D.2 — root-cause fix for the entire aggregate-scalar bug
   // class. Every scalar below replaces a Mo-1-frozen pre-loop counterpart
   // (whose value was `month1Subs × something`, multiplied by `multiplier`
@@ -1802,6 +1836,39 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
       : 0;
 
   const mrrAvg = _avg("revenue");
+
+  // ── ARR semantic disambiguation (Thread D.3.3, 2026-05) ──────────
+  //
+  // Pre-D.3.3 the engine exposed a single `arr = mrr × 12`. After D.2
+  // `mrr` is the AVERAGE of `cohortProjection[].revenue` over the
+  // 36-month horizon — so `arr` was effectively "12 × average". That
+  // diverges materially from the SaaS convention: in pitch decks and
+  // board updates, "ARR" means "current run-rate × 12" — i.e. exit
+  // ARR. In the stressed scenario the two readings differ by ~3.5×
+  // ($15.3M avg vs $54.1M exit).
+  //
+  // Decision: expose three readings as separate fields, and alias
+  // `arr` to `arrExit` so the default UI label matches investor
+  // convention.
+  //
+  //   arrAvg    = mrr × 12                   (status quo of D.2)
+  //   arrExit   = mrrExit × 12               (SaaS convention)
+  //   arr       = arrExit                    (alias)
+  //   revenueY1 = Σ cohortProjection[0..11]  (realized Y1 top-line)
+  //
+  // `revenueY1` is intentionally NOT labeled "ARR" — it's realized
+  // revenue, not an annualized run-rate. Useful for Y1 cash-flow
+  // forecasting alongside the ARR fields.
+  const mrrExit =
+    cohortProjection.length > 0
+      ? cohortProjection[cohortProjection.length - 1].revenue
+      : 0;
+  const arrAvg = mrrAvg * 12;
+  const arrExit = mrrExit * 12;
+  const revenueY1 = cohortProjection
+    .slice(0, 12)
+    .reduce((s, m) => s + m.revenue, 0);
+
   const totalProductCostAvg = _avg("cogsExpense");
   // Fulfillment is recurring per-active-sub at the scenario-level rate.
   // The aggregate `cohortProjection` doesn't carry shipping/handling
@@ -2414,7 +2481,14 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
     // `newSubscribersPerMonth`) keep their semantics. See doc block
     // attached to the avg declarations above for the full rationale.
     mrr: mrrAvg,
-    arr: mrrAvg * 12,
+    mrrExit,
+    // `arr` is intentionally aliased to `arrExit` (Thread D.3.3) so
+    // existing UI consumers display the SaaS-convention number by
+    // default. `arrAvg` remains available for internal modeling.
+    arr: arrExit,
+    arrAvg,
+    arrExit,
+    revenueY1,
     revenueByTier: revenueByTierAvg,
     totalProductCost: totalProductCostAvg,
     totalFulfillmentCost: totalFulfillmentCostAvg,

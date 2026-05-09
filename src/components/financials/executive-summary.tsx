@@ -81,7 +81,8 @@ export function ExecutiveSummary({ locale }: ExecutiveSummaryProps) {
   return (
     <div className="space-y-4">
       {/* Accounting basis — sub-etapa 3b: this whole panel reads from
-          accrual-basis aggregates (`results.mrr`, `results.arr`,
+          accrual-basis aggregates (`results.mrr` = period avg,
+          `results.arr` = exit ARR per Thread D.3.3 alias,
           `results.netMarginDollars`, `results.cohortProjection[].*`).
           See engine doc block for the full categorization. */}
       <div className="flex flex-wrap items-center gap-2">

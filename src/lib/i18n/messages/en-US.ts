@@ -715,7 +715,7 @@ export const messages: Record<MessageKey, string> = {
     "Total recurring revenue for the selected period, plus the blended average revenue per subscriber across all tiers and billing cycles.",
   "financials.metrics.revenue.label": "Revenue",
   "financials.metrics.revenue.revenue_per_sub": "Revenue/Sub",
-  "financials.metrics.revenue.arr": "ARR",
+  "financials.metrics.revenue.arr": "Exit ARR",
 
   "financials.metrics.cogs.title": "COGS",
   "financials.metrics.cogs.description":
@@ -828,7 +828,7 @@ export const messages: Record<MessageKey, string> = {
 
   "financials.summary.key_metrics.title": "Key Metrics",
   "financials.summary.key_metrics.mrr": "MRR",
-  "financials.summary.key_metrics.arr": "ARR",
+  "financials.summary.key_metrics.arr": "Exit ARR",
   "financials.summary.key_metrics.gross_margin": "Gross Margin",
   "financials.summary.key_metrics.new_subs_per_mo": "New Subs/Mo",
   "financials.summary.key_metrics.commission_pct_revenue":
@@ -931,7 +931,7 @@ export const messages: Record<MessageKey, string> = {
   "financials.models.breakeven.month_long": "Month {month}",
   "financials.models.column.model": "Model",
   "financials.models.column.mrr": "MRR",
-  "financials.models.column.arr": "ARR",
+  "financials.models.column.arr": "Exit ARR",
   "financials.models.column.net_margin": "Net Margin",
   "financials.models.column.gross_margin": "Gross Margin",
   "financials.models.column.new_subs_per_mo": "New Subs/Mo",

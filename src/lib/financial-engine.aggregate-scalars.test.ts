@@ -63,11 +63,24 @@ describe("Thread D.2 — aggregate-scalar root-cause fix", () => {
       expect(Math.abs(r.mrr * 36 - cum)).toBeLessThan(1);
     });
 
-    it("[A3] arr = mrr × 12 (~$293,319)", () => {
-      const expected = (879_956 / 36) * 12;
-      expect(r.arr).toBeGreaterThan(expected * 0.995);
-      expect(r.arr).toBeLessThan(expected * 1.005);
-      expect(Math.abs(r.arr - r.mrr * 12)).toBeLessThan(0.01);
+    it("[A3] ARR semantics — arrAvg pinned to ~$293,319; arr aliased to arrExit (Thread D.3.3)", () => {
+      // Pre-D.3.3 this test pinned `r.arr` at $293,319 (= 879,956/36 × 12,
+      // the avg-MRR-of-period × 12 reading α). Thread D.3.3 repointed
+      // `r.arr` to `arrExit` (SaaS convention β = exit MRR × 12).
+      // The original reconciliation pin moves to `arrAvg` (same value,
+      // new field). The audit scenario is NOT flat — it ramps from
+      // ~50 subs (Mo 1) to ~1,000 subs steady-state (Mo 30+) due to
+      // 50/mo acquisitions vs 5%/mo churn — so α and β diverge by
+      // ~1.51× even here. See Thread D.3.3 pause-and-report.
+      const expectedAvg = (879_956 / 36) * 12;
+      expect(r.arrAvg).toBeGreaterThan(expectedAvg * 0.995);
+      expect(r.arrAvg).toBeLessThan(expectedAvg * 1.005);
+      // Mathematical identities for the new API.
+      expect(Math.abs(r.arrAvg - r.mrr * 12)).toBeLessThan(0.01);
+      expect(r.arr).toBe(r.arrExit);
+      expect(Math.abs(r.arr - r.mrrExit * 12)).toBeLessThan(0.01);
+      // Direction: ramp produces exit > avg in this scenario.
+      expect(r.arrExit).toBeGreaterThan(r.arrAvg);
     });
 
     it("[A4] Σ first 36 months of revenue from cohortProjection = $879,956 (preserved)", () => {
