@@ -46,7 +46,7 @@ export function CohortSpreadsheet({ months = 12, locale }: CohortSpreadsheetProp
 
   const Selector = (
     <div className="flex items-center gap-2 pb-2">
-      <label className="text-xs text-muted-foreground">View:</label>
+      <label className="text-xs text-muted-foreground">{t("financials.cohort.view_label")}</label>
       <select
         value={view === "base" ? "base" : `cohort-${view}`}
         onChange={(e) => {
@@ -55,7 +55,7 @@ export function CohortSpreadsheet({ months = 12, locale }: CohortSpreadsheetProp
         }}
         className="text-xs border rounded-md bg-background px-2 py-1 min-w-[280px] hover:bg-muted/30 transition-colors"
       >
-        <option value="base">All cohorts (base — aggregate)</option>
+        <option value="base">{t("financials.cohort.view_aggregate")}</option>
         {lifecycleOptions.map((o) => (
           <option key={o.value} value={`cohort-${o.value}`}>
             {o.label}
@@ -90,7 +90,7 @@ export function CohortSpreadsheet({ months = 12, locale }: CohortSpreadsheetProp
         <div className="space-y-2">
           {Selector}
           <div className="flex items-center justify-center py-16 text-sm text-muted-foreground border rounded-md">
-            Cohort data unavailable.
+            {t("financials.cohort.empty_state")}
           </div>
         </div>
       );
@@ -255,11 +255,11 @@ function CohortLifecycleTable({
   const summaryRow = (
     <div className="flex flex-wrap items-center gap-3 px-3 py-2 bg-muted/30 rounded-md text-xs">
       <span className="font-semibold">
-        Acquired in Month {acquisitionMonth}
+        {t("financials.cohort.lifecycle.acquired_in_month")} {acquisitionMonth}
       </span>
       <span className="text-muted-foreground">·</span>
       <span>
-        <span className="text-muted-foreground">Gross:</span>{" "}
+        <span className="text-muted-foreground">{t("financials.cohort.lifecycle.gross_label")}</span>{" "}
         <span className="font-semibold tabular-nums">
           {formatNumber(grossNewSubs, locale, "integer")}
         </span>
@@ -268,7 +268,7 @@ function CohortLifecycleTable({
         <>
           <span className="text-muted-foreground">·</span>
           <span>
-            <span className="text-muted-foreground">Chargebacks:</span>{" "}
+            <span className="text-muted-foreground">{t("financials.cohort.lifecycle.chargebacks_label")}</span>{" "}
             <span className="font-semibold tabular-nums text-red-500">
               {formatNumber(chargebacks, locale, "integer")}
             </span>
@@ -277,14 +277,14 @@ function CohortLifecycleTable({
       )}
       <span className="text-muted-foreground">·</span>
       <span>
-        <span className="text-muted-foreground">Net:</span>{" "}
+        <span className="text-muted-foreground">{t("financials.cohort.lifecycle.net_label")}</span>{" "}
         <span className="font-semibold tabular-nums">
           {formatNumber(netNewSubs, locale, "integer")}
         </span>
       </span>
       <span className="text-muted-foreground">·</span>
       <span>
-        <span className="text-muted-foreground">Lifetime profit:</span>{" "}
+        <span className="text-muted-foreground">{t("financials.cohort.lifecycle.lifetime_profit_label")}</span>{" "}
         <span
           className={cn(
             "font-semibold tabular-nums",
@@ -296,7 +296,7 @@ function CohortLifecycleTable({
       </span>
       <span className="text-muted-foreground">·</span>
       <span>
-        <span className="text-muted-foreground">Payback:</span>{" "}
+        <span className="text-muted-foreground">{t("financials.cohort.lifecycle.payback_label")}</span>{" "}
         <span className="font-semibold tabular-nums">
           {totals.paybackMonth != null
             ? `Month ${totals.paybackMonth} of life`
@@ -1010,11 +1010,11 @@ function CohortLifecycleTable({
                   className="sticky top-0 z-20 bg-muted min-w-[90px] px-2 py-2 text-right font-medium text-muted-foreground whitespace-nowrap"
                   title={`Calendar Month ${m.monthIndex}`}
                 >
-                  Mo {m.monthOfLife}
+                  {t("financials.cohort.lifecycle.month_abbr")} {m.monthOfLife}
                 </th>
               ))}
               <th className="sticky top-0 z-20 bg-muted min-w-[100px] px-2 py-2 text-right font-semibold text-foreground whitespace-nowrap border-l-2 border-border">
-                Lifetime
+                {t("financials.cohort.lifecycle.lifetime_header")}
               </th>
             </tr>
           </thead>
@@ -1549,24 +1549,24 @@ function AggregateCohortTable({
   // showing projection-window totals across all cohorts.
   const summaryRow = (
     <div className="flex flex-wrap items-center gap-3 px-3 py-2 bg-muted/30 rounded-md text-xs">
-      <span className="font-semibold">All Cohorts (Aggregate)</span>
+      <span className="font-semibold">{t("financials.cohort.aggregate.title")}</span>
       <span className="text-muted-foreground">·</span>
       <span>
-        <span className="text-muted-foreground">Active (last):</span>{" "}
+        <span className="text-muted-foreground">{t("financials.cohort.aggregate.active_last_label")}</span>{" "}
         <span className="font-semibold tabular-nums">
           {formatNumber(totals.survivingSubsLast, locale, "integer")}
         </span>
       </span>
       <span className="text-muted-foreground">·</span>
       <span>
-        <span className="text-muted-foreground">Window revenue:</span>{" "}
+        <span className="text-muted-foreground">{t("financials.cohort.aggregate.window_revenue_label")}</span>{" "}
         <span className="font-semibold tabular-nums">
           {formatNumberAsMoney(totals.revenue, locale)}
         </span>
       </span>
       <span className="text-muted-foreground">·</span>
       <span>
-        <span className="text-muted-foreground">Window profit:</span>{" "}
+        <span className="text-muted-foreground">{t("financials.cohort.aggregate.window_profit_label")}</span>{" "}
         <span
           className={cn(
             "font-semibold tabular-nums",

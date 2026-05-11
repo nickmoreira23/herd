@@ -911,6 +911,31 @@ export const messages: Record<MessageKey, string> = {
   "financials.pl.unnamed": "Unnamed",
   "financials.pl.undistributed": "Undistributed ({percent}%)",
 
+  // Profit split — shared between P&L Statement and Metrics panel
+  "financials.profit_split.over_allocated.label": "Over-allocated:",
+  "financials.profit_split.over_allocated.body":
+    "profit-split shares total {total}% — exceeds 100% by {overage}%. The configured shares cannot all be paid; reduce one or more party percentages.",
+
+  // Cohort spreadsheet — top-level chrome
+  "financials.cohort.view_label": "View:",
+  "financials.cohort.view_aggregate": "All cohorts (base — aggregate)",
+  "financials.cohort.empty_state": "Cohort data unavailable.",
+  // Per-cohort lifecycle table
+  "financials.cohort.lifecycle.acquired_in_month": "Acquired in Month",
+  "financials.cohort.lifecycle.gross_label": "Gross:",
+  "financials.cohort.lifecycle.chargebacks_label": "Chargebacks:",
+  "financials.cohort.lifecycle.net_label": "Net:",
+  "financials.cohort.lifecycle.lifetime_profit_label": "Lifetime profit:",
+  "financials.cohort.lifecycle.payback_label": "Payback:",
+  // Per-cohort table headers
+  "financials.cohort.lifecycle.month_abbr": "Mo",
+  "financials.cohort.lifecycle.lifetime_header": "Lifetime",
+  // Aggregate cohort table
+  "financials.cohort.aggregate.title": "All Cohorts (Aggregate)",
+  "financials.cohort.aggregate.active_last_label": "Active (last):",
+  "financials.cohort.aggregate.window_revenue_label": "Window revenue:",
+  "financials.cohort.aggregate.window_profit_label": "Window profit:",
+
   // Models list
   "financials.models.title": "Projections",
   "financials.models.subtitle":
