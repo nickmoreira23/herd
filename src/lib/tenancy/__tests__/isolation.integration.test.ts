@@ -180,13 +180,19 @@ describe("Tenant scoping isolation (integration)", () => {
 
   it("create injects tenantId from context", async () => {
     const created = await withTenant(seeded.orgA.id, () =>
-      scopedPrisma.integrationSyncLog.create({
-        data: {
-          integrationId: seeded.integration.id,
-          action: "via-context",
-          status: "success",
-        },
-      }),
+      // tenantId omitted intentionally — this test verifies the extension injects it.
+      // The Prisma client requires tenantId in the type after making it NOT NULL,
+      // but the scoping extension injects it from the ALS context at runtime.
+      // We cast through unknown to suppress the TS error without using `any`.
+      scopedPrisma.integrationSyncLog.create(
+        {
+          data: {
+            integrationId: seeded.integration.id,
+            action: "via-context",
+            status: "success",
+          },
+        } as unknown as Parameters<typeof scopedPrisma.integrationSyncLog.create>[0]
+      ),
     );
     expect(created.tenantId).toBe(seeded.orgA.id);
     // Cleanup the row we just created so the count tests above remain stable

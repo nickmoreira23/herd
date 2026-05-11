@@ -97,6 +97,8 @@ export async function GET(request: Request) {
       const body = await tokenRes.text();
       await prisma.integrationSyncLog.create({
         data: {
+          // TODO(Sub-etapa 5): resolve tenantId from OAuth state or session
+          tenantId: "",
           integrationId,
           action: "connect",
           status: "error",
@@ -116,6 +118,8 @@ export async function GET(request: Request) {
     if (isSlack && tokenData.ok === false) {
       await prisma.integrationSyncLog.create({
         data: {
+          // TODO(Sub-etapa 5): resolve tenantId from OAuth state or session
+          tenantId: "",
           integrationId,
           action: "connect",
           status: "error",
@@ -149,6 +153,8 @@ export async function GET(request: Request) {
 
     await prisma.integrationSyncLog.create({
       data: {
+        // TODO(Sub-etapa 5): resolve tenantId from OAuth state or session
+        tenantId: "",
         integrationId,
         action: "connect",
         status: "success",
@@ -167,6 +173,8 @@ export async function GET(request: Request) {
     console.error(`OAuth callback error for ${slug}:`, e);
     await prisma.integrationSyncLog.create({
       data: {
+        // TODO(Sub-etapa 5): resolve tenantId from OAuth state or session
+        tenantId: "",
         integrationId,
         action: "connect",
         status: "error",

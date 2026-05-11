@@ -8,6 +8,7 @@ import { IntercomService } from "@/lib/services/intercom";
 import { GorgiasService } from "@/lib/services/gorgias";
 import { PlaudService } from "@/lib/services/plaud";
 import { requireSuperAdmin } from "@/lib/auth/require-super-admin";
+import { withTenant } from "@/lib/tenancy/context";
 
 export async function POST(
   request: Request,
@@ -15,7 +16,9 @@ export async function POST(
 ) {
   const sessionOrResponse = await requireSuperAdmin();
   if (sessionOrResponse instanceof Response) return sessionOrResponse;
+  const session = sessionOrResponse;
 
+  return withTenant(session.user.activeOrgId ?? "", async () => {
   try {
     const { id } = await params;
     const integration = await prisma.integration.findUnique({ where: { id } });
@@ -35,6 +38,7 @@ export async function POST(
         const message = err instanceof Error ? err.message : "Connection failed";
         await prisma.integrationSyncLog.create({
           data: {
+            tenantId: session.user.activeOrgId ?? "",
             integrationId: id,
             action: "connect",
             status: "error",
@@ -51,6 +55,7 @@ export async function POST(
         const message = err instanceof Error ? err.message : "Connection failed";
         await prisma.integrationSyncLog.create({
           data: {
+            tenantId: session.user.activeOrgId ?? "",
             integrationId: id,
             action: "connect",
             status: "error",
@@ -67,6 +72,7 @@ export async function POST(
         const message = err instanceof Error ? err.message : "Connection failed";
         await prisma.integrationSyncLog.create({
           data: {
+            tenantId: session.user.activeOrgId ?? "",
             integrationId: id,
             action: "connect",
             status: "error",
@@ -87,6 +93,7 @@ export async function POST(
         const message = err instanceof Error ? err.message : "Connection failed";
         await prisma.integrationSyncLog.create({
           data: {
+            tenantId: session.user.activeOrgId ?? "",
             integrationId: id,
             action: "connect",
             status: "error",
@@ -104,6 +111,7 @@ export async function POST(
         const message = err instanceof Error ? err.message : "Connection failed";
         await prisma.integrationSyncLog.create({
           data: {
+            tenantId: session.user.activeOrgId ?? "",
             integrationId: id,
             action: "connect",
             status: "error",
@@ -121,6 +129,7 @@ export async function POST(
         const message = err instanceof Error ? err.message : "Connection failed";
         await prisma.integrationSyncLog.create({
           data: {
+            tenantId: session.user.activeOrgId ?? "",
             integrationId: id,
             action: "connect",
             status: "error",
@@ -140,6 +149,7 @@ export async function POST(
         const message = err instanceof Error ? err.message : "Connection failed";
         await prisma.integrationSyncLog.create({
           data: {
+            tenantId: session.user.activeOrgId ?? "",
             integrationId: id,
             action: "connect",
             status: "error",
@@ -159,6 +169,7 @@ export async function POST(
         const message = err instanceof Error ? err.message : "Connection failed";
         await prisma.integrationSyncLog.create({
           data: {
+            tenantId: session.user.activeOrgId ?? "",
             integrationId: id,
             action: "connect",
             status: "error",
@@ -176,6 +187,7 @@ export async function POST(
         const message = err instanceof Error ? err.message : "Connection failed";
         await prisma.integrationSyncLog.create({
           data: {
+            tenantId: session.user.activeOrgId ?? "",
             integrationId: id,
             action: "connect",
             status: "error",
@@ -193,6 +205,7 @@ export async function POST(
         const message = err instanceof Error ? err.message : "Connection failed";
         await prisma.integrationSyncLog.create({
           data: {
+            tenantId: session.user.activeOrgId ?? "",
             integrationId: id,
             action: "connect",
             status: "error",
@@ -210,6 +223,7 @@ export async function POST(
         const message = err instanceof Error ? err.message : "Connection failed";
         await prisma.integrationSyncLog.create({
           data: {
+            tenantId: session.user.activeOrgId ?? "",
             integrationId: id,
             action: "connect",
             status: "error",
@@ -227,6 +241,7 @@ export async function POST(
         const message = err instanceof Error ? err.message : "Connection failed";
         await prisma.integrationSyncLog.create({
           data: {
+            tenantId: session.user.activeOrgId ?? "",
             integrationId: id,
             action: "connect",
             status: "error",
@@ -244,6 +259,7 @@ export async function POST(
         const message = err instanceof Error ? err.message : "Connection failed";
         await prisma.integrationSyncLog.create({
           data: {
+            tenantId: session.user.activeOrgId ?? "",
             integrationId: id,
             action: "connect",
             status: "error",
@@ -263,6 +279,7 @@ export async function POST(
         const message = err instanceof Error ? err.message : "Connection failed";
         await prisma.integrationSyncLog.create({
           data: {
+            tenantId: session.user.activeOrgId ?? "",
             integrationId: id,
             action: "connect",
             status: "error",
@@ -282,6 +299,7 @@ export async function POST(
         const message = `PageSpeed API key validation failed (${testRes.status}): ${body.substring(0, 200)}`;
         await prisma.integrationSyncLog.create({
           data: {
+            tenantId: session.user.activeOrgId ?? "",
             integrationId: id,
             action: "connect",
             status: "error",
@@ -303,6 +321,7 @@ export async function POST(
         const message = err instanceof Error ? err.message : "Connection failed";
         await prisma.integrationSyncLog.create({
           data: {
+            tenantId: session.user.activeOrgId ?? "",
             integrationId: id,
             action: "connect",
             status: "error",
@@ -320,6 +339,7 @@ export async function POST(
         const message = err instanceof Error ? err.message : "Connection failed";
         await prisma.integrationSyncLog.create({
           data: {
+            tenantId: session.user.activeOrgId ?? "",
             integrationId: id,
             action: "connect",
             status: "error",
@@ -337,6 +357,7 @@ export async function POST(
         const message = err instanceof Error ? err.message : "Connection failed";
         await prisma.integrationSyncLog.create({
           data: {
+            tenantId: session.user.activeOrgId ?? "",
             integrationId: id,
             action: "connect",
             status: "error",
@@ -354,6 +375,7 @@ export async function POST(
         const message = err instanceof Error ? err.message : "Connection failed";
         await prisma.integrationSyncLog.create({
           data: {
+            tenantId: session.user.activeOrgId ?? "",
             integrationId: id,
             action: "connect",
             status: "error",
@@ -371,6 +393,7 @@ export async function POST(
         const message = err instanceof Error ? err.message : "Connection failed";
         await prisma.integrationSyncLog.create({
           data: {
+            tenantId: session.user.activeOrgId ?? "",
             integrationId: id,
             action: "connect",
             status: "error",
@@ -388,6 +411,7 @@ export async function POST(
         const message = err instanceof Error ? err.message : "Connection failed";
         await prisma.integrationSyncLog.create({
           data: {
+            tenantId: session.user.activeOrgId ?? "",
             integrationId: id,
             action: "connect",
             status: "error",
@@ -405,6 +429,7 @@ export async function POST(
         const message = err instanceof Error ? err.message : "Connection failed";
         await prisma.integrationSyncLog.create({
           data: {
+            tenantId: session.user.activeOrgId ?? "",
             integrationId: id,
             action: "connect",
             status: "error",
@@ -422,6 +447,7 @@ export async function POST(
         const message = err instanceof Error ? err.message : "Connection failed";
         await prisma.integrationSyncLog.create({
           data: {
+            tenantId: session.user.activeOrgId ?? "",
             integrationId: id,
             action: "connect",
             status: "error",
@@ -438,7 +464,7 @@ export async function POST(
       if (!testRes.ok) {
         const message = `OpenAI API key validation failed (${testRes.status})`;
         await prisma.integrationSyncLog.create({
-          data: { integrationId: id, action: "connect", status: "error", details: message },
+          data: { tenantId: session.user.activeOrgId ?? "", integrationId: id, action: "connect", status: "error", details: message },
         });
         return apiError(`Connection test failed: Invalid API key`, 400);
       }
@@ -460,7 +486,7 @@ export async function POST(
       if (!testRes.ok && testRes.status === 401) {
         const message = `Anthropic API key validation failed (${testRes.status})`;
         await prisma.integrationSyncLog.create({
-          data: { integrationId: id, action: "connect", status: "error", details: message },
+          data: { tenantId: session.user.activeOrgId ?? "", integrationId: id, action: "connect", status: "error", details: message },
         });
         return apiError(`Connection test failed: Invalid API key`, 400);
       }
@@ -472,7 +498,7 @@ export async function POST(
       if (!testRes.ok) {
         const message = `xAI API key validation failed (${testRes.status})`;
         await prisma.integrationSyncLog.create({
-          data: { integrationId: id, action: "connect", status: "error", details: message },
+          data: { tenantId: session.user.activeOrgId ?? "", integrationId: id, action: "connect", status: "error", details: message },
         });
         return apiError(`Connection test failed: Invalid API key`, 400);
       }
@@ -487,7 +513,7 @@ export async function POST(
       } catch (err) {
         const message = err instanceof Error ? err.message : "Connection failed";
         await prisma.integrationSyncLog.create({
-          data: { integrationId: id, action: "connect", status: "error", details: message },
+          data: { tenantId: session.user.activeOrgId ?? "", integrationId: id, action: "connect", status: "error", details: message },
         });
         return apiError(`Connection test failed: ${message}`, 400);
       }
@@ -499,7 +525,7 @@ export async function POST(
       } catch (err) {
         const message = err instanceof Error ? err.message : "Connection failed";
         await prisma.integrationSyncLog.create({
-          data: { integrationId: id, action: "connect", status: "error", details: message },
+          data: { tenantId: session.user.activeOrgId ?? "", integrationId: id, action: "connect", status: "error", details: message },
         });
         return apiError(`Connection test failed: ${message}`, 400);
       }
@@ -511,7 +537,7 @@ export async function POST(
       } catch (err) {
         const message = err instanceof Error ? err.message : "Connection failed";
         await prisma.integrationSyncLog.create({
-          data: { integrationId: id, action: "connect", status: "error", details: message },
+          data: { tenantId: session.user.activeOrgId ?? "", integrationId: id, action: "connect", status: "error", details: message },
         });
         return apiError(`Connection test failed: ${message}`, 400);
       }
@@ -523,7 +549,7 @@ export async function POST(
       } catch (err) {
         const message = err instanceof Error ? err.message : "Connection failed";
         await prisma.integrationSyncLog.create({
-          data: { integrationId: id, action: "connect", status: "error", details: message },
+          data: { tenantId: session.user.activeOrgId ?? "", integrationId: id, action: "connect", status: "error", details: message },
         });
         return apiError(`Connection test failed: ${message}`, 400);
       }
@@ -535,7 +561,7 @@ export async function POST(
       } catch (err) {
         const message = err instanceof Error ? err.message : "Connection failed";
         await prisma.integrationSyncLog.create({
-          data: { integrationId: id, action: "connect", status: "error", details: message },
+          data: { tenantId: session.user.activeOrgId ?? "", integrationId: id, action: "connect", status: "error", details: message },
         });
         return apiError(`Connection test failed: ${message}`, 400);
       }
@@ -547,7 +573,7 @@ export async function POST(
       } catch (err) {
         const message = err instanceof Error ? err.message : "Connection failed";
         await prisma.integrationSyncLog.create({
-          data: { integrationId: id, action: "connect", status: "error", details: message },
+          data: { tenantId: session.user.activeOrgId ?? "", integrationId: id, action: "connect", status: "error", details: message },
         });
         return apiError(`Connection test failed: ${message}`, 400);
       }
@@ -581,6 +607,7 @@ export async function POST(
     // Log success
     await prisma.integrationSyncLog.create({
       data: {
+        tenantId: session.user.activeOrgId ?? "",
         integrationId: id,
         action: "connect",
         status: "success",
@@ -597,6 +624,7 @@ export async function POST(
     console.error("POST /api/integrations/[id]/connect error:", e);
     return apiError("Failed to connect integration", 500);
   }
+  });
 }
 
 // Disconnect
@@ -606,32 +634,36 @@ export async function DELETE(
 ) {
   const sessionOrResponse = await requireSuperAdmin();
   if (sessionOrResponse instanceof Response) return sessionOrResponse;
+  const session = sessionOrResponse;
 
-  try {
-    const { id } = await params;
-    const updated = await prisma.integration.update({
-      where: { id },
-      data: {
-        credentials: null,
-        status: "AVAILABLE",
-        connectedAt: null,
-        lastSyncAt: null,
-        lastSyncError: null,
-      },
-    });
+  return withTenant(session.user.activeOrgId ?? "", async () => {
+    try {
+      const { id } = await params;
+      const updated = await prisma.integration.update({
+        where: { id },
+        data: {
+          credentials: null,
+          status: "AVAILABLE",
+          connectedAt: null,
+          lastSyncAt: null,
+          lastSyncError: null,
+        },
+      });
 
-    await prisma.integrationSyncLog.create({
-      data: {
-        integrationId: id,
-        action: "disconnect",
-        status: "success",
-        details: "Integration disconnected",
-      },
-    });
+      await prisma.integrationSyncLog.create({
+        data: {
+          tenantId: session.user.activeOrgId ?? "",
+          integrationId: id,
+          action: "disconnect",
+          status: "success",
+          details: "Integration disconnected",
+        },
+      });
 
-    return apiSuccess({ id: updated.id, status: updated.status });
-  } catch (e) {
-    console.error("DELETE /api/integrations/[id]/connect error:", e);
-    return apiError("Failed to disconnect integration", 500);
-  }
+      return apiSuccess({ id: updated.id, status: updated.status });
+    } catch (e) {
+      console.error("DELETE /api/integrations/[id]/connect error:", e);
+      return apiError("Failed to disconnect integration", 500);
+    }
+  });
 }
