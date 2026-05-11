@@ -934,6 +934,31 @@ export const messages = {
   "financials.pl.unnamed": "Sem nome",
   "financials.pl.undistributed": "Não distribuído ({percent}%)",
 
+  // Profit split — shared between P&L Statement and Metrics panel
+  "financials.profit_split.over_allocated.label": "Sobre-alocado:",
+  "financials.profit_split.over_allocated.body":
+    "soma dos repasses de profit-split é {total}% — excede 100% em {overage}%. As cotas configuradas não podem ser todas pagas; reduza uma ou mais porcentagens.",
+
+  // Cohort spreadsheet — top-level chrome
+  "financials.cohort.view_label": "Visualizar:",
+  "financials.cohort.view_aggregate": "Todas as safras (base — agregado)",
+  "financials.cohort.empty_state": "Dados de safras indisponíveis.",
+  // Per-cohort lifecycle table
+  "financials.cohort.lifecycle.acquired_in_month": "Adquiridos no mês",
+  "financials.cohort.lifecycle.gross_label": "Bruto:",
+  "financials.cohort.lifecycle.chargebacks_label": "Chargebacks:",
+  "financials.cohort.lifecycle.net_label": "Líquido:",
+  "financials.cohort.lifecycle.lifetime_profit_label": "Lucro vitalício:",
+  "financials.cohort.lifecycle.payback_label": "Payback:",
+  // Per-cohort table headers
+  "financials.cohort.lifecycle.month_abbr": "Mês",
+  "financials.cohort.lifecycle.lifetime_header": "Vitalício",
+  // Aggregate cohort table
+  "financials.cohort.aggregate.title": "Todas as Safras (Agregado)",
+  "financials.cohort.aggregate.active_last_label": "Ativos (último):",
+  "financials.cohort.aggregate.window_revenue_label": "Receita da janela:",
+  "financials.cohort.aggregate.window_profit_label": "Lucro da janela:",
+
   // Models list
   "financials.models.title": "Projeções",
   "financials.models.subtitle":

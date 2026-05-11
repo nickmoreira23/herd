@@ -262,7 +262,11 @@ export function PLStatement({ multiplier, periodLabel, locale }: PLStatementProp
             )}
             {results.profitSplit.status === "over" && (
               <div className="px-3 py-2 mt-1 rounded-md border border-rose-300 bg-rose-50 text-rose-700 text-xs">
-                <strong>Over-allocated:</strong> profit-split shares total {results.profitSplit.totalDistributedPercent.toFixed(1)}% — exceeds 100% by {results.profitSplit.overAllocatedPercent.toFixed(1)}%. The configured shares cannot all be paid; reduce one or more party percentages.
+                <strong>{t("financials.profit_split.over_allocated.label")}</strong>{" "}
+                {t("financials.profit_split.over_allocated.body", {
+                  total: results.profitSplit.totalDistributedPercent.toFixed(1),
+                  overage: results.profitSplit.overAllocatedPercent.toFixed(1),
+                })}
               </div>
             )}
           </PLSection>
