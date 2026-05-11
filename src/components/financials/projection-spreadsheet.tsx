@@ -119,9 +119,19 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
 
   // Collapse state — mirror AggregateCohortTable defaults so the two
   // tables read identically.
-  const initialCollapsedRows: string[] = [];
+  const initialCollapsedRows: string[] = [
+    "subscribers-gross",
+    "monthly-billing",
+    "biannual-billing",
+    "annual-billing",
+    "commissions",
+    "overhead",
+    "buck",
+    "addons",
+  ];
   for (const tid of tierIds) {
     initialCollapsedRows.push(`active-by-plan-cycle--${tid}`);
+    initialCollapsedRows.push(`commissions--${tid}`);
   }
   const {
     collapsedSections,
@@ -246,13 +256,16 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
     netMarginPct.push(monthNetMargin);
   }
 
-  // Profit split rows
+  // Profit split rows — per-party monthly distribution + cumulative
+  // running total. Mirrors AggregateCohortTable's Profit Split section.
   const profitSplitRows: RowDef[] = [];
   if (results.profitSplit.parties.length > 0) {
     for (const party of results.profitSplit.parties) {
       const partyValues = netProfit.map((np) =>
-        np > 0 ? np * (party.percent / 100) : 0
+        np > 0 ? np * (party.percent / 100) : 0,
       );
+      let runningTotal = 0;
+      const partyCumulative = partyValues.map((v) => (runningTotal += v));
       profitSplitRows.push({
         label: t("financials.pl.party_label", { name: party.name, percent: party.percent }),
         type: "currency",
@@ -260,27 +273,86 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
         values: partyValues,
         colorBySign: true,
       });
+      profitSplitRows.push({
+        label: t("financials.projection.row.profit_split_cumulative", {
+          name: party.name,
+          percent: party.percent,
+        }),
+        type: "currency",
+        totalMode: "latest",
+        values: partyCumulative,
+        colorBySign: true,
+      });
     }
   }
 
-  // Per-tier breakdown of new sales
-  const perTierNewSalesRows: RowDef[] = tierIds.length > 1 ? tierIds.map((tierId) => ({
-    label: t("financials.projection.tier_indent", { tier: tierId }),
-    type: "number" as const,
-    totalMode: "sum" as const,
-    values: projection.map((mo) => {
-      const entry = mo.newSubsByTier?.find((tier) => tier.tierId === tierId);
-      return entry?.count ?? 0;
-    }),
-  })) : [];
+  // Per-tier breakdown of new sales — children of `subscribers-gross`.
+  const perTierNewSalesRows: RowDef[] = hasMultipleTiers
+    ? tierIds.map((tierId) => ({
+        id: `subscribers-gross--${tierId}`,
+        parentId: "subscribers-gross",
+        level: 1,
+        label: t("financials.projection.tier_indent", { tier: tierId }),
+        type: "number" as const,
+        totalMode: "sum" as const,
+        values: projection.map((mo) => {
+          const entry = mo.newSubsByTier?.find((tier) => tier.tierId === tierId);
+          return entry?.count ?? 0;
+        }),
+      }))
+    : [];
 
-  // Per-billing-cycle revenue breakdown
+  // Per-billing-cycle revenue breakdown. Each cycle is a parent with
+  // per-tier children (when there's >1 tier) — values come from the
+  // aggMonths cross-product.
   const hasBillingBreakdown = projection[0]?.revenueByBillingCycle != null;
-  const billingCycleRows: RowDef[] = hasBillingBreakdown ? [
-    { label: t("financials.projection.row.monthly_billing"), type: "currency" as const, totalMode: "sum" as const, values: projection.map((mo) => mo.revenueByBillingCycle?.monthly ?? 0) },
-    { label: t("financials.projection.row.biannual_billing"), type: "currency" as const, totalMode: "sum" as const, values: projection.map((mo) => mo.revenueByBillingCycle?.biannual ?? 0) },
-    { label: t("financials.projection.row.annual_billing"), type: "currency" as const, totalMode: "sum" as const, values: projection.map((mo) => mo.revenueByBillingCycle?.annual ?? 0) },
-  ] : [];
+  const buildCycleParentAndChildren = (
+    cycle: "monthly" | "biannual" | "annual",
+    rowId: "monthly-billing" | "biannual-billing" | "annual-billing",
+    labelKey: MessageKey,
+  ): RowDef[] => {
+    const parent: RowDef = {
+      id: rowId,
+      level: 0,
+      label: t(labelKey),
+      type: "currency",
+      totalMode: "sum",
+      values: projection.map((mo) => mo.revenueByBillingCycle?.[cycle] ?? 0),
+    };
+    if (!hasMultipleTiers) return [parent];
+    const children: RowDef[] = tierIds.map((tierId) => ({
+      id: `${rowId}--${tierId}`,
+      parentId: rowId,
+      level: 1,
+      label: t("financials.projection.tier_indent", { tier: tierId }),
+      type: "currency",
+      totalMode: "sum",
+      values: aggMonths.map(
+        (m) =>
+          m.revenueByTierAndCycle.find((e) => e.tierId === tierId)?.[cycle] ?? 0,
+      ),
+    }));
+    return [parent, ...children];
+  };
+  const billingCycleRows: RowDef[] = hasBillingBreakdown
+    ? [
+        ...buildCycleParentAndChildren(
+          "monthly",
+          "monthly-billing",
+          "financials.projection.row.monthly_billing",
+        ),
+        ...buildCycleParentAndChildren(
+          "biannual",
+          "biannual-billing",
+          "financials.projection.row.biannual_billing",
+        ),
+        ...buildCycleParentAndChildren(
+          "annual",
+          "annual-billing",
+          "financials.projection.row.annual_billing",
+        ),
+      ]
+    : [];
 
   // Active by Plan & Cycle section — per-tier parents + 3 cycle children
   // per parent. Only rendered when there's >1 tier (single-tier scenarios
@@ -343,7 +415,7 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
       header: t("financials.projection.section.subscribers"),
       rows: [
         { label: t("financials.projection.row.active_reps"), type: "number", totalMode: "latest", values: activeReps },
-        { label: t("financials.projection.row.gross_new_sales"), type: "number", totalMode: "sum", values: grossNewSales },
+        { id: "subscribers-gross", label: t("financials.projection.row.gross_new_sales"), type: "number", totalMode: "sum", values: grossNewSales, bold: true },
         ...perTierNewSalesRows,
         ...(chargebacks.some((v) => v > 0) ? [
           { label: t("financials.projection.row.chargebacks"), type: "number" as const, totalMode: "sum" as const, values: chargebacks, colorBySign: false },
@@ -374,33 +446,93 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
     },
     {
       header: t("financials.projection.section.opex"),
+      // Order mirrors AggregateCohortTable: Overhead → Welcome Kit →
+      // Buck → Add-Ons → Commissions → Total OpEx.
       rows: [
-        { label: t("financials.projection.row.commissions"), type: "currency", totalMode: "sum", values: commissions },
-        { label: t("financials.projection.row.buck_license"), type: "currency", totalMode: "sum", values: buckLicense },
-        { label: t("financials.projection.row.buck_tokens"), type: "currency", totalMode: "sum", values: buckTokens },
-        { label: "Add-ons (Path Scale)", type: "currency", totalMode: "sum", values: addOns },
-        { label: "Welcome Kit", type: "currency", totalMode: "sum", values: welcomeKit },
-        { label: t("financials.projection.row.overhead"), type: "currency", totalMode: "sum", values: overhead },
-        // Per-category overhead breakdown — one row per category (e.g.
-        // Marketing, Tech, Operations). The engine resolves each per
-        // month by looking up the highest milestone ≤ active subscriber
-        // count, so the rows step up at the configured thresholds.
+        // Overhead (parent) + per-category children.
+        { id: "overhead", label: t("financials.projection.row.overhead"), type: "currency", totalMode: "sum", values: overhead },
         ...(() => {
           // Collect the union of category ids across the projection
-          // window (a category that's only present in some months still
-          // needs a row; missing entries read as 0).
+          // window (a category present in only some months still needs
+          // a row; missing entries read as 0).
           const ids = new Map<string, string>();
           for (const arr of overheadByCategoryArr)
             for (const c of arr) if (!ids.has(c.id)) ids.set(c.id, c.name);
-          return Array.from(ids.entries()).map(([id, name]) => ({
+          return Array.from(ids.entries()).map(([id, name]): RowDef => ({
+            id: `overhead--${id}`,
+            parentId: "overhead",
+            level: 1,
             label: t("financials.projection.tier_indent", { tier: name }),
-            type: "currency" as const,
-            totalMode: "sum" as const,
+            type: "currency",
+            totalMode: "sum",
             values: overheadByCategoryArr.map(
               (arr) => arr.find((c) => c.id === id)?.monthly ?? 0,
             ),
           }));
         })(),
+        // Welcome Kit (flat).
+        { label: t("financials.projection.row.welcome_kit"), type: "currency", totalMode: "sum", values: welcomeKit },
+        // Buck (parent) + License + Tokens children.
+        {
+          id: "buck",
+          label: t("financials.projection.row.buck"),
+          type: "currency",
+          totalMode: "sum",
+          values: buckLicense.map((v, i) => v + (buckTokens[i] ?? 0)),
+        },
+        { id: "buck--license", parentId: "buck", level: 1, label: t("financials.projection.row.buck_license"), type: "currency", totalMode: "sum", values: buckLicense },
+        { id: "buck--tokens", parentId: "buck", level: 1, label: t("financials.projection.row.buck_tokens"), type: "currency", totalMode: "sum", values: buckTokens },
+        // Add-Ons (parent) + Path Scale child.
+        { id: "addons", label: t("financials.projection.row.add_ons"), type: "currency", totalMode: "sum", values: addOns },
+        { id: "addons--path-scale", parentId: "addons", level: 1, label: t("financials.projection.row.path_scale"), type: "currency", totalMode: "sum", values: addOns },
+        // Commissions (parent) + per-tier (parent) + Upfront/Residual (grandchildren).
+        { id: "commissions", label: t("financials.projection.row.commissions"), type: "currency", totalMode: "sum", values: commissions },
+        ...(hasMultipleTiers
+          ? tierIds.flatMap((tierId): RowDef[] => {
+              const tierParentId = `commissions--${tierId}`;
+              const tierTotal = projection.map((mo) => {
+                const e = mo.commissionByTier?.find((c) => c.tierId === tierId);
+                return (e?.upfront ?? 0) + (e?.residual ?? 0);
+              });
+              const tierUpfront = projection.map(
+                (mo) =>
+                  mo.commissionByTier?.find((c) => c.tierId === tierId)?.upfront ?? 0,
+              );
+              const tierResidual = projection.map(
+                (mo) =>
+                  mo.commissionByTier?.find((c) => c.tierId === tierId)?.residual ?? 0,
+              );
+              return [
+                {
+                  id: tierParentId,
+                  parentId: "commissions",
+                  level: 1,
+                  label: t("financials.projection.tier_indent", { tier: tierId }),
+                  type: "currency",
+                  totalMode: "sum",
+                  values: tierTotal,
+                },
+                {
+                  id: `${tierParentId}--upfront`,
+                  parentId: tierParentId,
+                  level: 2,
+                  label: t("financials.projection.row.commissions_upfront"),
+                  type: "currency",
+                  totalMode: "sum",
+                  values: tierUpfront,
+                },
+                {
+                  id: `${tierParentId}--residual`,
+                  parentId: tierParentId,
+                  level: 2,
+                  label: t("financials.projection.row.commissions_residual"),
+                  type: "currency",
+                  totalMode: "sum",
+                  values: tierResidual,
+                },
+              ];
+            })
+          : []),
         { label: t("financials.projection.row.total_opex"), type: "currency", totalMode: "sum", values: totalOpEx, bold: true },
       ],
     },
