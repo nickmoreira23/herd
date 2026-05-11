@@ -83,6 +83,21 @@ The `org_admin` concept does not exist in Camada 1 (YAGNI — 3 DEV orgs, all yo
 Introduce `org_admin` alongside a `Membership` table and drop of `NetworkProfile.email @unique`
 when the product becomes real SaaS multi-tenant (same trigger package).
 
+### Status Camada 1 Sub-etapa 3.5
+
+All 6 admin integration routes use `requireSuperAdmin + withTenant`:
+- `src/app/api/integrations/[id]/test/route.ts`
+- `src/app/api/integrations/[id]/sync/route.ts`
+- `src/app/api/integrations/[id]/connect/route.ts`
+- `src/app/api/integrations/[id]/logs/route.ts`
+- `src/app/api/integrations/[id]/mappings/route.ts`
+- `src/app/api/integrations/airtable/import/route.ts`
+
+`IntegrationTierMapping.tenantId` is NOT NULL (Migration 003).
+`IntegrationSyncLog.tenantId` is NOT NULL (Migration 003 — all ISL writers in admin routes were wrapped with withTenant before promotion).
+`IntegrationWebhookEvent.tenantId` remains nullable pending webhook tenant resolution (Sub-etapa 5/6).
+`oauth/callback` deferred with TODO inline (token exchange does not carry orgId yet).
+
 # Database migrations
 
 This project uses `prisma migrate`, not `db push`.

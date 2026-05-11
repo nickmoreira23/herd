@@ -251,14 +251,7 @@ const eslintConfig = defineConfig([
     // NOTE: square brackets in Next.js dynamic route segments (e.g. [id])
     // are glob character classes, so match them with a wildcard segment.
     files: [
-      // Admin API routes that touch scoped models without auth — Sub-etapa
-      // futura de "API auth + tenant resolution" vai refatorar essas.
-      "src/app/api/integrations/*/test/route.ts",
-      "src/app/api/integrations/*/sync/route.ts",
-      "src/app/api/integrations/*/connect/route.ts",
-      "src/app/api/integrations/*/logs/route.ts",
-      "src/app/api/integrations/*/mappings/route.ts",
-      "src/app/api/integrations/airtable/import/route.ts",
+      // oauth/callback — deferred (token exchange doesn't carry orgId yet).
       "src/app/api/integrations/oauth/callback/route.ts",
       // Webhook handlers — tenant resolution from payload chega na Sub-etapa
       // 5 (webhook framework).
