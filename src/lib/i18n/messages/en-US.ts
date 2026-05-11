@@ -1038,6 +1038,10 @@ export const messages: Record<MessageKey, string> = {
   "financials.projection.row.biannual_billing": "  └ Biannual Billing",
   "financials.projection.row.annual_billing": "  └ Annual Billing",
   "financials.projection.row.product_fulfillment": "Product & Fulfillment",
+  "financials.projection.row.product_cost": "Product Cost",
+  "financials.projection.row.shipping": "Shipping",
+  "financials.projection.row.handling": "Handling",
+  "financials.projection.row.payment_processing": "Payment Processing",
   "financials.projection.row.gross_profit": "Gross Profit",
   "financials.projection.row.gross_margin_pct": "Gross Margin %",
   "financials.projection.row.commissions": "Commissions",
@@ -1047,6 +1051,12 @@ export const messages: Record<MessageKey, string> = {
   "financials.projection.row.cumulative_profit": "Cumulative Profit",
   "financials.projection.row.net_margin_pct": "Net Margin %",
   "financials.projection.column.total_avg": "Total/Avg",
+  // Projection — Active Reps + Active by Plan & Cycle (Thread visual parity)
+  "financials.projection.row.active_reps": "Active Reps",
+  "financials.projection.section.active_by_plan_cycle": "Active by Plan & Cycle",
+  "financials.projection.cycle_label.monthly": "Monthly",
+  "financials.projection.cycle_label.biannual": "Biannual",
+  "financials.projection.cycle_label.annual": "Annual",
 
   // Cohort spreadsheet
   "financials.cohort.empty":

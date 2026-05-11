@@ -1063,6 +1063,10 @@ export const messages = {
   "financials.projection.row.biannual_billing": "  └ Cobrança Semestral",
   "financials.projection.row.annual_billing": "  └ Cobrança Anual",
   "financials.projection.row.product_fulfillment": "Produto & Fulfillment",
+  "financials.projection.row.product_cost": "Custo do Produto",
+  "financials.projection.row.shipping": "Frete",
+  "financials.projection.row.handling": "Manuseio",
+  "financials.projection.row.payment_processing": "Processamento de Pagamento",
   "financials.projection.row.gross_profit": "Lucro Bruto",
   "financials.projection.row.gross_margin_pct": "Margem Bruta %",
   "financials.projection.row.commissions": "Comissões",
@@ -1072,6 +1076,12 @@ export const messages = {
   "financials.projection.row.cumulative_profit": "Lucro Acumulado",
   "financials.projection.row.net_margin_pct": "Margem Líquida %",
   "financials.projection.column.total_avg": "Total/Méd",
+  // Projection — Active Reps + Active by Plan & Cycle (Thread visual parity)
+  "financials.projection.row.active_reps": "Reps Ativos",
+  "financials.projection.section.active_by_plan_cycle": "Ativos por Plano & Ciclo",
+  "financials.projection.cycle_label.monthly": "Mensal",
+  "financials.projection.cycle_label.biannual": "Semestral",
+  "financials.projection.cycle_label.annual": "Anual",
 
   // Cohort spreadsheet
   "financials.cohort.empty":

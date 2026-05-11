@@ -1,21 +1,28 @@
 "use client";
 
+import { ChevronRight } from "lucide-react";
 import { useFinancialStore } from "@/stores/financial-store";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/locale-context";
 import type { Locale } from "@/lib/i18n/locales";
 import { formatNumberAsMoney } from "@/lib/money/format";
 import { formatNumber } from "@/lib/i18n/format-number";
+import type { MessageKey } from "@/lib/i18n/t";
 import {
   AccountingBasisBadge,
   AccountingBasisReconciliation,
 } from "./accounting-basis-reconciliation";
+import {
+  aggregateLifecyclesByCalendarMonth,
+  useSpreadsheetCollapse,
+} from "./spreadsheet-shared";
+
 interface ProjectionSpreadsheetProps {
   months?: number;
   locale: Locale;
 }
 
-type RowType = "currency" | "number" | "percent";
+type RowType = "currency" | "number" | "decimal" | "percent";
 type TotalMode = "sum" | "average" | "latest";
 
 interface RowDef {
@@ -25,13 +32,19 @@ interface RowDef {
   values: number[];
   bold?: boolean;
   colorBySign?: boolean;
-  /** Stable identifier to anchor color logic (label is i18n now). */
+  /** Stable identifier; required if the row has children or is a child. */
   id?: string;
+  /** Points to the parent row's `id`. Determines indent + collapse ancestry. */
+  parentId?: string;
+  /** Indent depth; 0 = top, 1 = child, 2 = grandchild. Defaults to 0. */
+  level?: 0 | 1 | 2;
 }
 
 interface SectionDef {
   header: string;
   rows: RowDef[];
+  /** Section-level collapse id. Optional; sections without `id` never collapse. */
+  id?: string;
 }
 
 function formatCell(value: number, type: RowType, locale: Locale): string {
@@ -42,6 +55,8 @@ function formatCell(value: number, type: RowType, locale: Locale): string {
       return formatNumber(value / 100, locale, "percent");
     case "number":
       return formatNumber(Math.round(value), locale, "integer");
+    case "decimal":
+      return formatNumber(value, locale, "decimal");
   }
 }
 
@@ -75,15 +90,63 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
 
   // Collect unique tier IDs for per-tier breakdown
   const tierIds = projection[0]?.newSubsByTier?.map((tier) => tier.tierId) ?? inputs?.tiers?.map((tier) => tier.tierId) ?? [];
+  const hasMultipleTiers = tierIds.length > 1;
+
+  // Per-tier billing distribution — drives "(X%)" suffix in
+  // Active by Plan & Cycle labels. Mirror cohort-spreadsheet shape.
+  const tierBillingDistributions = new Map<
+    string,
+    { monthly: number; biannual: number; annual: number }
+  >(
+    (inputs?.tiers ?? []).map((t) => [
+      t.tierId,
+      t.billingDistribution ?? inputs.billingCycleDistribution,
+    ]),
+  );
+
+  // Per-calendar-month aggregate of cohortLifecycles — same data path as
+  // AggregateCohortTable. Used for rows that aren't on cohortProjection
+  // (subscribersByTierAndCycle, productCogsCost split, shipping, handling,
+  // payment processing). NOTE: shipping/handling/paymentProcessing are
+  // surfaced for visual parity with the Aggregate view; they are NOT in
+  // the engine's monthCosts/netProfit (cash-flow-only attribution).
+  const aggMonths = aggregateLifecyclesByCalendarMonth(
+    results.cohortLifecycles ?? [],
+    results.cohortProjection,
+    months,
+    tierIds,
+  );
+
+  // Collapse state — mirror AggregateCohortTable defaults so the two
+  // tables read identically.
+  const initialCollapsedRows: string[] = [];
+  for (const tid of tierIds) {
+    initialCollapsedRows.push(`active-by-plan-cycle--${tid}`);
+  }
+  const {
+    collapsedSections,
+    collapsedRows,
+    toggleSection,
+    toggleRow,
+  } = useSpreadsheetCollapse(["active-by-plan-cycle"], initialCollapsedRows);
 
   // Build row data for each month
+  const activeReps: number[] = [];
   const grossNewSales: number[] = [];
   const chargebacks: number[] = [];
   const newSubs: number[] = [];
   const churned: number[] = [];
   const totalActive: number[] = [];
   const subscriptionRevenue: number[] = [];
-  const productFulfillment: number[] = [];
+  // COGS detail — sourced from aggMonths (cohortLifecycles aggregate), not
+  // from cohortProjection. The engine's `cogsExpense` is the blended total
+  // (currentSubs × costPerSub) only; Aggregate splits into product /
+  // shipping / handling / payment-processing via cohort-attributed math.
+  const productCostDetail: number[] = [];
+  const shippingDetail: number[] = [];
+  const handlingDetail: number[] = [];
+  const paymentProcessingDetail: number[] = [];
+  const productFulfillment: number[] = []; // total COGS (back-compat fallback)
   const grossProfit: number[] = [];
   const grossMarginPct: number[] = [];
   const commissions: number[] = [];
@@ -101,6 +164,9 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
   for (let i = 0; i < projection.length; i++) {
     const curr = projection[i];
     const prev = i > 0 ? projection[i - 1] : null;
+    const agg = aggMonths[i];
+
+    activeReps.push(curr.activeReps);
 
     const monthChargebacks = curr.chargebacks ?? 0;
     const monthGrossNew = curr.newSubsFromReps + monthChargebacks;
@@ -116,10 +182,19 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
     totalActive.push(curr.subscribers);
     subscriptionRevenue.push(curr.revenue);
 
-    // Prefer the engine's emitted COGS / commission / chargeback figures.
-    // Fallbacks keep the view backward-compatible with any older snapshot
-    // that pre-dates these fields.
-    const monthCOGS = curr.cogsExpense ?? curr.subscribers * costPerSub;
+    // COGS detail from aggMonths (cohortLifecycles aggregate). Fallback
+    // to the engine's blended `cogsExpense` for productCost when the
+    // aggregate is empty (e.g. very short projection windows).
+    productCostDetail.push(agg?.productCogsCost ?? curr.cogsExpense ?? curr.subscribers * costPerSub);
+    shippingDetail.push(agg?.shippingCost ?? 0);
+    handlingDetail.push(agg?.handlingCost ?? 0);
+    paymentProcessingDetail.push(agg?.paymentProcessingCost ?? 0);
+
+    // Total COGS — sum the 4 components (matches Aggregate's productCost
+    // rollup). Engine's blended `cogsExpense` is used as fallback when
+    // the aggregate is empty.
+    const monthCOGS =
+      (agg?.productCost ?? curr.cogsExpense ?? curr.subscribers * costPerSub);
     productFulfillment.push(monthCOGS);
 
     const monthGross = curr.revenue - monthCOGS;
@@ -207,10 +282,67 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
     { label: t("financials.projection.row.annual_billing"), type: "currency" as const, totalMode: "sum" as const, values: projection.map((mo) => mo.revenueByBillingCycle?.annual ?? 0) },
   ] : [];
 
+  // Active by Plan & Cycle section — per-tier parents + 3 cycle children
+  // per parent. Only rendered when there's >1 tier (single-tier scenarios
+  // collapse this into "Total Active"). Values come from aggMonths, total
+  // mode is average (active subs are a stock, not a flow).
+  const activeByPlanCycleSection: SectionDef | null = hasMultipleTiers
+    ? {
+        header: t("financials.projection.section.active_by_plan_cycle"),
+        id: "active-by-plan-cycle",
+        rows: tierIds.flatMap((tierId): RowDef[] => {
+          const parentId = `active-by-plan-cycle--${tierId}`;
+          const cycles: ("monthly" | "biannual" | "annual")[] = [
+            "monthly",
+            "biannual",
+            "annual",
+          ];
+          const cycleKeys = {
+            monthly: "financials.projection.cycle_label.monthly",
+            biannual: "financials.projection.cycle_label.biannual",
+            annual: "financials.projection.cycle_label.annual",
+          } as const satisfies Record<typeof cycles[number], MessageKey>;
+          const tierBilling = tierBillingDistributions.get(tierId);
+          const parent: RowDef = {
+            id: parentId,
+            level: 0,
+            label: t("financials.projection.tier_indent", { tier: tierId }),
+            type: "decimal",
+            totalMode: "average",
+            values: aggMonths.map((m) => {
+              const e = m.subscribersByTierAndCycle.find((x) => x.tierId === tierId);
+              return e ? e.monthly + e.biannual + e.annual : 0;
+            }),
+          };
+          const children: RowDef[] = cycles.map((cycle) => ({
+            id: `${parentId}--${cycle}`,
+            parentId,
+            level: 1,
+            label: t("financials.projection.tier_subindent", {
+              tier: `${t(cycleKeys[cycle])} (${formatNumber(
+                (tierBilling?.[cycle] ?? 0) / 100,
+                locale,
+                "percent",
+              )})`,
+            }),
+            type: "decimal",
+            totalMode: "average",
+            values: aggMonths.map(
+              (m) =>
+                m.subscribersByTierAndCycle.find((e) => e.tierId === tierId)?.[cycle] ??
+                0,
+            ),
+          }));
+          return [parent, ...children];
+        }),
+      }
+    : null;
+
   const sections: SectionDef[] = [
     {
       header: t("financials.projection.section.subscribers"),
       rows: [
+        { label: t("financials.projection.row.active_reps"), type: "number", totalMode: "latest", values: activeReps },
         { label: t("financials.projection.row.gross_new_sales"), type: "number", totalMode: "sum", values: grossNewSales },
         ...perTierNewSalesRows,
         ...(chargebacks.some((v) => v > 0) ? [
@@ -221,6 +353,7 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
         { label: t("financials.projection.row.total_active"), type: "number", totalMode: "latest", values: totalActive, bold: true },
       ],
     },
+    ...(activeByPlanCycleSection ? [activeByPlanCycleSection] : []),
     {
       header: t("financials.projection.section.revenue"),
       rows: [
@@ -231,7 +364,10 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
     {
       header: t("financials.projection.section.cogs"),
       rows: [
-        { label: t("financials.projection.row.product_fulfillment"), type: "currency", totalMode: "sum", values: productFulfillment },
+        { label: t("financials.projection.row.product_cost"), type: "currency", totalMode: "sum", values: productCostDetail },
+        { label: t("financials.projection.row.shipping"), type: "currency", totalMode: "sum", values: shippingDetail },
+        { label: t("financials.projection.row.handling"), type: "currency", totalMode: "sum", values: handlingDetail },
+        { label: t("financials.projection.row.payment_processing"), type: "currency", totalMode: "sum", values: paymentProcessingDetail },
         { label: t("financials.projection.row.gross_profit"), type: "currency", totalMode: "sum", values: grossProfit, bold: true, colorBySign: true },
         { label: t("financials.projection.row.gross_margin_pct"), type: "percent", totalMode: "average", values: grossMarginPct },
       ],
@@ -344,7 +480,16 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
         </thead>
         <tbody>
           {sections.map((section) => (
-            <SectionGroup key={section.header} section={section} months={months} locale={locale} />
+            <SectionGroup
+              key={section.header}
+              section={section}
+              months={months}
+              locale={locale}
+              collapsedSections={collapsedSections}
+              collapsedRows={collapsedRows}
+              onToggleSection={toggleSection}
+              onToggleRow={toggleRow}
+            />
           ))}
         </tbody>
       </table>
@@ -353,40 +498,130 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
   );
 }
 
-function SectionGroup({ section, months, locale }: { section: SectionDef; months: number; locale: Locale }) {
+function SectionGroup({
+  section,
+  months,
+  locale,
+  collapsedSections,
+  collapsedRows,
+  onToggleSection,
+  onToggleRow,
+}: {
+  section: SectionDef;
+  months: number;
+  locale: Locale;
+  collapsedSections: Set<string>;
+  collapsedRows: Set<string>;
+  onToggleSection: (id: string) => void;
+  onToggleRow: (id: string) => void;
+}) {
+  const isCollapsible = section.id != null;
+  const isCollapsed = section.id ? collapsedSections.has(section.id) : false;
+
+  // A row is visible if NO ancestor in the parentId chain is collapsed.
+  const isRowVisible = (row: RowDef): boolean => {
+    let pid = row.parentId;
+    while (pid) {
+      if (collapsedRows.has(pid)) return false;
+      const parent = section.rows.find((r) => r.id === pid);
+      pid = parent?.parentId;
+    }
+    return true;
+  };
+
+  // A row has children if any other row in the section points to it.
+  const hasChildren = (row: RowDef): boolean =>
+    row.id != null && section.rows.some((r) => r.parentId === row.id);
+
   return (
     <>
       {/* Section header row */}
       <tr className="bg-muted">
         <td
           colSpan={months + 2}
-          className="sticky left-0 z-10 bg-muted px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground"
+          className={cn(
+            "sticky left-0 z-10 bg-muted px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground",
+            isCollapsible && "cursor-pointer select-none",
+          )}
+          onClick={
+            isCollapsible && section.id
+              ? () => onToggleSection(section.id!)
+              : undefined
+          }
         >
-          {section.header}
+          <span className="inline-flex items-center gap-1">
+            {isCollapsible && (
+              <ChevronRight
+                className={cn(
+                  "h-3 w-3 transition-transform duration-150",
+                  !isCollapsed && "rotate-90",
+                )}
+              />
+            )}
+            {section.header}
+          </span>
         </td>
       </tr>
-      {/* Data rows */}
-      {section.rows.map((row) => (
-        <DataRow key={row.label} row={row} locale={locale} />
-      ))}
+      {/* Data rows — hidden when section is collapsed */}
+      {!isCollapsed &&
+        section.rows.filter(isRowVisible).map((row) => (
+          <DataRow
+            key={row.id ?? row.label}
+            row={row}
+            locale={locale}
+            hasChildren={hasChildren(row)}
+            isCollapsed={row.id ? collapsedRows.has(row.id) : false}
+            onToggleRow={onToggleRow}
+          />
+        ))}
     </>
   );
 }
 
-function DataRow({ row, locale }: { row: RowDef; locale: Locale }) {
+function DataRow({
+  row,
+  locale,
+  hasChildren,
+  isCollapsed,
+  onToggleRow,
+}: {
+  row: RowDef;
+  locale: Locale;
+  hasChildren: boolean;
+  isCollapsed: boolean;
+  onToggleRow: (id: string) => void;
+}) {
   const total = computeTotal(row.values, row.totalMode);
   const isCumulativeProfit = row.id === "cumulative_profit";
+  const level = row.level ?? 0;
+  // Indent: 12px per level. Top-level = 0; nested rows get progressive padding.
+  const labelPaddingLeft = 12 + level * 12;
 
   return (
     <tr className="border-b border-border/50 hover:bg-muted/10">
       {/* Sticky label column */}
       <td
         className={cn(
-          "sticky left-0 z-10 bg-background px-3 py-1.5",
-          row.bold && "font-semibold"
+          "sticky left-0 z-10 bg-background py-1.5",
+          row.bold && "font-semibold",
+          hasChildren && row.id && "cursor-pointer select-none",
         )}
+        style={{ paddingLeft: labelPaddingLeft, paddingRight: 12 }}
+        onClick={
+          hasChildren && row.id ? () => onToggleRow(row.id!) : undefined
+        }
       >
-        {row.label}
+        <span className="inline-flex items-center gap-1">
+          {hasChildren && (
+            <ChevronRight
+              className={cn(
+                "h-3 w-3 transition-transform duration-150",
+                !isCollapsed && "rotate-90",
+              )}
+            />
+          )}
+          {row.label}
+        </span>
       </td>
       {/* Month values */}
       {row.values.map((value, i) => (
