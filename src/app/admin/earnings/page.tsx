@@ -1,4 +1,5 @@
 import { connection } from "next/server";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { EarningsClient } from "@/components/earnings/earnings-client";
 
 interface EarningEvent {
@@ -91,6 +92,7 @@ function buildMockEarnings(): { events: EarningEvent[]; daily: { date: string; a
 
 export default async function EarningsPage() {
   await connection();
+  const locale = await getLocale();
   const { events, daily } = buildMockEarnings();
 
   const totals = {
@@ -101,5 +103,5 @@ export default async function EarningsPage() {
     eventCount: events.length,
   };
 
-  return <EarningsClient daily={daily} events={events} totals={totals} />;
+  return <EarningsClient daily={daily} events={events} totals={totals} locale={locale} />;
 }

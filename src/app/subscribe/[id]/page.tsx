@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { toNumber } from "@/lib/utils";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { SubscriptionWizard } from "@/components/subscribe/subscription-wizard";
 
 export default async function SubscribePage({
@@ -10,6 +11,7 @@ export default async function SubscribePage({
   params: Promise<{ id: string }>;
 }) {
   await connection();
+  const locale = await getLocale();
   const { id } = await params;
 
   const tier = await prisma.subscriptionTier.findUnique({
@@ -124,6 +126,7 @@ export default async function SubscribePage({
       tier={tierData}
       packages={packages}
       brand={{ name: companyName, iconUrl: companyIconUrl }}
+      locale={locale}
     />
   );
 }

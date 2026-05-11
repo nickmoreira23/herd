@@ -13,7 +13,9 @@ import {
 import { TrendingUp, Clock, CheckCircle2, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/layout/page-header";
-import { formatCurrency, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { formatNumberAsMoney } from "@/lib/money/format";
+import type { Locale } from "@/lib/i18n/locales";
 
 interface EarningEvent {
   date: string;
@@ -36,9 +38,10 @@ interface Props {
   daily: { date: string; amount: number }[];
   events: EarningEvent[];
   totals: Totals;
+  locale: Locale;
 }
 
-export function EarningsClient({ daily, events, totals }: Props) {
+export function EarningsClient({ daily, events, totals, locale }: Props) {
   const chartData = useMemo(
     () =>
       daily.map((d) => {
@@ -73,27 +76,27 @@ export function EarningsClient({ daily, events, totals }: Props) {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Last 30 days"
-          value={formatCurrency(totals.last30)}
+          value={formatNumberAsMoney(totals.last30, locale)}
           sub={`${totals.eventCount} events`}
           icon={TrendingUp}
         />
         <StatCard
           label="Pending"
-          value={formatCurrency(totals.pending)}
+          value={formatNumberAsMoney(totals.pending, locale)}
           sub="Awaiting clearance"
           icon={Clock}
           tone="amber"
         />
         <StatCard
           label="Released"
-          value={formatCurrency(totals.released)}
+          value={formatNumberAsMoney(totals.released, locale)}
           sub="Paid to your account"
           icon={CheckCircle2}
           tone="emerald"
         />
         <StatCard
           label="Clawback"
-          value={formatCurrency(Math.abs(totals.clawback))}
+          value={formatNumberAsMoney(Math.abs(totals.clawback), locale)}
           sub="Reversals"
           icon={AlertTriangle}
           tone="rose"
@@ -106,12 +109,12 @@ export function EarningsClient({ daily, events, totals }: Props) {
           <div>
             <h2 className="text-base font-semibold">Daily earnings</h2>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Last 30 days · avg {formatCurrency(avgPerDay)}/day
+              Last 30 days · avg {formatNumberAsMoney(avgPerDay, locale)}/day
             </p>
           </div>
           {bestDay.amount > 0 && (
             <Badge variant="secondary" className="shrink-0">
-              Best day: {formatCurrency(bestDay.amount)} · {bestDay.date}
+              Best day: {formatNumberAsMoney(bestDay.amount, locale)} · {bestDay.date}
             </Badge>
           )}
         </div>
@@ -142,8 +145,11 @@ export function EarningsClient({ daily, events, totals }: Props) {
                   border: "1px solid hsl(var(--border))",
                   fontSize: 12,
                 }}
-                formatter={(v: number) => [formatCurrency(v), "Earnings"]}
-                labelFormatter={(l: string) => l}
+                formatter={(v) => [
+                  formatNumberAsMoney(typeof v === "number" ? v : 0, locale),
+                  "Earnings",
+                ]}
+                labelFormatter={(l) => String(l ?? "")}
               />
               <Bar
                 dataKey="amount"
@@ -199,7 +205,7 @@ export function EarningsClient({ daily, events, totals }: Props) {
                     )}
                   >
                     {e.amount < 0 ? "-" : ""}
-                    {formatCurrency(Math.abs(e.amount))}
+                    {formatNumberAsMoney(Math.abs(e.amount), locale)}
                   </td>
                 </tr>
               ))}

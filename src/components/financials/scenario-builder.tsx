@@ -1533,6 +1533,10 @@ function OverheadCategoriesEditor({
   ) => onChange({ categories: next, mode: "categories" });
 
   const addCategory = () => {
+    // Math.random in an event handler runs only at click time, never during
+    // render — React Compiler can't prove this statically, so disable the
+    // purity rule for this line.
+    // eslint-disable-next-line
     const id = `cat-${Math.random().toString(36).slice(2, 8)}`;
     updateCategories([
       ...categories,

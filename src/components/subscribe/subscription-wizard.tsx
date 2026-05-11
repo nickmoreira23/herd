@@ -40,7 +40,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { formatNumberAsMoney } from "@/lib/money/format";
+import type { Locale } from "@/lib/i18n/locales";
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -109,6 +111,7 @@ interface Props {
   tier: SubscribeTier;
   packages: SubscribePackage[];
   brand: Brand;
+  locale: Locale;
 }
 
 // ─── Label maps (mirror tier-card) ───────────────────────────
@@ -155,7 +158,7 @@ type BillingCycle = "monthly" | "biannual" | "annual";
 
 // ─── Component ────────────────────────────────────────────────
 
-export function SubscriptionWizard({ tier, packages, brand }: Props) {
+export function SubscriptionWizard({ tier, packages, brand, locale }: Props) {
   const router = useRouter();
   const [step, setStep] = useState<Step>(1);
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
@@ -244,6 +247,7 @@ export function SubscriptionWizard({ tier, packages, brand }: Props) {
             tier={tier}
             enabledPerks={enabledPerks}
             enabledCommunity={enabledCommunity}
+            locale={locale}
           />
         )}
         {step === 2 && (
@@ -269,6 +273,7 @@ export function SubscriptionWizard({ tier, packages, brand }: Props) {
             monthlyEquivalent={monthlyEquivalent}
             form={form}
             setForm={setForm}
+            locale={locale}
           />
         )}
         {step === 4 && <Step4ThankYou tier={tier} />}
@@ -387,10 +392,12 @@ function Step1Includes({
   tier,
   enabledPerks,
   enabledCommunity,
+  locale,
 }: {
   tier: SubscribeTier;
   enabledPerks: string[];
   enabledCommunity: string[];
+  locale: Locale;
 }) {
   const hasProducts = tier.redemptionRules.length > 0;
   const hasAgents = tier.agents.length > 0;
@@ -428,14 +435,14 @@ function Step1Includes({
         </div>
         <div className="flex items-baseline gap-2">
           <span className="text-4xl font-bold">
-            {formatCurrency(tier.monthlyPrice)}
+            {formatNumberAsMoney(tier.monthlyPrice, locale)}
           </span>
           <span className="text-muted-foreground text-sm">/month</span>
         </div>
         {tier.monthlyCredits > 0 && (
           <Badge variant="secondary" className="gap-1">
             <Coins className="h-3 w-3" />
-            {formatCurrency(tier.monthlyCredits)} in monthly credits
+            {formatNumberAsMoney(tier.monthlyCredits, locale)} in monthly credits
           </Badge>
         )}
         {tier.description && (
@@ -977,6 +984,7 @@ function Step3Checkout({
   monthlyEquivalent,
   form,
   setForm,
+  locale,
 }: {
   tier: SubscribeTier;
   selectedPackage: SubscribePackage | null;
@@ -998,6 +1006,7 @@ function Step3Checkout({
     cardExpiry: string;
     cardCvc: string;
   }>>;
+  locale: Locale;
 }) {
   const update = (key: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((prev) => ({ ...prev, [key]: e.target.value }));
@@ -1133,7 +1142,7 @@ function Step3Checkout({
                     )}
                   </div>
                   <p className="mt-2 text-lg font-bold tabular-nums">
-                    {formatCurrency(c.price)}
+                    {formatNumberAsMoney(c.price, locale)}
                     <span className="text-xs font-normal text-muted-foreground ml-1">
                       {c.suffix}
                     </span>
@@ -1211,13 +1220,13 @@ function Step3Checkout({
           <div className="pt-2 border-t space-y-1">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Subtotal</span>
-              <span className="tabular-nums">{formatCurrency(cyclePrice)}</span>
+              <span className="tabular-nums">{formatNumberAsMoney(cyclePrice, locale)}</span>
             </div>
             {cycle !== "monthly" && (
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>Equivalent</span>
                 <span className="tabular-nums">
-                  {formatCurrency(monthlyEquivalent)}/mo
+                  {formatNumberAsMoney(monthlyEquivalent, locale)}/mo
                 </span>
               </div>
             )}
@@ -1226,7 +1235,7 @@ function Step3Checkout({
           <div className="pt-3 border-t flex items-baseline justify-between">
             <span className="text-sm font-semibold">Total today</span>
             <span className="text-xl font-bold tabular-nums">
-              {formatCurrency(cyclePrice)}
+              {formatNumberAsMoney(cyclePrice, locale)}
               <span className="text-xs font-normal text-muted-foreground ml-1">
                 {cycleSuffix}
               </span>
