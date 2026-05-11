@@ -7,11 +7,15 @@ import { AirtableService } from "@/lib/services/airtable";
 import { IntercomService } from "@/lib/services/intercom";
 import { GorgiasService } from "@/lib/services/gorgias";
 import { PlaudService } from "@/lib/services/plaud";
+import { requireSuperAdmin } from "@/lib/auth/require-super-admin";
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const sessionOrResponse = await requireSuperAdmin();
+  if (sessionOrResponse instanceof Response) return sessionOrResponse;
+
   try {
     const { id } = await params;
     const integration = await prisma.integration.findUnique({ where: { id } });
@@ -600,6 +604,9 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const sessionOrResponse = await requireSuperAdmin();
+  if (sessionOrResponse instanceof Response) return sessionOrResponse;
+
   try {
     const { id } = await params;
     const updated = await prisma.integration.update({

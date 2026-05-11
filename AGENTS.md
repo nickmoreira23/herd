@@ -60,6 +60,29 @@ npx tsx scripts/create-tool-category.ts --name "hr" --display "Human Resources" 
 
 Then: import and register in `src/lib/tools/registry.ts`, add icon mapping in `category-meta.ts`.
 
+# Tenancy
+
+## requireSuperAdmin helper
+
+Admin routes in `src/app/api/` use `requireSuperAdmin` (at `src/lib/auth/require-super-admin.ts`)
+to enforce a valid session with role `super_admin`. Returns a 401/403 Response if invalid.
+Pattern: call first, return the Response if it is one, then proceed with the session.
+
+```typescript
+const sessionOrResponse = await requireSuperAdmin();
+if (sessionOrResponse instanceof Response) return sessionOrResponse;
+const session = sessionOrResponse;
+// session.user.id is now guaranteed
+```
+
+The check is performed at the start of each route handler, before `try {` and before
+any Prisma queries. The helper uses `apiError` from `@/lib/api-utils` for consistent
+error shape (`{ error: string, details?: unknown }`).
+
+The `org_admin` concept does not exist in Camada 1 (YAGNI — 3 DEV orgs, all yours).
+Introduce `org_admin` alongside a `Membership` table and drop of `NetworkProfile.email @unique`
+when the product becomes real SaaS multi-tenant (same trigger package).
+
 # Database migrations
 
 This project uses `prisma migrate`, not `db push`.

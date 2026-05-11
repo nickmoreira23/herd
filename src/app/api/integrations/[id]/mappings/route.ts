@@ -1,11 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError, parseAndValidate } from "@/lib/api-utils";
 import { tierMappingSchema, deleteTierMappingSchema } from "@/lib/validators/integration";
+import { requireSuperAdmin } from "@/lib/auth/require-super-admin";
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const sessionOrResponse = await requireSuperAdmin();
+  if (sessionOrResponse instanceof Response) return sessionOrResponse;
+
   try {
     const { id } = await params;
     const mappings = await prisma.integrationTierMapping.findMany({
@@ -24,6 +28,9 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const sessionOrResponse = await requireSuperAdmin();
+  if (sessionOrResponse instanceof Response) return sessionOrResponse;
+
   try {
     const { id } = await params;
     const result = await parseAndValidate(request, tierMappingSchema);
@@ -47,6 +54,9 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const sessionOrResponse = await requireSuperAdmin();
+  if (sessionOrResponse instanceof Response) return sessionOrResponse;
+
   try {
     await params; // consume params
     const result = await parseAndValidate(request, deleteTierMappingSchema);

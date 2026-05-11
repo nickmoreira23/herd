@@ -1,10 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-utils";
+import { requireSuperAdmin } from "@/lib/auth/require-super-admin";
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const sessionOrResponse = await requireSuperAdmin();
+  if (sessionOrResponse instanceof Response) return sessionOrResponse;
+
   try {
     const { id } = await params;
     const { searchParams } = new URL(request.url);

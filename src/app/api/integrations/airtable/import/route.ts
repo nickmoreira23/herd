@@ -10,6 +10,7 @@ import {
   withConcurrencyLimit,
   type AirtableAttachment,
 } from "@/lib/services/airtable";
+import { requireSuperAdmin } from "@/lib/auth/require-super-admin";
 
 const fieldMappingSchema = z.object({
   airtableFieldId: z.string(),
@@ -29,6 +30,9 @@ const importSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const sessionOrResponse = await requireSuperAdmin();
+  if (sessionOrResponse instanceof Response) return sessionOrResponse;
+
   try {
     // Validate request
     const body = await request.json();

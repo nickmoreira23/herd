@@ -2,11 +2,15 @@ import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-utils";
 import { decrypt } from "@/lib/encryption";
 import { RechargeService } from "@/lib/services/recharge";
+import { requireSuperAdmin } from "@/lib/auth/require-super-admin";
 
 export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const sessionOrResponse = await requireSuperAdmin();
+  if (sessionOrResponse instanceof Response) return sessionOrResponse;
+
   try {
     const { id } = await params;
     const integration = await prisma.integration.findUnique({ where: { id } });
