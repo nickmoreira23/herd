@@ -41,10 +41,11 @@ interface RowDef {
 }
 
 interface SectionDef {
+  /** Section-level collapse id. Required — every section is collapsible
+   *  per AggregateCohortTable convention. */
+  id: string;
   header: string;
   rows: RowDef[];
-  /** Section-level collapse id. Optional; sections without `id` never collapse. */
-  id?: string;
 }
 
 function formatCell(value: number, type: RowType, locale: Locale): string {
@@ -412,6 +413,7 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
 
   const sections: SectionDef[] = [
     {
+      id: "subscribers",
       header: t("financials.projection.section.subscribers"),
       rows: [
         { label: t("financials.projection.row.active_reps"), type: "number", totalMode: "latest", values: activeReps },
@@ -427,6 +429,7 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
     },
     ...(activeByPlanCycleSection ? [activeByPlanCycleSection] : []),
     {
+      id: "revenue",
       header: t("financials.projection.section.revenue"),
       rows: [
         { label: t("financials.projection.row.subscription_revenue"), type: "currency", totalMode: "sum", values: subscriptionRevenue },
@@ -434,6 +437,7 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
       ],
     },
     {
+      id: "cogs",
       header: t("financials.projection.section.cogs"),
       rows: [
         { label: t("financials.projection.row.product_cost"), type: "currency", totalMode: "sum", values: productCostDetail },
@@ -445,6 +449,7 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
       ],
     },
     {
+      id: "opex",
       header: t("financials.projection.section.opex"),
       // Order mirrors AggregateCohortTable: Overhead → Welcome Kit →
       // Buck → Add-Ons → Commissions → Total OpEx.
@@ -537,6 +542,7 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
       ],
     },
     {
+      id: "bottom-line",
       header: t("financials.projection.section.bottom_line"),
       rows: [
         { label: t("financials.projection.row.net_profit"), type: "currency", totalMode: "sum", values: netProfit, bold: true, colorBySign: true },
@@ -547,14 +553,13 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
     ...(profitSplitRows.length > 0
       ? [
           {
+            id: "profit-split",
             header: t("financials.projection.section.profit_split"),
             rows: profitSplitRows,
           },
         ]
       : []),
   ];
-
-  const monthLabels = projection.map((_, i) => t("financials.charts.month_label", { month: i + 1 }));
 
   // Reconciliation series — accrual is what this view displays
   // (`cohortProjection.revenue`); cash is the calendar-month aggregate of
@@ -585,28 +590,30 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
         cashSeries={cashSeries}
         locale={locale}
       />
-      <div className="overflow-auto border rounded-lg max-h-[75vh]">
-      <table className="w-full border-collapse text-xs">
+      <div className="overflow-auto border rounded-md max-h-[75vh]">
+      <table className="w-full text-xs border-collapse">
         <thead>
           {/* Header sticky on Y so column labels stay visible when the
               user scrolls down. The metric (left-most) cell is sticky on
               both axes — highest z-index in the table; month headers sit
               just below at z-20; section headers (sticky-left only) stay
               at z-10. */}
+          {/* Header — mirrors AggregateCohortTable thead: same labels,
+              same widths, same z-index stack. */}
           <tr className="border-b bg-muted">
-            <th className="sticky left-0 top-0 z-30 bg-muted w-[180px] min-w-[180px] px-3 py-2 text-left font-medium">
-              &nbsp;
+            <th className="sticky left-0 top-0 z-30 bg-muted min-w-[200px] px-3 py-2 text-left font-medium text-muted-foreground">
+              {t("financials.cohort.column.metric")}
             </th>
-            {monthLabels.map((label) => (
+            {projection.map((_, i) => (
               <th
-                key={label}
-                className="sticky top-0 z-20 bg-muted w-[100px] min-w-[100px] px-2 py-2 text-right font-medium tabular-nums"
+                key={i}
+                className="sticky top-0 z-20 bg-muted min-w-[100px] px-2 py-2 text-right font-medium text-muted-foreground whitespace-nowrap"
               >
-                {label}
+                {t("financials.cohort.column.month_long", { month: i + 1 })}
               </th>
             ))}
-            <th className="sticky top-0 z-20 bg-muted w-[100px] min-w-[100px] px-2 py-2 text-right font-medium border-l">
-              {t("financials.projection.column.total_avg")}
+            <th className="sticky top-0 z-20 bg-muted min-w-[100px] px-2 py-2 text-right font-semibold text-foreground whitespace-nowrap border-l-2 border-border">
+              {t("financials.cohort.column.total")}
             </th>
           </tr>
         </thead>
@@ -647,8 +654,9 @@ function SectionGroup({
   onToggleSection: (id: string) => void;
   onToggleRow: (id: string) => void;
 }) {
-  const isCollapsible = section.id != null;
-  const isCollapsed = section.id ? collapsedSections.has(section.id) : false;
+  // Every section is collapsible. Per `SectionDef`, `id` is required.
+  const sectionId = section.id!;
+  const isCollapsed = collapsedSections.has(sectionId);
 
   // A row is visible if NO ancestor in the parentId chain is collapsed.
   const isRowVisible = (row: RowDef): boolean => {
@@ -667,29 +675,23 @@ function SectionGroup({
 
   return (
     <>
-      {/* Section header row */}
-      <tr className="bg-muted">
+      {/* Section header — entire <tr> is clickable. Mirrors
+          AggregateCohortTable section header (cursor + hover-bg). */}
+      <tr
+        className="bg-muted cursor-pointer select-none hover:bg-muted/80 transition-colors"
+        onClick={() => onToggleSection(sectionId)}
+      >
         <td
           colSpan={months + 2}
-          className={cn(
-            "sticky left-0 z-10 bg-muted px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground",
-            isCollapsible && "cursor-pointer select-none",
-          )}
-          onClick={
-            isCollapsible && section.id
-              ? () => onToggleSection(section.id!)
-              : undefined
-          }
+          className="sticky left-0 z-10 bg-muted px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground"
         >
           <span className="inline-flex items-center gap-1">
-            {isCollapsible && (
-              <ChevronRight
-                className={cn(
-                  "h-3 w-3 transition-transform duration-150",
-                  !isCollapsed && "rotate-90",
-                )}
-              />
-            )}
+            <ChevronRight
+              className={cn(
+                "h-3 w-3 transition-transform",
+                !isCollapsed && "rotate-90",
+              )}
+            />
             {section.header}
           </span>
         </td>
@@ -728,26 +730,31 @@ function DataRow({
   const level = row.level ?? 0;
   // Indent: 12px per level. Top-level = 0; nested rows get progressive padding.
   const labelPaddingLeft = 12 + level * 12;
+  const handleRowClick =
+    hasChildren && row.id ? () => onToggleRow(row.id!) : undefined;
 
   return (
-    <tr className="border-b border-border/50 hover:bg-muted/10">
-      {/* Sticky label column */}
+    <tr
+      className={cn(
+        "border-b border-border/40 hover:bg-muted/10 transition-colors",
+        hasChildren && "cursor-pointer select-none",
+      )}
+      onClick={handleRowClick}
+    >
+      {/* Sticky label column — mirrors AggregateCohortTable row label
+          (muted-foreground default, foreground when bold). */}
       <td
         className={cn(
-          "sticky left-0 z-10 bg-background py-1.5",
-          row.bold && "font-semibold",
-          hasChildren && row.id && "cursor-pointer select-none",
+          "sticky left-0 z-10 bg-background min-w-[200px] py-1.5 text-muted-foreground whitespace-nowrap",
+          row.bold && "font-semibold text-foreground",
         )}
         style={{ paddingLeft: labelPaddingLeft, paddingRight: 12 }}
-        onClick={
-          hasChildren && row.id ? () => onToggleRow(row.id!) : undefined
-        }
       >
         <span className="inline-flex items-center gap-1">
           {hasChildren && (
             <ChevronRight
               className={cn(
-                "h-3 w-3 transition-transform duration-150",
+                "h-3 w-3 transition-transform",
                 !isCollapsed && "rotate-90",
               )}
             />
