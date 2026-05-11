@@ -429,6 +429,7 @@ export function ScenarioBuilder({
                         newTiers[idx] = { ...newTiers[idx], ...updates };
                         setInputs({ tiers: newTiers });
                       }}
+                      locale={locale}
                     />
                     {/* Advanced Overrides — collapsible */}
                     <TierAdvancedOverrides
@@ -488,9 +489,9 @@ export function ScenarioBuilder({
           </div>
           {(inputs.welcomeKitCostPerSub ?? 0) > 0 && (
             <div className="rounded-lg bg-muted/30 px-2.5 py-1.5 text-[11px] text-muted-foreground mt-1.5">
-              {formatNumberAsMoney(inputs.welcomeKitCostPerSub ?? 0, locale)} /
-              new sub · charged once at acquisition. Rolls into CAC and the
-              month's acquisition spend.
+              {t("financials.scenario_builder.welcome_kit.description", {
+                cost: formatNumberAsMoney(inputs.welcomeKitCostPerSub ?? 0, locale),
+              })}
             </div>
           )}
         </InputCard>
@@ -524,11 +525,12 @@ export function ScenarioBuilder({
           </div>
           {((inputs.buckPlatformFeePerSub ?? 0) + (inputs.buckTokenCostPerSub ?? 0)) > 0 && (
             <div className="rounded-lg bg-muted/30 px-2.5 py-1.5 text-[11px] text-muted-foreground mt-1.5">
-              {formatNumberAsMoney(
-                (inputs.buckPlatformFeePerSub ?? 0) + (inputs.buckTokenCostPerSub ?? 0),
-                locale,
-              )}
-              /sub/mo · charged every month against every active subscriber.
+              {t("financials.scenario_builder.buck_platform.description", {
+                cost: formatNumberAsMoney(
+                  (inputs.buckPlatformFeePerSub ?? 0) + (inputs.buckTokenCostPerSub ?? 0),
+                  locale,
+                ),
+              })}
             </div>
           )}
         </InputCard>
@@ -720,9 +722,11 @@ function LinkedBadge({ label }: { label: string }) {
 function TierAddOns({
   tier,
   onUpdateTier,
+  locale,
 }: {
   tier: import("@/lib/financial-engine").TierFinancialInput;
   onUpdateTier: (updates: Partial<import("@/lib/financial-engine").TierFinancialInput>) => void;
+  locale: Locale;
 }) {
   const t = useT();
   const [open, setOpen] = useState(false);
@@ -870,12 +874,17 @@ function TierAddOns({
 
             {pathScale?.mode === "purchase" && (
               <p className="text-[10px] text-muted-foreground">
-                We pay the supplier ${pathScale.purchaseAmount} per new subscriber at signup to acquire the Path Scale. We own the unit — no further payments regardless of churn.
+                {t("financials.scenario_builder.path_scale.purchase_description", {
+                  amount: formatNumberAsMoney(pathScale.purchaseAmount, locale),
+                })}
               </p>
             )}
             {pathScale?.mode === "lease" && (
               <p className="text-[10px] text-muted-foreground">
-                We pay the supplier ${pathScale.monthlyFee}/sub/mo for the first {pathScale.leaseMonths} months while each subscriber stays active. After that the scale is ours — no further payments.
+                {t("financials.scenario_builder.path_scale.lease_description", {
+                  fee: formatNumberAsMoney(pathScale.monthlyFee, locale),
+                  months: pathScale.leaseMonths,
+                })}
               </p>
             )}
           </div>
@@ -2005,10 +2014,7 @@ function ReferencePackageSelector({
         </p>
       </div>
       <p className="text-[10px] text-muted-foreground leading-snug">
-        Anchor COGS-per-sub to a real package's per-tier products. Each tier's
-        cost in the projection becomes the sum of (qty × cost-of-goods) of the
-        products in that tier's variant — replacing the flat apparel-budget
-        guess.
+        {t("financials.scenario_builder.reference_package.description")}
       </p>
       <Select value={selected} onValueChange={onChange} disabled={readOnly}>
         <SelectTrigger className="h-8 text-xs border-dashed">
