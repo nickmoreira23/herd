@@ -959,6 +959,46 @@ export const messages = {
   "financials.cohort.aggregate.window_revenue_label": "Receita da janela:",
   "financials.cohort.aggregate.window_profit_label": "Lucro da janela:",
 
+  // Scenario builder — short labels
+  "financials.scenario_builder.add_ons.title": "Add-ons",
+  "financials.scenario_builder.path_scale.label": "Path Scale",
+  "financials.scenario_builder.path_scale.description":
+    "Balança inteligente que rastreia métricas de saúde dos assinantes.",
+  // Rep schedule override
+  "financials.scenario_builder.rep_schedule.override": "Override",
+  "financials.scenario_builder.rep_schedule.off": "Desligado",
+  "financials.scenario_builder.rep_schedule.column_period": "Período",
+  "financials.scenario_builder.rep_schedule.column_growth":
+    "Crescimento / período (%)",
+  "financials.scenario_builder.rep_schedule.column_sales_per_rep":
+    "Vendas / rep",
+  "financials.scenario_builder.rep_schedule.column_reps_end":
+    "Reps no final",
+  // Overhead categories
+  "financials.scenario_builder.overhead.empty_state":
+    "Nenhuma categoria de overhead ainda. Adicione uma para começar a rastrear OpEx mensal.",
+  "financials.scenario_builder.overhead.add_category": "Adicionar categoria",
+  "financials.scenario_builder.overhead.pre_launch_baseline":
+    "Linha de base pré-lançamento:",
+  "financials.scenario_builder.overhead.milestones.column_at_subs":
+    "Em ≥ assinantes",
+  "financials.scenario_builder.overhead.milestones.column_monthly_cost":
+    "Custo mensal",
+  "financials.scenario_builder.overhead.milestones.add":
+    "Adicionar marco",
+  // Reference package picker
+  "financials.scenario_builder.product_pack.title": "Pacote de Referência",
+  "financials.scenario_builder.product_pack.none_option":
+    "Nenhum — usar heurística de orçamento de vestuário",
+  "financials.scenario_builder.product_pack.per_tier_cogs_header":
+    "COGS por faixa de {pack_name}",
+  // Tier summary + math display
+  "financials.scenario_builder.tier_summary.per_month_suffix": "/mês",
+  "financials.scenario_builder.tier_summary.months_abbr": "m",
+  "financials.scenario_builder.tier_summary.equals_separator": " = ",
+  "financials.scenario_builder.tier_summary.profit_label": "Lucro",
+  "financials.scenario_builder.tier_summary.margin_paren": "({percent}%)",
+
   // Models list
   "financials.models.title": "Projeções",
   "financials.models.subtitle":
