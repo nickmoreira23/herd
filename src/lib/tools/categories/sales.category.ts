@@ -1,3 +1,9 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck — TYPECHECK CARVE-OUT: uses `"manage"` permission
+// value not in the current enum ("read" | "write" | "read-write").
+// See AGENTS.md "Typecheck carve-outs". Removed when the enum is
+// expanded or the value is reconciled.
+
 import type { ToolCategoryManifest } from "../manifest";
 
 export const salesCategory: ToolCategoryManifest = {

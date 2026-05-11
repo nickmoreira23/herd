@@ -586,3 +586,47 @@ Use the helpers in `src/lib/i18n/notify.ts` instead of `toast.*` directly:
 
 These are required for all user-facing notifications in migrated features.
 They centralize translation handling and make the i18n contract explicit.
+
+# Pre-commit hooks
+
+Pre-commit hooks run via [`simple-git-hooks`](https://github.com/toplenboren/simple-git-hooks),
+configured in `package.json`. The hook executes:
+
+```
+npm run lint && npm run typecheck && npm test
+```
+
+before accepting a commit. It is auto-installed on fresh clones via the
+`postinstall` script (chained after `prisma generate`), so `npm install`
+in a new checkout sets up `.git/hooks/pre-commit` automatically. The
+hook file itself is not versioned.
+
+**Bypass** with `git commit --no-verify` when appropriate:
+mid-rebase, intentional WIP, fix-up commits that will be squashed,
+emergency hotfixes where the gate would block legitimate work. Not as
+a reflex to escape gates — if a gate fails, fix it first.
+
+CI continues to be the canonical gate (`.github/workflows/ci.yml` runs
+the same three commands plus `prisma validate` and `check:i18n`). The
+local hook is redundancy — it catches problems before push, not as a
+substitute for CI.
+
+## Typecheck carve-outs
+
+Three files are currently excluded from `tsc --noEmit` via top-of-file
+`// @ts-nocheck` directives. Each carries an inline comment naming the
+pending decision and pointing here. Carve-outs exit when the
+corresponding decision lands; new files **do not** enter this list
+without explicit discussion.
+
+| File | Pending |
+|---|---|
+| `src/lib/meeting-prep/specialist-templates.ts` | Schema mismatch: 15 object literals miss the `enabled` field on `SpecialistTemplate`. Default value is a product decision (Thread `meeting-prep-templates-enabled`). |
+| `src/components/tools/meeting-prep/specialist-template-card.tsx` | Base UI primitive does not support `asChild`; component-composition refactor required (Thread `meeting-prep-card-base-ui`). |
+| `src/lib/tools/categories/sales.category.ts` | Uses permission value `"manage"` not in the current enum (`"read" \| "write" \| "read-write"`); enum expansion or value reconciliation needed (Thread `tools-permission-enum`). |
+
+The same precedent rule from the [Lint debt](#lint-debt) section
+applies: new code is held to the strict ruleset; carve-outs only
+shrink. If your work would add a fourth file to this list, push back —
+the carve-out is a signal to fix the underlying issue, not a place to
+park it.

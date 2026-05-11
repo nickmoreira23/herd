@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
@@ -34,7 +35,10 @@
     "validate:feature-yml": "tsx scripts/validate-feature-yml.ts",
     "validate:handbook-graph": "tsx scripts/validate-handbook-graph.ts",
     "validate:handbook": "npm run gen:all && git diff --exit-code schemas/ mcp/generated/ docs/handbook/_meta/xrefmap.yml && npm run validate:feature-yml && npm run validate:handbook-graph",
-    "postinstall": "npx prisma generate"
+    "postinstall": "npx prisma generate && npx simple-git-hooks"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "npm run lint && npm run typecheck && npm test"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -120,6 +124,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
     "jsdom": "^29.1.0",
+    "simple-git-hooks": "^2.13.1",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5",
