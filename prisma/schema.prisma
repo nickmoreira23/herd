@@ -453,14 +453,14 @@ model SubscriptionTier {
   isFeatured Boolean                @default(false)
 
   // Pricing
-  monthlyPrice     Decimal       @db.Decimal(10, 2)
-  quarterlyPrice   Decimal       @db.Decimal(10, 2)
-  annualPrice      Decimal       @db.Decimal(10, 2)
-  quarterlyDisplay Decimal?      @db.Decimal(10, 2) // per-month equivalent shown to customer
-  annualDisplay    Decimal?      @db.Decimal(10, 2) // per-month equivalent shown to customer
-  setupFee         Decimal       @default(0) @db.Decimal(10, 2)
-  trialDays        Int           @default(0)
-  billingAnchor    BillingAnchor @default(SIGNUP_DATE)
+  monthlyPrice    Decimal       @db.Decimal(10, 2)
+  biannualPrice   Decimal       @db.Decimal(10, 2)
+  annualPrice     Decimal       @db.Decimal(10, 2)
+  biannualDisplay Decimal?      @db.Decimal(10, 2) // per-month equivalent shown to customer
+  annualDisplay   Decimal?      @db.Decimal(10, 2) // per-month equivalent shown to customer
+  setupFee        Decimal       @default(0) @db.Decimal(10, 2)
+  trialDays       Int           @default(0)
+  billingAnchor   BillingAnchor @default(SIGNUP_DATE)
 
   // Per-subscriber average costs — drive package profitability calc
   avgShippingCost   Decimal @default(0) @db.Decimal(10, 2)
@@ -639,7 +639,7 @@ model TierPricingSnapshot {
   id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   subscriptionTierId String   @db.Uuid
   monthlyPrice       Decimal  @db.Decimal(10, 2)
-  quarterlyPrice     Decimal? @db.Decimal(10, 2)
+  biannualPrice      Decimal? @db.Decimal(10, 2)
   annualPrice        Decimal? @db.Decimal(10, 2)
   changedBy          String?
   reason             String?
@@ -1835,7 +1835,7 @@ model MemberConnection {
 
 model IntegrationTierMapping {
   id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId           String?       @map("tenant_id") @db.Uuid
+  tenantId           String        @map("tenant_id") @db.Uuid
   integrationId      String        @db.Uuid
   externalPlanId     String
   externalPlanName   String?
@@ -1847,7 +1847,7 @@ model IntegrationTierMapping {
 
   integration      Integration      @relation(fields: [integrationId], references: [id], onDelete: Cascade)
   subscriptionTier SubscriptionTier @relation(fields: [subscriptionTierId], references: [id], onDelete: Cascade)
-  tenant           Organization?    @relation("IntegrationTierMappingTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant           Organization     @relation("IntegrationTierMappingTenant", fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([integrationId, externalPlanId])
   @@index([tenantId])
@@ -1873,7 +1873,7 @@ model IntegrationWebhookEvent {
 
 model IntegrationSyncLog {
   id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId         String?  @map("tenant_id") @db.Uuid
+  tenantId         String   @map("tenant_id") @db.Uuid
   integrationId    String   @db.Uuid
   action           String // e.g. "sync_plans", "test_connection"
   status           String // "success" | "error"
@@ -1881,8 +1881,8 @@ model IntegrationSyncLog {
   recordsProcessed Int      @default(0)
   createdAt        DateTime @default(now())
 
-  integration Integration   @relation(fields: [integrationId], references: [id], onDelete: Cascade)
-  tenant      Organization? @relation("IntegrationSyncLogTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+  integration Integration  @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  tenant      Organization @relation("IntegrationSyncLogTenant", fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([integrationId])
   @@index([tenantId])
