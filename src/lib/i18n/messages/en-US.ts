@@ -974,6 +974,18 @@ export const messages: Record<MessageKey, string> = {
   "financials.scenario_builder.tier_summary.profit_label": "Profit",
   "financials.scenario_builder.tier_summary.margin_paren": "({percent}%)",
 
+  // Scenario builder — long-form helper descriptions (Thread F.3)
+  "financials.scenario_builder.welcome_kit.description":
+    "{cost} / new sub · charged once at acquisition. Rolls into CAC and the month's acquisition spend.",
+  "financials.scenario_builder.buck_platform.description":
+    "{cost}/sub/mo · charged every month against every active subscriber.",
+  "financials.scenario_builder.path_scale.purchase_description":
+    "We pay the supplier {amount} per new subscriber at signup to acquire the Path Scale. We own the unit — no further payments regardless of churn.",
+  "financials.scenario_builder.path_scale.lease_description":
+    "We pay the supplier {fee}/sub/mo for the first {months} months while each subscriber stays active. After that the scale is ours — no further payments.",
+  "financials.scenario_builder.reference_package.description":
+    "Anchor COGS-per-sub to a real package's per-tier products. Each tier's cost in the projection becomes the sum of (qty × cost-of-goods) of the products in that tier's variant — replacing the flat apparel-budget guess.",
+
   // Models list
   "financials.models.title": "Projections",
   "financials.models.subtitle":

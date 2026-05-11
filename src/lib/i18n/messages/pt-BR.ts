@@ -999,6 +999,18 @@ export const messages = {
   "financials.scenario_builder.tier_summary.profit_label": "Lucro",
   "financials.scenario_builder.tier_summary.margin_paren": "({percent}%)",
 
+  // Scenario builder — long-form helper descriptions (Thread F.3)
+  "financials.scenario_builder.welcome_kit.description":
+    "{cost} / novo assinante · cobrado uma vez na aquisição. Entra no CAC e na despesa de aquisição do mês.",
+  "financials.scenario_builder.buck_platform.description":
+    "{cost}/sub/mês · cobrado todo mês sobre cada assinante ativo.",
+  "financials.scenario_builder.path_scale.purchase_description":
+    "Pagamos ao fornecedor {amount} por novo assinante no momento do cadastro para adquirir a Path Scale. A unidade é nossa — sem pagamentos adicionais, independentemente de churn.",
+  "financials.scenario_builder.path_scale.lease_description":
+    "Pagamos ao fornecedor {fee}/sub/mês durante os primeiros {months} meses em que cada assinante permanece ativo. Após isso, a balança é nossa — sem pagamentos adicionais.",
+  "financials.scenario_builder.reference_package.description":
+    "Ancora o COGS por assinante nos produtos por faixa de um pacote real. O custo de cada faixa na projeção passa a ser a soma de (qtd × custo das mercadorias) dos produtos da variante daquela faixa — substituindo o palpite da heurística de orçamento de vestuário.",
+
   // Models list
   "financials.models.title": "Projeções",
   "financials.models.subtitle":
