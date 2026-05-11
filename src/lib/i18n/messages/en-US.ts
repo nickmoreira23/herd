@@ -936,6 +936,44 @@ export const messages: Record<MessageKey, string> = {
   "financials.cohort.aggregate.window_revenue_label": "Window revenue:",
   "financials.cohort.aggregate.window_profit_label": "Window profit:",
 
+  // Scenario builder — short labels
+  "financials.scenario_builder.add_ons.title": "Add-ons",
+  "financials.scenario_builder.path_scale.label": "Path Scale",
+  "financials.scenario_builder.path_scale.description":
+    "Smart scale that tracks subscriber health metrics.",
+  // Rep schedule override
+  "financials.scenario_builder.rep_schedule.override": "Override",
+  "financials.scenario_builder.rep_schedule.off": "Off",
+  "financials.scenario_builder.rep_schedule.column_period": "Period",
+  "financials.scenario_builder.rep_schedule.column_growth":
+    "Growth / period (%)",
+  "financials.scenario_builder.rep_schedule.column_sales_per_rep":
+    "Sales / rep",
+  "financials.scenario_builder.rep_schedule.column_reps_end": "Reps end",
+  // Overhead categories
+  "financials.scenario_builder.overhead.empty_state":
+    "No overhead categories yet. Add one to start tracking monthly OpEx.",
+  "financials.scenario_builder.overhead.add_category": "Add category",
+  "financials.scenario_builder.overhead.pre_launch_baseline":
+    "Pre-launch baseline:",
+  "financials.scenario_builder.overhead.milestones.column_at_subs":
+    "At ≥ subs",
+  "financials.scenario_builder.overhead.milestones.column_monthly_cost":
+    "Monthly cost",
+  "financials.scenario_builder.overhead.milestones.add": "Add milestone",
+  // Reference package picker
+  "financials.scenario_builder.product_pack.title": "Reference Package",
+  "financials.scenario_builder.product_pack.none_option":
+    "None — use apparel budget heuristic",
+  "financials.scenario_builder.product_pack.per_tier_cogs_header":
+    "Per-tier COGS from {pack_name}",
+  // Tier summary + math display
+  "financials.scenario_builder.tier_summary.per_month_suffix": "/mo",
+  "financials.scenario_builder.tier_summary.months_abbr": "mo",
+  "financials.scenario_builder.tier_summary.equals_separator": " = ",
+  "financials.scenario_builder.tier_summary.profit_label": "Profit",
+  "financials.scenario_builder.tier_summary.margin_paren": "({percent}%)",
+
   // Models list
   "financials.models.title": "Projections",
   "financials.models.subtitle":

@@ -724,6 +724,7 @@ function TierAddOns({
   tier: import("@/lib/financial-engine").TierFinancialInput;
   onUpdateTier: (updates: Partial<import("@/lib/financial-engine").TierFinancialInput>) => void;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const readOnly = useContext(ReadOnlyContext);
   const pathScale = tier.addOns?.pathScale;
@@ -767,10 +768,12 @@ function TierAddOns({
         className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors w-full"
       >
         <ChevronRight className={cn("h-3 w-3 transition-transform duration-150", open && "rotate-90")} />
-        <span className="font-medium uppercase tracking-wider">Add-ons</span>
+        <span className="font-medium uppercase tracking-wider">{t("financials.scenario_builder.add_ons.title")}</span>
         {hasPathScale && (
           <span className="ml-auto text-[9px] rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 px-1.5 py-0.5 font-semibold">
-            Path Scale · {pathScale!.mode === "purchase" ? "Purchase" : "Lease"}
+            {t("financials.scenario_builder.path_scale.label")}
+            <span className="mx-1">·</span>
+            {pathScale!.mode === "purchase" ? "Purchase" : "Lease"}
           </span>
         )}
       </button>
@@ -780,9 +783,9 @@ function TierAddOns({
           <div className="rounded-md border border-border/60 p-2.5 space-y-2">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <p className="text-[11px] font-semibold leading-tight">Path Scale</p>
+                <p className="text-[11px] font-semibold leading-tight">{t("financials.scenario_builder.path_scale.label")}</p>
                 <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">
-                  Smart scale that tracks subscriber health metrics.
+                  {t("financials.scenario_builder.path_scale.description")}
                 </p>
               </div>
               {!readOnly && (
@@ -1248,6 +1251,7 @@ function SalesRepOverride({
   ) => void;
   locale: Locale;
 }) {
+  const t = useT();
   const readOnly = useContext(ReadOnlyContext);
   const override = channel.override;
   const active = !!override;
@@ -1389,7 +1393,7 @@ function SalesRepOverride({
           and not clickable when readOnly is true. */}
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-          Override
+          {t("financials.scenario_builder.rep_schedule.override")}
         </span>
         <span className="text-[10px] text-muted-foreground/70">
           {!active
@@ -1410,7 +1414,7 @@ function SalesRepOverride({
             readOnly && "opacity-60 cursor-not-allowed",
           )}
         >
-          Off
+          {t("financials.scenario_builder.rep_schedule.off")}
         </button>
         {(["annual", "biannual", "quarterly"] as const).map((freq) => {
           const isOn = active && override.frequency === freq;
@@ -1438,12 +1442,12 @@ function SalesRepOverride({
       {active && (
         <div className="rounded-md bg-muted/30 px-2.5 py-2 space-y-1">
           <div className="grid grid-cols-[60px_1fr_1fr_80px] gap-1.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wider px-1">
-            <span>Period</span>
+            <span>{t("financials.scenario_builder.rep_schedule.column_period")}</span>
             <span title="% growth across the whole period — the engine compounds it into a per-month rate based on the frequency.">
-              Growth / period (%)
+              {t("financials.scenario_builder.rep_schedule.column_growth")}
             </span>
-            <span>Sales / rep</span>
-            <span className="text-right">Reps end</span>
+            <span>{t("financials.scenario_builder.rep_schedule.column_sales_per_rep")}</span>
+            <span className="text-right">{t("financials.scenario_builder.rep_schedule.column_reps_end")}</span>
           </div>
           {override.periods.map((p) => (
             <div
@@ -1511,6 +1515,7 @@ function OverheadCategoriesEditor({
   ) => void;
   locale: Locale;
 }) {
+  const t = useT();
   const readOnly = useContext(ReadOnlyContext);
   const categories = overhead.categories ?? [];
 
@@ -1552,7 +1557,7 @@ function OverheadCategoriesEditor({
     <div className="space-y-2">
       {categories.length === 0 ? (
         <div className="rounded-md bg-muted/30 px-2.5 py-3 text-[11px] text-muted-foreground">
-          No overhead categories yet. Add one to start tracking monthly OpEx.
+          {t("financials.scenario_builder.overhead.empty_state")}
         </div>
       ) : (
         categories.map((cat) => (
@@ -1574,15 +1579,15 @@ function OverheadCategoriesEditor({
             className="text-[11px] inline-flex items-center gap-1 px-2 py-1 rounded-md border border-dashed text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-colors"
           >
             <Plus className="h-3 w-3" />
-            Add category
+            {t("financials.scenario_builder.overhead.add_category")}
           </button>
           {categories.length > 0 && (
             <span className="text-[11px] text-muted-foreground">
-              Pre-launch baseline:{" "}
+              {t("financials.scenario_builder.overhead.pre_launch_baseline")}{" "}
               <strong className="text-foreground tabular-nums">
                 {formatNumberAsMoney(baselineMonthly, locale)}
               </strong>{" "}
-              / mo
+              {t("financials.scenario_builder.tier_summary.per_month_suffix")}
             </span>
           )}
         </div>
@@ -1612,6 +1617,7 @@ function OverheadCategoryRow({
   readOnly: boolean;
   locale: Locale;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const sortedMilestones = [...category.milestones].sort(
     (a, b) => a.memberCount - b.memberCount,
@@ -1677,7 +1683,7 @@ function OverheadCategoryRow({
               <span className="text-foreground">{formatNumberAsMoney(top, locale)}</span>
             </>
           )}
-          <span className="text-muted-foreground"> / mo</span>
+          <span className="text-muted-foreground"> {t("financials.scenario_builder.tier_summary.per_month_suffix")}</span>
         </span>
         {!readOnly && (
           <button
@@ -1693,8 +1699,8 @@ function OverheadCategoryRow({
       {open && (
         <div className="border-t bg-muted/20 px-2 py-2 space-y-1.5">
           <div className="grid grid-cols-[1fr_1fr_24px] gap-1.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wider px-1">
-            <span>At ≥ subs</span>
-            <span>Monthly cost</span>
+            <span>{t("financials.scenario_builder.overhead.milestones.column_at_subs")}</span>
+            <span>{t("financials.scenario_builder.overhead.milestones.column_monthly_cost")}</span>
             <span />
           </div>
           {category.milestones
@@ -1757,7 +1763,7 @@ function OverheadCategoryRow({
               className="text-[11px] inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-dashed text-muted-foreground hover:bg-background hover:text-foreground transition-colors"
             >
               <Plus className="h-3 w-3" />
-              Add milestone
+              {t("financials.scenario_builder.overhead.milestones.add")}
             </button>
           )}
         </div>
@@ -1962,6 +1968,7 @@ function ReferencePackageSelector({
   locale: Locale;
 }) {
   const NONE = "__none";
+  const t = useT();
   const selected = inputs.referencePackageId ?? NONE;
   const onChange = (next: string) => {
     if (next === NONE) {
@@ -1994,7 +2001,7 @@ function ReferencePackageSelector({
       <div className="flex items-center gap-2">
         <PackageIcon className="h-3.5 w-3.5 text-muted-foreground" />
         <p className="text-[11px] font-semibold leading-tight">
-          Reference Package
+          {t("financials.scenario_builder.product_pack.title")}
         </p>
       </div>
       <p className="text-[10px] text-muted-foreground leading-snug">
@@ -2011,13 +2018,13 @@ function ReferencePackageSelector({
               the "trigger shows UUID" problem. */}
           <span className="truncate">
             {selected === NONE
-              ? "None — use apparel budget heuristic"
+              ? t("financials.scenario_builder.product_pack.none_option")
               : (activePkg?.name ?? "Select package…")}
           </span>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value={NONE} className="text-xs">
-            None — use apparel budget heuristic
+            {t("financials.scenario_builder.product_pack.none_option")}
           </SelectItem>
           {packagesCatalog.map((p) => (
             <SelectItem key={p.id} value={p.id} className="text-xs">
@@ -2029,7 +2036,7 @@ function ReferencePackageSelector({
       {activePkg && (
         <div className="space-y-1 pt-1 border-t border-border/40">
           <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            Per-tier COGS from {activePkg.name}
+            {t("financials.scenario_builder.product_pack.per_tier_cogs_header", { pack_name: activePkg.name })}
           </p>
           <div className="space-y-1">
             {inputs.tiers.map((t) => (
@@ -2066,6 +2073,7 @@ function PackageTierBreakdown({
   products: import("@/app/admin/financials/data").PackageProductBreakdown[] | undefined;
   locale: Locale;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const hasProducts = products != null && products.length > 0;
   return (
@@ -2107,7 +2115,8 @@ function PackageTierBreakdown({
                 {p.quantity > 1 ? (
                   <>
                     {formatNumberAsMoney(p.costEach, locale)} ×{" "}
-                    {p.quantity} ={" "}
+                    {p.quantity}
+                    {t("financials.scenario_builder.tier_summary.equals_separator")}
                     <span className="text-foreground font-medium">
                       {formatNumberAsMoney(p.subtotal, locale)}
                     </span>
@@ -2163,6 +2172,7 @@ function PlanVariationRow({
   globalShipping: number;
   locale: Locale;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
 
   const productCOGS = tier.packageCOGSPerSub ?? tier.apparelCOGSPerMonth ?? 0;
@@ -2211,11 +2221,12 @@ function PlanVariationRow({
           <span className="text-foreground font-medium">
             {formatNumberAsMoney(ratePerMonth, locale)}
           </span>
-          /mo
+          {t("financials.scenario_builder.tier_summary.per_month_suffix")}
           {months > 1 && (
             <>
               {" · "}
-              {formatNumberAsMoney(totalPrepaid, locale)}/{months}mo
+              {formatNumberAsMoney(totalPrepaid, locale)}/{months}
+              {t("financials.scenario_builder.tier_summary.months_abbr")}
             </>
           )}
         </span>
@@ -2250,16 +2261,17 @@ function PlanVariationRow({
             />
           )}
           <div className="flex items-center justify-between gap-2 border-t border-border/30 pt-0.5 mt-0.5">
-            <span className="text-muted-foreground font-medium">Profit</span>
+            <span className="text-muted-foreground font-medium">{t("financials.scenario_builder.tier_summary.profit_label")}</span>
             <span
               className={cn(
                 "tabular-nums font-semibold",
                 profitPerMonth >= 0 ? "text-emerald-600" : "text-red-500",
               )}
             >
-              {formatNumberAsMoney(profitPerMonth, locale)}/mo
+              {formatNumberAsMoney(profitPerMonth, locale)}
+              {t("financials.scenario_builder.tier_summary.per_month_suffix")}
               <span className="text-muted-foreground font-normal ml-1.5">
-                ({marginPercent.toFixed(1)}%)
+                {t("financials.scenario_builder.tier_summary.margin_paren", { percent: marginPercent.toFixed(1) })}
               </span>
             </span>
           </div>
