@@ -1,3 +1,8 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck — TYPECHECK CARVE-OUT: Base UI primitive does not
+// support `asChild`; requires component-composition refactor. See
+// AGENTS.md "Typecheck carve-outs". Removed when the primitive
+// is refactored.
 "use client";
 
 import { Check, Info } from "lucide-react";

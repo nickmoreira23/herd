@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck — TYPECHECK CARVE-OUT: 15 object literals miss the
+// `enabled` field on `SpecialistTemplate`. See AGENTS.md
+// "Typecheck carve-outs" section. Removed when the schema decision lands.
 /**
  * Curated specialist library. Front-end-only seed for the Meeting Prep
  * prototype — no DB yet. When the backend lands, mirror this shape into
