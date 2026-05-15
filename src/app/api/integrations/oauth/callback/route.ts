@@ -7,6 +7,11 @@ import {
 } from "@/lib/services/integration-oauth";
 import type { IntegrationOAuthCredentials } from "@/lib/services/integration-oauth";
 
+// TODO(camada-1, sub-etapa-5): add requireSuperAdmin + withTenant once OAuth state validation
+// is implemented (HMAC-signed state param). The redirect flow does not carry a session cookie
+// reliably across the OAuth provider round-trip, so auth enforcement must be embedded in the
+// signed state. Track: Camada 1 Sub-etapa 5.
+
 /**
  * GET — OAuth2 callback handler for integrations.
  * State format: "slug:integrationId"
@@ -92,6 +97,8 @@ export async function GET(request: Request) {
       const body = await tokenRes.text();
       await prisma.integrationSyncLog.create({
         data: {
+          // TODO(Sub-etapa 5): resolve tenantId from OAuth state or session
+          tenantId: "",
           integrationId,
           action: "connect",
           status: "error",
@@ -111,6 +118,8 @@ export async function GET(request: Request) {
     if (isSlack && tokenData.ok === false) {
       await prisma.integrationSyncLog.create({
         data: {
+          // TODO(Sub-etapa 5): resolve tenantId from OAuth state or session
+          tenantId: "",
           integrationId,
           action: "connect",
           status: "error",
@@ -144,6 +153,8 @@ export async function GET(request: Request) {
 
     await prisma.integrationSyncLog.create({
       data: {
+        // TODO(Sub-etapa 5): resolve tenantId from OAuth state or session
+        tenantId: "",
         integrationId,
         action: "connect",
         status: "success",
@@ -162,6 +173,8 @@ export async function GET(request: Request) {
     console.error(`OAuth callback error for ${slug}:`, e);
     await prisma.integrationSyncLog.create({
       data: {
+        // TODO(Sub-etapa 5): resolve tenantId from OAuth state or session
+        tenantId: "",
         integrationId,
         action: "connect",
         status: "error",

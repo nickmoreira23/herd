@@ -1,3 +1,6 @@
+// SECURITY: missing HMAC signature validation. Tracked: Camada 1 Sub-etapa 5.
+// Acceptable while Railway pre-production is not publicly exposed.
+// DO NOT remove this comment without implementing signature verification.
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 

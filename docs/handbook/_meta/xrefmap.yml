@@ -85,6 +85,13 @@ references:
     title:
       pt-BR: Diversos
       en-US: Miscellaneous
+  herd.category.integrations.integration-model:
+    level: category
+    id: integration-model
+    path: docs/handbook/integrations/integration-model/(overview)
+    title:
+      pt-BR: Modelo de Integrações
+      en-US: Integration Model
   herd.category.networks.corporate-network:
     level: category
     id: corporate-network
