@@ -92,3 +92,4 @@ Distills 10 sub-threads (A.1 → D.3.3, commits `91f163d` →
 protocol with pause-and-report gates; that protocol is **not**
 prescribed here as a repo rule — the technical invariants
 above stand regardless.
+
