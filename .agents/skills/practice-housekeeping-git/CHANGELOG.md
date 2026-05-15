@@ -1,0 +1,34 @@
+# Changelog — practice-housekeeping-git
+
+Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
+
+## 1.1 — 2026-05-15
+
+Enriquecimento pós-Fase 0 com 6 aprendizados operacionais descobertos empiricamente durante as Sub-etapas 0.3d.2 → 0.4.4.
+
+Aprendizados adicionados (seção `## Aprendizados operacionais pós-PR #16` no `SKILL.md`):
+
+1. Patch-equivalence pre-flight em reconciliação main↔origin (origem: Sub-etapa 0.2).
+2. Patch-id check é necessário mas não suficiente — adicionar supersede detection (origem: Sub-etapa 0.5).
+3. `git checkout --ours <file>` é destrutivo em arquivos multi-região (origem: Sub-etapa 0.4.3).
+4. Branch protection: `freshness`/`validate` são checks path-filter, não órfãos (origem: Sub-etapa 0.4.4).
+5. Backups específicos por sub-etapa de alto risco (com distinção entre `archive/*` e `pre-*-merge`).
+6. Batches únicos > while-read loops em operações git.
+
+Mergeado via PR [#18](https://github.com/nickmoreira23/herd/pull/18) na sub-etapa 0.6 do Plano Fase 0.
+
+## 1.0 — 2026-05-14
+
+Versão inicial. Codifica o protocolo de 3 fases (Discovery → Decisão → Execução) refinado através das Sub-etapas 0.3a → 0.3d.2 do Plano Fase 0 do Plano Central HERD.
+
+Cobertura:
+- 47 branches deletadas durante a Fase 0 (de 53 → 6 iniciais antes da 0.4).
+- 48 tags archive criadas (todas pushadas pra origin).
+- Zero perda de trabalho — todas as branches recuperáveis via tags.
+
+Conteúdo inicial:
+- Princípios (6): tags archive obrigatórios, discovery exaustiva, critério rígido, pause-and-report, patches já em main via squash, comparação local vs origin.
+- Procedimento canônico (Fase A/B/C).
+- Pitfalls observados (5): while-read em subshells, Prisma client dessincronizado, branch protection em main, path-filter deadlock, gh pr create --head explícito.
+
+Mergeado via PR [#16](https://github.com/nickmoreira23/herd/pull/16) na sub-etapa 0.3d.2.
