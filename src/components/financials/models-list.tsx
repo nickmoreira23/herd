@@ -260,7 +260,7 @@ function ModelsTable({
                 </td>
                 <td className={cn(
                   "px-3 py-2.5 text-right tabular-nums font-medium",
-                  ltvCacRatio !== undefined
+                  ltvCacRatio != null
                     ? ltvCacRatio >= 3
                       ? "text-green-600 dark:text-green-400"
                       : ltvCacRatio >= 1
@@ -268,7 +268,7 @@ function ModelsTable({
                         : "text-red-600 dark:text-red-400"
                     : ""
                 )}>
-                  {ltvCacRatio !== undefined
+                  {ltvCacRatio != null
                     ? ltvCacRatio === Infinity
                       ? "∞"
                       : t("financials.models.ratio_x", { value: ltvCacRatio.toFixed(1) })
@@ -276,7 +276,7 @@ function ModelsTable({
                 </td>
                 <td className={cn(
                   "px-3 py-2.5 text-right tabular-nums font-medium",
-                  breakeven !== undefined
+                  breakeven != null
                     ? breakeven === Infinity
                       ? "text-red-500"
                       : breakeven <= 6
@@ -284,7 +284,7 @@ function ModelsTable({
                         : "text-amber-600 dark:text-amber-400"
                     : ""
                 )}>
-                  {breakeven !== undefined
+                  {breakeven != null
                     ? breakeven === Infinity
                       ? t("financials.models.breakeven.never")
                       : t("financials.models.breakeven.month_short", { month: breakeven })
@@ -409,14 +409,14 @@ function ModelCard({
                 icon={<Target className="h-3 w-3" />}
                 label={t("financials.models.column.ltv_cac")}
                 value={
-                  ltvCacRatio !== undefined
+                  ltvCacRatio != null
                     ? ltvCacRatio === Infinity
                       ? "∞"
                       : t("financials.models.ratio_x", { value: ltvCacRatio.toFixed(1) })
                     : "—"
                 }
                 valueClass={
-                  ltvCacRatio !== undefined
+                  ltvCacRatio != null
                     ? ltvCacRatio >= 3
                       ? "text-green-600 dark:text-green-400"
                       : ltvCacRatio >= 1
@@ -429,14 +429,14 @@ function ModelCard({
                 icon={<BarChart3 className="h-3 w-3" />}
                 label={t("financials.models.column.breakeven")}
                 value={
-                  breakeven !== undefined
+                  breakeven != null
                     ? breakeven === Infinity
                       ? t("financials.models.breakeven.never")
                       : t("financials.models.breakeven.month_long", { month: breakeven })
                     : "—"
                 }
                 valueClass={
-                  breakeven !== undefined
+                  breakeven != null
                     ? breakeven === Infinity
                       ? "text-red-500"
                       : breakeven <= 6
