@@ -60,6 +60,44 @@ npx tsx scripts/create-tool-category.ts --name "hr" --display "Human Resources" 
 
 Then: import and register in `src/lib/tools/registry.ts`, add icon mapping in `category-meta.ts`.
 
+# Tenancy
+
+## requireSuperAdmin helper
+
+Admin routes in `src/app/api/` use `requireSuperAdmin` (at `src/lib/auth/require-super-admin.ts`)
+to enforce a valid session with role `super_admin`. Returns a 401/403 Response if invalid.
+Pattern: call first, return the Response if it is one, then proceed with the session.
+
+```typescript
+const sessionOrResponse = await requireSuperAdmin();
+if (sessionOrResponse instanceof Response) return sessionOrResponse;
+const session = sessionOrResponse;
+// session.user.id is now guaranteed
+```
+
+The check is performed at the start of each route handler, before `try {` and before
+any Prisma queries. The helper uses `apiError` from `@/lib/api-utils` for consistent
+error shape (`{ error: string, details?: unknown }`).
+
+The `org_admin` concept does not exist in Camada 1 (YAGNI — 3 DEV orgs, all yours).
+Introduce `org_admin` alongside a `Membership` table and drop of `NetworkProfile.email @unique`
+when the product becomes real SaaS multi-tenant (same trigger package).
+
+### Status Camada 1 Sub-etapa 3.5
+
+All 6 admin integration routes use `requireSuperAdmin + withTenant`:
+- `src/app/api/integrations/[id]/test/route.ts`
+- `src/app/api/integrations/[id]/sync/route.ts`
+- `src/app/api/integrations/[id]/connect/route.ts`
+- `src/app/api/integrations/[id]/logs/route.ts`
+- `src/app/api/integrations/[id]/mappings/route.ts`
+- `src/app/api/integrations/airtable/import/route.ts`
+
+`IntegrationTierMapping.tenantId` is NOT NULL (Migration 003).
+`IntegrationSyncLog.tenantId` is NOT NULL (Migration 003 — all ISL writers in admin routes were wrapped with withTenant before promotion).
+`IntegrationWebhookEvent.tenantId` remains nullable pending webhook tenant resolution (Sub-etapa 5/6).
+`oauth/callback` deferred with TODO inline (token exchange does not carry orgId yet).
+
 # Database migrations
 
 This project uses `prisma migrate`, not `db push`.
@@ -464,6 +502,79 @@ Without doc discipline, the Handbook drifts from reality. A drifted
 Handbook is worse than no Handbook — it lies confidently. The
 5-minute cost of updating docs alongside code is small; the cost of
 debugging based on stale docs is enormous.
+
+## Tenancy
+
+`Organization` is the tenant boundary. Each `NetworkProfile` owns one
+personal Organization (1:1, V1). Four tables are tenant-scoped via
+`tenant_id`:
+
+- `MemberConnection` — `tenant_id NOT NULL` + FK + index.
+- `IntegrationTierMapping`, `IntegrationWebhookEvent`,
+  `IntegrationSyncLog` — `tenant_id` nullable + FK + index. NOT NULL
+  is deferred until admin API auth and webhook tenant resolution land
+  in a later sub-etapa.
+
+**X1 — `Integration` is single-tenant.** The integration catalog is
+plataforma-wide. `Integration.tenantId` stays nullable indefinitely,
+and `Integration.slug @unique` global is preserved. Trigger to revisit:
+first enterprise customer that needs their own OAuth app.
+
+### Using `withTenant`
+
+`src/lib/tenancy/context.ts` exports an `AsyncLocalStorage`-backed
+helper. Wrap business logic in `withTenant(orgId, () => ...)`; queries
+on tenant-scoped models inside the callback are auto-filtered by
+`tenant_id`.
+
+```typescript
+import { withTenant } from "@/lib/tenancy/context";
+
+const session = await auth();
+return withTenant(session.user.activeOrgId, async () => {
+  return prisma.memberConnection.findMany();
+});
+```
+
+`requireTenantId()` reads the current context and throws if there is
+none — use it at the entry of business-logic helpers that must run
+under a tenant.
+
+### ALS gotcha — sync `fn` returning a Promise
+
+`AsyncLocalStorage` loses context if `storage.run(ctx, fn)` is given a
+synchronous `fn` that just returns a Promise: the Promise's
+continuations resolve after `storage.run` exits its scope and the
+async-hook chain breaks. `withTenant` works around this by wrapping
+the user `fn` with an internal `async () => fn()`. **Any new helper
+that uses `AsyncLocalStorage` must do the same.**
+
+```typescript
+// wrong — context leaks before Prisma's continuations run
+storage.run(ctx, () => prisma.x.findMany());
+
+// right — internal async forces await inside the scope
+storage.run(ctx, async () => fn());
+```
+
+### ESLint rule — `herd-tenancy/no-direct-prisma-on-scoped-models`
+
+Bans `prisma.{memberConnection,integrationTierMapping,integrationWebhookEvent,integrationSyncLog}.X`
+outside an enclosing `withTenant(...)` call. Static AST walk only — if
+the prisma call is inside a helper function called from a `withTenant`
+block, the rule cannot prove the chain. To declare an exception, add
+an inline disable with a comment explaining the helper's contract:
+
+```typescript
+// eslint-disable-next-line herd-tenancy/no-direct-prisma-on-scoped-models
+// — caller is always inside withTenant; see resolveTenantFromWebhookPayload.
+const conn = await prisma.memberConnection.findFirst({ ... });
+```
+
+Legacy admin API routes and webhook handlers that pre-date Camada 1
+are downgraded to `warn` in `eslint.config.mjs`. New code is held to
+`error`. When you refactor a legacy route to wrap with `withTenant`,
+remove its entry from the warn override list.
 
 ## Boundaries
 

@@ -10,6 +10,8 @@ import {
   withConcurrencyLimit,
   type AirtableAttachment,
 } from "@/lib/services/airtable";
+import { requireSuperAdmin } from "@/lib/auth/require-super-admin";
+import { withTenant } from "@/lib/tenancy/context";
 
 const fieldMappingSchema = z.object({
   airtableFieldId: z.string(),
@@ -29,6 +31,11 @@ const importSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const sessionOrResponse = await requireSuperAdmin();
+  if (sessionOrResponse instanceof Response) return sessionOrResponse;
+  const session = sessionOrResponse;
+
+  return withTenant(session.user.activeOrgId ?? "", async () => {
   try {
     // Validate request
     const body = await request.json();
@@ -129,7 +136,8 @@ export async function POST(request: Request) {
       table.id,
       fieldIdMapping,
       fieldTypeMapping,
-      integration.id
+      integration.id,
+      session.user.activeOrgId ?? ""
     ).catch((err) => {
       console.error("Airtable import background error:", err);
     });
@@ -139,6 +147,7 @@ export async function POST(request: Request) {
     console.error("POST /api/integrations/airtable/import error:", e);
     return apiError("Failed to start import", 500);
   }
+  });
 }
 
 /**
@@ -152,8 +161,10 @@ async function importRecords(
   herdTableId: string,
   fieldIdMapping: Record<string, string>,
   fieldTypeMapping: Record<string, string>,
-  integrationId: string
+  integrationId: string,
+  tenantId: string
 ) {
+  return withTenant(tenantId, async () => {
   const svc = new AirtableService(apiToken);
   let totalImported = 0;
   let sortOrder = 0;
@@ -245,6 +256,7 @@ async function importRecords(
 
     await prisma.integrationSyncLog.create({
       data: {
+        tenantId,
         integrationId,
         action: "import_table",
         status: "success",
@@ -266,6 +278,7 @@ async function importRecords(
 
     await prisma.integrationSyncLog.create({
       data: {
+        tenantId,
         integrationId,
         action: "import_table",
         status: "error",
@@ -274,4 +287,5 @@ async function importRecords(
       },
     });
   }
+  });
 }

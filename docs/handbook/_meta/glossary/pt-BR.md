@@ -10,7 +10,7 @@ uid: herd.meta.glossary
 
 Glossário global agregado a partir das seções `## Glossary` de todas as entries do Handbook. Gerado automaticamente por `npm run gen:glossary`.
 
-**Última atualização:** 2026-05-04
+**Última atualização:** 2026-05-11
 
 <!-- BEGIN_GENERATED_GLOSSARY -->
 
@@ -434,11 +434,47 @@ componente embutido em outra tela que mostra ou manipula dados.
 
 entidade concreta atrelada a contexto específico, derivada de um template.
 
+### Integração horizontal
+
+**From [Modelo de Integrações](/admin/handbook/integrations/integration-model):**
+
+Usa a infraestrutura de integração compartilhada (armazenamento de tokens, tabela de webhooks, sync logs) sem models específicos de domínio.
+
+### Integração profunda
+
+**From [Modelo de Integrações](/admin/handbook/integrations/integration-model):**
+
+OAuth + read/write + webhooks de entrada + sincronização de estado + validação de assinatura + deduplicação.
+
+### Integração rasa
+
+**From [Modelo de Integrações](/admin/handbook/integrations/integration-model):**
+
+OAuth + chamadas de API somente-leitura. Sem webhooks de entrada ou sincronização de estado.
+
+### Integração vertical
+
+**From [Modelo de Integrações](/admin/handbook/integrations/integration-model):**
+
+Categoria de integrações que compartilha regras de negócio de domínio que exigem seus próprios models ou invariantes (ex.: Payment).
+
+### Integration
+
+**From [Modelo de Integrações](/admin/handbook/integrations/integration-model):**
+
+Conexão entre o HERD e um serviço externo específico, identificada por um `slug` (ex.: `recharge`, `gorgias`, `zoom`).
+
 ### Integration surface
 
 **From [Pattern: Surface](/admin/handbook/meta/pattern-surface-level):**
 
 External surface fornecida por sistema terceiro que recebe dados nossos (ex: Stripe checkout).
+
+### IntegrationWebhookEvent
+
+**From [Modelo de Integrações](/admin/handbook/integrations/integration-model):**
+
+Payload de webhook de entrada armazenado antes do processamento, habilitando replay e auditoria.
 
 ### Internal Surface
 
@@ -515,6 +551,12 @@ declaração TypeScript que descreve a tool — identidade, paths, capabilities,
 **From [Servidor MCP](/admin/handbook/meta/mcp):**
 
 Model Context Protocol — spec aberta que define como AI assistants consultam recursos externos (tools, resources, prompts) de forma uniforme.
+
+### MemberConnection
+
+**From [Modelo de Integrações](/admin/handbook/integrations/integration-model):**
+
+Registro por-perfil que armazena tokens OAuth para integrações que suportam conexões pessoais.
 
 ### Mini-spec
 

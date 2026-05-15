@@ -1,7 +1,7 @@
 # HERD
 
 > HERD is an AI-native B2B platform for marketing networks.
-> Currently 54 documented entries across 5 layers (Networks, Solutions, Tools, Blocks, Integrations) plus a meta namespace.
+> Currently 55 documented entries across 5 layers (Networks, Solutions, Tools, Blocks, Integrations) plus a meta namespace.
 
 ## Documentation
 
@@ -25,6 +25,7 @@
 - [Infrastructure](https://herd.app/admin/handbook/tools/infrastructure): Cross-cutting functional tools that sustain other features without belonging to a specific business domain — events, queues, observability.
 - [Financial](https://herd.app/admin/handbook/blocks/financial): Financial data primitives — records, flows, immutable events — that serve as the foundation for tools and product flows.
 - [Miscellaneous](https://herd.app/admin/handbook/blocks/miscellaneous): Blocks not yet classified into a specific category. Temporary accommodation — debt to resolve during backfill.
+- [Integration Model](https://herd.app/admin/handbook/integrations/integration-model): Conceptual architecture of HERD integrations: horizontal vs. vertical axis (shared infra vs. domain specialization) and shallow vs. deep axis (OAuth+read vs. webhooks+sync+dedup).
 - [Communication](https://herd.app/admin/handbook/areas/communication): Communication between people in the system. Tools that enable conversation, messaging, and human-human or human-agent interaction.
 - [Identity](https://herd.app/admin/handbook/areas/identity): Identity and knowledge area. Tools that manage who is in the system (people, organizations) and what the system knows.
 - [Infrastructure](https://herd.app/admin/handbook/areas/infrastructure): Under-the-hood platform infrastructure. Tools that document, configure, or operate the platform itself — invisible in normal flow.

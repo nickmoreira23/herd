@@ -1,0 +1,41 @@
+id: integration-model
+uid: herd.category.integrations.integration-model
+level: category
+technical_category: foundation
+
+title:
+  pt-BR: "Modelo de Integrações"
+  en-US: "Integration Model"
+description:
+  pt-BR: "Arquitetura conceitual das integrações do HERD: eixo horizontal vs. vertical (infraestrutura compartilhada vs. especialização por domínio) e eixo raso vs. profundo (OAuth+read vs. webhooks+sync+dedup)."
+  en-US: "Conceptual architecture of HERD integrations: horizontal vs. vertical axis (shared infra vs. domain specialization) and shallow vs. deep axis (OAuth+read vs. webhooks+sync+dedup)."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-11
+updated: 2026-05-11
+
+parent: herd.layer.integrations
+children: []
+consumes: []
+consumed_by: []
+related:
+  - herd.layer.integrations
+
+source_paths:
+  - src/lib/integrations/
+admin_paths:
+  - /admin/integrations
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog
