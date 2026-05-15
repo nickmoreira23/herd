@@ -3,8 +3,8 @@ name: practice-housekeeping-git
 description: Workflow para limpeza de branches git em lote com preservação histórica. Use quando o repo acumular branches órfãs, stacks de trabalho mergeado, sub-agent scratch branches, ou fragmentação que dificulte navegação. Aplicado na Fase 0 do Plano Central HERD (Sub-etapas 0.3a, 0.3b, 0.3c, 0.3d.1, 0.3d.2 — 47 branches deletadas, 48 tags archive criadas).
 license: Apache-2.0
 title: Git Housekeeping — Archive + Batch Delete
-version: "1.0"
-last_updated: "2026-05-14"
+version: "1.1"
+last_updated: "2026-05-15"
 status: stable
 metadata:
   herd:
@@ -180,6 +180,116 @@ Sub-etapas:
 - **0.3c** — 5 claude/* ambíguas + 4 casos especiais + worktree órfão.
 - **0.3d.1** — 5 phase-refactor/* (R2.5-prelude — 9 patterns no Handbook).
 - **0.3d.2** — 18 phase-1.5/* (i18n stack — merge diferido).
+
+## Aprendizados operacionais pós-PR #16 (Fase 0 — Sub-etapas 0.3d.2 → 0.4.4)
+
+Aprendizados descobertos empiricamente durante housekeeping da Fase 0 que estendem
+ou refinam o protocolo desta skill.
+
+### 1. Patch-equivalence pre-flight em reconciliação main↔origin (origem: 0.2)
+
+Em qualquer reconciliação main local ↔ origin/main, executar **patch-equivalence
+pre-flight** antes de decidir estratégia (A merge, B rebase, C reset --hard).
+
+Comando padrão:
+
+```bash
+diff <(git show <local-commit> --format= --) <(git show <origin-candidate> --format= --)
+```
+
+Se patches batem, commit local já foi consumado em origin sob outro hash — não há
+trabalho a preservar. Decisão default vira reset --hard.
+
+**Caso real:** commit `908dc18` (local) era patch-equivalente a `6f39ece` (origin)
+— refutou recomendação default de Opção A merge.
+
+### 2. Patch-id check necessário mas NÃO suficiente (origem: 0.5)
+
+Patch-id detecta cópia idêntica de patch, mas **não detecta refinamento** — mesmo
+trabalho conceitual com implementação iterativa.
+
+Pra cada commit ahead descoberto como UNIQUE, validar adicionalmente:
+
+- **Mesmos arquivos tocados em main?** `git log main -- <files> --since=<data> --until=<data + 7d>`
+- **Mesmo autor?** Refinamento iterativo costuma ter mesmo autor.
+- **Subject conceitualmente relacionado?** Palavras-chave do subject.
+
+Se 2+ sinais batem, hipótese de "trabalho superseded" é forte.
+
+**Caso real:** commit `0766e5f` (`chore/fix-gen-all-ordering`, 19:59:16) foi
+superseded por `24697e7` em main (20:25:56, +26min, mesmo autor, mesmo escopo
+de UI polish do Handbook). Patch-id NÃO bateu, mas trabalho foi reimplementado.
+
+### 3. `git checkout --ours <file>` destrutivo em arquivos multi-região (origem: 0.4.3)
+
+Em merge com conflitos, `checkout --ours <file>` reverte o **arquivo inteiro**
+pra versão de main — descartando regiões auto-mergeadas fora dos conflict markers.
+
+**Caso real:** `prisma/schema.prisma` tinha bloco SubscriptionTier em conflito +
+Organization model + tenantId em 4 tabelas auto-mergeados em outras regiões.
+`checkout --ours` descartou Organization model (detectado via TSC error
+`Property 'organization' does not exist on type 'PrismaClient'`).
+
+**Correção:** `git checkout --merge <file>` restaura conflict markers; edição
+manual cirúrgica dentro dos markers preserva auto-merge em outras regiões.
+
+**Resolução defensiva:**
+
+- Arquivos pequenos com mudanças concentradas: `checkout --ours/--theirs` OK.
+- Arquivos grandes com modificações em múltiplas regiões: **sempre edição manual
+  nos conflict markers**, nunca `checkout --ours/--theirs` em escopo de arquivo
+  inteiro.
+- Reservar `checkout --ours <file>` apenas pra arquivos gerados (ex:
+  `mcp/generated/manifest.json`).
+
+### 4. Branch protection: checks path-filter, não órfãos (origem: 0.4.4)
+
+Hipótese inicial após PR #16: checks `freshness` e `validate` eram configurações
+órfãs em branch protection. Hipótese **refutada empiricamente** no PR #17.
+
+**Conclusão:** `freshness` e `validate` são GitHub Actions workflows com
+path-filter triggers que disparam apenas quando paths específicos são modificados.
+
+| Tipo de PR | Workflow esperado |
+|---|---|
+| Toca `.agents/` OU `mcp/generated/` OU `prisma/` OU `src/` OU scripts de build | 4/4 checks disparam naturalmente. PR merge sem bypass. |
+| Só toca docs `.md` em raiz ou `docs/` (sem outros paths) | Path-filter dos workflows pode não disparar. Bypass admin (`gh pr merge --admin --squash --delete-branch`) pode ser necessário. |
+
+### 5. Backups específicos por sub-etapa de alto risco
+
+Pra sub-etapas que modificam main ou integram trabalho grande, **2 tags backup
+específicas** antes de qualquer mutação:
+
+- **Tag em main pré-merge:** `pre-<sub-etapa-name>-merge` (rollback total).
+- **Tag no tip do trabalho a integrar:** `<source-branch>-pre-merge-<hash>`
+  (preservação independente).
+
+Exemplo da 0.4.3:
+
+- `pre-camada1-merge` em main.
+- `epic-hellman-pre-merge-70c29ae` no tip de epic-hellman.
+
+Tags backup específicas **permanecem permanentemente** (não-deletar em cleanup).
+
+Esses backups específicos são adicionais aos `archive/<branch-name>-<hash>`
+padrão (criados pra todas as branches deletadas conforme protocolo principal
+desta skill). A diferença: `archive/*` preservam refs deletadas; backups
+específicos preservam ESTADOS antes de mutação de main.
+
+### 6. Batches únicos > while-read loops em operações git
+
+Comandos compactos com argumentos explícitos são mais robustos que loops:
+
+```bash
+# Robusto:
+git push origin --delete b1 b2 b3 b4 ... b10
+
+# Frágil (pode travar com latência ou expor race conditions):
+while read b; do git push origin --delete "$b"; done < list.txt
+```
+
+Aplica a: tag creation/push, branch deletion (local + origin), cherry-pick em
+sequência curta.
 
 ## How to update
 
