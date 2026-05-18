@@ -700,6 +700,60 @@ the DB-layer guarantee.
   Missing it silently falls back to `DIRECT_URL` (postgres), which
   bypasses RLS. Verify on each environment promotion.
 
+# Webhooks
+
+Inbound webhooks from external providers are signature-verified before any
+business logic runs. The framework lives at `src/lib/webhooks/` and exposes
+a single barrel (`src/lib/webhooks/index.ts`):
+
+- `WebhookVerifier` — interface with `verify(rawBody: Buffer, headers): Promise<VerificationResult>`.
+- One verifier class per provider:
+  - `GorgiasWebhookVerifier` — HMAC-SHA256 hex, header `X-Gorgias-Signature`.
+  - `IntercomWebhookVerifier` — HMAC-SHA256 hex with `sha256=` prefix, header `X-Hub-Signature`.
+  - `RechargeWebhookVerifier` — **literal** `sha256(client_secret + raw_body)` hex (NOT HMAC), header `X-Recharge-Hmac-Sha256`.
+  - `RecallWebhookVerifier` — Svix-style HMAC-SHA256 base64 over `${svix-id}.${svix-timestamp}.${body}`, key derived from `whsec_` secret. Headers: `svix-id`, `svix-timestamp`, `svix-signature`.
+- `resolveTenantFromPayload(provider, payload)` — looks up `MemberConnection`
+  by `(integration.slug, externalUserId)` to find the owning `tenantId`.
+  Uses an admin (postgres, bypass-RLS) Prisma client because the resolver
+  must read across tenants. This is the **one documented exception** to the
+  "no direct Prisma on tenant-scoped models" rule.
+
+## Recharge signing — DO NOT swap to createHmac
+
+Recharge's wire format is `sha256(client_secret_bytes ++ raw_body_bytes)` —
+the secret is hashed alongside the body, not used as an HMAC key. A unit
+test in `recharge.verifier.test.ts` is explicitly named to fail loudly
+if someone "modernizes" the implementation to `createHmac`:
+
+> `it("uses sha256(secret+body) literal concatenation, NOT HMAC — changing to createHmac must fail this test", ...)`
+
+If this test fails, the fix is to revert the implementation, not the test.
+
+## Fail-closed defaults
+
+Every verifier accepts the secret at construction time and rejects every
+webhook with 401 when the secret is empty. Missing `*_WEBHOOK_SECRET` in
+the environment is therefore a deny-all, not a bypass. Deploy environments
+must wire all four `*_WEBHOOK_SECRET` env vars (Gorgias / Intercom /
+Recharge / Recall) — missing any one stops that provider's webhook traffic
+at the door.
+
+## Raw body access in handlers
+
+Handlers must read raw bytes via `request.arrayBuffer()` and wrap in
+`Buffer.from(...)` — `request.text()` decodes through UTF-8 and re-encoding
+the result for the verifier is lossy for non-UTF-8 sequences (rare for
+JSON, but the verifier should still compute over original bytes). Parse
+JSON only AFTER signature verification has passed.
+
+## Tenant scoping post-verify
+
+Handlers for Gorgias / Intercom / Recharge wrap business logic in
+`withTenant(tenant.tenantId, ...)` after `resolveTenantFromPayload`
+succeeds. Recall does not — `Meeting` is not in `TENANT_SCOPED_MODELS`.
+If `Meeting` becomes tenant-scoped, add the wrap and route tenant
+resolution through the meeting owner's organization.
+
 ## Boundaries
 
 - Never edit `mcp/generated/`, `schemas/feature.schema.json`,
