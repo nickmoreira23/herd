@@ -48,12 +48,18 @@ export async function POST(request: Request) {
       });
       if (!integration) return apiError("Intercom integration not found", 404);
 
+      // tenantId is injected by the Prisma tenant-scoping extension from
+      // the active withTenant context. Cast is required after Sub-etapa 6
+      // promoted IWE.tenant_id to NOT NULL (the Prisma type now requires
+      // it explicitly even though the Extension supplies it at runtime).
       await prisma.integrationWebhookEvent.create({
         data: {
           integrationId: integration.id,
           eventType: topic,
           payload: rawBody.toString("utf8"),
-        },
+        } as unknown as Parameters<
+          typeof prisma.integrationWebhookEvent.create
+        >[0]["data"],
       });
 
       return apiSuccess({ received: true });

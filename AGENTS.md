@@ -754,6 +754,51 @@ succeeds. Recall does not — `Meeting` is not in `TENANT_SCOPED_MODELS`.
 If `Meeting` becomes tenant-scoped, add the wrap and route tenant
 resolution through the meeting owner's organization.
 
+## Async pipeline — dedup + outbox (Sub-etapa 6)
+
+Production webhook delivery is at-least-once. The Gorgias ingress route
+(template for the other 3 providers) splits work into two stages so the
+ack stays under 500ms and retries never multiply downstream effects:
+
+**Ingress (synchronous, < 500ms target):**
+1. HMAC verify (`WebhookVerifier`).
+2. Parse + extract provider-native `event_id` (Gorgias = `payload.id`).
+   Reject 400 if absent — composite hashes as dedup keys are fragile and
+   silently mask collisions.
+3. `resolveTenantFromPayload`.
+4. Fast-path `webhook_dedup.findUnique({ provider, event_id })` — if hit,
+   return 200 `{ status: "duplicate" }` and bail.
+5. One transaction: `webhook_dedup.create(...)` + `emitDomainEvent(...)`.
+   Both rows commit together; if the provider concurrently retries, the
+   second arrival hits the UNIQUE `(provider, event_id)` constraint and
+   we catch `P2002` to return the same `{ status: "duplicate" }`.
+6. Return 200 `{ status: "accepted" }`.
+
+**Outbox handler (async, via `npm run worker:domain-events`):**
+- The `domain-events` outbox stores `(aggregateType="webhook",
+  aggregateId=<tenant uuid>, eventType="webhook.<provider>", payload)`.
+- A SINGLE entry per provider is registered in `HANDLER_REGISTRY` —
+  e.g. `"webhook.gorgias": gorgiasHandler`. The handler dispatches
+  internally based on `payload.<provider>_event_type` (no wildcard
+  support in the registry; no N-entries-per-event-type sprawl).
+- Handler MUST be idempotent — same event may run multiple times.
+- Handler wraps tenant-scoped writes in `withTenant(event.aggregateId)`.
+
+**`webhook_dedup` table:**
+- Platform-wide (no `tenant_id`, no RLS). Dedup keys are provider-scoped
+  and tenants don't share `event_id` namespaces with the same provider.
+- 30-day TTL via `expires_at` column default. **No cleanup job today** —
+  tech debt. Trigger to add: row count > ~10M OR write contention on the
+  unique index.
+
+**Registry pattern — single eventType per provider, dispatch inside:**
+- `HANDLER_REGISTRY` is a `Record<exact-string, DomainEventHandler>`.
+  No wildcards; `getHandler(eventType)` is a direct map lookup.
+- For webhooks, emit `eventType: "webhook.gorgias"` (uniform) and put
+  the provider's own event type (e.g. `ticket.created`) in
+  `payload.gorgias_event_type`. The handler reads payload and dispatches.
+- Keeps the registry small and the table-of-handlers easy to scan.
+
 ## Boundaries
 
 - Never edit `mcp/generated/`, `schemas/feature.schema.json`,
