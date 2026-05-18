@@ -1,8 +1,21 @@
-// SECURITY: missing HMAC signature validation. Tracked: Camada 1 Sub-etapa 5.
-// Acceptable while Railway pre-production is not publicly exposed.
-// DO NOT remove this comment without implementing signature verification.
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { RecallWebhookVerifier } from "@/lib/webhooks";
+
+// Recall.ai delegates webhook delivery to Svix; signature format follows Svix
+// conventions (HMAC-SHA256 over `${id}.${timestamp}.${body}`, key derived
+// from the `whsec_` secret). See `RecallWebhookVerifier` for details.
+const verifier = new RecallWebhookVerifier(
+  process.env.RECALL_WEBHOOK_SECRET ?? "",
+);
+
+function headersToRecord(req: Request): Record<string, string> {
+  const out: Record<string, string> = {};
+  req.headers.forEach((value, key) => {
+    out[key.toLowerCase()] = value;
+  });
+  return out;
+}
 
 /**
  * POST — Handle Recall.ai webhook events for bot lifecycle.
@@ -12,13 +25,36 @@ import { prisma } from "@/lib/prisma";
  *
  * When a recording completes, async processing is triggered to download
  * audio, transcribe, and summarize the meeting.
+ *
+ * Tenant scope: `Meeting` is NOT in `TENANT_SCOPED_MODELS` — recordings are
+ * not tenant-isolated at this stage. The handler therefore does not call
+ * `resolveTenantFromPayload` / `withTenant`. If/when `Meeting` becomes
+ * tenant-scoped, add the tenant resolution shim here (likely via the owning
+ * `NetworkProfile` → `Organization` chain rather than `MemberConnection`).
  */
 export async function POST(req: NextRequest) {
-  const body = await req.json();
+  const rawBody = Buffer.from(await req.arrayBuffer());
+  const headers = headersToRecord(req);
+
+  const verification = await verifier.verify(rawBody, headers);
+  if (!verification.ok) {
+    return NextResponse.json(
+      { error: verification.reason },
+      { status: verification.statusCode },
+    );
+  }
+
+  let body: { event?: string; data?: Record<string, unknown> };
+  try {
+    body = JSON.parse(rawBody.toString("utf8"));
+  } catch {
+    return NextResponse.json({ error: "invalid JSON body" }, { status: 400 });
+  }
+
   const { event, data } = body;
 
   // Must have a bot_id to look up the meeting
-  if (!data?.bot_id) {
+  if (!data || typeof data.bot_id !== "string") {
     return NextResponse.json({ ok: true });
   }
 
@@ -32,7 +68,7 @@ export async function POST(req: NextRequest) {
 
   switch (event) {
     case "bot.status_change": {
-      const status = data.status?.code;
+      const status = (data.status as { code?: string } | undefined)?.code;
 
       if (status === "in_call_recording") {
         await prisma.meeting.update({
@@ -47,12 +83,14 @@ export async function POST(req: NextRequest) {
         // Trigger async processing (don't await — webhook should return fast)
         processRecording(meeting.id, data.bot_id).catch(console.error);
       } else if (status === "fatal") {
+        const message =
+          (data.status as { message?: string } | undefined)?.message ??
+          "Bot encountered a fatal error";
         await prisma.meeting.update({
           where: { id: meeting.id },
           data: {
             status: "ERROR",
-            errorMessage:
-              data.status?.message || "Bot encountered a fatal error",
+            errorMessage: message,
           },
         });
       }
@@ -69,7 +107,7 @@ export async function POST(req: NextRequest) {
  */
 async function processRecording(
   meetingId: string,
-  botId: string
+  botId: string,
 ): Promise<void> {
   try {
     const { RecallAiService } = await import("@/lib/services/recall-ai");
@@ -127,7 +165,7 @@ async function processRecording(
           );
           const summary = await summarizeMeeting(
             transcriptText,
-            m?.title || "Virtual Meeting"
+            m?.title || "Virtual Meeting",
           );
           await prisma.meeting.update({
             where: { id: meetingId },

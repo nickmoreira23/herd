@@ -1,0 +1,140 @@
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+
+/**
+ * Sub-etapa 5, Tarefa 6 — tenant resolution from webhook payload.
+ *
+ * Resolves which Organization owns the incoming webhook by looking up the
+ * `MemberConnection` row whose `(integration.slug, externalUserId)` pair
+ * matches the provider and the external identifier extracted from the payload.
+ *
+ * RLS bypass — documented exception. `MemberConnection` is RLS-strict post
+ * Sub-etapa 4: queries via the runtime singleton (`herd_app`) only see rows
+ * matching the active GUC. Webhook handlers don't have a tenant context yet
+ * (they're discovering it), so they must read MemberConnection ACROSS tenants.
+ * This file uses its own PrismaClient bound to `DATABASE_URL` (postgres role,
+ * `rolbypassrls=true`) — the same admin role used by migrations and by
+ * integration tests' `adminClient`. The client is NOT exported; only the
+ * `resolveTenantFromPayload` function is. That keeps the RLS bypass
+ * surface as small as possible.
+ *
+ * Why not the runtime singleton wrapped in `withTenant(SYSTEM_TENANT)`?
+ * Because there is no system tenant. The query must read all tenants'
+ * MemberConnections, find the one that owns the external user/shop, and
+ * return its tenantId. RLS would correctly block this for a non-bypass role.
+ *
+ * Why not run it inside an explicit `$transaction` that sets the GUC to NULL?
+ * `set_config(..., NULL, true)` would still leave the RLS policy evaluating
+ * `tenant_id = NULL` → false → 0 rows. The bypass role is the only way.
+ */
+
+type Provider = "gorgias" | "intercom" | "recharge";
+
+export type TenantResolution =
+  | { ok: true; tenantId: string }
+  | { ok: false; reason: string };
+
+// Module-local admin client. Mirrors the singleton pattern of `prisma.ts`
+// (pinned to globalThis to survive duplicate module loads), but uses the
+// admin URL — postgres, bypass RLS. Deliberately NOT exported.
+const STORAGE_KEY = Symbol.for("herd.webhooks.tenantResolverAdminClient");
+type GlobalWithAdmin = typeof globalThis & {
+  [STORAGE_KEY]?: PrismaClient;
+};
+const g = globalThis as GlobalWithAdmin;
+
+function getAdminClient(): PrismaClient {
+  if (!g[STORAGE_KEY]) {
+    const url = process.env.DATABASE_URL ?? process.env.DIRECT_URL;
+    if (!url) {
+      throw new Error(
+        "tenant-resolver: DATABASE_URL or DIRECT_URL must be set (admin/bypass connection required for cross-tenant MemberConnection lookup)",
+      );
+    }
+    g[STORAGE_KEY] = new PrismaClient({ adapter: new PrismaPg(url) });
+  }
+  return g[STORAGE_KEY]!;
+}
+
+/**
+ * Extracts the provider-specific external identifier that links the webhook
+ * payload back to a `MemberConnection.externalUserId`. Each provider sends a
+ * different field shape:
+ *
+ *  - Gorgias: top-level `account_id` (numeric) or nested `account.id`.
+ *  - Intercom: `app_id` at top level, or `app.id_code` for newer payloads.
+ *  - Recharge: `customer.id` (per-shop customer), or `merchant_id` for some
+ *    event types.
+ *
+ * Returns null if no recognizable identifier is present — the caller treats
+ * that as "no tenant resolvable" and returns 400.
+ */
+function extractExternalId(provider: Provider, payload: unknown): string | null {
+  if (!payload || typeof payload !== "object") return null;
+  const p = payload as Record<string, unknown>;
+
+  const stringify = (v: unknown): string | null => {
+    if (typeof v === "string") return v;
+    if (typeof v === "number" || typeof v === "bigint") return String(v);
+    return null;
+  };
+
+  switch (provider) {
+    case "gorgias": {
+      const direct = stringify(p["account_id"]);
+      if (direct) return direct;
+      const account = p["account"] as Record<string, unknown> | undefined;
+      return stringify(account?.["id"]);
+    }
+    case "intercom": {
+      const direct = stringify(p["app_id"]);
+      if (direct) return direct;
+      const app = p["app"] as Record<string, unknown> | undefined;
+      return stringify(app?.["id_code"]) ?? stringify(app?.["id"]);
+    }
+    case "recharge": {
+      const customer = p["customer"] as Record<string, unknown> | undefined;
+      const customerId = stringify(customer?.["id"]);
+      if (customerId) return customerId;
+      return stringify(p["merchant_id"]) ?? stringify(p["shop_id"]);
+    }
+  }
+}
+
+export async function resolveTenantFromPayload(
+  provider: Provider,
+  payload: unknown,
+): Promise<TenantResolution> {
+  const externalId = extractExternalId(provider, payload);
+  if (!externalId) {
+    return {
+      ok: false,
+      reason: `cannot extract external id from ${provider} payload`,
+    };
+  }
+
+  const admin = getAdminClient();
+
+  const connection = await admin.memberConnection.findFirst({
+    where: {
+      externalUserId: externalId,
+      integration: { slug: provider },
+    },
+    select: { tenantId: true },
+  });
+
+  if (!connection) {
+    return {
+      ok: false,
+      reason: `no MemberConnection found for ${provider} external_id=${externalId}`,
+    };
+  }
+
+  return { ok: true, tenantId: connection.tenantId };
+}
+
+/**
+ * Internal hook for tests — exposed only so suites can introspect the
+ * extractor without going through the DB. Not intended for production use.
+ */
+export const __internal = { extractExternalId };
