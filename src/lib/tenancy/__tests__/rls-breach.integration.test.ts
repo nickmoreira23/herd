@@ -40,6 +40,7 @@ type Seeded = {
   orgB: { id: string };
   integration: { id: string };
   islA: { id: string };
+  iweA: { id: string };
 };
 
 let seeded: Seeded;
@@ -114,10 +115,34 @@ async function seed(): Promise<Seeded> {
     select: { id: true },
   });
 
-  return { profileTypeId, profileA, profileB, orgA, orgB, integration, islA };
+  // IWE row owned by tenant A — mirrors ISL coverage for the IWE strict
+  // policy added in Sub-etapa 6 (`iwe_tenant_isolation`).
+  const iweA = await adminClient.integrationWebhookEvent.create({
+    data: {
+      tenantId: orgA.id,
+      integrationId: integration.id,
+      eventType: `${TEST_PREFIX}-evt`,
+      payload: "{}",
+    },
+    select: { id: true },
+  });
+
+  return {
+    profileTypeId,
+    profileA,
+    profileB,
+    orgA,
+    orgB,
+    integration,
+    islA,
+    iweA,
+  };
 }
 
 async function cleanup() {
+  await adminClient.integrationWebhookEvent.deleteMany({
+    where: { integrationId: seeded.integration.id },
+  });
   await adminClient.integrationSyncLog.deleteMany({
     where: { integrationId: seeded.integration.id },
   });
@@ -174,6 +199,43 @@ describe("RLS breach prevention (integration)", () => {
     // policy `tenant_id = NULL::uuid` is always false → 0 rows.
     const rows = await runtimeClient.$queryRaw<Array<{ id: string }>>`
       SELECT id::text AS id FROM "IntegrationSyncLog" WHERE id = ${seeded.islA.id}::uuid
+    `;
+    expect(rows).toHaveLength(0);
+  });
+
+  // ──────────────────────────────────────────────────────────────────────
+  // IntegrationWebhookEvent — strict policy added in Sub-etapa 6
+  // (replacing the permissive `iwe_temp_permissive` from Sub-etapa 4).
+  // Same shape of assertions as ISL above; if these three pass, the
+  // tightening did not regress any other surface.
+  // ──────────────────────────────────────────────────────────────────────
+
+  it("rejects cross-tenant raw SQL on IntegrationWebhookEvent", async () => {
+    const rows = await runtimeClient.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.tenant_id', ${seeded.orgB.id}, true)`;
+      return await tx.$queryRaw<Array<{ id: string }>>`
+        SELECT id::text AS id FROM "IntegrationWebhookEvent" WHERE id = ${seeded.iweA.id}::uuid
+      `;
+    });
+
+    expect(rows).toHaveLength(0);
+  });
+
+  it("allows same-tenant access on IntegrationWebhookEvent", async () => {
+    const rows = await runtimeClient.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT set_config('app.tenant_id', ${seeded.orgA.id}, true)`;
+      return await tx.$queryRaw<Array<{ id: string }>>`
+        SELECT id::text AS id FROM "IntegrationWebhookEvent" WHERE id = ${seeded.iweA.id}::uuid
+      `;
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0].id).toBe(seeded.iweA.id);
+  });
+
+  it("rejects raw SQL on IntegrationWebhookEvent without any GUC set", async () => {
+    const rows = await runtimeClient.$queryRaw<Array<{ id: string }>>`
+      SELECT id::text AS id FROM "IntegrationWebhookEvent" WHERE id = ${seeded.iweA.id}::uuid
     `;
     expect(rows).toHaveLength(0);
   });

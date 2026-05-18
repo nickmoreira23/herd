@@ -51,12 +51,17 @@ export async function POST(request: Request) {
       });
       if (!integration) return apiError("Recharge integration not found", 404);
 
+      // tenantId is injected by the Prisma tenant-scoping extension from
+      // the active withTenant context. Cast required after Sub-etapa 6
+      // promoted IWE.tenant_id to NOT NULL.
       await prisma.integrationWebhookEvent.create({
         data: {
           integrationId: integration.id,
           eventType: topic,
           payload: rawBody.toString("utf8"),
-        },
+        } as unknown as Parameters<
+          typeof prisma.integrationWebhookEvent.create
+        >[0]["data"],
       });
 
       return apiSuccess({ received: true });

@@ -1,4 +1,5 @@
 import type { DomainEventHandler } from "./types";
+import { gorgiasHandler } from "@/lib/webhooks/handlers/gorgias.handler";
 
 /**
  * Maps event_type strings to their handler functions.
@@ -20,10 +21,15 @@ import type { DomainEventHandler } from "./types";
  *
  * Handlers MUST be idempotent — the worker may retry, and the same event may
  * be invoked multiple times for the same payload over the system's lifetime.
+ *
+ * Webhook handlers register a SINGLE entry per provider (e.g. "webhook.gorgias")
+ * and dispatch internally on `payload.<provider>_event_type`. No wildcard
+ * support in the registry — keep it as `Record<exact-string, handler>`.
  */
 export const HANDLER_REGISTRY: Record<string, DomainEventHandler> = {
-  // Empty in Phase 1, Etapa 1.8.
-  // Real handlers will be added when Phase 2 introduces Transaction.
+  // Webhook outbox handlers (Sub-etapa 6).
+  // One entry per provider; sub-event dispatch lives inside the handler.
+  "webhook.gorgias": gorgiasHandler,
 };
 
 export function getHandler(eventType: string): DomainEventHandler | null {
