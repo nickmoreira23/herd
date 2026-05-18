@@ -8,9 +8,23 @@ const globalForPrisma = globalThis as unknown as {
 
 function getClient(): PrismaClient | null {
   if (!globalForPrisma.prisma) {
-    // PrismaPg manages its own pool — use DIRECT_URL (session connection)
+    // PrismaPg manages its own pool — use a session-mode connection (port 5432)
     // to avoid double-pooling through PgBouncer transaction mode.
-    const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL;
+    //
+    // Sub-etapa 4: 3-URL split for RLS rollout. Precedence:
+    //  1. RUNTIME_DATABASE_URL — `herd_app` (NOBYPASSRLS). Production runtime
+    //     singleton; Postgres RLS enforces tenant isolation as defense-in-depth
+    //     behind the Prisma Extension's ORM-level filter.
+    //  2. DIRECT_URL — `postgres` (table owner, bypasses RLS). Used by Prisma
+    //     migrations DDL (`prisma.config.ts`). Falling back here at runtime
+    //     bypasses RLS — only acceptable in environments where RUNTIME_DATABASE_URL
+    //     was intentionally not set (local DDL scripts, build-time prerender).
+    //  3. DATABASE_URL — pooler. Final fallback for environments that only
+    //     wire the pooler URL.
+    const connectionString =
+      process.env.RUNTIME_DATABASE_URL ??
+      process.env.DIRECT_URL ??
+      process.env.DATABASE_URL;
     if (!connectionString) return null; // Build time — no DB available
     const adapter = new PrismaPg(connectionString);
     globalForPrisma.prisma = new PrismaClient({ adapter }).$extends(
