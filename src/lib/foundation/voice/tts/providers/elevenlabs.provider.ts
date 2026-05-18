@@ -1,4 +1,4 @@
-import { getIntegrationApiKey } from "@/lib/integrations";
+import { getIntegrationApiKey } from "@/lib/integration-keys";
 import type { TTSProvider, TTSInput, TTSResult, TTSVoice } from "../../types";
 
 const BASE_URL = "https://api.elevenlabs.io/v1";

@@ -1,6 +1,6 @@
 import { readFile } from "fs/promises";
 import path from "path";
-import { resolveAnthropicKey } from "@/lib/integrations";
+import { resolveAnthropicKey } from "@/lib/integration-keys";
 
 /**
  * Extract plain text from a knowledge document file.

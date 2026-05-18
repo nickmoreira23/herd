@@ -1,7 +1,7 @@
 import { readFile, unlink } from "fs/promises";
 import path from "path";
 import os from "os";
-import { getIntegrationApiKey } from "@/lib/integrations";
+import { getIntegrationApiKey } from "@/lib/integration-keys";
 import type {
   VideoTranscriptionProvider,
   VideoTranscriptionInput,

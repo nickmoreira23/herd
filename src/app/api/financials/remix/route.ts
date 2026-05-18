@@ -2,7 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { apiError } from "@/lib/api-utils";
 import { NextResponse } from "next/server";
 import type { FinancialInputs } from "@/lib/financial-engine";
-import { resolveAnthropicKey } from "@/lib/integrations";
+import { resolveAnthropicKey } from "@/lib/integration-keys";
 
 const SYSTEM_PROMPT = `You are a financial modeling assistant for HERD OS, a subscription box company. You modify financial model inputs based on natural language instructions.
 

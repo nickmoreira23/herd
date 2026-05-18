@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { prisma } from "@/lib/prisma";
-import { resolveAnthropicKey } from "@/lib/integrations";
+import { resolveAnthropicKey } from "@/lib/integration-keys";
 import { nextRunAt } from "./cron";
 import { dispatchBlockEvent } from "./dispatcher";
 import type { Prisma } from "@prisma/client";

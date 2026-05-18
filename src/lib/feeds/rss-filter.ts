@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { ParsedFeedEntry } from "./rss-parser";
-import { resolveAnthropicKey } from "@/lib/integrations";
+import { resolveAnthropicKey } from "@/lib/integration-keys";
 
 /**
  * Checks whether a feed entry matches the user's include/exclude keyword filters.

@@ -4,7 +4,7 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
-import { getIntegrationApiKey } from "@/lib/integrations";
+import { getIntegrationApiKey } from "@/lib/integration-keys";
 import type { SendFn } from "../runtime";
 
 // ─── Tool Definition ───────────────────────────────────────────

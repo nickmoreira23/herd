@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { apiError } from "@/lib/api-utils";
 import { aiSuggestSchema } from "@/lib/validators/package";
 import { computeCreditCost, resolveDiscount, type RedemptionRule } from "@/lib/credit-cost";
-import { resolveAnthropicKey } from "@/lib/integrations";
+import { resolveAnthropicKey } from "@/lib/integration-keys";
 
 const FITNESS_GOAL_SPECIALIST_PROMPT = `You are an expert fitness and nutrition specialist. Your job is to recommend TYPES of products (not specific products) that would best support a person's fitness goal.
 

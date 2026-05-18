@@ -1,4 +1,4 @@
-import { getIntegrationApiKey } from "@/lib/integrations";
+import { getIntegrationApiKey } from "@/lib/integration-keys";
 import type {
   VideoGenerationProvider,
   VideoGenerationInput,
