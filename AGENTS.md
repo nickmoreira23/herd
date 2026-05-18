@@ -799,6 +799,82 @@ ack stays under 500ms and retries never multiply downstream effects:
   `payload.gorgias_event_type`. The handler reads payload and dispatches.
 - Keeps the registry small and the table-of-handlers easy to scan.
 
+# IntegrationAdapter
+
+Sub-etapa 7 introduces a horizontal/vertical adapter hierarchy that unifies
+the previously fragmented per-provider code (admin routes, webhook routes,
+services, verifiers, handlers — up to 5 directories per provider).
+
+## Layout (`src/lib/integrations/`)
+
+| File / dir | Role |
+|---|---|
+| `adapter.interface.ts` | Horizontal base: `IntegrationAdapter`, `AdapterConfig`, `HealthCheckResult`. Lifecycle hooks (`onConnect`, `onDisconnect`, `onHealthCheck`) are optional. |
+| `manifest.schema.ts` | Zod 3 schema for `IntegrationManifest`. Validates at registry load (Decision #4). |
+| `capabilities.ts` | `CapabilityFlagsSchema` — coarse-grained flags used by orchestrator routing without `instanceof`. |
+| `payment/payment-adapter.interface.ts` | Vertical: `PaymentProviderAdapter extends IntegrationAdapter`, narrows `manifest` to `PaymentProviderManifest`. |
+| `payment/payment-manifest.schema.ts` | `PaymentProviderManifestSchema` — extends base with `chargeModel`, `supportedCurrencies`, `supportsBillingPortal`. |
+| `integrations/{slug}.integration.ts` | One file per adapter. Each exports a `{slug}Adapter` constant. |
+| `registry.ts` | Explicit array → `Map<string, IntegrationAdapter>` lookup. Validates each manifest (base + vertical where applicable) and detects duplicate slugs and slug/manifest mismatch. |
+| `index.ts` | Barrel — consumers import only from here. |
+
+## Convention — adding an adapter
+
+1. Create `src/lib/integrations/integrations/{slug}.integration.ts` exporting
+   `{slug}Adapter: IntegrationAdapter` (or `PaymentProviderAdapter` for the
+   payment vertical). The literal `slug` field must match the file basename
+   and must match `manifest.slug`.
+2. Add an `import { {slug}Adapter } from "./integrations/{slug}.integration"`
+   line to `registry.ts` and append to the `adapters` array. **Do not** use
+   side-effect auto-registration — bundler tree-shaking can drop the side
+   effect. Explicit array mirrors `blocks/registry.ts` and `tools/registry.ts`.
+3. Manifest validation runs at registry build (module load). A malformed
+   manifest throws before any request hits a route.
+
+## Zod 3 — no mixing with Zod 4
+
+This module imports from `"zod"` (Zod 3) only. The cross-cutting rule from
+the [Tenancy boundaries] section applies: `feature.yml` schema code uses
+`"zod/v4"`; everything else, including this module, uses `"zod"`.
+
+## Verticals
+
+`PaymentProviderAdapter` is the only vertical implemented today. Adding a
+new vertical (e.g. `SupportProviderAdapter`, `MessagingProviderAdapter`) is
+explicitly **deferred until a real caller demands it** (Decision #2). A
+vertical justifies its existence by adding typed methods or required
+manifest fields that downstream code calls without `instanceof` — never as
+"future-proof" speculation.
+
+## Recharge BILLING vs PAYMENT
+
+Decision #9: the `category` literal for Recharge (`BILLING` vs `PAYMENT`)
+is set to `BILLING` here as a working choice for Sub-etapa 7 manifest
+validation. The final cravamento happens in Sub-etapa 10 when
+`RechargeAdapter` is implemented against the real OAuth/HTTP surface and
+the orchestrator starts consuming the category-derived UI. The schema
+(`PaymentProviderManifestSchema`) accepts both literal values, so changing
+the single line in `recharge.integration.ts` later is a non-breaking edit.
+
+## Capability flags — additive
+
+`CapabilityFlagsSchema` starts with the set derived from the 4 guinea-pig
+manifests. New capabilities are added as **optional** fields (Zod
+`.optional()`) so that existing manifests keep validating without
+modification. If a flag becomes universally required, promote it from
+optional to required in a dedicated commit and update all manifests in
+the same change — never silent-fail a new requirement.
+
+## Tech debt — 32 services not adopted
+
+The `src/lib/services/{provider}.ts` directory holds 36 HTTP-client
+wrappers (airtable, asana, attio, slack, zoom, …). Only 4 are adopted by
+the adapter hierarchy in Sub-etapa 7: gorgias, intercom, recharge, recall.
+The other 32 stay as plain service files. **Trigger to adopt:** the
+provider needs structured behavior beyond a wrapper — webhook handling,
+OAuth flow, manifest-driven UI, orchestrator routing. Adding an adapter
+without a real driver is over-engineering.
+
 ## Boundaries
 
 - Never edit `mcp/generated/`, `schemas/feature.schema.json`,
