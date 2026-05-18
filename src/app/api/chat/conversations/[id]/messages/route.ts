@@ -16,7 +16,7 @@ import {
 } from "@/lib/chat/action-execution";
 import { buildActionCatalog, actionToBlock } from "@/lib/blocks/registry";
 import { buildToolActionCatalog } from "@/lib/tools/registry";
-import { resolveAnthropicKey } from "@/lib/integrations";
+import { resolveAnthropicKey } from "@/lib/integration-keys";
 
 const ORCHESTRATOR_KEY = "orchestrator";
 

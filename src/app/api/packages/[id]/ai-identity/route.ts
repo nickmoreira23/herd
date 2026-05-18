@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-utils";
-import { resolveAnthropicKey } from "@/lib/integrations";
+import { resolveAnthropicKey } from "@/lib/integration-keys";
 
 const IDENTITY_PROMPT = `You are a fitness brand copywriter. Given a fitness goal and optional product summary, generate a compelling package name and description for a subscription product bundle.
 

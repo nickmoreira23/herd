@@ -1,5 +1,5 @@
 import { readFile } from "fs/promises";
-import { getIntegrationApiKey } from "@/lib/integrations";
+import { getIntegrationApiKey } from "@/lib/integration-keys";
 import type { STTProvider, STTInput, STTResult, STTUtterance } from "../../types";
 
 // ─── Deepgram STT Provider ───────────────────────────────────────

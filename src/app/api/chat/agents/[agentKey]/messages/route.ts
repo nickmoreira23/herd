@@ -2,7 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { apiError } from "@/lib/api-utils";
-import { resolveAnthropicKey } from "@/lib/integrations";
+import { resolveAnthropicKey } from "@/lib/integration-keys";
 import { createAgentStream, sseResponse } from "@/lib/agents/runtime";
 import { findOrCreateConversation } from "@/lib/agents/conversation";
 import { blockRegistry, actionToBlock } from "@/lib/blocks/registry";

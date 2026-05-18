@@ -6,7 +6,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
-import { getIntegrationApiKey } from "@/lib/integrations";
+import { getIntegrationApiKey } from "@/lib/integration-keys";
 import type { SendFn } from "../runtime";
 
 // ─── Tool Definition ───────────────────────────────────────────

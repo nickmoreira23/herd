@@ -1,5 +1,5 @@
 import { readFile } from "fs/promises";
-import { resolveAnthropicKey } from "@/lib/integrations";
+import { resolveAnthropicKey } from "@/lib/integration-keys";
 
 /**
  * Describe an image using Claude Vision API.
