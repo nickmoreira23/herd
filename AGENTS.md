@@ -509,11 +509,13 @@ debugging based on stale docs is enormous.
 personal Organization (1:1, V1). Four tables are tenant-scoped via
 `tenant_id`:
 
-- `MemberConnection` — `tenant_id NOT NULL` + FK + index.
-- `IntegrationTierMapping`, `IntegrationWebhookEvent`,
-  `IntegrationSyncLog` — `tenant_id` nullable + FK + index. NOT NULL
-  is deferred until admin API auth and webhook tenant resolution land
-  in a later sub-etapa.
+- `MemberConnection`, `IntegrationTierMapping`, `IntegrationSyncLog` —
+  `tenant_id NOT NULL` + FK + index. RLS strict policy applied
+  (Sub-etapa 4) — see "Row Level Security" below.
+- `IntegrationWebhookEvent` — `tenant_id` nullable + FK + index. RLS
+  enabled but permissive policy (`USING true`) until webhook tenant
+  resolution lands in Sub-etapa 5/6, when the column becomes NOT NULL
+  and the policy tightens to strict.
 
 **X1 — `Integration` is single-tenant.** The integration catalog is
 plataforma-wide. `Integration.tenantId` stays nullable indefinitely,
@@ -575,6 +577,128 @@ Legacy admin API routes and webhook handlers that pre-date Camada 1
 are downgraded to `warn` in `eslint.config.mjs`. New code is held to
 `error`. When you refactor a legacy route to wrap with `withTenant`,
 remove its entry from the warn override list.
+
+### Row Level Security (RLS) — Sub-etapa 4
+
+Postgres RLS enforces tenant isolation at the database layer as
+defense-in-depth behind the Prisma Extension's ORM-level filter. A
+query that bypasses the ORM (raw SQL, missed Extension scope) is still
+rejected by the DB.
+
+**Architecture — 3 connection URLs:**
+
+| Env var | Role | Purpose |
+|---|---|---|
+| `DATABASE_URL` | `postgres` (pooler, port 6543) | Prisma migrations fallback |
+| `DIRECT_URL` | `postgres` (session, port 5432) | Prisma migrations DDL — needs owner to `CREATE POLICY` |
+| `RUNTIME_DATABASE_URL` | `herd_app` (session, port 5432) | Runtime app singleton — `NOBYPASSRLS` enforces policies |
+
+`herd_app` was created in Sub-etapa 4 with `NOBYPASSRLS` explicitly.
+**Do not alter that property.** It is the load-bearing assumption that
+makes every RLS policy enforceable. The role has `GRANT ALL ON ALL
+TABLES IN SCHEMA public` plus `ALTER DEFAULT PRIVILEGES FOR ROLE
+postgres` so migrations creating new tables auto-grant to `herd_app` —
+no manual GRANT step per migration.
+
+`src/lib/prisma.ts` reads the URL via the precedence
+`RUNTIME_DATABASE_URL ?? DIRECT_URL ?? DATABASE_URL`. Deploy environments
+must set `RUNTIME_DATABASE_URL` alongside the others. If only the
+fallback is wired, the singleton runs as `postgres` (bypassing RLS) and
+the entire defense-in-depth layer is silently disabled.
+
+**GUC mechanism.** Policies reference `current_app_tenant_id()`, a
+helper function that returns the `app.tenant_id` GUC (or NULL when
+unset, via `NULLIF(..., '')`). The Prisma Extension
+(`src/lib/tenancy/prisma-extension.ts`) sets the GUC at the start of
+each tenant-scoped operation by opening an implicit `$transaction` and
+emitting `SELECT set_config('app.tenant_id', <uuid>, true)` as the
+first statement. `SET LOCAL`/`set_config(..., true)` scopes the value
+to the transaction only — no leak across pooled connections.
+
+**Caminho B — implementation note.** Inside the Extension's
+`$allOperations` handler, the original `query(args)` function does
+**not** run inside the Extension's `$transaction` (Caminho A failed
+the GUC observability test — Prisma 7 does not propagate transaction
+context via AsyncLocalStorage for query-callbacks). The Extension
+dispatches the operation on `tx` directly:
+
+```typescript
+const delegateKey = model.charAt(0).toLowerCase() + model.slice(1);
+return await (tx as any)[delegateKey][operation](filteredArgs);
+```
+
+Any future Extension that needs `SET LOCAL` to apply to ORM calls
+**must use the same pattern**. Trusting AsyncLocalStorage propagation
+will silently fail (the GUC won't be visible from the operation's
+connection) and policies will deny what they shouldn't.
+
+**Cast + NULLIF.** RLS policies compare a UUID column to a TEXT GUC
+return:
+
+```sql
+USING ("tenant_id" = current_app_tenant_id()::uuid)
+```
+
+The cast is required because `current_setting(...)` returns TEXT.
+The helper wraps with `NULLIF(..., '')` so an unset GUC becomes NULL
+rather than `''` — `''::uuid` raises `invalid input syntax for type
+uuid`, which would surface as a runtime error instead of a clean
+"deny by default". Apply the same `::uuid` + NULLIF pattern to any
+future RLS policy referencing a UUID column and a GUC.
+
+**`CREATE POLICY` ownership constraint.** Only the table owner (or a
+superuser) can `CREATE POLICY`. `herd_app` is intentionally NOT the
+owner. Migrations that create or alter RLS policies must run via
+`DIRECT_URL` (postgres → owner). This already works because
+`prisma.config.ts` uses `DIRECT_URL` and Prisma migrations run
+through it. The constraint is invisible day-to-day but matters when:
+(a) a migration unexpectedly fails with code 42501 — check whether
+DIRECT_URL points at the owner; (b) running policy SQL via psql or
+ad-hoc scripts — connect as `postgres`, not `herd_app`.
+
+**Current policies:**
+
+| Table | Policy | Type |
+|---|---|---|
+| `IntegrationSyncLog` | `isl_tenant_isolation` | Strict — `tenant_id = current_app_tenant_id()::uuid` |
+| `IntegrationTierMapping` | `itm_tenant_isolation` | Strict |
+| `member_connections` | `mc_tenant_isolation` | Strict |
+| `IntegrationWebhookEvent` | `iwe_temp_permissive` | Permissive (`USING true`) — until Sub-etapa 6 makes `tenant_id` NOT NULL |
+
+**Test architecture — two-connection pattern.** Integration tests
+that touch tenant-scoped tables open two clients:
+
+```typescript
+const adminClient = new PrismaClient({ adapter: new PrismaPg(process.env.DATABASE_URL) });
+const runtimeClient = new PrismaClient({ adapter: new PrismaPg(process.env.RUNTIME_DATABASE_URL) });
+```
+
+`adminClient` (postgres, bypass) is used only for seed and teardown
+that crosses tenant boundaries — analogous to migration-time setup,
+not what the app does at runtime. `runtimeClient` (+ the Extension)
+mirrors the production singleton and is what the assertions exercise.
+Tests that conflate the two will either fail under RLS (using
+`adminClient` shape with `runtimeClient` is forbidden cross-tenant) or
+leak (using `runtimeClient` for setup may insert rows that pass RLS
+under the wrong context). Mirror `isolation.integration.test.ts`.
+
+**Breach test.** `src/lib/tenancy/__tests__/rls-breach.integration.test.ts`
+is the canonical end-to-end proof: it runs raw `$queryRaw` outside the
+Extension to confirm RLS blocks cross-tenant access even when the ORM
+layer is absent. Three assertions — cross-tenant rejected, same-tenant
+allowed, no-GUC rejected. **Do not delete or weaken these without
+replacement coverage.** They are the only test surface that proves
+the DB-layer guarantee.
+
+**Tech debt cravados:**
+
+- `DATABASE_URL` (pooler) still uses `postgres`. Trigger to migrate:
+  first runtime client that requires pgbouncer transaction-mode pooling.
+- 2 round-trips per tenant-scoped op (SET LOCAL + query). Optimize
+  when p99 latency on tenant-scoped operations exceeds ~50ms in prod.
+- `RUNTIME_DATABASE_URL` must be set in every deploy environment.
+  Missing it silently falls back to `DIRECT_URL` (postgres), which
+  bypasses RLS. Verify on each environment promotion.
 
 ## Boundaries
 

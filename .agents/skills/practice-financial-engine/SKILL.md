@@ -93,3 +93,4 @@ protocol with pause-and-report gates; that protocol is **not**
 prescribed here as a repo rule — the technical invariants
 above stand regardless.
 
+

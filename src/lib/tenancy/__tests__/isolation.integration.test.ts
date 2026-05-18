@@ -4,15 +4,46 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { withTenant } from "../context";
 import { createTenantScopingExtension } from "../prisma-extension";
 
-const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL;
-if (!connectionString) throw new Error("DATABASE_URL or DIRECT_URL required");
+/**
+ * Sub-etapa 4 — Two-connection test pattern.
+ *
+ * After the herd_app rollout (Tarefa A–D of the adendo), the runtime DB role
+ * (`herd_app`) is `NOBYPASSRLS`. RLS policies on tenant-scoped tables are now
+ * enforced for every query made via `DIRECT_URL`.
+ *
+ * Integration tests therefore need two connections:
+ *
+ *  - `adminClient` — uses `DATABASE_URL` (postgres role, `rolbypassrls=true`).
+ *    Represents what a migration / setup script would do: privileged seed and
+ *    teardown that crosses tenant boundaries. NOT what the app does in prod.
+ *
+ *  - `runtimeClient` (+ `scopedPrisma`) — uses `DIRECT_URL` (herd_app).
+ *    Mirrors the production singleton: RLS-enforced, Extension applied. This
+ *    is what the actual test assertions exercise.
+ *
+ * Tests that depend on an RLS policy not yet applied are marked with `it.skip`
+ * and an explicit TODO pointing to the canary migration that re-enables them.
+ */
 
-const baseClient = new PrismaClient({ adapter: new PrismaPg(connectionString) });
+// Sub-etapa 4 (3-URL split):
+//  - adminClient uses DATABASE_URL (postgres pooler, bypass RLS) for seed/teardown.
+//  - runtimeClient uses RUNTIME_DATABASE_URL (herd_app, NOBYPASSRLS) to exercise
+//    the production singleton's RLS-enforced path. Fallback to DIRECT_URL keeps
+//    older local envs working — but those envs see RLS bypassed if DIRECT_URL is
+//    pointed at postgres, masking failures. Prefer RUNTIME_DATABASE_URL.
+const adminUrl = process.env.DATABASE_URL;
+const runtimeUrl = process.env.RUNTIME_DATABASE_URL ?? process.env.DIRECT_URL;
+if (!adminUrl)
+  throw new Error("DATABASE_URL required (admin/bypass connection for seed)");
+if (!runtimeUrl)
+  throw new Error("RUNTIME_DATABASE_URL or DIRECT_URL required (runtime/herd_app connection)");
 
-// Test-only Prisma client scoped over all 4 tenant-scoped models. Mirrors
-// production TENANT_SCOPED_MODELS but stays isolated to this suite so changes
-// to the prod list don't bleed into existing seed/cleanup expectations.
-const scopedPrisma = baseClient.$extends(
+const adminClient = new PrismaClient({ adapter: new PrismaPg(adminUrl) });
+const runtimeClient = new PrismaClient({ adapter: new PrismaPg(runtimeUrl) });
+
+// Mirror production TENANT_SCOPED_MODELS but stay isolated to this suite so
+// changes to the prod list don't bleed into existing seed/cleanup expectations.
+const scopedPrisma = runtimeClient.$extends(
   createTenantScopingExtension([
     "MemberConnection",
     "IntegrationTierMapping",
@@ -35,11 +66,11 @@ type Seeded = {
 let seeded: Seeded;
 
 async function ensureProfileType(): Promise<string> {
-  const existing = await baseClient.networkProfileType.findFirst({
+  const existing = await adminClient.networkProfileType.findFirst({
     select: { id: true },
   });
   if (existing) return existing.id;
-  const created = await baseClient.networkProfileType.create({
+  const created = await adminClient.networkProfileType.create({
     data: {
       slug: `${TEST_PREFIX}-type`,
       displayName: "Test Type",
@@ -53,7 +84,7 @@ async function ensureProfileType(): Promise<string> {
 async function seedTwoTenants(): Promise<Seeded> {
   const profileTypeId = await ensureProfileType();
 
-  const profileA = await baseClient.networkProfile.create({
+  const profileA = await adminClient.networkProfile.create({
     data: {
       firstName: "TenantA",
       lastName: "Owner",
@@ -65,7 +96,7 @@ async function seedTwoTenants(): Promise<Seeded> {
     select: { id: true },
   });
 
-  const profileB = await baseClient.networkProfile.create({
+  const profileB = await adminClient.networkProfile.create({
     data: {
       firstName: "TenantB",
       lastName: "Owner",
@@ -77,17 +108,17 @@ async function seedTwoTenants(): Promise<Seeded> {
     select: { id: true },
   });
 
-  const orgA = await baseClient.organization.create({
+  const orgA = await adminClient.organization.create({
     data: { ownerId: profileA.id, slug: `${TEST_PREFIX}-a`, name: "Tenant A" },
     select: { id: true },
   });
 
-  const orgB = await baseClient.organization.create({
+  const orgB = await adminClient.organization.create({
     data: { ownerId: profileB.id, slug: `${TEST_PREFIX}-b`, name: "Tenant B" },
     select: { id: true },
   });
 
-  const integration = await baseClient.integration.create({
+  const integration = await adminClient.integration.create({
     data: {
       name: `${TEST_PREFIX}-int`,
       slug: `${TEST_PREFIX}-int`,
@@ -96,10 +127,10 @@ async function seedTwoTenants(): Promise<Seeded> {
     select: { id: true },
   });
 
-  // 3 logs for tenant A, 2 for tenant B — written via baseClient (no scoping)
-  // so we can set tenantId explicitly.
+  // 3 logs for tenant A, 2 for tenant B — written via adminClient (postgres,
+  // bypass RLS) so we can set tenantId explicitly across two tenants in seed.
   for (let i = 0; i < 3; i++) {
-    await baseClient.integrationSyncLog.create({
+    await adminClient.integrationSyncLog.create({
       data: {
         tenantId: orgA.id,
         integrationId: integration.id,
@@ -109,7 +140,7 @@ async function seedTwoTenants(): Promise<Seeded> {
     });
   }
   for (let i = 0; i < 2; i++) {
-    await baseClient.integrationSyncLog.create({
+    await adminClient.integrationSyncLog.create({
       data: {
         tenantId: orgB.id,
         integrationId: integration.id,
@@ -123,19 +154,18 @@ async function seedTwoTenants(): Promise<Seeded> {
 }
 
 async function cleanup() {
-  await baseClient.integrationSyncLog.deleteMany({
+  await adminClient.integrationSyncLog.deleteMany({
     where: { integrationId: seeded.integration.id },
   });
-  await baseClient.integration.delete({ where: { id: seeded.integration.id } });
-  await baseClient.organization.deleteMany({
+  await adminClient.integration.delete({ where: { id: seeded.integration.id } });
+  await adminClient.organization.deleteMany({
     where: { id: { in: [seeded.orgA.id, seeded.orgB.id] } },
   });
-  await baseClient.networkProfile.deleteMany({
+  await adminClient.networkProfile.deleteMany({
     where: { id: { in: [seeded.profileA.id, seeded.profileB.id] } },
   });
   if (seeded.profileTypeId) {
-    // Delete only if we created it (slug starts with TEST_PREFIX)
-    await baseClient.networkProfileType.deleteMany({
+    await adminClient.networkProfileType.deleteMany({
       where: { id: seeded.profileTypeId, slug: { startsWith: TEST_PREFIX } },
     });
   }
@@ -148,7 +178,8 @@ describe("Tenant scoping isolation (integration)", () => {
 
   afterAll(async () => {
     await cleanup();
-    await baseClient.$disconnect();
+    await adminClient.$disconnect();
+    await runtimeClient.$disconnect();
   });
 
   it("read sees only own tenant's rows when in withTenant context", async () => {
@@ -171,19 +202,31 @@ describe("Tenant scoping isolation (integration)", () => {
     expect(logs.every((l) => l.tenantId === seeded.orgB.id)).toBe(true);
   });
 
-  it("read without context returns all rows (no-op extension)", async () => {
+  it("runtime without withTenant cannot see RLS-protected rows", async () => {
+    // Defense-in-depth post-herd_app: scopedPrisma without withTenant is an
+    // Extension no-op (no tenantId injected, no GUC set). With RLS enabled on
+    // IntegrationSyncLog (rls_setup) and a strict policy in place
+    // (rls_isl_canary), `current_app_tenant_id()` returns NULL → no rows match.
+    // Before the canary policy, RLS without policy is deny-all → also 0 rows.
+    // Either way, runtime cannot bypass tenant isolation at the DB level.
     const logs = await scopedPrisma.integrationSyncLog.findMany({
       where: { integrationId: seeded.integration.id },
     });
-    expect(logs).toHaveLength(5);
+    expect(logs).toHaveLength(0);
+  });
+
+  it("admin connection (postgres, bypass RLS) sees all rows", async () => {
+    // Sanity check: the seed wrote 5 rows via adminClient. Verify they're
+    // there regardless of RLS — confirms the two-connection split works as
+    // intended (admin role bypasses, runtime role enforces).
+    const all = await adminClient.integrationSyncLog.findMany({
+      where: { integrationId: seeded.integration.id },
+    });
+    expect(all).toHaveLength(5);
   });
 
   it("create injects tenantId from context", async () => {
     const created = await withTenant(seeded.orgA.id, () =>
-      // tenantId omitted intentionally — this test verifies the extension injects it.
-      // The Prisma client requires tenantId in the type after making it NOT NULL,
-      // but the scoping extension injects it from the ALS context at runtime.
-      // We cast through unknown to suppress the TS error without using `any`.
       scopedPrisma.integrationSyncLog.create(
         {
           data: {
@@ -191,13 +234,12 @@ describe("Tenant scoping isolation (integration)", () => {
             action: "via-context",
             status: "success",
           },
-        } as unknown as Parameters<typeof scopedPrisma.integrationSyncLog.create>[0]
+        } as unknown as Parameters<typeof scopedPrisma.integrationSyncLog.create>[0],
       ),
     );
     expect(created.tenantId).toBe(seeded.orgA.id);
-    // Cleanup the row we just created so the count tests above remain stable
-    // if re-run order shifts.
-    await baseClient.integrationSyncLog.delete({ where: { id: created.id } });
+    // Cleanup via adminClient (RLS-bypass) so we always reach the row.
+    await adminClient.integrationSyncLog.delete({ where: { id: created.id } });
   });
 
   it("update by id is scoped — cannot update another tenant's row", async () => {
@@ -217,8 +259,8 @@ describe("Tenant scoping isolation (integration)", () => {
       ),
     ).rejects.toThrow();
 
-    // Verify the row was not mutated.
-    const after = await baseClient.integrationSyncLog.findUnique({
+    // Verify the row was not mutated. Use adminClient to bypass RLS for the read.
+    const after = await adminClient.integrationSyncLog.findUnique({
       where: { id: orgBLog!.id },
     });
     expect(after?.details).toBeNull();
@@ -235,12 +277,13 @@ describe("Tenant scoping isolation (integration)", () => {
     expect(logs.every((l) => l.tenantId === seeded.orgB.id)).toBe(true);
   });
 
-  // Smoke coverage for the other 3 tenant-scoped tables. The extension behavior
-  // is identical to IntegrationSyncLog (already exhaustively tested above) —
-  // these confirm the model name matching works for each table name.
+  // Smoke coverage for the other 3 tenant-scoped tables.
 
   it("scopes IntegrationWebhookEvent reads to current tenant", async () => {
-    const eventA = await baseClient.integrationWebhookEvent.create({
+    // IWE has a permissive policy from rls_setup (USING true) because its
+    // tenant_id is still nullable. RLS allows the rows; Extension filter scopes
+    // them to the active tenantId.
+    const eventA = await adminClient.integrationWebhookEvent.create({
       data: {
         tenantId: seeded.orgA.id,
         integrationId: seeded.integration.id,
@@ -248,7 +291,7 @@ describe("Tenant scoping isolation (integration)", () => {
         payload: "{}",
       },
     });
-    const eventB = await baseClient.integrationWebhookEvent.create({
+    const eventB = await adminClient.integrationWebhookEvent.create({
       data: {
         tenantId: seeded.orgB.id,
         integrationId: seeded.integration.id,
@@ -264,19 +307,17 @@ describe("Tenant scoping isolation (integration)", () => {
     );
     expect(seenByA.map((e) => e.id)).toEqual([eventA.id]);
 
-    await baseClient.integrationWebhookEvent.deleteMany({
+    await adminClient.integrationWebhookEvent.deleteMany({
       where: { id: { in: [eventA.id, eventB.id] } },
     });
   });
 
   it("scopes IntegrationTierMapping reads to current tenant", async () => {
-    // Reuse an existing SubscriptionTier (creating one requires ~10 Decimal
-    // fields irrelevant to this assertion).
-    const tier = await baseClient.subscriptionTier.findFirst({ select: { id: true } });
+    const tier = await adminClient.subscriptionTier.findFirst({ select: { id: true } });
     if (!tier) {
       throw new Error("Test requires at least one SubscriptionTier seeded");
     }
-    const mappingA = await baseClient.integrationTierMapping.create({
+    const mappingA = await adminClient.integrationTierMapping.create({
       data: {
         tenantId: seeded.orgA.id,
         integrationId: seeded.integration.id,
@@ -284,7 +325,7 @@ describe("Tenant scoping isolation (integration)", () => {
         subscriptionTierId: tier.id,
       },
     });
-    const mappingB = await baseClient.integrationTierMapping.create({
+    const mappingB = await adminClient.integrationTierMapping.create({
       data: {
         tenantId: seeded.orgB.id,
         integrationId: seeded.integration.id,
@@ -300,13 +341,13 @@ describe("Tenant scoping isolation (integration)", () => {
     );
     expect(seenByA.map((m) => m.id)).toEqual([mappingA.id]);
 
-    await baseClient.integrationTierMapping.deleteMany({
+    await adminClient.integrationTierMapping.deleteMany({
       where: { id: { in: [mappingA.id, mappingB.id] } },
     });
   });
 
   it("scopes MemberConnection reads to current tenant", async () => {
-    const connA = await baseClient.memberConnection.create({
+    const connA = await adminClient.memberConnection.create({
       data: {
         tenantId: seeded.orgA.id,
         profileId: seeded.profileA.id,
@@ -314,7 +355,7 @@ describe("Tenant scoping isolation (integration)", () => {
         externalUserId: `${TEST_PREFIX}-ext-a`,
       },
     });
-    const connB = await baseClient.memberConnection.create({
+    const connB = await adminClient.memberConnection.create({
       data: {
         tenantId: seeded.orgB.id,
         profileId: seeded.profileB.id,
@@ -330,7 +371,7 @@ describe("Tenant scoping isolation (integration)", () => {
     );
     expect(seenByA.map((c) => c.id)).toEqual([connA.id]);
 
-    await baseClient.memberConnection.deleteMany({
+    await adminClient.memberConnection.deleteMany({
       where: { id: { in: [connA.id, connB.id] } },
     });
   });
