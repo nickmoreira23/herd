@@ -19,7 +19,6 @@ parent: herd.category.blocks.financial
 children: []
 consumes:
   - herd.block.financial.billing-customers
-  - herd.integration.payment.recharge
 consumed_by:
   - herd.block.financial.charges
 related:

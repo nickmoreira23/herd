@@ -17,8 +17,7 @@ since: 2026-05-19
 updated: 2026-05-19
 parent: herd.category.blocks.financial
 children: []
-consumes:
-  - herd.integration.payment.recharge
+consumes: []
 consumed_by: []
 related:
   - herd.block.financial.subscriptions

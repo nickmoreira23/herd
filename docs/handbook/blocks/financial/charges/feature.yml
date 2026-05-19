@@ -20,7 +20,6 @@ children: []
 consumes:
   - herd.block.financial.billing-customers
   - herd.block.financial.subscriptions
-  - herd.integration.payment.recharge
 consumed_by: []
 related:
   - herd.block.financial.billing-customers
