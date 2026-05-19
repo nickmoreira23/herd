@@ -4,7 +4,6 @@ import {
   Brain,
   Compass,
   LayoutDashboard,
-  Network,
   ShoppingBag,
   Receipt,
   Bot,
@@ -157,7 +156,6 @@ export function buildNavForView(view: ProfileView): ProfileNav {
       top: [
         { type: "link", href: "/admin", label: "Dashboard", icon: LayoutDashboard },
         { type: "link", href: "/admin/chat", label: "Chat", icon: MessageSquare },
-        { type: "link", href: "/admin/network", label: "Network", icon: Network },
         { type: "link", href: "/admin/knowledge", label: "Knowledge", icon: Brain },
         { type: "link", href: "/admin/marketplace", label: "Marketplace", icon: ShoppingBag },
       ],
@@ -181,7 +179,6 @@ export function buildNavForView(view: ProfileView): ProfileNav {
       { type: "link", href: "/admin", label: "Dashboard", icon: LayoutDashboard },
       { type: "link", href: "/admin/chat", label: "Chat", icon: MessageSquare },
       { type: "link", href: "/admin/agents", label: "Agents", icon: Bot },
-      { type: "link", href: "/admin/network", label: "Network", icon: Network },
       { type: "link", href: "/admin/knowledge", label: "Knowledge", icon: Brain },
       { type: "link", href: "/admin/marketplace", label: "Marketplace", icon: ShoppingBag },
       { type: "link", href: "/admin/ledger", label: "Ledger", icon: Receipt },
