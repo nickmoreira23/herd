@@ -79,7 +79,6 @@ import {
 } from "@/lib/blocks/block-categories";
 import { ManageBlocksDialog } from "@/components/blocks/manage-blocks-dialog";
 import { ManageSectionsDialog } from "@/components/marketplace/admin/manage-sections-dialog";
-import { NetworkSubPanel } from "@/components/network/network-sub-panel";
 import { ManageKnowledgeDialog } from "@/components/knowledge/manage-knowledge-dialog";
 import {
   KNOWLEDGE_BLOCKS_SETTING_KEY,
@@ -143,11 +142,6 @@ export const subPanelRegistry: Record<string, SubPanelConfig> = {
     id: "blocks",
     label: "Blocks",
     links: [], // Dynamically rendered by BlocksSubPanel
-  },
-  network: {
-    id: "network",
-    label: "Network",
-    links: [], // Dynamically rendered by NetworkSubPanel
   },
   organization: {
     id: "organization",
@@ -273,7 +267,6 @@ export const subPanelRegistry: Record<string, SubPanelConfig> = {
 export const hrefToSubPanel: Record<string, string> = {
   "/admin/agents": "agents",
   "/admin/blocks": "blocks",
-  "/admin/network": "network",
   "/admin/tools": "tools",
   "/admin/organization/profile": "organization",
   "/admin/knowledge": "knowledge",
@@ -294,7 +287,6 @@ export function getSubPanelIdForPath(pathname: string): string | null {
   if (pathname.startsWith("/admin/marketplace")) return "marketplace";
   if (pathname.startsWith("/admin/ledger")) return "ledger";
   if (pathname.startsWith("/admin/handbook")) return "handbook";
-  if (pathname.startsWith("/admin/network")) return "network";
   if (pathname.startsWith("/admin/knowledge")) return "knowledge";
   if (pathname.startsWith("/admin/organization")) return "organization";
   if (pathname.startsWith("/admin/spaces/exercise")) return "exercise";
@@ -1151,7 +1143,6 @@ export function SubPanel() {
   // Custom sub-panels
   if (subPanelId === "blocks") return <BlocksSubPanel />;
   if (subPanelId === "knowledge") return <KnowledgeSubPanel />;
-  if (subPanelId === "network") return <NetworkSubPanel />;
   if (subPanelId === "tools") return <ToolsSubPanel />;
   if (subPanelId === "marketplace") return <MarketplaceSubPanel />;
   if (subPanelId === "organization") return <OrganizationSubPanel />;

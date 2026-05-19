@@ -165,7 +165,6 @@ export function ExecutiveSummary({ locale }: ExecutiveSummaryProps) {
                 bonus: inputs.commissionStructure.flatBonusPerSale,
                 residual: inputs.commissionStructure.residualPercent,
               })}
-              href="/admin/network/channels/promoters"
               source={t("financials.summary.provenance.source_promoters")}
             />
             <ProvenanceRow

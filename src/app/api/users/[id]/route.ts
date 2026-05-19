@@ -72,6 +72,9 @@ export async function PATCH(
     });
 
     // Handle role updates if provided
+    // TODO Sub-etapa 3.5: networkProfileRole será removido; tabela vai ser dropada
+    // em 3.6. Por enquanto, mantém para CRUD de user funcionar — sem impacto
+    // runtime (tabela vazia desde Sub-etapa 3.2).
     if (body.roleIds && Array.isArray(body.roleIds)) {
       // Remove existing roles and re-assign
       await prisma.networkProfileRole.deleteMany({ where: { profileId: id } });
