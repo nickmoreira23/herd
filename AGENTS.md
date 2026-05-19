@@ -949,6 +949,96 @@ Codified across the codebase, not just Meeting:
 When adding a similar feature to another model, follow the same split —
 do not conflate "the summary failed" with "the whole thing failed".
 
+# Billing schema (Camada 1, Sub-etapa 9)
+
+11 tabelas tenant-scoped: `payment_providers`, `billing_customers`,
+`payment_methods`, `subscriptions`, `charges`, `charge_line_items`,
+`invoices`, `refunds`, `dunning_attempts`, `portal_sessions`,
+`billing_events`. Todas com `tenant_id NOT NULL` + RLS estrita +
+`provider_data JSONB` preservando o payload bruto do provider.
+
+`ChargeStatus` enum canonical (8 estados: QUEUED, PENDING, SUCCESS,
+FAILED, REFUNDED, PARTIALLY_REFUNDED, SKIPPED, CANCELLED) normaliza o
+status entre providers — Recharge fala `success`, outros providers
+falariam `paid`/`completed`, e tudo converge no enum.
+
+`ChargeLineItem` é junction N:N (`charge_id` ↔ `subscription_id`).
+Necessário porque providers como Recharge agregam múltiplas
+subscriptions num único charge composto; sem junction, ou duplicamos
+charges (total errado por cliente) ou perdemos atribuição por tier
+(receita errada por tier). Sem `external_id`/`provider_id` próprio:
+o line item é split interno, não entidade do provider.
+
+Integração com as primitives de Ledger (`Account` / `JournalEntry` /
+`JournalLine`) é **Camada 3**, fora de escopo da Camada 1. O hook
+naturalizado será `JournalEntry.sourceKind = 'charge'` com
+`sourceId = charges.id`.
+
+Os 11 modelos estão em `TENANT_SCOPED_MODELS` —
+`herd-tenancy/no-direct-prisma-on-scoped-models` ESLint rule cobre
+desde o seu commit. Tipos ergonômicos em `src/lib/billing/types.ts`
+(re-exports do Prisma client).
+
+# Test patterns — práticas operacionais
+
+## Back-dating `updatedAt` em testes
+
+Models Prisma com `@updatedAt` não aceitam `updatedAt` arbitrário via
+`prisma.update()` — o `@updatedAt` pin sobrescreve o valor para `now()`
+em qualquer write via ORM. Tests que precisam simular "row antiga"
+(ex: cron orphan recovery testando threshold `updatedAt < now - 15min`)
+devem usar `$executeRaw`:
+
+```typescript
+await adminClient.$executeRaw`
+  UPDATE "<table>" SET "updatedAt" = ${cutoff} WHERE id = ${id}::uuid
+`;
+```
+
+Este é o único caminho confiável. Reinventar via timestamps mockados ou
+clock injection criaria divergência entre o DB real e a expectativa do test.
+
+# Tech debt — rastreado
+
+## Cron auth fail-open quando `CRON_SECRET` unset
+
+`src/app/api/cron/meetings-sync/route.ts` (e demais rotas em
+`src/app/api/cron/*`) implementam a auth como:
+
+```typescript
+const cronSecret = process.env.CRON_SECRET;
+if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+}
+```
+
+Quando `CRON_SECRET` está unset, a guarda **skipa** — qualquer request
+público alcança o handler. Funciona em DEV/test (intencional), mas se
+um deploy externo for feito sem setar `CRON_SECRET`, o cron fica
+publicamente acessível sem aviso.
+
+**Trigger para resolver:** primeiro deploy externo, primeira produção
+real, ou primeira preocupação concreta com cron acessível. Fix é
+trivial:
+
+```typescript
+if (!cronSecret) throw new Error("CRON_SECRET required");
+if (authHeader !== `Bearer ${cronSecret}`) throw new Error("Unauthorized");
+```
+
+## Concerns acumulando em `meetings-sync` cron
+
+A rota cron `src/app/api/cron/meetings-sync/route.ts` hoje executa 4
+responsabilidades num único endpoint: (1) calendar sync, (2)
+completed-recordings check via agent pipeline, (3) completed-recordings
+check fallback, (4) PROCESSING orphan recovery. Não é problema
+imediato — funciona — mas o número de mocks que o test de integração
+precisa para isolar um caminho específico (mockar 4 módulos para testar
+o orphan recovery) revela que o endpoint mistura concerns.
+
+**Observação (não débito formal):** considerar split em sub-rotas se
+passar de 5 responsabilidades.
+
 ## Boundaries
 
 - Never edit `mcp/generated/`, `schemas/feature.schema.json`,

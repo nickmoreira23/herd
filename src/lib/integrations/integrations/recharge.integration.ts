@@ -5,12 +5,11 @@ import type { PaymentProviderManifest } from "../payment/payment-manifest.schema
 /**
  * Recharge — subscription billing for Shopify-native commerce.
  *
- * Implemented as `PaymentProviderAdapter` (Decision #9). Category is set
- * to BILLING here as a working choice for Sub-etapa 7 manifest validation;
- * the final BILLING-vs-PAYMENT call is cravado in Sub-etapa 10 when the
- * adapter ships with real OAuth + HTTP wiring and the orchestrator starts
- * consuming the category-derived UI surface. Switching the literal at
- * that point is a one-line change validated by the same Zod schema.
+ * Implemented as `PaymentProviderAdapter` (Decision #9). Category is
+ * BILLING — finalized in Sub-etapa 9 alongside the canonical Payment
+ * Provider Layer schema (`payment_providers`, `subscriptions`, `charges`,
+ * etc). The Sub-etapa 7 manifest carried this value as a working choice;
+ * Sub-etapa 9 promotes it to the final classification.
  *
  * Webhook signature is `sha256(client_secret + raw_body)` — literal
  * concatenation, NOT HMAC. See `RechargeWebhookVerifier` and its
@@ -19,7 +18,7 @@ import type { PaymentProviderManifest } from "../payment/payment-manifest.schema
 const rechargeManifest: PaymentProviderManifest = {
   slug: "recharge",
   name: "Recharge",
-  category: IntegrationCategory.BILLING, // confirmed in Sub-etapa 10
+  category: IntegrationCategory.BILLING,
   capabilities: {
     supportsWebhooks: true,
     supportsOAuth: true,

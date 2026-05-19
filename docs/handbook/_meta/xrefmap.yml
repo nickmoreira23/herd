@@ -1,6 +1,20 @@
 # Auto-generated. Do not edit by hand. Regenerate via npm run gen:xrefmap.
 version: 1
 references:
+  herd.block.financial.billing-customers:
+    level: block
+    id: billing-customers
+    path: docs/handbook/blocks/financial/billing-customers
+    title:
+      pt-BR: Clientes de Cobrança
+      en-US: Billing Customers
+  herd.block.financial.charges:
+    level: block
+    id: charges
+    path: docs/handbook/blocks/financial/charges
+    title:
+      pt-BR: Cobranças
+      en-US: Charges
   herd.block.financial.commissions-payments:
     level: block
     id: commissions-payments
@@ -15,6 +29,13 @@ references:
     title:
       pt-BR: Lançamentos Contábeis
       en-US: Journal Entries
+  herd.block.financial.subscriptions:
+    level: block
+    id: subscriptions
+    path: docs/handbook/blocks/financial/subscriptions
+    title:
+      pt-BR: Assinaturas
+      en-US: Subscriptions
   herd.block.miscellaneous.contacts:
     level: block
     id: contacts

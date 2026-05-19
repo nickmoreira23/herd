@@ -1,0 +1,40 @@
+id: subscriptions
+uid: herd.block.financial.subscriptions
+level: block
+technical_category: block
+title:
+  pt-BR: Assinaturas
+  en-US: Subscriptions
+description:
+  pt-BR: Vínculo ativo entre BillingCustomer e plano. Opcionalmente conectado
+    ao catálogo SubscriptionTier da plataforma.
+  en-US: Active link between a BillingCustomer and a plan. Optionally
+    connected to the platform's SubscriptionTier catalog.
+status: draft
+owners:
+  - "@nick"
+since: 2026-05-19
+updated: 2026-05-19
+parent: herd.category.blocks.financial
+children: []
+consumes:
+  - herd.block.financial.billing-customers
+consumed_by:
+  - herd.block.financial.charges
+related:
+  - herd.block.financial.billing-customers
+  - herd.block.financial.charges
+source_paths:
+  - src/lib/billing/types.ts
+  - prisma/schema.prisma
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

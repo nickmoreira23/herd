@@ -1,0 +1,38 @@
+id: billing-customers
+uid: herd.block.financial.billing-customers
+level: block
+technical_category: block
+title:
+  pt-BR: Clientes de Cobrança
+  en-US: Billing Customers
+description:
+  pt-BR: Espelho local de clientes do provider de pagamento, opcionalmente
+    vinculados a um membro da plataforma via MemberConnection.
+  en-US: Local mirror of customers from the payment provider, optionally
+    linked to a platform member via MemberConnection.
+status: draft
+owners:
+  - "@nick"
+since: 2026-05-19
+updated: 2026-05-19
+parent: herd.category.blocks.financial
+children: []
+consumes: []
+consumed_by: []
+related:
+  - herd.block.financial.subscriptions
+  - herd.block.financial.charges
+source_paths:
+  - src/lib/billing/types.ts
+  - prisma/schema.prisma
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog
