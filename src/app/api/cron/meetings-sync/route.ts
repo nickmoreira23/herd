@@ -9,6 +9,20 @@ import {
 } from "@/lib/meetings/meeting-agent";
 import { RecallAiService } from "@/lib/services/recall-ai";
 import { prisma } from "@/lib/prisma";
+import { processRecording } from "@/lib/meetings/process-recording";
+
+/**
+ * How long a Meeting can sit in PROCESSING before it is treated as
+ * orphaned and re-driven through the canonical pipeline. Typical
+ * Deepgram + Anthropic completion is < 2 minutes; 15 minutes is a
+ * generous ceiling that won't false-positive on a meeting that's
+ * actively being processed in another worker.
+ *
+ * The canonical pipeline is idempotent by step, so re-running on a
+ * partially-processed Meeting is safe — already-transcribed/summarized
+ * Meetings skip the expensive Deepgram/Anthropic calls.
+ */
+const PROCESSING_ORPHAN_THRESHOLD_MS = 15 * 60 * 1000;
 
 /**
  * GET — Scheduled sync for meetings.
@@ -35,11 +49,13 @@ export async function GET(request: Request) {
     calendarSync: { created: number; botsSent: number; providers: string[] } | null;
     recordings: { processed: number } | null;
     agentPipeline: { processed: number } | null;
+    processingOrphans: { recovered: number } | null;
     errors: string[];
   } = {
     calendarSync: null,
     recordings: null,
     agentPipeline: null,
+    processingOrphans: null,
     errors: [],
   };
 
@@ -122,6 +138,45 @@ export async function GET(request: Request) {
         e instanceof Error ? e.message : "Recording check failed";
       results.errors.push(msg);
     }
+  }
+
+  // 3. Recover Meetings stuck in PROCESSING beyond the threshold.
+  //    Pre-8.5 this was a silent failure mode — a Meeting whose webhook
+  //    arrived but whose async pipeline died (process restart, transient
+  //    network failure, etc.) sat at PROCESSING forever. The canonical
+  //    pipeline is idempotent by step, so re-driving it is safe.
+  try {
+    const cutoff = new Date(Date.now() - PROCESSING_ORPHAN_THRESHOLD_MS);
+    const stuck = await prisma.meeting.findMany({
+      where: {
+        status: "PROCESSING",
+        updatedAt: { lt: cutoff },
+        externalBotId: { not: null },
+      },
+      select: { id: true },
+    });
+
+    let recovered = 0;
+    for (const meeting of stuck) {
+      try {
+        // Use defaults (no insights, no knowledge save) — orphan recovery
+        // mirrors the webhook path's behavior, not the cron-with-agent's
+        // richer pipeline. If we wanted insights on recovery, that'd be
+        // a separate decision (changing recovery semantics).
+        await processRecording(meeting.id);
+        recovered++;
+      } catch (err) {
+        console.error(
+          `[meetings-sync] PROCESSING orphan recovery failed for ${meeting.id}:`,
+          err,
+        );
+      }
+    }
+    results.processingOrphans = { recovered };
+  } catch (e) {
+    const msg =
+      e instanceof Error ? e.message : "Processing orphan recovery failed";
+    results.errors.push(msg);
   }
 
   return NextResponse.json(results);

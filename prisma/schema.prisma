@@ -2543,7 +2543,12 @@ model Meeting {
   participantCount Int?
 
   // Error handling
+  // - errorMessage: fatal pipeline failure → status flips to ERROR.
+  // - summaryError: partial failure of the optional summarize step;
+  //   transcript still landed, Meeting stays READY. See AGENTS.md
+  //   "Recall integration — divergência arquitetural consciente".
   errorMessage String?
+  summaryError String?
 
   // Timestamps
   processedAt DateTime?

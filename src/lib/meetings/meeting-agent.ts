@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { RecallAiService } from "@/lib/services/recall-ai";
-import type { MeetingAgentConfig, Prisma } from "@prisma/client";
+import type { MeetingAgentConfig } from "@prisma/client";
 import type { NormalizedEvent } from "./calendar-providers";
+import { processRecording } from "./process-recording";
 
 // ─── Agent Config Management ──────────────────────────────────────
 
@@ -164,152 +165,45 @@ export async function deployBotForMeeting(
 // ─── Post-Meeting Pipeline ────────────────────────────────────────
 
 /**
- * Run the full post-meeting processing pipeline:
- * 1. Download audio from Recall.ai
- * 2. Transcribe via Deepgram
- * 3. Summarize via Claude
- * 4. Generate next steps + suggestions (if enabled)
+ * Sub-etapa 8.5 delegate.
+ *
+ * Pre-8.5 this function carried its own copy of the download → transcribe
+ * → summarize → insights → knowledge-save pipeline. The whole body was a
+ * superset of the Recall webhook's `processRecording`. Sub-etapa 8.5
+ * extracted the canonical pipeline to `process-recording.ts` and this
+ * function now maps `MeetingAgentConfig` to its options and delegates.
+ *
+ * Behavior preserved:
+ *   - status flipped to PROCESSING up front (caller pre-8.5 contract).
+ *   - autoTranscribe / autoSummarize / generateNextSteps /
+ *     generateSuggestions taken from the config, NOT defaulted.
+ *   - saveToKnowledge: true — the original pipeline always tried
+ *     `saveMeetingToKnowledge`; preserved as a non-defaulted option.
+ *
+ * The `audioUrl` parameter is now redundant (canonical fetches it from
+ * the Recall API itself). Kept in the signature to avoid breaking the
+ * caller's call site — see `meetings-sync` cron — and prevent the
+ * signature change from rippling. Future cleanup can drop it once all
+ * callsites are confirmed.
  */
 export async function processCompletedMeeting(
   meetingId: string,
   audioUrl: string,
   config: MeetingAgentConfig
 ): Promise<void> {
+  void audioUrl; // canonical resolves audioUrl via RecallAiService.getBot.
+
   await prisma.meeting.update({
     where: { id: meetingId },
     data: { status: "PROCESSING" },
   });
 
-  const meeting = await prisma.meeting.findUnique({
-    where: { id: meetingId },
+  await processRecording(meetingId, {
+    autoTranscribe: config.autoTranscribe,
+    autoSummarize: config.autoSummarize,
+    generateNextSteps: config.generateNextSteps,
+    generateSuggestions: config.generateSuggestions,
+    // Cron-with-agent path always ran knowledge save (best-effort).
+    saveToKnowledge: true,
   });
-  if (!meeting) return;
-
-  try {
-    // 1. Download audio
-    const audioRes = await fetch(audioUrl);
-    if (!audioRes.ok) throw new Error("Failed to download audio");
-
-    const buffer = Buffer.from(await audioRes.arrayBuffer());
-    const { writeFile, unlink } = await import("fs/promises");
-    const { join } = await import("path");
-    const { tmpdir } = await import("os");
-    const tmpPath = join(tmpdir(), `recall-${meeting.externalBotId || meetingId}.mp4`);
-    await writeFile(tmpPath, buffer);
-
-    // 2. Transcribe
-    let transcriptText = "";
-    if (config.autoTranscribe) {
-      const { transcribeAudio } = await import("@/lib/audios/audio-transcriber");
-      transcriptText = await transcribeAudio(tmpPath);
-    }
-
-    // Clean up temp file
-    await unlink(tmpPath).catch(() => {});
-
-    // Calculate duration
-    const duration =
-      meeting.startedAt && meeting.endedAt
-        ? (meeting.endedAt.getTime() - meeting.startedAt.getTime()) / 1000
-        : null;
-
-    // Update with transcript
-    await prisma.meeting.update({
-      where: { id: meetingId },
-      data: {
-        transcript: transcriptText || null,
-        chunkCount: transcriptText ? Math.ceil(transcriptText.length / 1000) : 0,
-        audioFileUrl: audioUrl,
-        audioMimeType: "audio/mp4",
-        duration,
-        status: "READY",
-        processedAt: new Date(),
-      },
-    });
-
-    // 3. Summarize
-    if (config.autoSummarize && transcriptText) {
-      try {
-        const { summarizeMeeting } = await import("@/lib/meetings/meeting-summarizer");
-        const summary = await summarizeMeeting(transcriptText, meeting.title);
-        await prisma.meeting.update({
-          where: { id: meetingId },
-          data: {
-            summary: summary.summary,
-            actionItems: summary.actionItems,
-            keyTopics: summary.keyTopics,
-          },
-        });
-
-        // 4. Generate next steps and suggestions (if enabled)
-        if (config.generateNextSteps || config.generateSuggestions) {
-          try {
-            const { generateMeetingInsights } = await import(
-              "@/lib/meetings/meeting-summarizer"
-            );
-            const insights = await generateMeetingInsights(
-              transcriptText,
-              summary.summary,
-              meeting.title,
-              {
-                generateNextSteps: config.generateNextSteps,
-                generateSuggestions: config.generateSuggestions,
-              }
-            );
-
-            // Store insights as part of actionItems metadata
-            const existingActions = (summary.actionItems || []) as Array<Record<string, unknown>>;
-            if (insights.nextSteps?.length) {
-              for (const step of insights.nextSteps) {
-                existingActions.push({
-                  text: step,
-                  assignee: null,
-                  dueDate: null,
-                  completed: false,
-                  type: "next_step",
-                });
-              }
-            }
-
-            await prisma.meeting.update({
-              where: { id: meetingId },
-              data: {
-                actionItems: existingActions as Prisma.InputJsonValue,
-                // Store suggestions as a JSON metadata field on keyTopics
-                keyTopics: [
-                  ...summary.keyTopics,
-                  ...(insights.suggestions || []).map(
-                    (s: string) => `💡 ${s}`
-                  ),
-                ],
-              },
-            });
-          } catch {
-            // Insights are optional, don't fail the pipeline
-          }
-        }
-      } catch {
-        // Summary is optional
-      }
-    }
-
-    // 5. Save to knowledge base (best-effort)
-    try {
-      const { saveMeetingToKnowledge } = await import(
-        "@/lib/meetings/meeting-knowledge"
-      );
-      await saveMeetingToKnowledge(meetingId);
-    } catch {
-      // Knowledge pipeline is optional, don't fail the main pipeline
-    }
-  } catch (err) {
-    console.error(`Agent pipeline failed for meeting ${meetingId}:`, err);
-    await prisma.meeting.update({
-      where: { id: meetingId },
-      data: {
-        status: "ERROR",
-        errorMessage: err instanceof Error ? err.message : "Processing failed",
-      },
-    });
-  }
 }

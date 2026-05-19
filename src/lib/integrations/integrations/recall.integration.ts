@@ -15,7 +15,12 @@ import type { IntegrationManifest } from "../manifest.schema";
  * but the per-route tenant flow is documented in AGENTS.md.
  */
 const recallManifest: IntegrationManifest = {
-  slug: "recall",
+  // Slug aligned to DB / service in Sub-etapa 8.5 — `Integration` row uses
+  // `recall-ai` and `RecallAiService.fromIntegration()` looks it up via that
+  // same slug. The Sub-etapa 7 manifest had `recall` (without `-ai`) as a
+  // working choice; the mismatch became blocking once the canonical pipeline
+  // unified around the DB slug.
+  slug: "recall-ai",
   name: "Recall.ai",
   category: IntegrationCategory.MEETINGS,
   capabilities: {
