@@ -2,6 +2,13 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.1.2 — 2026-05-19
+
+Anchor entry. PR #32 (Sub-etapa 3.3 — remove RBAC + /api/network/* +
+/admin/network/*) toca apenas paths não-cobertos pelos filtros de
+`freshness`/`validate` (`src/**` + edits em `src/components/**`,
+`src/app/api/**`). Mesma necessidade de âncora; mesmo fix.
+
 ## 1.1.1 — 2026-05-19
 
 Anchor entry. PR #31 (Sub-etapa 3.2 — data cleanup MLM/Commission/D2D) confirma
