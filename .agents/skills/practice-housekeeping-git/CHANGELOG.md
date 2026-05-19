@@ -2,6 +2,16 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.1.1 — 2026-05-19
+
+Anchor entry. PR #31 (Sub-etapa 3.2 — data cleanup MLM/Commission/D2D) confirma
+mais uma vez o padrão "freshness/validate são checks path-filter" (aprendizado #4
+da v1.1): um PR que só toca `.agents/runbooks/**` fica com os 2 Required checks
+em "Expected — Waiting for status to be reported" indefinidamente. Fix
+canônico mantém-se: tocar arquivo em `.agents/skills/**` (ou
+`docs/handbook/**`, `schemas/**`) no mesmo PR. Esta entrada serve como a
+âncora do PR #31.
+
 ## 1.1 — 2026-05-15
 
 Enriquecimento pós-Fase 0 com 6 aprendizados operacionais descobertos empiricamente durante as Sub-etapas 0.3d.2 → 0.4.4.
