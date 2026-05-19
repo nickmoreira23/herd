@@ -14,7 +14,7 @@ describe("integration adapter registry — production state", () => {
     const slugs = getAllAdapters()
       .map((a) => a.slug)
       .sort();
-    expect(slugs).toEqual(["gorgias", "intercom", "recall", "recharge"]);
+    expect(slugs).toEqual(["gorgias", "intercom", "recall-ai", "recharge"]);
   });
 
   it("lookup by slug returns the correct adapter", () => {
@@ -149,7 +149,7 @@ describe("integration adapter registry — per-adapter manifests", () => {
   });
 
   it("recall manifest passes validation (MEETINGS, HMAC via Svix)", () => {
-    const a = getAdapter("recall");
+    const a = getAdapter("recall-ai");
     expect(a?.manifest.category).toBe(IntegrationCategory.MEETINGS);
     expect(a?.manifest.webhookEvents).toContain("bot.status_change");
   });

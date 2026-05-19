@@ -869,11 +869,85 @@ the same change — never silent-fail a new requirement.
 
 The `src/lib/services/{provider}.ts` directory holds 36 HTTP-client
 wrappers (airtable, asana, attio, slack, zoom, …). Only 4 are adopted by
-the adapter hierarchy in Sub-etapa 7: gorgias, intercom, recharge, recall.
+the adapter hierarchy in Sub-etapa 7: gorgias, intercom, recharge, recall-ai.
 The other 32 stay as plain service files. **Trigger to adopt:** the
 provider needs structured behavior beyond a wrapper — webhook handling,
 OAuth flow, manifest-driven UI, orchestrator routing. Adding an adapter
 without a real driver is over-engineering.
+
+# Recall integration — divergência arquitetural consciente
+
+Recall webhooks do **NOT** use the `domain_events` outbox (Sub-etapa 6).
+The decision is recorded as Decision B in Sub-etapa 8.5 and applies until
+the trigger fires.
+
+**Why no outbox?** The outbox emit requires `aggregateId: <tenant UUID>`
+(validated as UUID at emit-time). `Meeting` is not in `TENANT_SCOPED_MODELS`
+and has no FK to `Organization` — there is no path `Meeting → tenantId`
+that could feed `aggregateId`. Forcing outbox adoption would require a
+schema change (new FK + backfill + RLS + adding `Meeting` to
+`TENANT_SCOPED_MODELS`) with no proportional benefit:
+
+- The Meeting status state-machine is synchronous by UX requirement — the
+  admin UI flips on the same render cycle as the webhook arrival; moving
+  the flip behind a worker introduces visible lag.
+- Idempotency is achieved differently: the canonical pipeline
+  (`src/lib/meetings/process-recording.ts`) skips each step if its output
+  already exists. Replays from Recall, cron orphan recovery, or manual
+  retries don't re-charge Deepgram or Anthropic.
+- Resilience comes from `meetings-sync` cron, which covers both
+  `RECORDING` orphans (waiting for `done` from Recall) and `PROCESSING`
+  orphans (>15 minutes in PROCESSING — pipeline died mid-flight). Both
+  paths delegate to the canonical pipeline.
+
+**Trigger to revisit Decision B:** `Meeting` gains tenant scope (FK
+`tenantId` + entry in `TENANT_SCOPED_MODELS`). At that point the outbox
+fit is natural and the Recall handler can adopt the Sub-etapa 6 pattern.
+
+## Canonical pipeline — `src/lib/meetings/process-recording.ts`
+
+Single source of truth for Recall post-meeting processing. Three callers
+delegate to it (Sub-etapa 8.5):
+
+| Caller | Options |
+|---|---|
+| Recall webhook route (`POST /api/integrations/recall/webhook`) | defaults (transcribe + summarize, no insights, no knowledge save) |
+| Cron with agent (`meetings-sync` → `processCompletedMeeting`) | mapped from `MeetingAgentConfig` (autoTranscribe, autoSummarize, generateNextSteps, generateSuggestions) + `saveToKnowledge: true` |
+| Cron fallback (`checkCompletedRecordings`) | `saveToKnowledge: true` (no insights — matches pre-8.5 behavior exactly) |
+| Cron orphan recovery (`PROCESSING > 15 min`) | defaults (matches webhook semantics) |
+
+**Idempotency contract.** Skip the expensive step if its output is
+already present:
+
+- `meeting.transcript` non-null → skip download + transcribe + Update#1.
+- `meeting.summary` non-null → skip summarize + Update#2.
+- Both present + `saveToKnowledge: false` → zero external calls.
+
+**Status contract.** The function does NOT set `status: PROCESSING` on
+entry — callers do that when they transition the Meeting into the active
+pipeline. The function flips to `READY` after Update#1 lands.
+
+**Error contract.**
+- `summaryError` (text NULL) — partial failure of the optional summarize
+  step. Meeting stays `READY`. Logged via `console.error`.
+- `errorMessage` — fatal pipeline failure (transcribe stage or earlier).
+  Status flips to `ERROR`.
+
+**Audio URL** is always fetched via `RecallAiService.getBot(externalBotId)`.
+No caller passes `audioUrl` as an argument — fonte única eliminates the
+"which `audioUrl` is the caller using?" debug class.
+
+## `summaryError` vs `errorMessage` — convention
+
+Codified across the codebase, not just Meeting:
+
+- `errorMessage` — fatal failure that invalidates the row's primary
+  purpose. Status field (where present) flips to `ERROR`/equivalent.
+- `summaryError` (and similar `<feature>Error` columns) — partial failure
+  of an optional sub-step. Row remains valid for its primary use.
+
+When adding a similar feature to another model, follow the same split —
+do not conflate "the summary failed" with "the whole thing failed".
 
 ## Boundaries
 

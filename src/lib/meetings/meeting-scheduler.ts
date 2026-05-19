@@ -122,17 +122,26 @@ export async function syncCalendarMeetings(): Promise<{
 // ─── Poll for completed recordings ─────────────────────────────────
 
 /**
- * Check meetings that have a Recall.ai bot but are still in SCHEDULED
- * or RECORDING status. If the bot has finished, download the audio,
- * transcribe, and summarize.
+ * Sub-etapa 8.5 delegate.
+ *
+ * Cron fallback path: scan meetings still in SCHEDULED/RECORDING, ask
+ * Recall for the bot's latest status, and trigger the canonical pipeline
+ * when the bot reports `done`. `fatal` flips the Meeting to ERROR with
+ * a generic message — there's no body to delegate to.
+ *
+ * Pre-8.5 this function carried an inline copy of the download →
+ * transcribe → summarize → knowledge-save pipeline; that body now lives
+ * in `process-recording.ts`. Behavior preserved exactly: no insights,
+ * `saveToKnowledge: true`.
  */
 export async function checkCompletedRecordings(): Promise<number> {
+  const { processRecording } = await import("./process-recording");
+
   let processed = 0;
 
   const recallService = await RecallAiService.fromIntegration();
   if (!recallService) return processed;
 
-  // Find meetings with bots still pending
   const pendingMeetings = await prisma.meeting.findMany({
     where: {
       externalBotId: { not: null },
@@ -154,80 +163,13 @@ export async function checkCompletedRecordings(): Promise<number> {
           data: { status: "PROCESSING" },
         });
 
-        // Download audio and write to temp file
-        const audioRes = await fetch(bot.audio_url);
-        if (audioRes.ok) {
-          const buffer = Buffer.from(await audioRes.arrayBuffer());
-          const { writeFile, unlink } = await import("fs/promises");
-          const { join } = await import("path");
-          const { tmpdir } = await import("os");
-          const tmpPath = join(
-            tmpdir(),
-            `recall-${meeting.externalBotId}.mp4`
-          );
-          await writeFile(tmpPath, buffer);
+        // Pre-8.5 fallback included `saveMeetingToKnowledge` (best-effort)
+        // and did NOT generate insights. Mirror exactly via canonical opts.
+        await processRecording(meeting.id, {
+          saveToKnowledge: true,
+        });
 
-          const { transcribeAudio } = await import(
-            "@/lib/audios/audio-transcriber"
-          );
-          const transcriptText = await transcribeAudio(tmpPath);
-
-          // Clean up temp file
-          await unlink(tmpPath).catch(() => {});
-
-          const duration =
-            meeting.startedAt && meeting.endedAt
-              ? (meeting.endedAt.getTime() -
-                  meeting.startedAt.getTime()) /
-                1000
-              : null;
-
-          await prisma.meeting.update({
-            where: { id: meeting.id },
-            data: {
-              transcript: transcriptText,
-              chunkCount: Math.ceil(transcriptText.length / 1000),
-              audioFileUrl: bot.audio_url,
-              audioMimeType: "audio/mp4",
-              duration,
-              status: "READY",
-              processedAt: new Date(),
-            },
-          });
-
-          // Auto-summarize (best-effort)
-          try {
-            const { summarizeMeeting } = await import(
-              "@/lib/meetings/meeting-summarizer"
-            );
-            const summary = await summarizeMeeting(
-              transcriptText,
-              meeting.title
-            );
-            await prisma.meeting.update({
-              where: { id: meeting.id },
-              data: {
-                summary: summary.summary,
-                actionItems: summary.actionItems,
-                keyTopics: summary.keyTopics,
-              },
-            });
-          } catch {
-            // Summary is optional
-          }
-
-          // Save to knowledge base (best-effort)
-          try {
-            const { saveMeetingToKnowledge } = await import(
-              "@/lib/meetings/meeting-knowledge"
-            );
-            await saveMeetingToKnowledge(meeting.id);
-          } catch {
-            // Knowledge pipeline is optional
-          }
-
-          processed++;
-        }
+        processed++;
       } else if (latestStatus === "fatal") {
         await prisma.meeting.update({
           where: { id: meeting.id },
