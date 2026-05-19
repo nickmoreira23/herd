@@ -1039,6 +1039,19 @@ o orphan recovery) revela que o endpoint mistura concerns.
 **Observação (não débito formal):** considerar split em sub-rotas se
 passar de 5 responsabilidades.
 
+# Camada 1 — pause em Sub-etapa 10 (aguardando credenciais Recharge)
+
+Aguardando `RECHARGE_CLIENT_ID` + `RECHARGE_CLIENT_SECRET` do cliente
+(Partner App sandbox). Discovery + spec da Sub-etapa 10 prontas
+(capturadas no chat). Sub-etapas 10, 10.5, 11 e 12 bloqueadas até
+secrets disponíveis.
+
+Trabalho retomado na Fase 3 (Network MLM removal) enquanto bloqueio
+externo persiste. Quando secrets chegarem, retomar diretamente da
+Sub-etapa 10 — estado do código não tem débito intermediário.
+
+Tag de marco: `camada-1-pause-pre-recharge` em main.
+
 ## Boundaries
 
 - Never edit `mcp/generated/`, `schemas/feature.schema.json`,
