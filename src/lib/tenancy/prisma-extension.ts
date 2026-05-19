@@ -13,6 +13,18 @@ export const TENANT_SCOPED_MODELS = [
   "IntegrationTierMapping",
   "IntegrationWebhookEvent",
   "IntegrationSyncLog",
+  // Sub-etapa 9 — Payment Provider Layer (11 tables)
+  "PaymentProvider",
+  "BillingCustomer",
+  "PaymentMethod",
+  "Subscription",
+  "Charge",
+  "ChargeLineItem",
+  "Invoice",
+  "Refund",
+  "DunningAttempt",
+  "PortalSession",
+  "BillingEvent",
 ] as const satisfies readonly string[];
 
 const READ_OPS = new Set([

@@ -535,6 +535,9 @@ model SubscriptionTier {
   communityAssignments CommunityBenefitTierAssignment[]
   integrationMappings  IntegrationTierMapping[]
   packageVariants      PackageTierVariant[]
+  // Sub-etapa 9 — Subscription rows reference SubscriptionTier as the
+  // catalog plan they belong to (nullable; SET NULL on tier deletion).
+  subscriptions        Subscription[]                   @relation("SubscriptionTier")
 }
 
 // @deprecated — replaced by CommissionPlan. Kept for migration.
@@ -1834,6 +1837,9 @@ model MemberConnection {
   integration Integration    @relation(fields: [integrationId], references: [id], onDelete: Cascade)
   tenant      Organization   @relation("MemberConnectionTenant", fields: [tenantId], references: [id], onDelete: Cascade)
 
+  // Sub-etapa 9 — link from BillingCustomer (SET NULL on member disconnect).
+  billingCustomers BillingCustomer[] @relation("BillingCustomerMemberConnection")
+
   @@unique([profileId, integrationId])
   @@index([integrationId])
   @@index([tenantId])
@@ -2222,6 +2228,19 @@ model Organization {
   integrationTierMappings  IntegrationTierMapping[]  @relation("IntegrationTierMappingTenant")
   integrationWebhookEvents IntegrationWebhookEvent[] @relation("IntegrationWebhookEventTenant")
   integrationSyncLogs      IntegrationSyncLog[]      @relation("IntegrationSyncLogTenant")
+
+  // Sub-etapa 9 — Payment Provider Layer
+  paymentProviders  PaymentProvider[]  @relation("PaymentProviderTenant")
+  billingCustomers  BillingCustomer[]  @relation("BillingCustomerTenant")
+  paymentMethods    PaymentMethod[]    @relation("PaymentMethodTenant")
+  subscriptions     Subscription[]     @relation("SubscriptionTenant")
+  charges           Charge[]           @relation("ChargeTenant")
+  chargeLineItems   ChargeLineItem[]   @relation("ChargeLineItemTenant")
+  invoices          Invoice[]          @relation("InvoiceTenant")
+  refunds           Refund[]           @relation("RefundTenant")
+  dunningAttempts   DunningAttempt[]   @relation("DunningAttemptTenant")
+  portalSessions    PortalSession[]    @relation("PortalSessionTenant")
+  billingEvents     BillingEvent[]     @relation("BillingEventTenant")
 
   @@map("organizations")
 }
@@ -3509,4 +3528,329 @@ model WebhookDedup {
   @@unique([provider, eventId], map: "webhook_dedup_provider_event_id_key")
   @@index([expiresAt], map: "webhook_dedup_expires_at_idx")
   @@map("webhook_dedup")
+}
+
+// ========================
+// Payment Provider Layer (Sub-etapa 9)
+// ========================
+//
+// 11 tables modeling the canonical billing surface. All tenant-scoped
+// (RLS strict policy + tenant_id NOT NULL + FK to Organization).
+// providerData JSONB preserves the raw provider payload.
+
+enum ChargeStatus {
+  QUEUED
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+  SKIPPED
+  CANCELLED
+}
+
+/// Catalog of payment providers connected per tenant (e.g. `recharge`).
+/// `provider_id` FK on every other billing table points here.
+model PaymentProvider {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  slug         String
+  name         String
+  category     String // BILLING | PAYMENT
+  providerData Json     @default("{}") @map("provider_data")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  tenant Organization @relation("PaymentProviderTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+
+  billingCustomers BillingCustomer[]
+  paymentMethods   PaymentMethod[]
+  subscriptions    Subscription[]
+  charges          Charge[]
+  invoices         Invoice[]
+  refunds          Refund[]
+  dunningAttempts  DunningAttempt[]
+  portalSessions   PortalSession[]
+  billingEvents    BillingEvent[]
+
+  @@unique([tenantId, slug], map: "payment_providers_tenant_slug_unique")
+  @@index([tenantId], map: "payment_providers_tenant_idx")
+  @@map("payment_providers")
+}
+
+/// Customer record mirrored from the provider. `memberConnectionId` links
+/// the customer back to the platform's member (nullable — provider may
+/// know the customer before the member is connected).
+model BillingCustomer {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId           String   @map("tenant_id") @db.Uuid
+  providerId         String   @map("provider_id") @db.Uuid
+  externalId         String   @map("external_id")
+  email              String?
+  name               String?
+  memberConnectionId String?  @map("member_connection_id") @db.Uuid
+  providerData       Json     @default("{}") @map("provider_data")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  tenant           Organization      @relation("BillingCustomerTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+  provider         PaymentProvider   @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  memberConnection MemberConnection? @relation("BillingCustomerMemberConnection", fields: [memberConnectionId], references: [id], onDelete: SetNull)
+
+  paymentMethods PaymentMethod[]
+  subscriptions  Subscription[]
+  charges        Charge[]
+  portalSessions PortalSession[]
+
+  @@unique([providerId, externalId], map: "billing_customers_provider_external_unique")
+  @@index([tenantId], map: "billing_customers_tenant_idx")
+  @@index([memberConnectionId], map: "billing_customers_member_connection_idx")
+  @@map("billing_customers")
+}
+
+/// Stored payment instrument (card/paypal/…). Tokenized at the provider
+/// — only last4/brand surfaced locally.
+model PaymentMethod {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  providerId   String   @map("provider_id") @db.Uuid
+  externalId   String   @map("external_id")
+  customerId   String   @map("customer_id") @db.Uuid
+  type         String
+  last4        String?
+  brand        String?
+  isDefault    Boolean  @default(false) @map("is_default")
+  providerData Json     @default("{}") @map("provider_data")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  tenant   Organization    @relation("PaymentMethodTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+  provider PaymentProvider @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  customer BillingCustomer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  subscriptions Subscription[]
+  charges       Charge[]
+
+  @@unique([providerId, externalId], map: "payment_methods_provider_external_unique")
+  @@index([tenantId], map: "payment_methods_tenant_idx")
+  @@index([customerId], map: "payment_methods_customer_idx")
+  @@map("payment_methods")
+}
+
+/// Active subscription record (cliente → plano). `tierId` links to the
+/// platform `SubscriptionTier` catalog when the provider plan maps to a
+/// known tier (nullable — provider plan may not be in the catalog).
+model Subscription {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  providerId      String    @map("provider_id") @db.Uuid
+  externalId      String    @map("external_id")
+  customerId      String    @map("customer_id") @db.Uuid
+  paymentMethodId String?   @map("payment_method_id") @db.Uuid
+  tierId          String?   @map("tier_id") @db.Uuid
+  status          String
+  nextChargeAt    DateTime? @map("next_charge_at") @db.Timestamptz(6)
+  cancelledAt     DateTime? @map("cancelled_at") @db.Timestamptz(6)
+  providerData    Json      @default("{}") @map("provider_data")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  tenant        Organization      @relation("SubscriptionTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+  provider      PaymentProvider   @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  customer      BillingCustomer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  paymentMethod PaymentMethod?    @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
+  tier          SubscriptionTier? @relation("SubscriptionTier", fields: [tierId], references: [id], onDelete: SetNull)
+
+  lineItems ChargeLineItem[]
+
+  @@unique([providerId, externalId], map: "subscriptions_provider_external_unique")
+  @@index([tenantId], map: "subscriptions_tenant_idx")
+  @@index([customerId], map: "subscriptions_customer_idx")
+  @@index([tierId], map: "subscriptions_tier_idx")
+  @@index([status], map: "subscriptions_status_idx")
+  @@map("subscriptions")
+}
+
+/// Single charge event from the provider. Composite charges (one customer,
+/// multiple subscriptions) are split via `ChargeLineItem`.
+model Charge {
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String       @map("tenant_id") @db.Uuid
+  providerId      String       @map("provider_id") @db.Uuid
+  externalId      String       @map("external_id")
+  customerId      String       @map("customer_id") @db.Uuid
+  paymentMethodId String?      @map("payment_method_id") @db.Uuid
+  status          ChargeStatus
+  amountCents     Int          @map("amount_cents")
+  currency        String       @default("USD")
+  processedAt     DateTime?    @map("processed_at") @db.Timestamptz(6)
+  failedAt        DateTime?    @map("failed_at") @db.Timestamptz(6)
+  failureReason   String?      @map("failure_reason")
+  providerData    Json         @default("{}") @map("provider_data")
+  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  tenant        Organization    @relation("ChargeTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+  provider      PaymentProvider @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  customer      BillingCustomer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  paymentMethod PaymentMethod?  @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
+
+  lineItems       ChargeLineItem[]
+  invoices        Invoice[]
+  refunds         Refund[]
+  dunningAttempts DunningAttempt[]
+
+  @@unique([providerId, externalId], map: "charges_provider_external_unique")
+  @@index([tenantId], map: "charges_tenant_idx")
+  @@index([customerId], map: "charges_customer_idx")
+  @@index([status], map: "charges_status_idx")
+  @@index([processedAt], map: "charges_processed_at_idx")
+  @@map("charges")
+}
+
+/// Junction N:N between Charge and Subscription. Splits a composite
+/// charge into per-subscription portions. No `external_id`/`provider_id`
+/// of its own — derives from the parent charge.
+model ChargeLineItem {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  chargeId       String   @map("charge_id") @db.Uuid
+  subscriptionId String   @map("subscription_id") @db.Uuid
+  amountCents    Int      @map("amount_cents")
+  providerData   Json     @default("{}") @map("provider_data")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  tenant       Organization @relation("ChargeLineItemTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+  charge       Charge       @relation(fields: [chargeId], references: [id], onDelete: Cascade)
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@unique([chargeId, subscriptionId], map: "charge_line_items_charge_subscription_unique")
+  @@index([tenantId], map: "charge_line_items_tenant_idx")
+  @@index([chargeId], map: "charge_line_items_charge_idx")
+  @@index([subscriptionId], map: "charge_line_items_subscription_idx")
+  @@map("charge_line_items")
+}
+
+/// Invoice document for a charge. Some providers issue invoices
+/// independent of charge — captured here as `provider_data` + nullable
+/// fields rather than splitting the model.
+model Invoice {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String    @map("tenant_id") @db.Uuid
+  providerId    String    @map("provider_id") @db.Uuid
+  externalId    String    @map("external_id")
+  chargeId      String    @map("charge_id") @db.Uuid
+  invoiceNumber String?   @map("invoice_number")
+  pdfUrl        String?   @map("pdf_url")
+  issuedAt      DateTime? @map("issued_at") @db.Timestamptz(6)
+  providerData  Json      @default("{}") @map("provider_data")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  tenant   Organization    @relation("InvoiceTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+  provider PaymentProvider @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  charge   Charge          @relation(fields: [chargeId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, externalId], map: "invoices_provider_external_unique")
+  @@index([tenantId], map: "invoices_tenant_idx")
+  @@index([chargeId], map: "invoices_charge_idx")
+  @@map("invoices")
+}
+
+/// Refund record (full or partial). For partial refunds, multiple rows
+/// can attach to the same charge.
+model Refund {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String    @map("tenant_id") @db.Uuid
+  providerId   String    @map("provider_id") @db.Uuid
+  externalId   String    @map("external_id")
+  chargeId     String    @map("charge_id") @db.Uuid
+  amountCents  Int       @map("amount_cents")
+  reason       String?
+  refundedAt   DateTime? @map("refunded_at") @db.Timestamptz(6)
+  providerData Json      @default("{}") @map("provider_data")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  tenant   Organization    @relation("RefundTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+  provider PaymentProvider @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  charge   Charge          @relation(fields: [chargeId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, externalId], map: "refunds_provider_external_unique")
+  @@index([tenantId], map: "refunds_tenant_idx")
+  @@index([chargeId], map: "refunds_charge_idx")
+  @@map("refunds")
+}
+
+/// Retry attempt for a failed charge (provider-driven dunning flow).
+/// One row per attempt; `outcome` records the resolution.
+model DunningAttempt {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  providerId    String   @map("provider_id") @db.Uuid
+  externalId    String   @map("external_id")
+  chargeId      String   @map("charge_id") @db.Uuid
+  attemptNumber Int      @map("attempt_number")
+  attemptedAt   DateTime @default(now()) @map("attempted_at") @db.Timestamptz(6)
+  outcome       String // retry_succeeded | retry_failed | abandoned
+  providerData  Json     @default("{}") @map("provider_data")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  tenant   Organization    @relation("DunningAttemptTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+  provider PaymentProvider @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  charge   Charge          @relation(fields: [chargeId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, externalId], map: "dunning_attempts_provider_external_unique")
+  @@index([tenantId], map: "dunning_attempts_tenant_idx")
+  @@index([chargeId], map: "dunning_attempts_charge_idx")
+  @@map("dunning_attempts")
+}
+
+/// Short-lived customer-portal session URL surfaced by the provider.
+/// Used to redirect customers to the provider's hosted billing UI.
+model PortalSession {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  providerId   String   @map("provider_id") @db.Uuid
+  externalId   String   @map("external_id")
+  customerId   String   @map("customer_id") @db.Uuid
+  sessionUrl   String   @map("session_url")
+  expiresAt    DateTime @map("expires_at") @db.Timestamptz(6)
+  providerData Json     @default("{}") @map("provider_data")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  tenant   Organization    @relation("PortalSessionTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+  provider PaymentProvider @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  customer BillingCustomer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, externalId], map: "portal_sessions_provider_external_unique")
+  @@index([tenantId], map: "portal_sessions_tenant_idx")
+  @@index([customerId], map: "portal_sessions_customer_idx")
+  @@map("portal_sessions")
+}
+
+/// Internal audit log for billing-domain state transitions. Distinct from
+/// `domain_events` (cross-context outbox) and `IntegrationWebhookEvent`
+/// (provider-raw webhook log). This table captures the BILLING-domain
+/// view: `subscription.status_changed`, `charge.refunded`, etc.
+model BillingEvent {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  providerId String   @map("provider_id") @db.Uuid
+  entityType String   @map("entity_type")
+  entityId   String   @map("entity_id") @db.Uuid
+  eventType  String   @map("event_type")
+  payload    Json     @default("{}")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  tenant   Organization    @relation("BillingEventTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+  provider PaymentProvider @relation(fields: [providerId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId], map: "billing_events_tenant_idx")
+  @@index([entityType, entityId], map: "billing_events_entity_idx")
+  @@index([eventType], map: "billing_events_event_type_idx")
+  @@index([createdAt], map: "billing_events_created_at_idx")
+  @@map("billing_events")
 }

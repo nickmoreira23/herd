@@ -10,7 +10,7 @@ uid: herd.meta.glossary
 
 Glossário global agregado a partir das seções `## Glossary` de todas as entries do Handbook. Gerado automaticamente por `npm run gen:glossary`.
 
-**Última atualização:** 2026-05-11
+**Última atualização:** 2026-05-19
 
 <!-- BEGIN_GENERATED_GLOSSARY -->
 
@@ -120,6 +120,12 @@ lookup `Record<string, AreaManifest>` em `src/lib/core/registry.ts`.
 
 convenção R2 — areas viraram a 5ª camada canônica do Handbook (sob `docs/handbook/areas/`).
 
+### Assinatura
+
+**From [Assinaturas](/admin/handbook/blocks/financial/subscriptions):**
+
+relação de cobrança ativa no provider espelhada localmente.
+
 ### Audit trail
 
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
@@ -144,11 +150,23 @@ current saldo dinâmico que atualiza on event, sem fechamento periódico.
 
 Esquema de auth onde o cliente envia `Authorization: Bearer <token>` no header. Day-1 do HTTP transport usa token estático configurado via env var.
 
+### Billing customer
+
+**From [Clientes de Cobrança](/admin/handbook/blocks/financial/billing-customers):**
+
+o espelho local de um cliente registrado no provider de pagamento.
+
 ### BillingCycle
 
 **From [R5 — Subscriptions Split + Offering Creation](/admin/handbook/refactor/r5-subscriptions-split):**
 
 ciclo de cobrança (monthly, annual, etc.). Atributo da subscription real.
+
+### BillingEvent
+
+**From [Assinaturas](/admin/handbook/blocks/financial/subscriptions):**
+
+linha de log de auditoria interno capturando transição de estado.
 
 ### Block
 
@@ -246,6 +264,18 @@ estados (DRAFT, SCHEDULED, RUNNING, COMPLETED, PAUSED, CANCELLED).
 
 termo polissêmico — em Organization significa channel institucional (canal organizacional); em messaging significa canal de comunicação. Distinção crítica.
 
+### ChargeLineItem
+
+**From [Cobranças](/admin/handbook/blocks/financial/charges):**
+
+linha que divide uma cobrança composta entre as assinaturas que cobre (junction N:N).
+
+### Cobrança (Charge)
+
+**From [Cobranças](/admin/handbook/blocks/financial/charges):**
+
+evento único de cobrança no provider.
+
 ### Communication area
 
 **From [Comunicação](/admin/handbook/areas/communication):**
@@ -322,6 +352,12 @@ Modelo contábil onde todo movimento é registrado simultaneamente como débito 
 
 navegação do efeito (event derivado) para a causa (registro de origem).
 
+### DunningAttempt
+
+**From [Cobranças](/admin/handbook/blocks/financial/charges):**
+
+retry de uma cobrança falha, rastreado por tentativa com um outcome.
+
 ### Embed
 
 **From [Pattern: Surface](/admin/handbook/meta/pattern-surface-level):**
@@ -355,6 +391,12 @@ par `feature.yml` + `{pt-BR,en-US}.md` documentando uma feature/category/layer.
 **From [Eventos de Domínio](/admin/handbook/tools/infrastructure/domain-events):**
 
 Estado após 5 tentativas falhas. `nextAttemptAt = NULL`, auto-retry para, intervenção manual necessária.
+
+### External ID
+
+**From [Clientes de Cobrança](/admin/handbook/blocks/financial/billing-customers):**
+
+o identificador do cliente no namespace do provider (ex: ID de cliente Recharge).
 
 ### External Surface
 
@@ -683,6 +725,12 @@ convenção para tools que gerenciam coleções (Plans, Products, Contracts) e p
 **From [Pattern: Source Attribution](/admin/handbook/meta/pattern-source-attribution):**
 
 referência composta por (block_uid + id + type) que aponta para tipos diversos de registros.
+
+### PortalSession
+
+**From [Assinaturas](/admin/handbook/blocks/financial/subscriptions):**
+
+URL de curta duração para a UI hospedada de billing do provider.
 
 ### position
 
