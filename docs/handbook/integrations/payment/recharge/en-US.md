@@ -44,14 +44,41 @@ Sub-etapa 11 will introduce the raw → canonical mapper (Charge/Subscription/Bi
 
 **First-time setup:**
 
-1. Set `RECHARGE_API_KEY` in `.env` locally + Railway.
+1. Set `RECHARGE_API_KEY` + `RECHARGE_WEBHOOK_SECRET` + `ENCRYPTION_KEY` + `NEXTAUTH_URL` in `.env` locally + Railway.
 2. `npm run seed:recharge` creates/updates the Integration row.
-3. In the Recharge dashboard: register webhook URL `${DEPLOY_URL}/api/webhooks/recharge` with the 9 events listed above.
-4. Smoke test: dashboard has a "Send test webhook" button — confirm 200 + entry in `IntegrationWebhookEvent`.
+3. `npm run recharge:register-webhooks` (Sub-etapa 10.0.2) registers the 9 webhooks via API.
+
+**Webhook management (Sub-etapa 10.0.2):**
+
+The `bucked_up_herd_hl` account is headless — no webhook UI. All CRUD is API-driven. 3 CLI scripts:
+
+```bash
+# List current webhooks
+npm run recharge:list-webhooks
+
+# Register missing (idempotent: list, diff vs manifest, create missing)
+npm run recharge:register-webhooks
+
+# Preview without executing
+npm run recharge:register-webhooks -- --dry-run
+
+# Clean up obsolete (webhooks at the endpoint but not in the manifest)
+npm run recharge:register-webhooks -- --delete-obsolete
+
+# Override base URL (default: NEXTAUTH_URL)
+npm run recharge:register-webhooks -- --base-url https://app.example.com
+
+# Delete an individual webhook by id
+npm run recharge:delete-webhook -- --id 1234567
+```
+
+Scripts abort if the resolved URL is `localhost*` (Recharge requires HTTPS). Source of truth for topics: `rechargeAdapter.manifest.webhookEvents`. `charge/paid` falls back to `charge/succeeded` automatically on 422.
+
+**Smoke test:** the headless account has no "Send test webhook" button. Verify via a real event (create a test customer/charge in the Recharge admin) and confirm an entry appeared in `IntegrationWebhookEvent` via psql/Prisma Studio.
 
 **Tech debt tracked in AGENTS.md:**
 
-- Multi-tenant webhook subscription via API (dashboard-managed now).
+- Multi-tenant webhook subscription via API (scripts today target the single Integration row).
 - Historical backfill (forward-flow only V1).
 - Storefront Token (browser-side customer portal).
 

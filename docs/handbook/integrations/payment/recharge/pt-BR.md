@@ -44,14 +44,41 @@ Sub-etapa 11 introduzirá o mapper raw → canonical (Charge/Subscription/Billin
 
 **First-time setup:**
 
-1. Setar `RECHARGE_API_KEY` no `.env` local + Railway.
+1. Setar `RECHARGE_API_KEY` + `RECHARGE_WEBHOOK_SECRET` + `ENCRYPTION_KEY` + `NEXTAUTH_URL` no `.env` local + Railway.
 2. `npm run seed:recharge` cria/atualiza o Integration row.
-3. No dashboard Recharge: registrar webhook URL `${DEPLOY_URL}/api/webhooks/recharge` com os 9 events listados acima.
-4. Smoke test: dashboard tem botão "Send test webhook" — confirmar 200 + entry em `IntegrationWebhookEvent`.
+3. `npm run recharge:register-webhooks` (Sub-etapa 10.0.2) registra os 9 webhooks via API.
+
+**Webhook management (Sub-etapa 10.0.2):**
+
+A conta `bucked_up_herd_hl` é headless — não tem UI de webhook. Toda CRUD é via API. 3 scripts CLI:
+
+```bash
+# Listar webhooks atuais
+npm run recharge:list-webhooks
+
+# Registrar faltantes (idempotente: lista, diff vs manifest, cria os que faltam)
+npm run recharge:register-webhooks
+
+# Preview sem executar
+npm run recharge:register-webhooks -- --dry-run
+
+# Limpar obsoletos (webhooks no endpoint que não estão no manifest)
+npm run recharge:register-webhooks -- --delete-obsolete
+
+# Override base URL (default: NEXTAUTH_URL)
+npm run recharge:register-webhooks -- --base-url https://app.example.com
+
+# Deletar webhook individual por id
+npm run recharge:delete-webhook -- --id 1234567
+```
+
+Scripts abortam se URL resolvida for `localhost*` (Recharge requer HTTPS). Source of truth de topics: `rechargeAdapter.manifest.webhookEvents`. `charge/paid` tem fallback automático para `charge/succeeded` em 422.
+
+**Smoke test:** conta headless não tem botão "Send test webhook". Verificar via evento real (criar customer/charge de teste no admin Recharge) e confirmar entry em `IntegrationWebhookEvent` via psql/Prisma Studio.
 
 **Tech debt rastreado em AGENTS.md:**
 
-- Multi-tenant webhook subscription via API (dashboard-managed agora).
+- Multi-tenant webhook subscription via API (scripts hoje atacam single Integration row).
 - Backfill histórico (forward-flow only V1).
 - Storefront Token (browser-side customer portal).
 

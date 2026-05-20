@@ -2,6 +2,13 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.4 — 2026-05-20
+
+Anchor entry. PR (Sub-etapa 10.0.2 — programmatic Recharge webhook
+registration scripts). 3 scripts CLI novos + atualiza handbook + AGENTS.md.
+
+Refs: Sub-etapa 10.0.2.
+
 ## 1.2.3 — 2026-05-20
 
 Anchor entry. PR (Sub-etapa 10.0.1 — dotenv hotfix em seed script).
