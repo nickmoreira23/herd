@@ -57,7 +57,6 @@ export const DEFAULT_BLOCK_CATEGORIES: BlockCategory[] = [
       "services",
       "experiences",
       "perks",
-      "partners",
       "subscriptions",
     ],
   },

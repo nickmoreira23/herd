@@ -6,11 +6,6 @@ export async function GET() {
   try {
     const tiers = await prisma.subscriptionTier.findMany({
       orderBy: { sortOrder: "asc" },
-      include: {
-        partnerAssignments: {
-          include: { partner: true },
-        },
-      },
     });
     return apiSuccess(tiers);
   } catch (e) {

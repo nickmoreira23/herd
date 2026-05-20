@@ -22,11 +22,6 @@ export const dashboardTool: Tool = {
       usage: "read",
       purpose: "Tier listing and pricing aggregation",
     },
-    {
-      blockName: "partners",
-      usage: "read",
-      purpose: "Partner brand counts",
-    },
   ],
   actions: [],
   paths: {

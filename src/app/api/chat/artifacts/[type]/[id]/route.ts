@@ -47,22 +47,8 @@ export async function GET(
         break;
       }
 
-      case "partner_brand": {
-        const partner = await prisma.partnerBrand.findUnique({
-          where: { id },
-          include: {
-            tierAssignments: { select: { id: true, subscriptionTierId: true, discountPercent: true, isActive: true, tier: { select: { name: true } } } },
-          },
-        });
-        if (partner) {
-          data = {
-            ...partner,
-            commissionRate: partner.commissionRate ? Number(partner.commissionRate) : null,
-            kickbackValue: partner.kickbackValue ? Number(partner.kickbackValue) : null,
-          };
-        }
-        break;
-      }
+      // case "partner_brand" removed in Sub-etapa 3.5.5 — PartnerBrand model
+      // dropped; external affiliate concept returns later as company profile.
 
       case "perk": {
         const perk = await prisma.perk.findUnique({

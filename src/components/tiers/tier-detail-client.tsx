@@ -66,7 +66,6 @@ import { RulesTab } from "./tabs/rules-tab";
 import { CancellationTab } from "./tabs/cancellation-tab";
 import { ProductsTab } from "./tabs/products-tab";
 import { AgentsTab } from "./tabs/agents-tab";
-import { PartnersTab } from "./tabs/partners-tab";
 import { CommunityTab } from "./tabs/community-tab";
 import { PerksTab } from "./tabs/perks-tab";
 
@@ -186,7 +185,6 @@ const BENEFIT_TAB_RENDERERS: Record<
     <ProductsTab key={rulesVersion} tierId={tierId} onBenefitSaved={onBenefitSaved} />
   ),
   agents: ({ tierId, benefitsVersion, onBenefitSaved }) => <AgentsTab key={`agents-${benefitsVersion}`} tierId={tierId} onBenefitSaved={onBenefitSaved} />,
-  partners: ({ tierId, benefitsVersion, onBenefitSaved }) => <PartnersTab key={`partners-${benefitsVersion}`} tierId={tierId} onBenefitSaved={onBenefitSaved} />,
   perks: ({ tierId, form, updateForm, benefitsVersion, onBenefitSaved }) => (
     <PerksTab key={`perks-${benefitsVersion}`} tierId={tierId} form={form} updateForm={updateForm} onBenefitSaved={onBenefitSaved} />
   ),

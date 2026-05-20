@@ -190,7 +190,6 @@ export function ExecutiveSummary({ locale }: ExecutiveSummaryProps) {
               icon={<Handshake className="h-3.5 w-3.5" />}
               label={t("financials.summary.provenance.partner_kickbacks")}
               detail={t("financials.summary.provenance.partners_count", { count: inputs.partnerKickbacks.length })}
-              href="/admin/blocks/partners"
               source={t("financials.summary.provenance.source_brands")}
             />
           </div>

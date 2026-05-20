@@ -58,17 +58,14 @@ export const getFinancialDefaults = cache(async function getFinancialDefaults() 
   // CommissionPlan / CommissionStructure removed in Sub-etapa 3.5 (Fase 3
   // Network MLM removal). The "Commission" block below uses manual defaults
   // — D2D commission feature will be re-introduced cleanly post-Fase 3.
+  // PartnerBrand removed in Sub-etapa 3.5.5; partner kickbacks dataset empty.
   const [
     tiers,
-    partners,
     opexCategories,
     products,
     packages,
   ] = await Promise.all([
     prisma.subscriptionTier.findMany({ orderBy: { sortOrder: "asc" } }),
-    prisma.partnerBrand.findMany({
-      where: { isActive: true, kickbackType: { not: "NONE" } },
-    }),
     prisma.opexCategory.findMany({
       where: { isActive: true },
       orderBy: { sortOrder: "asc" },
@@ -286,13 +283,9 @@ export const getFinancialDefaults = cache(async function getFinancialDefaults() 
   };
 
   // ─── Partner kickbacks ─────────────────────────────────────────
-
-  const partnerData: PartnerKickbackInput[] = partners.map((p) => ({
-    partnerId: p.id,
-    estimatedMonthlyReferrals: 10, // manual — no referral tracking yet
-    kickbackType: p.kickbackType,
-    kickbackValue: p.kickbackValue ? toNumber(p.kickbackValue) : 0,
-  }));
+  // PartnerBrand model removed in Sub-etapa 3.5.5; partner kickback data
+  // returns when affiliate concept is re-modeled as company profile.
+  const partnerData: PartnerKickbackInput[] = [];
 
   // ─── OPEX milestones ───────────────────────────────────────────
 
@@ -333,7 +326,7 @@ export const getFinancialDefaults = cache(async function getFinancialDefaults() 
       commissionPerTierRates: false,
       commissionOverrides: false,
       commissionPerformanceTiers: false,
-      partnerKickbacks: partners.length > 0,
+      partnerKickbacks: false,
       opexMilestones: hasOpexData,
       productCOGS: hasProductData,
       productFulfillment: hasProductData,
@@ -341,7 +334,7 @@ export const getFinancialDefaults = cache(async function getFinancialDefaults() 
     sources: {
       commissionPlanName: undefined,
       productCount: products.length,
-      partnerCount: partners.length,
+      partnerCount: 0,
       tierCount: tiers.length,
       opexCategoryCount: opexCategories.length,
     },

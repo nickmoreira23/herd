@@ -10,22 +10,18 @@ export default async function DashboardPage() {
   // CommissionStructure removed in Sub-etapa 3.5 — dashboard's "Active
   // Commission Structure" card is collapsed until new commission feature
   // lands post-Fase 3.
+  // PartnerBrand dropped in Sub-etapa 3.5.5 — partner stats card removed.
   const [
     productCount,
     activeProducts,
     tiers,
-    partnerCount,
-    activePartners,
     snapshotCount,
   ] = await Promise.all([
     prisma.product.count(),
     prisma.product.count({ where: { isActive: true } }),
     prisma.subscriptionTier.findMany({
       orderBy: { sortOrder: "asc" },
-      include: { partnerAssignments: true },
     }),
-    prisma.partnerBrand.count(),
-    prisma.partnerBrand.count({ where: { isActive: true } }),
     prisma.financialSnapshot.count(),
   ]);
 
@@ -44,7 +40,6 @@ export default async function DashboardPage() {
       monthlyPrice: monthly,
       blendedRevenue: blended,
       credits,
-      partnerAssignments: t.partnerAssignments.length,
       isFeatured: t.isFeatured,
     };
   });
@@ -57,10 +52,9 @@ export default async function DashboardPage() {
       />
 
       {/* Top-level stats */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
         <StatCard label="Products" value={String(activeProducts)} sub={`${productCount} total`} />
         <StatCard label="Plans" value={String(tiers.length)} />
-        <StatCard label="Partners" value={String(activePartners)} sub={`${partnerCount} total`} />
         <StatCard label="Saved Scenarios" value={String(snapshotCount)} />
       </div>
 
@@ -89,10 +83,6 @@ export default async function DashboardPage() {
                   <span className="text-muted-foreground">Credits</span>
                   <span className="font-medium">{formatCurrency(t.credits)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Partners</span>
-                  <span>{t.partnerAssignments}</span>
-                </div>
               </div>
             </div>
           ))}
@@ -103,7 +93,7 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
         <QuickLink href="/admin/blocks/products" label="Manage Products" description="Edit catalog, prices, and COGS" />
         <QuickLink href="/admin/blocks/subscriptions" label="Plans" description="Design pricing and credit allocations" />
-        <QuickLink href="/admin/blocks/partners" label="Partners" description="Manage brand partnerships" />
+        <QuickLink href="/admin/blocks/perks" label="Perks" description="Manage subscription perks" />
         <QuickLink href="/admin/operation/finances" label="Finances" description="Projections and payments" />
         <QuickLink href="/admin/settings" label="Settings" description="System-wide configuration" />
       </div>

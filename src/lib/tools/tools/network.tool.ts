@@ -29,11 +29,6 @@ export const networkTool: Tool = {
       usage: "read",
       purpose: "Organizational structure data",
     },
-    {
-      blockName: "partners",
-      usage: "read",
-      purpose: "Promoter and partner network",
-    },
   ],
   actions: [],
   paths: {

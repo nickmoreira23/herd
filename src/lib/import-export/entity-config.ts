@@ -132,45 +132,15 @@ export const communityConfig: EntityConfig = {
   ],
 };
 
-// ─── Partners ───────────────────────────────────────────────────────
-
-export const partnerConfig: EntityConfig = {
-  entityType: "partners",
-  displayName: "Partners",
-  displayNameSingular: "Partner",
-  identifierField: "key",
-  identifierLabel: "Key",
-  prismaModel: "partnerBrand",
-  apiBasePath: "/api/partners",
-  columns: [
-    { key: "name", label: "Name", type: "string" },
-    { key: "category", label: "Category", type: "string" },
-    { key: "status", label: "Status", type: "string", enumValues: ["RESEARCHED", "APPLIED", "APPROVED", "ACTIVE", "PAUSED"] },
-    { key: "kickbackType", label: "Kickback Type", type: "string", enumValues: ["NONE", "PERCENT_OF_SALE", "FLAT_PER_REFERRAL", "FLAT_PER_MONTH"] },
-    { key: "kickbackValue", label: "Kickback Value", type: "decimal" },
-    { key: "discountDescription", label: "Discount Description", type: "string" },
-    { key: "tagline", label: "Tagline", type: "string" },
-    { key: "description", label: "Description", type: "string" },
-    { key: "websiteUrl", label: "Website URL", type: "string" },
-    { key: "audienceBenefit", label: "Audience Benefit", type: "string" },
-    { key: "benefitType", label: "Benefit Type", type: "string", enumValues: ["PERCENTAGE_DISCOUNT", "FLAT_DISCOUNT", "FREE_TRIAL", "FREE_PRODUCT", "BOGO", "OTHER"] },
-    { key: "affiliateSignupUrl", label: "Affiliate Signup URL", type: "string" },
-    { key: "affiliateLinkPlaceholder", label: "Affiliate Link", type: "string" },
-    { key: "affiliateNetwork", label: "Affiliate Network", type: "string" },
-    { key: "commissionRate", label: "Commission Rate", type: "string" },
-    { key: "commissionType", label: "Commission Type", type: "string", enumValues: ["PERCENTAGE", "FLAT", "CPA", "RECURRING", "HYBRID"] },
-    { key: "cookieDuration", label: "Cookie Duration", type: "string" },
-    { key: "tierAccess", label: "Tier Access", type: "string", enumValues: ["ALL", "BASIC", "PLUS", "PREMIUM", "ELITE"] },
-    { key: "notes", label: "Notes", type: "string" },
-  ],
-};
-
 // ─── Registry ───────────────────────────────────────────────────────
+//
+// PartnerBrand removed in Sub-etapa 3.5.5 — concept revisited later as
+// company profile in network, not as a Block. Perk is now the single
+// benefit concept.
 
 export const entityConfigs: Record<string, EntityConfig> = {
   products: productConfig,
   agents: agentConfig,
   perks: perkConfig,
   community: communityConfig,
-  partners: partnerConfig,
 };

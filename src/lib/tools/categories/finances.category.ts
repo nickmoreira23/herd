@@ -37,11 +37,6 @@ export const financesCategory: ToolCategoryManifest = {
           usage: "read",
           purpose: "Product COGS for cost calculations",
         },
-        {
-          blockName: "partners",
-          usage: "read",
-          purpose: "Partner data for commission calculations",
-        },
       ],
       actions: [
         {
@@ -75,30 +70,6 @@ export const financesCategory: ToolCategoryManifest = {
       paths: {
         page: "src/app/admin/tools/projections/",
         components: "src/components/financials/",
-      },
-    },
-    {
-      kind: "tool",
-      name: "payments",
-      displayName: "Payments",
-      description:
-        "Commission payment ledger — track earned, held, released, and clawed-back entries across all partners.",
-      icon: "CreditCard",
-      color: "#3b82f6",
-      status: "active",
-      hasSubRoutes: false,
-      blocks: [
-        {
-          blockName: "partners",
-          usage: "read",
-          purpose: "Partner data for commission tracking",
-        },
-      ],
-      actions: [],
-      area: "workflow",
-      paths: {
-        page: "src/app/admin/tools/payments/",
-        components: "src/components/network/promoters/tabs/",
       },
     },
     {

@@ -5,7 +5,6 @@ import { meetingsBlock } from "./blocks/meetings.block";
 import { agentsBlock } from "./blocks/agents.block";
 import { communityBlock } from "./blocks/community.block";
 import { perksBlock } from "./blocks/perks.block";
-import { partnersBlock } from "./blocks/partners.block";
 import { subscriptionsBlock } from "./blocks/subscriptions.block";
 import { pagesBlock } from "./blocks/pages.block";
 // Knowledge-type blocks (first-class)
@@ -44,7 +43,6 @@ const blocks: BlockManifest[] = [
   agentsBlock,
   communityBlock,
   perksBlock,
-  partnersBlock,
   subscriptionsBlock,
   pagesBlock,
   // Knowledge-type blocks (first-class)

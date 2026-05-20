@@ -116,7 +116,7 @@ export const DEFAULT_BENEFIT_BLOCKS = "products,agents,partners,perks,community"
 export const BENEFIT_BLOCKS_SETTING_KEY = "plan_benefit_blocks";
 
 /** Blocks that require a saved tierId before their benefit tab can be used */
-export const BLOCKS_REQUIRING_TIER_ID = new Set(["products", "agents", "partners"]);
+export const BLOCKS_REQUIRING_TIER_ID = new Set(["products", "agents"]);
 
 /** Ordered list of all block names eligible as benefits */
 export const ALL_BENEFIT_ELIGIBLE_BLOCKS = Object.keys(BLOCK_ICON_MAP);
