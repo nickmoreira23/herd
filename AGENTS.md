@@ -1163,10 +1163,24 @@ secret stuff made any sense for recharge. it's all based on the api key."
 
 **Setup atual:**
 - Admin API key em `RECHARGE_API_KEY` (encriptada em `Integration.credentials`).
-- Webhook events registrados manualmente no dashboard Recharge — V1
-  single-tenant (Bucked Up storefront).
+- Webhook events registrados via API (Sub-etapa 10.0.2) — conta
+  `bucked_up_herd_hl` é headless e não expõe webhook management UI.
 - Storefront tokens: separados, virão quando produto requerer checkout
   customer-facing.
+
+**Webhook registration (Sub-etapa 10.0.2):**
+- 3 CLI scripts via npm: `recharge:register-webhooks`, `recharge:list-webhooks`,
+  `recharge:delete-webhook`.
+- Idempotente: `register-webhooks` lista existentes, faz diff vs manifest,
+  cria só os faltantes. Flag `--delete-obsolete` remove os que estão no
+  endpoint mas fora do manifest. `--dry-run` mostra plano sem executar.
+- Source of truth: `rechargeAdapter.manifest.webhookEvents` (9 topics:
+  order/created, charge/{created,paid,failed,refunded}, subscription/
+  {created,updated,cancelled,activated}).
+- `charge/paid` tem fallback automático para `charge/succeeded` em 422
+  (drift entre versões da Recharge API).
+- Scripts abortam se URL resolvida for localhost (Recharge requer HTTPS).
+- Base URL: `--base-url` arg override, fallback para `NEXTAUTH_URL`.
 
 **Sub-etapas pendentes da Camada 1:**
 

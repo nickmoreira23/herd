@@ -201,9 +201,18 @@ export class RechargeService {
 
   // ── Webhooks ──
   //
-  // @todo Programmatic webhook registration via Recharge API.
-  // Dashboard-managed for now (single tenant, V1). Migrate to programmatic
-  // when multi-tenant lands — webhook URLs will need to be per-tenant.
+  // Webhook management methods used by the recharge:register-webhooks,
+  // recharge:list-webhooks, and recharge:delete-webhook CLI scripts.
+  //
+  // Programmatic-only path: the bucked_up_herd_hl headless Recharge account
+  // does not expose webhook management in the UI, so all CRUD goes through
+  // these methods. Multi-tenant evolution: scripts will accept a --tenant-id
+  // arg when multi-tenant lands; today they target the single platform-wide
+  // Integration row.
+  //
+  // @see scripts/register-recharge-webhooks.ts
+  // @see scripts/list-recharge-webhooks.ts
+  // @see scripts/delete-recharge-webhook.ts
 
   async listWebhooks(): Promise<RechargeWebhook[]> {
     const data = await this.request<{ webhooks: RechargeWebhook[] }>("/webhooks");
