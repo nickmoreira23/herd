@@ -291,6 +291,101 @@ while read b; do git push origin --delete "$b"; done < list.txt
 Aplica a: tag creation/push, branch deletion (local + origin), cherry-pick em
 sequência curta.
 
+---
+
+## Worktree operations (v1.2.0 — Fase 3)
+
+Operações canônicas de worktree em sub-etapas de Fase 3 (Sub-etapas 3.5 → 3.8).
+Aplicar para qualquer sub-etapa que usa o padrão `.claude/worktrees/<branch>/`.
+
+### Setup do worktree
+
+```bash
+git worktree add .claude/worktrees/<name> -b feat/<name>
+cd .claude/worktrees/<name>
+
+# Symlink temporário de node_modules — necessário para rodar
+# lint/typecheck/test (e pre-commit hook) dentro do worktree.
+ln -sfn /<abs-path-main-repo>/node_modules node_modules
+```
+
+`node_modules` no worktree NÃO é committado em nenhum momento. O symlink
+serve apenas para a sessão local. Remover pre-push.
+
+Se o sub-etapa precisa de `.env` (integration tests), copiar do main repo:
+
+```bash
+cp /<abs-path-main-repo>/.env .env
+```
+
+Também NÃO committado — remover pre-push.
+
+### Cleanup pré-push
+
+```bash
+rm node_modules .env
+git push origin feat/<name>
+```
+
+### Cleanup pós-merge
+
+Squash-merge **orfana** a branch local — após o squash, `feat/<name>` aponta
+para um commit que **não está** no histórico linear de main (main tem o
+squash commit diferente). `git branch -d` falha por "not fully merged".
+Usar `-D` (force delete).
+
+```bash
+git checkout main && git pull origin main
+
+MERGED=$(git rev-parse --short main)
+git tag archive/sub-etapa-X-name-${MERGED} main
+git push origin archive/sub-etapa-X-name-${MERGED}
+
+git push origin --delete feat/<name>
+git branch -D feat/<name>          # -D obrigatório pós-squash
+git worktree remove .claude/worktrees/<name>
+```
+
+### Build local em worktree = expected failure
+
+`npm run build` falha porque Turbopack rejeita symlinks cross-worktree de
+`node_modules` ("symlink invalid, points out of filesystem root").
+
+**Não tentar fix.** Validar build via CI. Outros gates (`tsc --noEmit`,
+`npm run lint`, `npm test`, `npm run test:integration`) rodam localmente
+com o symlink em pé.
+
+### `gen:all` no-diff em PRs cosméticos
+
+Quando o PR não toca `prisma/`, `src/lib/blocks/`, `src/lib/tools/`, ou
+similares que afetam manifests gerados, `npm run gen:all` produz no-diff.
+
+**Anchor proativo necessário mesmo assim** — path-filter no CI só dispara
+`freshness` + `validate` quando há mudança em `.agents/skills/**` (ou
+outros paths registrados nos workflows). Adicionar entry incremental
+neste CHANGELOG no mesmo push.
+
+### Recovery de `--no-verify` denied
+
+Pre-commit hook é obrigatório (deny do harness sobre `--no-verify` mesmo
+em hooks legítimos). Workflow correto:
+
+```bash
+git add -A && git commit -m "..."  # hook roda lint+typecheck+test
+```
+
+Se o `git add` ficou incompleto antes do commit (e.g. um `git add` denied
+não rodou e o commit pegou só parte das mudanças), recovery:
+
+```bash
+git reset --soft HEAD~1
+git add -A
+git commit -m "..."  # mesma mensagem, agora completa
+```
+
+Antes de push. NÃO usar `git commit --amend` per regra global "always
+create NEW commits rather than amending".
+
 ## How to update
 
 Adicione novos pitfalls ou padrões descobertos em sub-etapas futuras (0.4 reconciliação Camada 1, sub-etapas da Fase 1+). Bump `version` (minor) quando adicionar padrão novo. Bump `version` (major) quando estrutura das 3 fases mudar materialmente.

@@ -29,6 +29,13 @@ references:
     title:
       pt-BR: Lançamentos Contábeis
       en-US: Journal Entries
+  herd.block.financial.perks:
+    level: block
+    id: perks
+    path: docs/handbook/blocks/financial/perks
+    title:
+      pt-BR: Perks
+      en-US: Perks
   herd.block.financial.subscriptions:
     level: block
     id: subscriptions
@@ -372,13 +379,20 @@ references:
     title:
       pt-BR: Knowledge
       en-US: Knowledge
-  herd.tool.identity.network:
+  herd.tool.identity.organization:
     level: tool
-    id: network
-    path: docs/handbook/areas/identity/network
+    id: organization
+    path: docs/handbook/areas/identity/organization
     title:
-      pt-BR: Network
-      en-US: Network
+      pt-BR: Organization
+      en-US: Organization
+  herd.tool.identity.profile:
+    level: tool
+    id: profile
+    path: docs/handbook/areas/identity/profile
+    title:
+      pt-BR: Profile
+      en-US: Profile
   herd.tool.infrastructure.domain-events:
     level: tool
     id: domain-events

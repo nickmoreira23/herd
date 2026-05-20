@@ -1,5 +1,19 @@
 # CHANGELOG — chat-code-handoff (project-local)
 
+## v0.2.0 — 2026-05-20
+
+Adições pós-Fase 3 (Sub-etapas 3.5 → 3.8). Nova seção "Lições cravadas
+pós-criação" no SKILL.md, com 5 lições codificadas:
+
+- L1 — Reverse rels em todos preserved models (não só o principal).
+- L2 — `prisma.X` literals + `include: { X }` patterns via tsc surface
+  em worktree throwaway (Tarefa 0.5 da discovery).
+- L3 — `grep "^model NewName"` para detectar colisões em renames.
+- L4 — `npm run build` local em worktree é expected failure (trust CI).
+- L5 — Symlink temporário de node_modules para pre-commit hook em worktree.
+
+Refs: Sub-etapas 3.5.5, 3.6, 3.7, 3.8.
+
 ## v0.1.0 — 2026-05-20
 
 Inicial. Cravamento da regra de **discovery antecipada obrigatória**

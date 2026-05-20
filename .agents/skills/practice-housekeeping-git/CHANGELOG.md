@@ -2,6 +2,24 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.0 — 2026-05-20
+
+Adições pós-Fase 3 (Sub-etapas 3.5 → 3.8). Nova seção "Worktree operations"
+em SKILL.md, codificando o padrão usado nas 7 sub-etapas da Fase 3:
+
+- Setup com symlink temporário de `node_modules` e cópia de `.env`.
+- Cleanup pré-push (remover symlink + .env).
+- Cleanup pós-squash-merge — branch orfanada exige `git branch -D`.
+- Build local em worktree é expected failure (Turbopack cross-worktree symlink).
+- `gen:all` no-diff em PRs cosméticos — anchor proativo no CHANGELOG.
+- Recovery de `--no-verify` denied via `git reset --soft HEAD~1`.
+
+Refs: Sub-etapas 3.5 → 3.8 (todas usaram este padrão).
+
+Este push (Sub-etapa 3.9) toca `docs/handbook/**` + `.agents/skills/**` + 
+`AGENTS.md`. Path-filter trigger natural (já dispara freshness + validate); 
+v1.2.0 codifica o aprendizado, não age como anchor.
+
 ## 1.1.8 — 2026-05-20
 
 Anchor entry. PR (Sub-etapa 3.8 — manifest audit: 6 áreas em union literal,
