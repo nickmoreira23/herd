@@ -11,7 +11,7 @@ export const ledgerTool: Tool = {
   status: "active",
   hasSubRoutes: true,
   // No category — foundation tool, not a business discipline.
-  area: "infrastructure",
+  area: "transaction",
   blocks: [],
   actions: [],
   paths: {

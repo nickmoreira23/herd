@@ -60,6 +60,58 @@ npx tsx scripts/create-tool-category.ts --name "hr" --display "Human Resources" 
 
 Then: import and register in `src/lib/tools/registry.ts`, add icon mapping in `category-meta.ts`.
 
+## Tools manifest convention (cravada na Sub-etapa 3.8)
+
+**Standalone tools:** declared in their own files at
+`src/lib/tools/tools/<name>.tool.ts`, imported in `registry.ts` and
+registered in the `standaloneTools` map. Cross-cutting capabilities
+(chat, dashboard, handbook, knowledge, ledger, marketplace,
+organization, profile) follow this pattern.
+
+**Grouped tools:** declared inline inside
+`src/lib/tools/categories/<category>.category.ts` under the
+`tools: []` field of the category manifest. Tools tied to a single
+business discipline (finances, legal, operations, sales, …) follow
+this pattern.
+
+Dual pattern accepted. Do **not** promote inline tools to separate
+`.tool.ts` files without a functional driver (cosmetic refactor with no
+gain). Conversely, do **not** demote standalone tools into a category
+just for organization — standalone signals cross-cutting nature.
+
+## Reserved blocks (cravado na Sub-etapa 3.8)
+
+14 blocks live in `src/lib/blocks/blocks/` with zero references in any
+tool or category manifest — preserved as forward investment:
+
+`campaigns`, `community`, `deals`, `events`, `experiences`,
+`feedbacks`, `locations`, `meetings`, `messages`, `notes`, `pages`,
+`perks` (zero refs após Sub-etapa 3.5.5), `routines`, `voice`.
+
+Trigger to revisit: product scoping crystallizes a tool that consumes
+one of these, OR a housekeeping cycle decides to drop unused blocks
+deliberately. Until then, the block manifests stay — they cost
+nothing and removing them prematurely loses domain modeling work.
+
+## Reserved area: `notification`
+
+The `Area` union in `src/lib/tools/manifest.ts` declares 6 canonical
+operational areas: `communication`, `transaction`, `workflow`,
+`notification`, `identity`, `infrastructure`. Five are in use; the
+sixth — `notification` — is reserved for future tools surfacing
+alerts, broadcasts, push notifications. No current tool or category
+uses it. Keep it in the union so the first notification tool lands
+without a type system change.
+
+## Exception: `dashboard` path = admin root
+
+`dashboard.tool.ts` declares `paths.page: "src/app/admin"` (no
+subpath). It is the only tool with a path at the admin root. Accepted
+because the dashboard is semantically the admin home page —
+`/admin/` itself, not `/admin/dashboard/`. Do **not** refactor into a
+dedicated subdirectory without a UX trigger; the special-case is the
+correct shape today.
+
 # Tenancy
 
 ## requireSuperAdmin helper

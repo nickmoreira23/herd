@@ -2,6 +2,14 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.1.8 — 2026-05-20
+
+Anchor entry. PR (Sub-etapa 3.8 — manifest audit: 6 áreas em union literal,
+fixes consistency em chat/knowledge/ledger, polish em registry + marketing)
+toca `src/lib/tools/**` + `AGENTS.md` + `mcp/generated/**`. Mesmo
+path-filter pattern. Anchor proativo neste push para disparar
+freshness + validate.
+
 ## 1.1.7 — 2026-05-20
 
 Anchor entry. PR (Sub-etapa 3.7 — split networkTool → organizationTool +

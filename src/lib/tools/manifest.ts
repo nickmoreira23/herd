@@ -39,6 +39,21 @@ export interface BlockConnection {
 
 export type ToolStatus = "active" | "beta" | "coming-soon";
 
+/**
+ * Operational areas — high-level domain classification for tools.
+ * 6 canonical areas anchored in CLAUDE.md / AGENTS.md.
+ *
+ * Adding a new area is a cross-cutting decision: it implies a new
+ * macro-division of the product surface. Discuss before extending.
+ */
+export type Area =
+  | "communication"   // chat, messaging, calls
+  | "transaction"     // marketplace, ledger, payments, subscriptions
+  | "workflow"        // dashboard, knowledge, operations orchestration
+  | "notification"    // alerts, broadcasts (reserved — no current usage)
+  | "identity"        // organization, profile, member directory
+  | "infrastructure"; // handbook, system meta
+
 export interface Tool {
   kind: "tool";
   /** Machine name, e.g. "projections" */
@@ -70,10 +85,9 @@ export interface Tool {
   category?: string;
   /**
    * Mandatory area positioning the tool in the product macro-division.
-   * Values: "communication" | "transaction" | "workflow" | "notification"
-   *         | "identity" | "infrastructure".
+   * See the `Area` union for the 6 canonical values.
    */
-  area: string;
+  area: Area;
   /** File paths (relative to project root) */
   paths: {
     page: string;

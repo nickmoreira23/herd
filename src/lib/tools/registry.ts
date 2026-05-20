@@ -7,16 +7,16 @@ import { blockRegistry } from "../blocks/registry";
 import { financesCategory } from "./categories/finances.category";
 import { legalCategory } from "./categories/legal.category";
 import { marketingCategory } from "./categories/marketing.category";
-import { salesCategory } from "./categories/sales.category";
 import { operationsCategory } from "./categories/operations.category";
+import { salesCategory } from "./categories/sales.category";
 import { chatTool } from "./tools/chat.tool";
-import { marketplaceTool } from "./tools/marketplace.tool";
 import { dashboardTool } from "./tools/dashboard.tool";
+import { handbookTool } from "./tools/handbook.tool";
 import { knowledgeTool } from "./tools/knowledge.tool";
+import { ledgerTool } from "./tools/ledger.tool";
+import { marketplaceTool } from "./tools/marketplace.tool";
 import { organizationTool } from "./tools/organization.tool";
 import { profileTool } from "./tools/profile.tool";
-import { handbookTool } from "./tools/handbook.tool";
-import { ledgerTool } from "./tools/ledger.tool";
 
 // ─── All registered tool categories ───────────────────────────────
 // To add a new category, create a manifest and add it here.
@@ -128,13 +128,13 @@ export function buildToolActionCatalog(): string {
 
 const standaloneTools: Record<string, Tool> = {
   chat: chatTool,
-  marketplace: marketplaceTool,
   dashboard: dashboardTool,
+  handbook: handbookTool,
   knowledge: knowledgeTool,
+  ledger: ledgerTool,
+  marketplace: marketplaceTool,
   organization: organizationTool,
   profile: profileTool,
-  handbook: handbookTool,
-  ledger: ledgerTool,
 };
 
 function flattenCategoryTools(): Record<string, Tool> {

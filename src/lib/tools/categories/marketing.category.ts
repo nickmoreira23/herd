@@ -15,5 +15,8 @@ export const marketingCategory: ToolCategoryManifest = {
     "Manage content creation and calendars",
     "Track marketing performance and ROI",
   ],
+  // TODO: marketing tools pending product scoping.
+  // Category registered as placeholder; tools to be added when the marketing
+  // surface area is defined (campaigns, audience segments, etc.).
   tools: [],
 };
