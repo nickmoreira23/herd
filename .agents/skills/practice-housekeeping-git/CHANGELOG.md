@@ -2,6 +2,13 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.1.5 — 2026-05-20
+
+Anchor entry. PR #36 (Sub-etapa 3.5.5 — drop PartnerBrand entirely, keep
+Perk as single concept) toca `prisma/**` + `src/**` + `mcp/generated/**`.
+Mesmo path-filter pattern. Anchor proativo neste push para disparar
+freshness+validate sem segundo round.
+
 ## 1.1.4 — 2026-05-20
 
 Anchor entry. PR #35 (Sub-etapa 3.5 — DROP MLM/Commission/D2D tables) toca
