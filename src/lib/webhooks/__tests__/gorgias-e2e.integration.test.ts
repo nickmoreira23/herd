@@ -48,7 +48,6 @@ type POSTFn = (req: Request) => Promise<Response>;
 let POST: POSTFn;
 
 type Seeded = {
-  profileTypeId: string;
   profile: { id: string };
   org: { id: string };
   integration: { id: string; created: boolean };
@@ -86,29 +85,13 @@ function buildRequest(rawBody: Buffer, signature: string): Request {
 }
 
 async function seed(): Promise<Seeded> {
-  const existing = await adminClient.networkProfileType.findFirst({
-    select: { id: true },
-  });
-  const profileTypeId =
-    existing?.id ??
-    (
-      await adminClient.networkProfileType.create({
-        data: {
-          slug: `${TEST_PREFIX}-type`,
-          displayName: "Test Type",
-          networkType: "INTERNAL",
-        },
-        select: { id: true },
-      })
-    ).id;
+  // NetworkProfileType removed in Sub-etapa 3.6.
 
   const profile = await adminClient.networkProfile.create({
     data: {
       firstName: "GorgiasE2E",
       lastName: "Owner",
       email: `${TEST_PREFIX}@example.com`,
-      networkType: "INTERNAL",
-      profileTypeId,
       status: "ACTIVE",
     },
     select: { id: true },
@@ -148,7 +131,6 @@ async function seed(): Promise<Seeded> {
   });
 
   return {
-    profileTypeId,
     profile,
     org,
     integration: { id: integration.id, created: createdIntegration },
@@ -178,9 +160,7 @@ async function cleanup() {
   }
   await adminClient.organization.delete({ where: { id: seeded.org.id } });
   await adminClient.networkProfile.delete({ where: { id: seeded.profile.id } });
-  await adminClient.networkProfileType.deleteMany({
-    where: { id: seeded.profileTypeId, slug: { startsWith: TEST_PREFIX } },
-  });
+  // NetworkProfileType removed in Sub-etapa 3.6
 }
 
 describe("Gorgias webhook e2e (verify → dedup → outbox → worker → IWE)", () => {

@@ -20,7 +20,6 @@ export type {
   CommunityBenefit,
   CommunityBenefitTierAssignment,
   NetworkProfile,
-  NetworkProfileType,
   // Integration types
   Integration,
   IntegrationTierMapping,

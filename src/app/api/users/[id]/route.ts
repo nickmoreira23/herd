@@ -10,9 +10,6 @@ export async function GET(
     const { id } = await params;
     const user = await prisma.networkProfile.findUnique({
       where: { id },
-      include: {
-        profileType: { select: { id: true, displayName: true, slug: true, color: true, networkType: true } },
-      },
     });
     if (!user) return apiError("User not found", 404);
     return apiSuccess(user);
@@ -38,14 +35,7 @@ export async function PATCH(
     if (body.phone !== undefined) allowedFields.phone = body.phone;
     if (body.status !== undefined) allowedFields.status = body.status;
     if (body.avatarUrl !== undefined) allowedFields.avatarUrl = body.avatarUrl;
-    if (body.profileTypeId !== undefined) {
-      allowedFields.profileTypeId = body.profileTypeId;
-      // Also update networkType based on the new profile type
-      const pt = await prisma.networkProfileType.findUnique({
-        where: { id: body.profileTypeId },
-      });
-      if (pt) allowedFields.networkType = pt.networkType;
-    }
+    // profileTypeId / networkType dropped — Sub-etapa 3.6
 
     // Handle password reset
     if (body.password && typeof body.password === "string" && body.password.trim()) {
@@ -55,9 +45,6 @@ export async function PATCH(
     const user = await prisma.networkProfile.update({
       where: { id },
       data: allowedFields,
-      include: {
-        profileType: { select: { id: true, displayName: true, slug: true, color: true, networkType: true } },
-      },
     });
 
     // RBAC role assignment (networkProfileRole) removed in Sub-etapa 3.5;

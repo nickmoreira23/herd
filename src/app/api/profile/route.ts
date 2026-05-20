@@ -10,9 +10,6 @@ export async function GET() {
 
   const user = await prisma.networkProfile.findUnique({
     where: { id: userId },
-    include: {
-      profileType: { select: { id: true, displayName: true, slug: true, color: true } },
-    },
   });
   if (!user) return apiError("User not found", 404);
 
@@ -20,7 +17,7 @@ export async function GET() {
   return apiSuccess({
     ...user,
     name: `${user.firstName}${user.lastName ? " " + user.lastName : ""}`.trim(),
-    role: user.profileType.displayName,
+    role: "user",
   });
 }
 
@@ -46,14 +43,11 @@ export async function PATCH(request: Request) {
   const user = await prisma.networkProfile.update({
     where: { id: userId },
     data,
-    include: {
-      profileType: { select: { id: true, displayName: true, slug: true, color: true } },
-    },
   });
 
   return apiSuccess({
     ...user,
     name: `${user.firstName}${user.lastName ? " " + user.lastName : ""}`.trim(),
-    role: user.profileType.displayName,
+    role: "user",
   });
 }

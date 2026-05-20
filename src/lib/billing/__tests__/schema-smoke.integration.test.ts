@@ -36,7 +36,6 @@ const runtimeClient = runtimeClientBare.$extends(
 const TEST_PREFIX = `test-billing-smoke-${Date.now()}`;
 
 type Seeded = {
-  profileTypeId: string;
   profileA: { id: string };
   profileB: { id: string };
   orgA: { id: string };
@@ -47,29 +46,13 @@ type Seeded = {
 let seeded: Seeded;
 
 async function seed(): Promise<Seeded> {
-  const existing = await adminClient.networkProfileType.findFirst({
-    select: { id: true },
-  });
-  const profileTypeId =
-    existing?.id ??
-    (
-      await adminClient.networkProfileType.create({
-        data: {
-          slug: `${TEST_PREFIX}-type`,
-          displayName: "Test Type",
-          networkType: "INTERNAL",
-        },
-        select: { id: true },
-      })
-    ).id;
+  // NetworkProfileType removed in Sub-etapa 3.6.
 
   const profileA = await adminClient.networkProfile.create({
     data: {
       firstName: "BillA",
       lastName: "Owner",
       email: `${TEST_PREFIX}-a@example.com`,
-      networkType: "INTERNAL",
-      profileTypeId,
       status: "ACTIVE",
     },
     select: { id: true },
@@ -80,8 +63,6 @@ async function seed(): Promise<Seeded> {
       firstName: "BillB",
       lastName: "Owner",
       email: `${TEST_PREFIX}-b@example.com`,
-      networkType: "INTERNAL",
-      profileTypeId,
       status: "ACTIVE",
     },
     select: { id: true },
@@ -107,7 +88,7 @@ async function seed(): Promise<Seeded> {
     select: { id: true },
   });
 
-  return { profileTypeId, profileA, profileB, orgA, orgB, providerA };
+  return { profileA, profileB, orgA, orgB, providerA };
 }
 
 async function cleanup() {
@@ -119,9 +100,7 @@ async function cleanup() {
   await adminClient.networkProfile.deleteMany({
     where: { id: { in: [seeded.profileA.id, seeded.profileB.id] } },
   });
-  await adminClient.networkProfileType.deleteMany({
-    where: { id: seeded.profileTypeId, slug: { startsWith: TEST_PREFIX } },
-  });
+  // NetworkProfileType removed in Sub-etapa 3.6
 }
 
 describe("Sub-etapa 9 billing schema — smoke", () => {
@@ -199,8 +178,6 @@ describe("Sub-etapa 9 billing schema — smoke", () => {
         firstName: "Cascade",
         lastName: "Test",
         email: `${TEST_PREFIX}-cascade@example.com`,
-        networkType: "INTERNAL",
-        profileTypeId: seeded.profileTypeId,
         status: "ACTIVE",
       },
       select: { id: true },

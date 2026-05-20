@@ -2,9 +2,11 @@ import { prisma } from "@/lib/prisma";
 import { apiSuccess } from "@/lib/api-utils";
 
 export async function GET() {
+  // NetworkProfile.networkType + parentId + profileType dropped in
+  // Sub-etapa 3.6. Profile filter is now all profiles; Department.networkType
+  // preserved (used to filter "internal" departments).
   const [profiles, departments] = await Promise.all([
     prisma.networkProfile.findMany({
-      where: { networkType: "INTERNAL" },
       select: {
         id: true,
         firstName: true,
@@ -12,8 +14,6 @@ export async function GET() {
         email: true,
         avatarUrl: true,
         status: true,
-        parentId: true,
-        profileType: { select: { id: true, displayName: true, color: true } },
         departmentMemberships: {
           include: {
             department: { select: { id: true, name: true, color: true } },

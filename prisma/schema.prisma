@@ -1597,20 +1597,6 @@ enum ProfileStatus {
 // Network Profile Models
 // ========================
 
-model NetworkCompensationPlan {
-  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  slug            String   @unique
-  name            String
-  commissionRules Json     @default("{}")
-  bonusRules      Json     @default("{}")
-  pointsRules     Json     @default("{}")
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@map("network_compensation_plans")
-}
-
 model RankTier {
   id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   slug               String   @unique
@@ -1626,32 +1612,8 @@ model RankTier {
   @@map("rank_tiers")
 }
 
-model NetworkProfileType {
-  id                String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  slug              String      @unique
-  networkType       NetworkType
-  displayName       String
-  description       String?
-  icon              String?
-  color             String?
-  wizardFields      Json        @default("[]")
-  defaultRoleIds    String[]
-  defaultCompPlanId String?     @db.Uuid
-  defaultRankId     String?     @db.Uuid
-  isActive          Boolean     @default(true)
-  sortOrder         Int         @default(0)
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-
-  profiles NetworkProfile[]
-
-  @@map("network_profile_types")
-}
-
 model NetworkProfile {
   id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  networkType   NetworkType
-  profileTypeId String        @db.Uuid
   status        ProfileStatus @default(PENDING)
   firstName     String
   lastName      String
@@ -1660,16 +1622,11 @@ model NetworkProfile {
   passwordHash  String?
   avatarUrl     String?
   locale        String        @default("pt-BR")
-  parentId      String?       @db.Uuid
   onboardedAt   DateTime?
   lastLogin     DateTime?
   createdBy     String?       @db.Uuid
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
-
-  profileType NetworkProfileType @relation(fields: [profileTypeId], references: [id])
-  parent      NetworkProfile?    @relation("ProfileHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
-  children    NetworkProfile[]   @relation("ProfileHierarchy")
 
   departmentMemberships    DepartmentMember[]
   headOfDepartments        Department[]                       @relation("DepartmentHead")

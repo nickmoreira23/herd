@@ -15,7 +15,7 @@ export default async function DepartmentsPage() {
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     }),
     prisma.networkProfile.findMany({
-      where: { networkType: "INTERNAL", status: "ACTIVE" },
+      where: { status: "ACTIVE" },
       select: { id: true, firstName: true, lastName: true, email: true },
       orderBy: { firstName: "asc" },
     }),

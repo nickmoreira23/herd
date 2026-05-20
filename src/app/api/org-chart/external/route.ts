@@ -1,21 +1,9 @@
-import { prisma } from "@/lib/prisma";
 import { apiSuccess } from "@/lib/api-utils";
 
+// External org chart removed in Sub-etapa 3.6 — NetworkProfile.networkType
+// dropped (INTERNAL/EXTERNAL distinction no longer modeled). Route preserved
+// as empty response to avoid 404 on legacy consumers; full removal planned
+// in Sub-etapa 3.7 (network tool split).
 export async function GET() {
-  const profiles = await prisma.networkProfile.findMany({
-    where: { networkType: "EXTERNAL" },
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      email: true,
-      avatarUrl: true,
-      status: true,
-      parentId: true,
-      profileType: { select: { id: true, displayName: true, color: true } },
-    },
-    orderBy: { firstName: "asc" },
-  });
-
-  return apiSuccess({ profiles });
+  return apiSuccess({ profiles: [] });
 }

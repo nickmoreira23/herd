@@ -15,34 +15,24 @@ export default async function ProfilePage() {
 
   let user = await prisma.networkProfile.findUnique({
     where: { id: userId },
-    include: {
-      profileType: { select: { displayName: true, slug: true } },
-    },
   });
 
-  // Fallback: create user if it doesn't exist yet (first login before auth creates it)
+  // Fallback: create user if it doesn't exist yet (first login before auth creates it).
+  // NetworkProfileType + profileTypeId + networkType dropped in Sub-etapa 3.6.
   if (!user && session?.user?.email) {
-    const adminType = await prisma.networkProfileType.findUnique({
-      where: { slug: "admin" },
-    });
     user = await prisma.networkProfile.create({
       data: {
         firstName: session.user.name || "Admin",
         lastName: "",
         email: session.user.email,
-        networkType: "INTERNAL",
-        profileTypeId: adminType!.id,
         status: "ACTIVE",
-      },
-      include: {
-        profileType: { select: { displayName: true, slug: true } },
       },
     });
   }
 
   if (!user) redirect("/login");
 
-  const roleName = user.profileType.displayName;
+  const roleName = "user";
 
   return (
     <ProfileClient

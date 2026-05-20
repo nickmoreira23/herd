@@ -9,29 +9,18 @@ const baseClient = new PrismaClient({ adapter: new PrismaPg(connectionString) })
 
 const TEST_PREFIX = `test-resolve-org-${Date.now()}`;
 
-let profileTypeId: string;
 let profileWithOrg: { id: string };
 let profileWithoutOrg: { id: string };
 let org: { id: string };
 
 beforeAll(async () => {
-  const existing = await baseClient.networkProfileType.findFirst({ select: { id: true } });
-  profileTypeId = existing
-    ? existing.id
-    : (
-        await baseClient.networkProfileType.create({
-          data: { slug: `${TEST_PREFIX}-type`, displayName: "Test", networkType: "INTERNAL" },
-          select: { id: true },
-        })
-      ).id;
+  // NetworkProfileType removed in Sub-etapa 3.6.
 
   profileWithOrg = await baseClient.networkProfile.create({
     data: {
       firstName: "WithOrg",
       lastName: "Test",
       email: `${TEST_PREFIX}-with@example.com`,
-      networkType: "INTERNAL",
-      profileTypeId,
       status: "ACTIVE",
     },
     select: { id: true },
@@ -42,8 +31,6 @@ beforeAll(async () => {
       firstName: "WithoutOrg",
       lastName: "Test",
       email: `${TEST_PREFIX}-without@example.com`,
-      networkType: "INTERNAL",
-      profileTypeId,
       status: "ACTIVE",
     },
     select: { id: true },
@@ -65,9 +52,6 @@ afterAll(async () => {
   });
   await baseClient.networkProfile.deleteMany({
     where: { id: { in: [profileWithOrg.id, profileWithoutOrg.id] } },
-  });
-  await baseClient.networkProfileType.deleteMany({
-    where: { id: profileTypeId, slug: { startsWith: TEST_PREFIX } },
   });
   await baseClient.$disconnect();
 });

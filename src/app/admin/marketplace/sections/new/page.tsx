@@ -10,16 +10,13 @@ import { SectionWizardShell } from "@/components/marketplace/wizard/section-wiza
 export default async function NewSectionPage() {
   await connection();
 
-  // NetworkRole removed in Sub-etapa 3.5; roles[] passed empty until new RBAC.
-  const [profileTypes, categoriesSetting] = await Promise.all([
-    prisma.networkProfileType.findMany({
-      where: { isActive: true },
-      orderBy: { sortOrder: "asc" },
-      select: { id: true, displayName: true },
-    }),
-    prisma.setting.findUnique({ where: { key: BLOCK_CATEGORIES_SETTING_KEY } }),
-  ]);
+  // NetworkRole + NetworkProfileType removed in 3.5/3.6; roles + profileTypes
+  // passed empty until new RBAC/identity model.
+  const categoriesSetting = await prisma.setting.findUnique({
+    where: { key: BLOCK_CATEGORIES_SETTING_KEY },
+  });
   const roles: { id: string; displayName: string }[] = [];
+  const profileTypes: { id: string; displayName: string }[] = [];
 
   const categories = parseBlockCategories(categoriesSetting?.value);
 
