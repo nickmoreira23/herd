@@ -223,36 +223,8 @@ export const PLAN_AGENT_TOOLS: Anthropic.Tool[] = [
       required: ["planId", "assignments"],
     },
   },
-  {
-    name: "manage_partners",
-    description:
-      "Set partner brand assignments for a plan. Replaces all current assignments.",
-    input_schema: {
-      type: "object" as const,
-      properties: {
-        planId: { type: "string", description: "The UUID of the plan" },
-        assignments: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              partnerBrandId: {
-                type: "string",
-                description: "UUID of the partner brand",
-              },
-              discountPercent: {
-                type: "number",
-                description: "Discount percentage for this partner",
-              },
-              isActive: { type: "boolean" },
-            },
-            required: ["partnerBrandId", "discountPercent"],
-          },
-        },
-      },
-      required: ["planId", "assignments"],
-    },
-  },
+  // manage_partners action removed in Sub-etapa 3.5.5 — PartnerBrand model
+  // dropped; concept returns later as company profile in network.
   {
     name: "navigate_user",
     description:
@@ -335,8 +307,6 @@ export async function handlePlanAgentToolCall(
       return handleManagePerks(input, send);
     case "manage_community":
       return handleManageCommunity(input, send);
-    case "manage_partners":
-      return handleManagePartners(input, send);
     case "navigate_user":
       return handleNavigateUser(input, send, allPlans);
     default:
@@ -443,9 +413,6 @@ async function handleGetPlanDetails(
       include: {
         redemptionRules: {
           orderBy: [{ redemptionType: "asc" }, { scopeType: "asc" }],
-        },
-        partnerAssignments: {
-          include: { partner: { select: { name: true } } },
         },
       },
     });
@@ -556,11 +523,6 @@ async function handleGetPlanDetails(
     if (communityAssignments.length > 0) {
       benefitLines.push(
         `Community: ${communityAssignments.map((c) => `${c.communityBenefit.name} (${c.isEnabled ? "enabled" : "disabled"})`).join(", ")}`
-      );
-    }
-    if (plan.partnerAssignments.length > 0) {
-      benefitLines.push(
-        `Partners: ${plan.partnerAssignments.map((p) => `${p.partner.name} (${Number(p.discountPercent)}% off)`).join(", ")}`
       );
     }
     sections.push(
@@ -931,45 +893,8 @@ async function handleManageCommunity(
   }
 }
 
-async function handleManagePartners(
-  input: Record<string, unknown>,
-  send: SendFn
-): Promise<string> {
-  const planId = String(input.planId);
-  const assignments = input.assignments as Array<{
-    partnerBrandId: string;
-    discountPercent: number;
-    isActive?: boolean;
-  }>;
-
-  send("step", { text: "Updating partner assignments..." });
-
-  try {
-    await prisma.$transaction([
-      prisma.partnerTierAssignment.deleteMany({
-        where: { subscriptionTierId: planId },
-      }),
-      prisma.partnerTierAssignment.createMany({
-        data: assignments.map((a) => ({
-          subscriptionTierId: planId,
-          partnerBrandId: a.partnerBrandId,
-          discountPercent: a.discountPercent,
-          isActive: a.isActive ?? true,
-        })),
-      }),
-    ]);
-
-    send("step_complete", {
-      text: `${assignments.length} partners assigned`,
-    });
-    send("benefits_updated", { planId, blockName: "partners" });
-
-    return `Updated partner assignments: ${assignments.length} partners configured.`;
-  } catch (err) {
-    send("step_complete", { text: "Failed" });
-    return `Error: ${err instanceof Error ? err.message : "Unknown error"}`;
-  }
-}
+// handleManagePartners removed in Sub-etapa 3.5.5 — PartnerBrand model
+// dropped; external affiliate concept returns later as company profile.
 
 function handleNavigateUser(
   input: Record<string, unknown>,

@@ -138,39 +138,6 @@ enum LandingPageStatus {
 // Partner Brand Enums
 // ========================
 
-enum PartnerBenefitType {
-  PERCENTAGE_DISCOUNT
-  FLAT_DISCOUNT
-  FREE_TRIAL
-  FREE_PRODUCT
-  BOGO
-  OTHER
-}
-
-enum PartnerCommissionType {
-  PERCENTAGE
-  FLAT
-  CPA
-  RECURRING
-  HYBRID
-}
-
-enum PartnerStatus {
-  RESEARCHED
-  APPLIED
-  APPROVED
-  ACTIVE
-  PAUSED
-}
-
-enum PartnerTierAccess {
-  ALL
-  BASIC
-  PLUS
-  PREMIUM
-  ELITE
-}
-
 model Product {
   id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name           String
@@ -488,7 +455,6 @@ model SubscriptionTier {
   updatedAt DateTime @updatedAt
 
   // Relations
-  partnerAssignments   PartnerTierAssignment[]
   financialSnapshots   FinancialSnapshot[]
   redemptionRules      SubscriptionRedemptionRule[]
   pricingSnapshots     TierPricingSnapshot[]
@@ -505,62 +471,6 @@ model SubscriptionTier {
 // @deprecated — replaced by CommissionPlan. Kept for migration.
 
 // @deprecated — replaced by CommissionPlanRate. Kept for migration.
-
-model PartnerBrand {
-  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name                String
-  key                 String   @unique
-  logoUrl             String?
-  heroImageUrl        String?
-  discountDescription String?
-  tagline             String?
-  description         String? // 2-3 sentence rich description
-  websiteUrl          String?
-  isActive            Boolean  @default(true) // DEPRECATED — use status; kept for migration
-  kickbackType        String // NONE | PERCENT_OF_SALE | FLAT_PER_REFERRAL | FLAT_PER_MONTH
-  kickbackValue       Decimal? @db.Decimal(10, 2)
-  category            String
-
-  // Audience benefit
-  audienceBenefit String? // e.g. "20% off your first order"
-  benefitType     PartnerBenefitType?
-
-  // Affiliate program details
-  affiliateSignupUrl       String?
-  affiliateLinkPlaceholder String? // filled after manual signup
-  affiliateNetwork         String? // e.g. "Impact", "ShareASale", "In-house"
-  commissionRate           String? // e.g. "15%", "$20 flat", "Up to 50%"
-  commissionType           PartnerCommissionType?
-  cookieDuration           String? // e.g. "30 days", "Lifetime"
-
-  // Status & access
-  status     PartnerStatus     @default(ACTIVE)
-  tierAccess PartnerTierAccess @default(ALL)
-
-  // Scraper metadata
-  scrapedAt DateTime?
-  notes     String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  tierAssignments PartnerTierAssignment[]
-}
-
-model PartnerTierAssignment {
-  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  partnerBrandId     String   @db.Uuid
-  subscriptionTierId String   @db.Uuid
-  discountPercent    Decimal  @db.Decimal(5, 2)
-  isActive           Boolean  @default(true)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
-  partner PartnerBrand     @relation(fields: [partnerBrandId], references: [id], onDelete: Cascade)
-  tier    SubscriptionTier @relation(fields: [subscriptionTierId], references: [id], onDelete: Cascade)
-
-  @@unique([partnerBrandId, subscriptionTierId])
-}
 
 model FinancialSnapshot {
   id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid

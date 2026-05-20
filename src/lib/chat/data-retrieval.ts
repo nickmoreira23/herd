@@ -14,7 +14,6 @@ import { ProductProvider } from "./providers/product.provider";
 import { AgentProvider } from "./providers/agent.provider";
 import { PerkProvider } from "./providers/perk.provider";
 import { CommunityProvider } from "./providers/community.provider";
-import { PartnerProvider } from "./providers/partner.provider";
 import { MeetingProvider } from "./providers/meeting.provider";
 import { EventProvider } from "./providers/event.provider";
 import { LandingPageProvider } from "./providers/landing-page.provider";
@@ -51,7 +50,6 @@ export const providers: DataProvider[] = [
   new AgentProvider(),
   new PerkProvider(),
   new CommunityProvider(),
-  new PartnerProvider(),
   new MeetingProvider(),
   new EventProvider(),
   new LandingPageProvider(),
@@ -129,7 +127,6 @@ export async function getDataCatalog(): Promise<string> {
       agent: "AI Agents",
       perk: "Perks",
       community_benefit: "Community Benefits",
-      partner_brand: "Partner Brands",
     };
 
     const subSections: string[] = [];
@@ -294,7 +291,6 @@ export const SEARCH_DATA_TOOL = {
             "agent",
             "perk",
             "community_benefit",
-            "partner_brand",
             "meeting",
             "event",
             "message_thread",

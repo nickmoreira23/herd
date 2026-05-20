@@ -55,11 +55,6 @@ export const legalCategory: ToolCategoryManifest = {
           usage: "read-write",
           purpose: "Contract document storage and rendering",
         },
-        {
-          blockName: "partners",
-          usage: "read",
-          purpose: "Partner data for contract generation",
-        },
       ],
       agentKeys: ["contract-reviewer"],
       actions: [],

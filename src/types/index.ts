@@ -8,8 +8,6 @@ export type {
   AgentTool,
   Product,
   SubscriptionTier,
-  PartnerBrand,
-  PartnerTierAssignment,
   FinancialSnapshot,
   Setting,
   OpexCategory,
@@ -49,14 +47,9 @@ export {
   TierChangeTiming,
   CreditOnChange,
   PauseCreditBehavior,
-  // Partner Brand enums
-  PartnerBenefitType,
-  PartnerCommissionType,
   // Network enums
   NetworkType,
   ProfileStatus,
-  PartnerStatus,
-  PartnerTierAccess,
   PerkStatus,
   CommunityBenefitStatus,
   // Integration enums
@@ -116,68 +109,10 @@ export const KICKBACK_TYPES = [
 ] as const;
 export type KickbackType = (typeof KICKBACK_TYPES)[number];
 
-// Partner benefit type enum values
-export const PARTNER_BENEFIT_TYPES = [
-  "PERCENTAGE_DISCOUNT",
-  "FLAT_DISCOUNT",
-  "FREE_TRIAL",
-  "FREE_PRODUCT",
-  "BOGO",
-  "OTHER",
-] as const;
-export type PartnerBenefitTypeValue = (typeof PARTNER_BENEFIT_TYPES)[number];
-
-// Partner commission type enum values
-export const PARTNER_COMMISSION_TYPES = [
-  "PERCENTAGE",
-  "FLAT",
-  "CPA",
-  "RECURRING",
-  "HYBRID",
-] as const;
-export type PartnerCommissionTypeValue = (typeof PARTNER_COMMISSION_TYPES)[number];
-
-// Partner status enum values
-export const PARTNER_STATUSES = [
-  "RESEARCHED",
-  "APPLIED",
-  "APPROVED",
-  "ACTIVE",
-  "PAUSED",
-] as const;
-export type PartnerStatusValue = (typeof PARTNER_STATUSES)[number];
-
-// Partner tier access enum values
-export const PARTNER_TIER_ACCESS = [
-  "ALL",
-  "BASIC",
-  "PLUS",
-  "PREMIUM",
-  "ELITE",
-] as const;
-export type PartnerTierAccessValue = (typeof PARTNER_TIER_ACCESS)[number];
-
-// Partner category values (expanded for 16 affiliate categories)
-export const PARTNER_CATEGORIES = [
-  "Supplements & Sports Nutrition",
-  "Meal Delivery",
-  "Healthy Snacks & Functional Foods",
-  "Fitness Apparel & Footwear",
-  "Lifting Gear & Equipment",
-  "Recovery Equipment",
-  "Red Light Therapy & Biohacking",
-  "Cold Plunge & Saunas",
-  "Sleep Tech",
-  "Mobility & PT Tools",
-  "Wearable Tech",
-  "Fitness Platforms & Apps",
-  "Meditation & Mindfulness",
-  "Gym & Studio Access",
-  "Peptides & Research Compounds",
-  "Nootropics, Longevity & Health Testing",
-] as const;
-export type PartnerCategory = (typeof PARTNER_CATEGORIES)[number];
-
+// Partner enum values (PARTNER_BENEFIT_TYPES, PARTNER_COMMISSION_TYPES,
+// PARTNER_STATUSES, PARTNER_TIER_ACCESS, PARTNER_CATEGORIES) removed in
+// Sub-etapa 3.5.5 along with the PartnerBrand model. External affiliate
+// concept returns later as company profile in network.
 
 // AI Agent enum values
 export const AGENT_STATUSES = ["DRAFT", "ACTIVE", "BETA", "DEPRECATED"] as const;

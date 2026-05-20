@@ -16,10 +16,6 @@ export default async function TiersPage() {
           where: { isEnabled: true },
           include: { agent: { select: { id: true, name: true, category: true, icon: true } } },
         },
-        partnerAssignments: {
-          where: { isActive: true },
-          include: { partner: { select: { id: true, name: true, logoUrl: true } } },
-        },
       },
     }),
     prisma.setting.findUnique({ where: { key: BENEFIT_BLOCKS_SETTING_KEY } }),
@@ -52,10 +48,6 @@ export default async function TiersPage() {
     redemptionRules: t.redemptionRules.map((r) => ({
       ...r,
       discountPercent: toNumber(r.discountPercent),
-    })),
-    partnerAssignments: t.partnerAssignments.map((a) => ({
-      ...a,
-      discountPercent: toNumber(a.discountPercent),
     })),
   }));
 

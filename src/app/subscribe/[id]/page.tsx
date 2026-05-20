@@ -24,12 +24,6 @@ export default async function SubscribePage({
           agent: { select: { id: true, name: true, category: true, icon: true } },
         },
       },
-      partnerAssignments: {
-        where: { isActive: true },
-        include: {
-          partner: { select: { id: true, name: true, logoUrl: true } },
-        },
-      },
     },
   });
   if (!tier) notFound();
@@ -93,12 +87,7 @@ export default async function SubscribePage({
       category: a.agent.category,
       icon: a.agent.icon,
     })),
-    partners: tier.partnerAssignments.map((a) => ({
-      id: a.partner.id,
-      name: a.partner.name,
-      logoUrl: a.partner.logoUrl,
-      discountPercent: toNumber(a.discountPercent),
-    })),
+    partners: [] as Array<{ id: string; name: string; logoUrl: string | null; discountPercent: number }>,
     perksConfig: (tier.perksConfig as Record<string, { enabled: boolean }>) || {},
     communityConfig: (tier.communityConfig as Record<string, boolean>) || {},
   };

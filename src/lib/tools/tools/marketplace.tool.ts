@@ -27,11 +27,6 @@ export const marketplaceTool: Tool = {
       usage: "read",
       purpose: "Subscription tiers exposed in storefront",
     },
-    {
-      blockName: "partners",
-      usage: "read",
-      purpose: "Partner storefronts and visibility",
-    },
   ],
   actions: [],
   paths: {

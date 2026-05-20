@@ -55,11 +55,6 @@ export const salesCategory: ToolCategoryManifest = {
       hasSubRoutes: true,
       blocks: [
         {
-          blockName: "partners",
-          usage: "read",
-          purpose: "Partner and prospect data",
-        },
-        {
           blockName: "products",
           usage: "read",
           purpose: "Product catalog for deal building",
