@@ -1,3 +1,5 @@
+import "dotenv/config";
+
 /**
  * Seeds the Recharge Integration row with the API key from env.
  *
