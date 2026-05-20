@@ -2,6 +2,12 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.1.6 — 2026-05-20
+
+Anchor entry. PR #37 (Sub-etapa 3.6 — ALTER NetworkProfile + drop
+NetworkProfileType + NCP) toca `prisma/**` + `src/**` + `mcp/generated/**`.
+Mesmo path-filter pattern. Anchor proativo neste push.
+
 ## 1.1.5 — 2026-05-20
 
 Anchor entry. PR #36 (Sub-etapa 3.5.5 — drop PartnerBrand entirely, keep
