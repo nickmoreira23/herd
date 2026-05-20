@@ -28,7 +28,6 @@ export async function GET(
               email: true,
               avatarUrl: true,
               status: true,
-              profileType: { select: { displayName: true, color: true } },
             },
           },
         },

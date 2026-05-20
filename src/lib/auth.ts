@@ -26,30 +26,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (isSuperAdmin) {
           // Look up or create the admin NetworkProfile.
           // RBAC (NetworkRole/NetworkProfileRole) deleted in Sub-etapa 3.3/3.5;
-          // role is now derived from the super-admin env-shortcut alone.
+          // NetworkProfileType + NetworkProfile.networkType/profileTypeId/parentId
+          // deleted in Sub-etapa 3.6. Role is derived from the super-admin
+          // env-shortcut alone; profile is now plain identity.
           let user = await prisma.networkProfile.findUnique({
             where: { email },
-            include: {
-              profileType: { select: { displayName: true, slug: true } },
-            },
           });
 
           if (!user) {
-            const adminType = await prisma.networkProfileType.findUnique({
-              where: { slug: "admin" },
-            });
-
             user = await prisma.networkProfile.create({
               data: {
                 firstName: "Admin",
                 lastName: "",
                 email,
-                networkType: "INTERNAL",
-                profileTypeId: adminType!.id,
                 status: "ACTIVE",
-              },
-              include: {
-                profileType: { select: { displayName: true, slug: true } },
               },
             });
           }
@@ -71,9 +61,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         // ── 2. Regular user login (password hash in DB) ──────────────
         const user = await prisma.networkProfile.findUnique({
           where: { email },
-          include: {
-            profileType: { select: { displayName: true, slug: true } },
-          },
         });
 
         if (!user || !user.passwordHash) return null;

@@ -34,7 +34,6 @@ export default async function DepartmentDetailPage({
                 email: true,
                 avatarUrl: true,
                 status: true,
-                profileType: { select: { displayName: true, color: true } },
               },
             },
           },
@@ -43,7 +42,7 @@ export default async function DepartmentDetailPage({
       },
     }),
     prisma.networkProfile.findMany({
-      where: { networkType: "INTERNAL", status: "ACTIVE" },
+      where: { status: "ACTIVE" },
       select: { id: true, firstName: true, lastName: true, email: true },
       orderBy: { firstName: "asc" },
     }),
@@ -53,7 +52,7 @@ export default async function DepartmentDetailPage({
 
   return (
     <DepartmentDetail
-      department={department}
+      department={department as never}
       allProfiles={allProfiles}
     />
   );

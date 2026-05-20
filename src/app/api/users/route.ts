@@ -18,9 +18,6 @@ function generateTempPassword(): string {
 export async function GET() {
   try {
     const users = await prisma.networkProfile.findMany({
-      include: {
-        profileType: { select: { id: true, displayName: true, slug: true, color: true, networkType: true } },
-      },
       orderBy: { createdAt: "desc" },
     });
     return apiSuccess(users);
@@ -33,24 +30,17 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    // roleIds dropped — RBAC removed in Sub-etapa 3.5
-    const { firstName, lastName, email, phone, profileTypeId, password } = body;
+    // roleIds + profileTypeId + networkType dropped — RBAC removed Sub-etapa 3.5;
+    // ProfileType removed Sub-etapa 3.6
+    const { firstName, lastName, email, phone, password } = body;
 
-    if (!firstName || !email || !profileTypeId) {
-      return apiError("First name, email, and profile type are required", 400);
+    if (!firstName || !email) {
+      return apiError("First name and email are required", 400);
     }
 
     const existing = await prisma.networkProfile.findUnique({ where: { email } });
     if (existing) {
       return apiError("A user with this email already exists", 409);
-    }
-
-    // Fetch profile type to determine networkType
-    const profileType = await prisma.networkProfileType.findUnique({
-      where: { id: profileTypeId },
-    });
-    if (!profileType) {
-      return apiError("Invalid profile type", 400);
     }
 
     // Use provided password or generate a temporary one
@@ -64,12 +54,7 @@ export async function POST(request: Request) {
         email,
         phone: phone || null,
         passwordHash,
-        networkType: profileType.networkType,
-        profileTypeId,
         status: "PENDING",
-      },
-      include: {
-        profileType: { select: { id: true, displayName: true, slug: true, color: true, networkType: true } },
       },
     });
 

@@ -55,7 +55,6 @@ const scopedPrisma = runtimeClient.$extends(
 const TEST_PREFIX = `test-tenancy-${Date.now()}`;
 
 type Seeded = {
-  profileTypeId: string;
   profileA: { id: string };
   profileB: { id: string };
   orgA: { id: string };
@@ -65,32 +64,14 @@ type Seeded = {
 
 let seeded: Seeded;
 
-async function ensureProfileType(): Promise<string> {
-  const existing = await adminClient.networkProfileType.findFirst({
-    select: { id: true },
-  });
-  if (existing) return existing.id;
-  const created = await adminClient.networkProfileType.create({
-    data: {
-      slug: `${TEST_PREFIX}-type`,
-      displayName: "Test Type",
-      networkType: "INTERNAL",
-    },
-    select: { id: true },
-  });
-  return created.id;
-}
-
 async function seedTwoTenants(): Promise<Seeded> {
-  const profileTypeId = await ensureProfileType();
+  // NetworkProfileType removed in Sub-etapa 3.6.
 
   const profileA = await adminClient.networkProfile.create({
     data: {
       firstName: "TenantA",
       lastName: "Owner",
       email: `${TEST_PREFIX}-a@example.com`,
-      networkType: "INTERNAL",
-      profileTypeId,
       status: "ACTIVE",
     },
     select: { id: true },
@@ -101,8 +82,6 @@ async function seedTwoTenants(): Promise<Seeded> {
       firstName: "TenantB",
       lastName: "Owner",
       email: `${TEST_PREFIX}-b@example.com`,
-      networkType: "INTERNAL",
-      profileTypeId,
       status: "ACTIVE",
     },
     select: { id: true },
@@ -150,7 +129,7 @@ async function seedTwoTenants(): Promise<Seeded> {
     });
   }
 
-  return { profileTypeId, profileA, profileB, orgA, orgB, integration };
+  return { profileA, profileB, orgA, orgB, integration };
 }
 
 async function cleanup() {
@@ -164,11 +143,7 @@ async function cleanup() {
   await adminClient.networkProfile.deleteMany({
     where: { id: { in: [seeded.profileA.id, seeded.profileB.id] } },
   });
-  if (seeded.profileTypeId) {
-    await adminClient.networkProfileType.deleteMany({
-      where: { id: seeded.profileTypeId, slug: { startsWith: TEST_PREFIX } },
-    });
-  }
+  // NetworkProfileType removed in Sub-etapa 3.6
 }
 
 describe("Tenant scoping isolation (integration)", () => {
