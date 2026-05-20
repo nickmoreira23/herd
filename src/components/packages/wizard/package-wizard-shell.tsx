@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { WizardProgress } from "@/components/network/profiles/wizard/wizard-progress";
+import { WizardProgress } from "@/components/shared/wizard-progress";
 import { StepMode } from "./step-mode";
 import { StepGoal } from "./step-goal";
 import { StepPreferences } from "./step-preferences";

@@ -580,12 +580,6 @@ function KnowledgeSubPanel() {
   );
 }
 
-// ─── Network Sub-Panel ─────────────────────────────────────────────
-// Extracted to src/components/network/network-sub-panel.tsx in Etapa 1.5.6b-bis.
-// This pattern (extract feature-specific sub-panel to its own file) will be
-// replicated for BlocksSubPanel, KnowledgeSubPanel, MarketplaceSubPanel,
-// ToolsSubPanel, OrganizationSubPanel in 1.5.6c-e.
-
 // ─── Tools Sub-Panel (dynamic from registry) ────────────────────────
 
 function ToolsSubPanel() {
