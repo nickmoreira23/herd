@@ -54,7 +54,7 @@ Discovery 3.5.5 revelou colisão: spec inicial assumia rename `PartnerBrand → 
 
 `area: string` promovido para `Area` union literal em `src/lib/tools/manifest.ts` — 6 áreas canonicais (`communication`, `transaction`, `workflow`, `notification`, `identity`, `infrastructure`). Fixes semânticos: `chat` block ref `knowledge` → `documents`; `knowledge` area `identity` → `workflow`; `ledger` area `infrastructure` → `transaction`. Polish: registry imports alfabetizados, marketing category com TODO. 4 seções novas em AGENTS.md: Tools manifest convention, Reserved blocks, Reserved area `notification`, Dashboard exception.
 
-### ✅ Sub-etapa 3.9 — Handbook + AGENTS.md + skill updates (this PR)
+### ✅ Sub-etapa 3.9 — Handbook + AGENTS.md + skill updates (PR #40)
 
 Close-out de docs:
 - Handbook entry stale `areas/identity/network/` deletada (`network.tool.ts` não existia mais).
@@ -64,19 +64,26 @@ Close-out de docs:
 - AGENTS.md ganhou seção `# Fase 3 close-out` + tech debt consolidado (Camada 1 + Fase 3 + cron existente).
 - Este `Plano_Fase_3.md` commitado em `docs/discovery/` como artefato histórico.
 
-### ⏳ Sub-etapa 3.10 — Final pass + Fase 3 close-out tag
+### ✅ Sub-etapa 3.10 — Final pass + Fase 3 close-out tag (PR #41)
 
-Pendente. Tag de marco `fase-3-network-mlm-removal-complete` em main + verificação final dos gates + check de qualquer cleanup residual.
+Final pass:
+- Fix de regressão residual: `src/app/admin/organization/users/page.tsx` deletado (redirect órfão para `/admin/network`, path que foi deletado em 3.3).
+- `prisma validate` + `prisma migrate status` rodados — schema válido, 20 migrations up to date.
+- 22 tombstones em comentários (`// X removed in Sub-etapa 3.Y`) preservados como context histórico — não débito.
+- Tag `fase-3-complete` aplicada em main pós-merge.
+
+**Fase 3 complete.** 12 de 12 sub-etapas ✅ (100%). Próximo: retomada de Camada 1 quando secrets Recharge chegarem do cliente.
 
 ---
 
 ## Backup / archive tags em origin
 
 - `pre-fase-3-network-mlm-removal` — main state pré-PR #31.
-- `pre-sub-3.X-*` — main state pré-merge de cada sub-etapa (7 tags).
-- `archive/sub-etapa-3-X-*-<hash>` — merge commit de cada sub-etapa (8 tags pós-merge).
+- `pre-sub-3.X-*` — main state pré-merge de cada sub-etapa (11 tags: 3.2, 3.3, 3.4, 3.4.5, 3.5, 3.5.5, 3.6, 3.7, 3.8, 3.9, 3.10).
+- `archive/sub-etapa-3-X-*-<hash>` — merge commit de cada sub-etapa (11 tags pós-merge).
+- `fase-3-complete` — marco final em main pós-3.10.
 
-Total: ~16 tags entre `pre-*` e `archive/*`.
+Total: ~23 tags entre `pre-*`, `archive/*`, e marcos.
 
 ---
 
@@ -88,12 +95,39 @@ Após Fase 3:
 
 ---
 
-## Status final pós-3.9
+## Status final pós-3.10 — Fase 3 ✅ complete
 
-- main em commit pós-3.9.
+**Progresso:** ██████████████████████ **12 de 12 sub-etapas (100% ✅)**
+
+- main em commit pós-3.10. Tag `fase-3-complete` aplicada.
 - 24 tables + 6 enums + ~150 arquivos de código removidos.
 - 8 standalone tools no registry (chat, dashboard, handbook, knowledge, ledger, marketplace, organization, profile).
 - 30 blocks no filesystem (14 órfãos preservados como forward investment).
 - Type `Area` union (6 valores) protegendo manifests contra typo.
 - Handbook com entries para organization, profile, perks (cravadas em 3.9).
 - 2 skills atualizadas com lições da fase.
+- Zero referência de código vivo aos models dropados (22 tombstones em comentários preservados como context histórico).
+- 1 regressão residual de redirect corrigida em 3.10.
+
+## Timeline
+
+- **2026-05-18:** Fase 3 iniciada (PR #31, Sub-etapa 3.2).
+- **2026-05-19:** Sub-etapas 3.3 → 3.4 (PRs #32, #33).
+- **2026-05-20:** Sub-etapas 3.4.5 → 3.10 (PRs #34 → #41). Fase 3 fechada.
+
+## Retomada da Camada 1
+
+**Estado atual:** Fase 3 complete. main em commit pós-3.10. Tag `fase-3-complete` em origin.
+
+**Quando os secrets Recharge chegarem do cliente:**
+
+1. Tag de marco da retomada: `camada-1-resume-post-fase-3` em main.
+2. Retomar exatamente em **Sub-etapa 10 (Recharge OAuth)** do Plano_Camada_1.
+3. Estado do código no momento da retomada **não tem débito MLM/Commission/D2D** para contaminar o cutover — Fase 3 limpou tudo.
+
+**Sub-etapas pendentes da Camada 1:**
+
+- **Sub-etapa 10** — Recharge OAuth + HTTP client + webhook pipeline + handbook entries.
+- **Sub-etapa 10.5** — OAuth callback hardening (HMAC-signed state, requireSuperAdmin).
+- **Sub-etapa 11** — Recharge mapper raw → canonical (Charge / Subscription / BillingCustomer normalization).
+- **Sub-etapa 12** — Cutover + DLQ + observability + done Camada 1.
