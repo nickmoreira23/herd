@@ -2,6 +2,13 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.3 — 2026-05-20
+
+Anchor entry. PR (Sub-etapa 10.0.1 — dotenv hotfix em seed script).
+Adicionada nota "Scripts standalone precisam dotenv" no SKILL.md,
+documentando o padrão `import "dotenv/config"` como primeira linha
+de scripts standalone. Refs: Sub-etapa 10.0.1.
+
 ## 1.2.2 — 2026-05-20
 
 Anchor entry. PR (Sub-etapa 10 revised — Recharge API key integration +

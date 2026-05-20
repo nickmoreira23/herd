@@ -240,6 +240,24 @@ git push
 **Caso real (3.7, 3.8):** pre-commit hook quebrou silenciosamente sem o
 symlink. Workaround documentado e replicado nas duas sub-etapas.
 
+### L6 — Scripts CLI standalone precisam `dotenv/config` explícito
+
+`tsx` (e Node direto via `node`) NÃO carrega `.env` automaticamente.
+Apenas frameworks como `next dev` fazem isso. Scripts standalone executados
+via `npx tsx scripts/X.ts` ou `npm run X` que dependam de env vars precisam
+de `import "dotenv/config"` como primeira linha.
+
+**Como aplicar:** todo script novo em `scripts/` ou `prisma/seeds/` que
+toca `process.env.X` deve ter `import "dotenv/config"` como primeira linha.
+Seguir padrão de `prisma/seeds/seed-ledger.ts`.
+
+**Sintoma:** script falha com `process.env.X is undefined` mesmo com X
+presente no `.env`. Erro confunde porque `next dev` funciona, e o
+desenvolvedor assume que `.env` é "automágico".
+
+**Caso real (10.0.1):** Sub-etapa 10 entregou `scripts/seed-recharge-integration.ts`
+sem essa linha. Bloqueou execução pós-merge. Hotfix Sub-etapa 10.0.1 cravou.
+
 ---
 
 ## Referência

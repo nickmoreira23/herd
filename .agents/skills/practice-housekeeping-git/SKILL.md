@@ -386,6 +386,25 @@ git commit -m "..."  # mesma mensagem, agora completa
 Antes de push. NÃO usar `git commit --amend` per regra global "always
 create NEW commits rather than amending".
 
+### Scripts standalone precisam dotenv
+
+Scripts em `scripts/` ou `prisma/seeds/` executados via `tsx` ou `node`
+direto **não carregam `.env` automaticamente**. Apenas frameworks como
+`next dev` fazem isso.
+
+Primeira linha obrigatória em qualquer script standalone que leia
+`process.env.X`:
+
+```typescript
+import "dotenv/config";
+```
+
+Sintoma de esquecimento: o script falha com `process.env.X is undefined`
+mesmo com X presente no `.env`. Erro confunde porque o app Next funciona.
+
+Padrão de referência: `prisma/seeds/seed-ledger.ts`. Cravado na
+Sub-etapa 10.0.1 após hotfix do `seed-recharge-integration.ts`.
+
 ## How to update
 
 Adicione novos pitfalls ou padrões descobertos em sub-etapas futuras (0.4 reconciliação Camada 1, sub-etapas da Fase 1+). Bump `version` (minor) quando adicionar padrão novo. Bump `version` (major) quando estrutura das 3 fases mudar materialmente.

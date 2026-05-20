@@ -1,5 +1,14 @@
 # CHANGELOG — chat-code-handoff (project-local)
 
+## v0.2.1 — 2026-05-20
+
+- L6: Scripts CLI standalone via `tsx` precisam `import "dotenv/config"`
+  explícito. `tsx`/`node` não carregam `.env` automaticamente (só
+  frameworks como `next dev`). Sintoma: `process.env.X is undefined`.
+  Padrão de referência: `prisma/seeds/seed-ledger.ts`.
+
+Refs: Sub-etapa 10.0.1.
+
 ## v0.2.0 — 2026-05-20
 
 Adições pós-Fase 3 (Sub-etapas 3.5 → 3.8). Nova seção "Lições cravadas
