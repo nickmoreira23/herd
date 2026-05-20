@@ -13,12 +13,6 @@ export async function GET() {
       status: true,
       parentId: true,
       profileType: { select: { id: true, displayName: true, color: true } },
-      profileRoles: { include: { role: { select: { displayName: true } } } },
-      profileRanks: {
-        where: { isCurrent: true },
-        include: { rankTier: { select: { displayName: true, color: true, level: true } } },
-        take: 1,
-      },
     },
     orderBy: { firstName: "asc" },
   });

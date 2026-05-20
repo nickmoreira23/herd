@@ -17,9 +17,6 @@ export default async function ProfilePage() {
     where: { id: userId },
     include: {
       profileType: { select: { displayName: true, slug: true } },
-      profileRoles: {
-        include: { role: { select: { displayName: true, slug: true } } },
-      },
     },
   });
 
@@ -39,16 +36,13 @@ export default async function ProfilePage() {
       },
       include: {
         profileType: { select: { displayName: true, slug: true } },
-        profileRoles: {
-          include: { role: { select: { displayName: true, slug: true } } },
-        },
       },
     });
   }
 
   if (!user) redirect("/login");
 
-  const roleName = user.profileRoles?.[0]?.role?.displayName ?? user.profileType.displayName;
+  const roleName = user.profileType.displayName;
 
   return (
     <ProfileClient

@@ -14,7 +14,6 @@ export async function GET() {
         status: true,
         parentId: true,
         profileType: { select: { id: true, displayName: true, color: true } },
-        profileRoles: { include: { role: { select: { displayName: true } } } },
         departmentMemberships: {
           include: {
             department: { select: { id: true, name: true, color: true } },

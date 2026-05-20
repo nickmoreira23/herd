@@ -20,7 +20,9 @@ export default async function EditSectionPage({
   await connection();
   const { id } = await params;
 
-  const [section, profileTypes, roles, categoriesSetting] = await Promise.all([
+  // NetworkRole removed in Sub-etapa 3.5 — role-based section gating temporarily
+  // disabled; section can still gate by ProfileType. Comes back with new RBAC.
+  const [section, profileTypes, categoriesSetting] = await Promise.all([
     prisma.marketplaceSection.findUnique({
       where: { id },
       include: { scopes: true },
@@ -30,12 +32,9 @@ export default async function EditSectionPage({
       orderBy: { sortOrder: "asc" },
       select: { id: true, displayName: true },
     }),
-    prisma.networkRole.findMany({
-      orderBy: { displayName: "asc" },
-      select: { id: true, displayName: true },
-    }),
     prisma.setting.findUnique({ where: { key: BLOCK_CATEGORIES_SETTING_KEY } }),
   ]);
+  const roles: { id: string; displayName: string }[] = [];
 
   if (!section) redirect("/admin/marketplace");
   const categories = parseBlockCategories(categoriesSetting?.value);

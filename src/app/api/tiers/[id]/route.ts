@@ -11,7 +11,6 @@ export async function GET(
     const tier = await prisma.subscriptionTier.findUnique({
       where: { id },
       include: {
-        commissionTierRates: { include: { commissionStructure: true } },
         partnerAssignments: { include: { partner: true } },
         pricingSnapshots: { orderBy: { createdAt: "desc" }, take: 50 },
       },

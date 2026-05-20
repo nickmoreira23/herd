@@ -24,23 +24,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           password === process.env.ADMIN_PASSWORD;
 
         if (isSuperAdmin) {
-          // Look up or create the admin NetworkProfile
+          // Look up or create the admin NetworkProfile.
+          // RBAC (NetworkRole/NetworkProfileRole) deleted in Sub-etapa 3.3/3.5;
+          // role is now derived from the super-admin env-shortcut alone.
           let user = await prisma.networkProfile.findUnique({
             where: { email },
             include: {
               profileType: { select: { displayName: true, slug: true } },
-              profileRoles: {
-                include: { role: { select: { slug: true, displayName: true } } },
-              },
             },
           });
 
           if (!user) {
             const adminType = await prisma.networkProfileType.findUnique({
               where: { slug: "admin" },
-            });
-            const superAdminRole = await prisma.networkRole.findUnique({
-              where: { slug: "super_admin" },
             });
 
             user = await prisma.networkProfile.create({
@@ -51,15 +47,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 networkType: "INTERNAL",
                 profileTypeId: adminType!.id,
                 status: "ACTIVE",
-                profileRoles: superAdminRole
-                  ? { create: { roleId: superAdminRole.id } }
-                  : undefined,
               },
               include: {
                 profileType: { select: { displayName: true, slug: true } },
-                profileRoles: {
-                  include: { role: { select: { slug: true, displayName: true } } },
-                },
               },
             });
           }
@@ -74,7 +64,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             email: user.email,
             name: `${user.firstName}${user.lastName ? " " + user.lastName : ""}`.trim(),
             image: user.avatarUrl,
-            role: user.profileRoles?.[0]?.role?.slug ?? "super_admin",
+            role: "super_admin",
           };
         }
 
@@ -83,9 +73,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           where: { email },
           include: {
             profileType: { select: { displayName: true, slug: true } },
-            profileRoles: {
-              include: { role: { select: { slug: true, displayName: true } } },
-            },
           },
         });
 
@@ -114,7 +101,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           email: user.email,
           name: `${user.firstName}${user.lastName ? " " + user.lastName : ""}`.trim(),
           image: user.avatarUrl,
-          role: user.profileRoles?.[0]?.role?.slug ?? "user",
+          role: "user",
         };
       },
     }),
@@ -140,21 +127,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         });
         if (dbUser) token.dbId = dbUser.id;
       }
-      // Refresh user data from DB on update trigger
+      // Refresh user data from DB on update trigger.
+      // RBAC removed in Sub-etapa 3.5; role stays as set on initial token.
       if (trigger === "update" && token.dbId) {
         const dbUser = await prisma.networkProfile.findUnique({
           where: { id: token.dbId as string },
-          include: {
-            profileRoles: {
-              include: { role: { select: { slug: true } } },
-            },
-          },
         });
         if (dbUser) {
           token.name = `${dbUser.firstName}${dbUser.lastName ? " " + dbUser.lastName : ""}`.trim();
           token.picture = dbUser.avatarUrl;
           token.email = dbUser.email;
-          token.role = dbUser.profileRoles?.[0]?.role?.slug ?? "user";
         }
       }
       return token;

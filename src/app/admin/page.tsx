@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { toNumber, formatCurrency, formatPercent } from "@/lib/utils";
+import { toNumber, formatCurrency } from "@/lib/utils";
 import { calculateBlendedRevenue } from "@/lib/financial-engine";
 import { Badge } from "@/components/ui/badge";
 import { connection } from "next/server";
@@ -7,11 +7,13 @@ import { PageHeader } from "@/components/layout/page-header";
 
 export default async function DashboardPage() {
   await connection();
+  // CommissionStructure removed in Sub-etapa 3.5 — dashboard's "Active
+  // Commission Structure" card is collapsed until new commission feature
+  // lands post-Fase 3.
   const [
     productCount,
     activeProducts,
     tiers,
-    activeCommission,
     partnerCount,
     activePartners,
     snapshotCount,
@@ -20,11 +22,7 @@ export default async function DashboardPage() {
     prisma.product.count({ where: { isActive: true } }),
     prisma.subscriptionTier.findMany({
       orderBy: { sortOrder: "asc" },
-      include: { commissionTierRates: true, partnerAssignments: true },
-    }),
-    prisma.commissionStructure.findFirst({
-      where: { isActive: true },
-      include: { tierRates: true },
+      include: { partnerAssignments: true },
     }),
     prisma.partnerBrand.count(),
     prisma.partnerBrand.count({ where: { isActive: true } }),
@@ -47,7 +45,6 @@ export default async function DashboardPage() {
       blendedRevenue: blended,
       credits,
       partnerAssignments: t.partnerAssignments.length,
-      commissionRates: t.commissionTierRates.length,
       isFeatured: t.isFeatured,
     };
   });
@@ -102,40 +99,10 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Commission Structure */}
-      <div className="rounded-lg border p-4">
-        <h3 className="font-semibold mb-3">Active Commission Structure</h3>
-        {activeCommission ? (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="font-medium">{activeCommission.name}</span>
-              <Badge className="bg-green-100 text-green-700 text-xs">Active</Badge>
-            </div>
-            <div className="grid grid-cols-3 gap-4 text-sm">
-              <div>
-                <span className="text-muted-foreground">Residual</span>
-                <p className="font-medium">{formatPercent(toNumber(activeCommission.residualPercent))}</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Clawback Window</span>
-                <p className="font-medium">{activeCommission.clawbackWindowDays} days</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Tier Rates</span>
-                <p className="font-medium">{activeCommission.tierRates.length} configured</p>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">No active commission structure.</p>
-        )}
-      </div>
-
       {/* Quick links */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
         <QuickLink href="/admin/blocks/products" label="Manage Products" description="Edit catalog, prices, and COGS" />
         <QuickLink href="/admin/blocks/subscriptions" label="Plans" description="Design pricing and credit allocations" />
-        <QuickLink href="/admin/network/channels/promoters" label="Promoters" description="Configure sales team compensation" />
         <QuickLink href="/admin/blocks/partners" label="Partners" description="Manage brand partnerships" />
         <QuickLink href="/admin/operation/finances" label="Finances" description="Projections and payments" />
         <QuickLink href="/admin/settings" label="Settings" description="System-wide configuration" />

@@ -13,19 +13,18 @@ export interface ViewerContext {
 export async function getViewerContext(
   profileId: string | null
 ): Promise<ViewerContext> {
+  // roleIds always empty post Sub-etapa 3.5 — NetworkProfileRole removed.
+  // Marketplace visibility still gates on profileTypeId; role-based gating
+  // returns post-Fase 3 with new RBAC.
   if (!profileId) return { profileId: null, profileTypeId: null, roleIds: [] };
   const profile = await prisma.networkProfile.findUnique({
     where: { id: profileId },
-    select: {
-      id: true,
-      profileTypeId: true,
-      profileRoles: { select: { roleId: true } },
-    },
+    select: { id: true, profileTypeId: true },
   });
   if (!profile) return { profileId, profileTypeId: null, roleIds: [] };
   return {
     profileId: profile.id,
     profileTypeId: profile.profileTypeId,
-    roleIds: profile.profileRoles.map((r) => r.roleId),
+    roleIds: [],
   };
 }

@@ -29,7 +29,6 @@ export async function GET(
               avatarUrl: true,
               status: true,
               profileType: { select: { displayName: true, color: true } },
-              profileRoles: { include: { role: { select: { displayName: true } } } },
             },
           },
         },
