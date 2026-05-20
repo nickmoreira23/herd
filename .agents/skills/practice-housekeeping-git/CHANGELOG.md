@@ -2,6 +2,20 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.1 — 2026-05-20
+
+Anchor entry. PR #41 (Sub-etapa 3.10 — final pass + close-out) tocou
+apenas `src/**` (1 delete) + `docs/discovery/**` (Plano update). Sem
+mudança em `.agents/skills/**`, `docs/handbook/**`, ou `schemas/**` —
+path-filter NÃO disparou `freshness` + `validate` workflows, e ambos
+são Required gates. Bloqueio descoberto pós-push.
+
+Anchor v1.2.1 adicionado num segundo push para tripar o path-filter
+e liberar o merge. Lição cravada: **toda sub-etapa de Fase 3+ que NÃO
+toca paths handbook/skills/schemas precisa de anchor proativo no
+push inicial**, não como recurso de recovery. Atualizar "How to update"
+em SKILL.md no próximo bump para refletir.
+
 ## 1.2.0 — 2026-05-20
 
 Adições pós-Fase 3 (Sub-etapas 3.5 → 3.8). Nova seção "Worktree operations"
