@@ -18,7 +18,10 @@ import { IntegrationCategory } from "@prisma/client";
  * `feature.yml` schema chain. Do not introduce `"zod/v4"` here.
  */
 
-const AuthTypeSchema = z.enum(["token", "oauth2", "basic"]);
+// Sub-etapa 10 (revised): "api_key" added for Recharge (pivot from OAuth).
+// Conceptually a long-lived bearer credential; distinct from per-request
+// "token" (which is short-lived/refreshable) and "basic" (username + pwd).
+const AuthTypeSchema = z.enum(["token", "oauth2", "basic", "api_key"]);
 export type AuthType = z.infer<typeof AuthTypeSchema>;
 
 export const IntegrationManifestSchema = z.object({

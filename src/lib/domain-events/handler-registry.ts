@@ -1,6 +1,7 @@
 import type { DomainEventHandler } from "./types";
 import { gorgiasHandler } from "@/lib/webhooks/handlers/gorgias.handler";
 import { intercomHandler } from "@/lib/webhooks/handlers/intercom.handler";
+import { rechargeHandler } from "@/lib/webhooks/handlers/recharge.handler";
 
 /**
  * Maps event_type strings to their handler functions.
@@ -32,6 +33,7 @@ export const HANDLER_REGISTRY: Record<string, DomainEventHandler> = {
   // lives inside each handler (no wildcards in registry).
   "webhook.gorgias": gorgiasHandler, // Sub-etapa 6
   "webhook.intercom": intercomHandler, // Sub-etapa 8
+  "webhook.recharge": rechargeHandler, // Sub-etapa 10 (revised)
 };
 
 export function getHandler(eventType: string): DomainEventHandler | null {

@@ -1,0 +1,50 @@
+id: recharge
+uid: herd.integration.payment.recharge
+level: integration
+technical_category: foundation
+
+title:
+  pt-BR: "Recharge"
+  en-US: "Recharge"
+description:
+  pt-BR: "Provider de subscription billing para storefronts Shopify-native. Single-tenant V1 (Bucked Up), API key + webhooks dashboard-managed."
+  en-US: "Subscription billing provider for Shopify-native storefronts. Single-tenant V1 (Bucked Up), API key + dashboard-managed webhooks."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-20
+updated: 2026-05-20
+
+parent: herd.category.integrations.payment
+children: []
+consumes:
+  - herd.block.financial.subscriptions
+  - herd.block.financial.charges
+consumed_by: []
+related:
+  - herd.category.integrations.integration-model
+
+source_paths:
+  - "src/lib/services/recharge.ts"
+  - "src/lib/integrations/integrations/recharge.integration.ts"
+  - "src/lib/webhooks/verifiers/recharge.verifier.ts"
+  - "src/lib/webhooks/handlers/recharge.handler.ts"
+  - "src/app/api/webhooks/recharge/route.ts"
+  - "src/app/api/integrations/recharge"
+  - "scripts/seed-recharge-integration.ts"
+
+admin_paths:
+  - "/admin/integrations/recharge"
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog
