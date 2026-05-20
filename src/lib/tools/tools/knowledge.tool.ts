@@ -10,7 +10,7 @@ export const knowledgeTool: Tool = {
   color: "#a855f7",
   status: "active",
   hasSubRoutes: true,
-  area: "identity",
+  area: "workflow",
   blocks: [
     {
       blockName: "documents",

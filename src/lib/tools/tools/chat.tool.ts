@@ -23,9 +23,9 @@ export const chatTool: Tool = {
       purpose: "Resolve which agent handles the conversation",
     },
     {
-      blockName: "knowledge",
+      blockName: "documents",
       usage: "read",
-      purpose: "Retrieve information for queries",
+      purpose: "Context retrieval from documents during conversation",
     },
   ],
   agentKeys: ["primary-orchestrator"],
