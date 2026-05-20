@@ -2,6 +2,13 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.1.4 — 2026-05-20
+
+Anchor entry. PR #35 (Sub-etapa 3.5 — DROP MLM/Commission/D2D tables) toca
+apenas `prisma/**` + `src/**` + `mcp/generated/manifest.json`. Mesmo
+path-filter pattern dos anchors anteriores (1.1.1, 1.1.2, 1.1.3). Anchor
+proativo neste push.
+
 ## 1.1.3 — 2026-05-19
 
 Anchor entry. PR #33 (Sub-etapa 3.4 — Commission/D2D/Network components

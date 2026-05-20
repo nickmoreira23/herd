@@ -134,42 +134,6 @@ enum LandingPageStatus {
 // D2D Commission Enums
 // ========================
 
-enum OrgRoleType {
-  REGIONAL_LEADER
-  TEAM_LEAD
-  REP
-}
-
-enum LedgerEntryType {
-  EARNED
-  HELD
-  RELEASED
-  CLAWED_BACK
-  ADJUSTED
-}
-
-enum LedgerEntrySource {
-  UPFRONT_BONUS
-  RESIDUAL
-  OVERRIDE
-  ACCELERATOR_BONUS
-  CLAWBACK
-  MANUAL_ADJUSTMENT
-}
-
-enum PayoutCadence {
-  WEEKLY
-  BIWEEKLY
-  MONTHLY
-}
-
-enum AgreementStatus {
-  DRAFT
-  ACTIVE
-  SUSPENDED
-  TERMINATED
-}
-
 // ========================
 // Partner Brand Enums
 // ========================
@@ -524,8 +488,6 @@ model SubscriptionTier {
   updatedAt DateTime @updatedAt
 
   // Relations
-  commissionTierRates  CommissionTierRate[]
-  commissionPlanRates  CommissionPlanRate[]
   partnerAssignments   PartnerTierAssignment[]
   financialSnapshots   FinancialSnapshot[]
   redemptionRules      SubscriptionRedemptionRule[]
@@ -541,35 +503,8 @@ model SubscriptionTier {
 }
 
 // @deprecated — replaced by CommissionPlan. Kept for migration.
-model CommissionStructure {
-  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name               String
-  isActive           Boolean  @default(false)
-  clawbackWindowDays Int      @default(60)
-  residualPercent    Decimal  @db.Decimal(5, 2)
-  notes              String?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
-  tierRates CommissionTierRate[]
-}
 
 // @deprecated — replaced by CommissionPlanRate. Kept for migration.
-model CommissionTierRate {
-  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  commissionStructureId String   @db.Uuid
-  subscriptionTierId    String   @db.Uuid
-  flatBonusAmount       Decimal  @db.Decimal(10, 2)
-  acceleratorThreshold  Decimal? @db.Decimal(5, 2)
-  acceleratorMultiplier Decimal? @db.Decimal(5, 2)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-
-  commissionStructure CommissionStructure @relation(fields: [commissionStructureId], references: [id], onDelete: Cascade)
-  subscriptionTier    SubscriptionTier    @relation(fields: [subscriptionTierId], references: [id], onDelete: Cascade)
-
-  @@unique([commissionStructureId, subscriptionTierId])
-}
 
 model PartnerBrand {
   id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -756,181 +691,12 @@ model Location {
 // D2D Commission Models
 // ========================
 
-model D2DPartner {
-  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name         String
-  contactName  String?
-  contactEmail String?
-  contactPhone String?
-  logoUrl      String?
-  isActive     Boolean  @default(true)
-  notes        String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  orgNodes   OrgNode[]
-  agreements PartnerAgreement[]
-}
-
-model OrgNode {
-  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  d2dPartnerId String      @db.Uuid
-  parentId     String?     @db.Uuid
-  name         String
-  roleType     OrgRoleType
-  email        String?
-  phone        String?
-  isActive     Boolean     @default(true)
-  hireDate     DateTime?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-
-  partner       D2DPartner              @relation(fields: [d2dPartnerId], references: [id], onDelete: Cascade)
-  parent        OrgNode?                @relation("OrgHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
-  children      OrgNode[]               @relation("OrgHierarchy")
-  ledgerEntries CommissionLedgerEntry[]
-
-  @@index([d2dPartnerId])
-  @@index([parentId])
-}
-
-model CommissionPlan {
-  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name            String
-  version         Int       @default(1)
-  isActive        Boolean   @default(false)
-  effectiveFrom   DateTime?
-  effectiveTo     DateTime?
-  residualPercent Decimal   @db.Decimal(5, 2)
-  notes           String?
-
-  legacyStructureId String? @db.Uuid
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  planRates        CommissionPlanRate[]
-  overrideRules    OverrideRule[]
-  performanceTiers PerformanceTier[]
-  agreements       PartnerAgreement[]
-
-  @@unique([name, version])
-}
-
-model CommissionPlanRate {
-  id                 String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  commissionPlanId   String      @db.Uuid
-  subscriptionTierId String      @db.Uuid
-  roleType           OrgRoleType
-  upfrontBonus       Decimal     @db.Decimal(10, 2)
-  residualPercent    Decimal     @db.Decimal(5, 2)
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
-
-  commissionPlan   CommissionPlan   @relation(fields: [commissionPlanId], references: [id], onDelete: Cascade)
-  subscriptionTier SubscriptionTier @relation(fields: [subscriptionTierId], references: [id], onDelete: Cascade)
-
-  @@unique([commissionPlanId, subscriptionTierId, roleType])
-}
-
-model OverrideRule {
-  id               String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  commissionPlanId String      @db.Uuid
-  roleType         OrgRoleType
-  overrideType     String // FLAT | PERCENT_OF_BONUS | PERCENT_OF_REVENUE
-  overrideValue    Decimal     @db.Decimal(10, 2)
-  notes            String?
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
-
-  commissionPlan CommissionPlan @relation(fields: [commissionPlanId], references: [id], onDelete: Cascade)
-
-  @@unique([commissionPlanId, roleType])
-}
-
-model PerformanceTier {
-  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  commissionPlanId String   @db.Uuid
-  label            String
-  minSales         Int
-  maxSales         Int?
-  bonusMultiplier  Decimal  @db.Decimal(5, 2)
-  bonusFlat        Decimal  @default(0) @db.Decimal(10, 2)
-  sortOrder        Int      @default(0)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  commissionPlan CommissionPlan @relation(fields: [commissionPlanId], references: [id], onDelete: Cascade)
-
-  @@index([commissionPlanId])
-}
-
-model ClawbackRule {
-  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  agreementId     String   @db.Uuid
-  windowDays      Int
-  clawbackPercent Decimal  @db.Decimal(5, 2)
-  notes           String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  agreement PartnerAgreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
-
-  @@unique([agreementId, windowDays])
-}
-
-model PartnerAgreement {
-  id               String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  d2dPartnerId     String          @db.Uuid
-  commissionPlanId String          @db.Uuid
-  name             String
-  status           AgreementStatus @default(DRAFT)
-  effectiveFrom    DateTime?
-  effectiveTo      DateTime?
-  payoutCadence    PayoutCadence   @default(MONTHLY)
-  holdPeriodDays   Int             @default(30)
-  notes            String?
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-
-  partner        D2DPartner              @relation(fields: [d2dPartnerId], references: [id], onDelete: Cascade)
-  commissionPlan CommissionPlan          @relation(fields: [commissionPlanId], references: [id], onDelete: Cascade)
-  clawbackRules  ClawbackRule[]
-  ledgerEntries  CommissionLedgerEntry[]
-
-  @@index([d2dPartnerId])
-  @@index([commissionPlanId])
-}
-
 /// @deprecated since Phase 1, Etapa 1.2 of the Marketplace+Opportunities project.
 /// This single-table ledger is frozen — no new writes after this point.
 /// All new financial movements go through the double-entry ledger
 /// (models Account / JournalEntry / JournalLine in this same schema).
 /// See docs/discovery/HERD_DISCOVERY_REPORT.md, section 9, for the rationale.
 /// Data migration from this model to the new ledger is deferred to a later phase.
-model CommissionLedgerEntry {
-  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  orgNodeId          String            @db.Uuid
-  agreementId        String?           @db.Uuid
-  entryType          LedgerEntryType
-  source             LedgerEntrySource
-  amount             Decimal           @db.Decimal(10, 2)
-  subscriptionTierId String?           @db.Uuid
-  relatedEntryId     String?           @db.Uuid
-  periodStart        DateTime?
-  periodEnd          DateTime?
-  description        String?
-  metadata           Json?
-  createdAt          DateTime          @default(now())
-
-  orgNode   OrgNode           @relation(fields: [orgNodeId], references: [id], onDelete: Cascade)
-  agreement PartnerAgreement? @relation(fields: [agreementId], references: [id], onDelete: SetNull)
-
-  @@index([orgNodeId])
-  @@index([agreementId])
-  @@index([entryType])
-  @@index([createdAt])
-}
 
 // ========================
 // Foundation: Perks
@@ -1917,11 +1683,6 @@ enum ProfileStatus {
   TERMINATED
 }
 
-enum OverrideEffect {
-  GRANT
-  DENY
-}
-
 // ========================
 // Network Profile Models
 // ========================
@@ -1937,8 +1698,6 @@ model NetworkCompensationPlan {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  profileCompensations NetworkProfileCompensation[]
-
   @@map("network_compensation_plans")
 }
 
@@ -1953,9 +1712,6 @@ model RankTier {
   isActive           Boolean  @default(true)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
-
-  profileRanks        NetworkProfileRank[]
-  monthlyPerformances NetworkMonthlyPerformance[]
 
   @@map("rank_tiers")
 }
@@ -1982,49 +1738,6 @@ model NetworkProfileType {
   @@map("network_profile_types")
 }
 
-model NetworkRole {
-  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  slug         String       @unique
-  displayName  String
-  description  String?
-  networkType  NetworkType?
-  parentRoleId String?      @db.Uuid
-  isSystem     Boolean      @default(false)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-
-  parentRole      NetworkRole?            @relation("RoleHierarchy", fields: [parentRoleId], references: [id], onDelete: SetNull)
-  childRoles      NetworkRole[]           @relation("RoleHierarchy")
-  rolePermissions NetworkRolePermission[]
-  profileRoles    NetworkProfileRole[]
-
-  @@map("network_roles")
-}
-
-model NetworkPermission {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  resource  String
-  action    String
-  createdAt DateTime @default(now())
-
-  rolePermissions  NetworkRolePermission[]
-  profileOverrides NetworkProfilePermissionOverride[]
-
-  @@unique([resource, action])
-  @@map("network_permissions")
-}
-
-model NetworkRolePermission {
-  roleId       String @db.Uuid
-  permissionId String @db.Uuid
-
-  role       NetworkRole       @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission NetworkPermission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-
-  @@id([roleId, permissionId])
-  @@map("network_role_permissions")
-}
-
 model NetworkProfile {
   id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   networkType   NetworkType
@@ -2048,17 +1761,6 @@ model NetworkProfile {
   parent      NetworkProfile?    @relation("ProfileHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
   children    NetworkProfile[]   @relation("ProfileHierarchy")
 
-  attributes               NetworkProfileAttribute[]
-  ancestorPaths            NetworkProfileHierarchyPath[]      @relation("Descendant")
-  descendantPaths          NetworkProfileHierarchyPath[]      @relation("Ancestor")
-  profileRoles             NetworkProfileRole[]
-  permissionOverrides      NetworkProfilePermissionOverride[]
-  compensations            NetworkProfileCompensation[]
-  profileRanks             NetworkProfileRank[]
-  pointsLedger             NetworkPointsLedger[]
-  monthlyPerformances      NetworkMonthlyPerformance[]
-  teamMemberships          NetworkTeamMember[]
-  ledTeams                 NetworkTeam[]                      @relation("TeamLead")
   departmentMemberships    DepartmentMember[]
   headOfDepartments        Department[]                       @relation("DepartmentHead")
   conversations            ChatConversation[]
@@ -2068,146 +1770,6 @@ model NetworkProfile {
   ownedOrganization        Organization?                      @relation("OrganizationOwner")
 
   @@map("network_profiles")
-}
-
-model NetworkProfileAttribute {
-  id             String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  profileId      String @db.Uuid
-  attributeKey   String
-  attributeValue Json
-
-  profile NetworkProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-
-  @@unique([profileId, attributeKey])
-  @@map("network_profile_attributes")
-}
-
-model NetworkProfileHierarchyPath {
-  ancestorId   String @db.Uuid
-  descendantId String @db.Uuid
-  depth        Int
-
-  ancestor   NetworkProfile @relation("Ancestor", fields: [ancestorId], references: [id], onDelete: Cascade)
-  descendant NetworkProfile @relation("Descendant", fields: [descendantId], references: [id], onDelete: Cascade)
-
-  @@id([ancestorId, descendantId])
-  @@map("network_profile_hierarchy_paths")
-}
-
-model NetworkProfileRole {
-  profileId  String   @db.Uuid
-  roleId     String   @db.Uuid
-  assignedAt DateTime @default(now())
-  assignedBy String?  @db.Uuid
-
-  profile NetworkProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  role    NetworkRole    @relation(fields: [roleId], references: [id], onDelete: Cascade)
-
-  @@id([profileId, roleId])
-  @@map("network_profile_roles")
-}
-
-model NetworkProfilePermissionOverride {
-  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  profileId    String         @db.Uuid
-  permissionId String         @db.Uuid
-  effect       OverrideEffect
-  reason       String?
-
-  profile    NetworkProfile    @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  permission NetworkPermission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-
-  @@unique([profileId, permissionId])
-  @@map("network_profile_permission_overrides")
-}
-
-model NetworkProfileCompensation {
-  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  profileId     String    @db.Uuid
-  compPlanId    String    @db.Uuid
-  effectiveFrom DateTime  @db.Date
-  effectiveTo   DateTime? @db.Date
-
-  profile  NetworkProfile          @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  compPlan NetworkCompensationPlan @relation(fields: [compPlanId], references: [id])
-
-  @@map("network_profile_compensations")
-}
-
-model NetworkProfileRank {
-  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  profileId         String   @db.Uuid
-  rankTierId        String   @db.Uuid
-  isCurrent         Boolean  @default(true)
-  achievedAt        DateTime @default(now())
-  qualifyingMetrics Json     @default("{}")
-
-  profile  NetworkProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  rankTier RankTier       @relation(fields: [rankTierId], references: [id])
-
-  @@map("network_profile_ranks")
-}
-
-model NetworkPointsLedger {
-  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  profileId    String   @db.Uuid
-  points       Int
-  balanceAfter Int
-  sourceType   String
-  sourceId     String?  @db.Uuid
-  description  String?
-  period       String // YYYY-MM
-  createdAt    DateTime @default(now())
-
-  profile NetworkProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-
-  @@index([profileId, period])
-  @@map("network_points_ledger")
-}
-
-model NetworkMonthlyPerformance {
-  id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  profileId      String  @db.Uuid
-  period         String // YYYY-MM
-  totalPoints    Int     @default(0)
-  totalRevenue   Decimal @default(0) @db.Decimal(12, 2)
-  totalReferrals Int     @default(0)
-  totalSales     Int     @default(0)
-  rankTierId     String? @db.Uuid
-  rankPosition   Int?
-
-  profile  NetworkProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  rankTier RankTier?      @relation(fields: [rankTierId], references: [id])
-
-  @@unique([profileId, period])
-  @@map("network_monthly_performances")
-}
-
-model NetworkTeam {
-  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name        String
-  description String?
-  teamLeadId  String?      @db.Uuid
-  networkType NetworkType?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-
-  teamLead NetworkProfile?     @relation("TeamLead", fields: [teamLeadId], references: [id], onDelete: SetNull)
-  members  NetworkTeamMember[]
-
-  @@map("network_teams")
-}
-
-model NetworkTeamMember {
-  teamId    String   @db.Uuid
-  profileId String   @db.Uuid
-  joinedAt  DateTime @default(now())
-
-  team    NetworkTeam    @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  profile NetworkProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-
-  @@id([teamId, profileId])
-  @@map("network_team_members")
 }
 
 // ========================

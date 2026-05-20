@@ -12,14 +12,6 @@ export async function GET(
       where: { id },
       include: {
         profileType: { select: { id: true, displayName: true, slug: true, color: true, networkType: true } },
-        profileRoles: {
-          include: { role: { select: { id: true, displayName: true, slug: true } } },
-        },
-        profileRanks: {
-          where: { isCurrent: true },
-          include: { rankTier: { select: { displayName: true, color: true, level: true } } },
-          take: 1,
-        },
       },
     });
     if (!user) return apiError("User not found", 404);
@@ -65,25 +57,12 @@ export async function PATCH(
       data: allowedFields,
       include: {
         profileType: { select: { id: true, displayName: true, slug: true, color: true, networkType: true } },
-        profileRoles: {
-          include: { role: { select: { id: true, displayName: true, slug: true } } },
-        },
       },
     });
 
-    // Handle role updates if provided
-    // TODO Sub-etapa 3.5: networkProfileRole será removido; tabela vai ser dropada
-    // em 3.6. Por enquanto, mantém para CRUD de user funcionar — sem impacto
-    // runtime (tabela vazia desde Sub-etapa 3.2).
-    if (body.roleIds && Array.isArray(body.roleIds)) {
-      // Remove existing roles and re-assign
-      await prisma.networkProfileRole.deleteMany({ where: { profileId: id } });
-      if (body.roleIds.length > 0) {
-        await prisma.networkProfileRole.createMany({
-          data: body.roleIds.map((roleId: string) => ({ profileId: id, roleId })),
-        });
-      }
-    }
+    // RBAC role assignment (networkProfileRole) removed in Sub-etapa 3.5;
+    // any `body.roleIds` sent by legacy clients is silently dropped here
+    // until the new Membership-based RBAC lands.
 
     return apiSuccess(user);
   } catch (e) {

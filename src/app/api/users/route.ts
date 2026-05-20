@@ -20,14 +20,6 @@ export async function GET() {
     const users = await prisma.networkProfile.findMany({
       include: {
         profileType: { select: { id: true, displayName: true, slug: true, color: true, networkType: true } },
-        profileRoles: {
-          include: { role: { select: { id: true, displayName: true, slug: true } } },
-        },
-        profileRanks: {
-          where: { isCurrent: true },
-          include: { rankTier: { select: { displayName: true, color: true, level: true } } },
-          take: 1,
-        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -41,7 +33,8 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { firstName, lastName, email, phone, profileTypeId, roleIds, password } = body;
+    // roleIds dropped — RBAC removed in Sub-etapa 3.5
+    const { firstName, lastName, email, phone, profileTypeId, password } = body;
 
     if (!firstName || !email || !profileTypeId) {
       return apiError("First name, email, and profile type are required", 400);
@@ -74,15 +67,9 @@ export async function POST(request: Request) {
         networkType: profileType.networkType,
         profileTypeId,
         status: "PENDING",
-        profileRoles: roleIds?.length
-          ? { createMany: { data: roleIds.map((roleId: string) => ({ roleId })) } }
-          : undefined,
       },
       include: {
         profileType: { select: { id: true, displayName: true, slug: true, color: true, networkType: true } },
-        profileRoles: {
-          include: { role: { select: { id: true, displayName: true, slug: true } } },
-        },
       },
     });
 

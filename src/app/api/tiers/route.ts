@@ -7,9 +7,6 @@ export async function GET() {
     const tiers = await prisma.subscriptionTier.findMany({
       orderBy: { sortOrder: "asc" },
       include: {
-        commissionTierRates: {
-          include: { commissionStructure: true },
-        },
         partnerAssignments: {
           include: { partner: true },
         },

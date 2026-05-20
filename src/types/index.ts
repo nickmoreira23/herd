@@ -8,8 +8,6 @@ export type {
   AgentTool,
   Product,
   SubscriptionTier,
-  CommissionStructure,
-  CommissionTierRate,
   PartnerBrand,
   PartnerTierAssignment,
   FinancialSnapshot,
@@ -19,24 +17,12 @@ export type {
   OpexMilestone,
   SubscriptionRedemptionRule,
   TierPricingSnapshot,
-  // D2D Commission types
-  D2DPartner,
-  OrgNode,
-  CommissionPlan,
-  CommissionPlanRate,
-  OverrideRule,
-  PerformanceTier,
-  ClawbackRule,
-  PartnerAgreement,
-  CommissionLedgerEntry,
   Perk,
   PerkTierAssignment,
   CommunityBenefit,
   CommunityBenefitTierAssignment,
   NetworkProfile,
   NetworkProfileType,
-  NetworkRole,
-  NetworkPermission,
   // Integration types
   Integration,
   IntegrationTierMapping,
@@ -63,19 +49,12 @@ export {
   TierChangeTiming,
   CreditOnChange,
   PauseCreditBehavior,
-  // D2D Commission enums
-  OrgRoleType,
-  LedgerEntryType,
-  LedgerEntrySource,
-  PayoutCadence,
-  AgreementStatus,
   // Partner Brand enums
   PartnerBenefitType,
   PartnerCommissionType,
   // Network enums
   NetworkType,
   ProfileStatus,
-  OverrideEffect,
   PartnerStatus,
   PartnerTierAccess,
   PerkStatus,
@@ -199,26 +178,6 @@ export const PARTNER_CATEGORIES = [
 ] as const;
 export type PartnerCategory = (typeof PARTNER_CATEGORIES)[number];
 
-// D2D Commission enum values
-export const ORG_ROLE_TYPES = ["REGIONAL_LEADER", "TEAM_LEAD", "REP"] as const;
-export type OrgRoleTypeValue = (typeof ORG_ROLE_TYPES)[number];
-
-export const LEDGER_ENTRY_TYPES = ["EARNED", "HELD", "RELEASED", "CLAWED_BACK", "ADJUSTED"] as const;
-export type LedgerEntryTypeValue = (typeof LEDGER_ENTRY_TYPES)[number];
-
-export const LEDGER_ENTRY_SOURCES = [
-  "UPFRONT_BONUS", "RESIDUAL", "OVERRIDE", "ACCELERATOR_BONUS", "CLAWBACK", "MANUAL_ADJUSTMENT",
-] as const;
-export type LedgerEntrySourceValue = (typeof LEDGER_ENTRY_SOURCES)[number];
-
-export const PAYOUT_CADENCES = ["WEEKLY", "BIWEEKLY", "MONTHLY"] as const;
-export type PayoutCadenceValue = (typeof PAYOUT_CADENCES)[number];
-
-export const AGREEMENT_STATUSES = ["DRAFT", "ACTIVE", "SUSPENDED", "TERMINATED"] as const;
-export type AgreementStatusValue = (typeof AGREEMENT_STATUSES)[number];
-
-export const OVERRIDE_TYPES = ["FLAT", "PERCENT_OF_BONUS", "PERCENT_OF_REVENUE"] as const;
-export type OverrideTypeValue = (typeof OVERRIDE_TYPES)[number];
 
 // AI Agent enum values
 export const AGENT_STATUSES = ["DRAFT", "ACTIVE", "BETA", "DEPRECATED"] as const;

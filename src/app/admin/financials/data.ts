@@ -8,7 +8,6 @@ import type {
   SamplerChannel,
   PartnerKickbackInput,
   OperationalOverhead,
-  FullyLoadedCommissionInput,
 } from "@/lib/financial-engine";
 import type { OpexCategoryData } from "@/lib/opex-resolver";
 
@@ -56,25 +55,17 @@ export interface TierDisplayMeta {
 // React.cache deduplicates calls within a single render tree (e.g. both the
 // snapshot page AND a parallel segment calling this get one set of DB queries).
 export const getFinancialDefaults = cache(async function getFinancialDefaults() {
+  // CommissionPlan / CommissionStructure removed in Sub-etapa 3.5 (Fase 3
+  // Network MLM removal). The "Commission" block below uses manual defaults
+  // — D2D commission feature will be re-introduced cleanly post-Fase 3.
   const [
     tiers,
-    // New commission plan system (preferred)
-    commissionPlan,
     partners,
     opexCategories,
     products,
     packages,
   ] = await Promise.all([
     prisma.subscriptionTier.findMany({ orderBy: { sortOrder: "asc" } }),
-    prisma.commissionPlan.findFirst({
-      where: { isActive: true },
-      include: {
-        planRates: { include: { subscriptionTier: true } },
-        overrideRules: true,
-        performanceTiers: { orderBy: { sortOrder: "asc" } },
-      },
-    }),
-    // legacyCommissionStructure removed — it was fetched but never used
     prisma.partnerBrand.findMany({
       where: { isActive: true, kickbackType: { not: "NONE" } },
     }),
@@ -272,49 +263,12 @@ export const getFinancialDefaults = cache(async function getFinancialDefaults() 
     clawbackWindowDays: 60,
     payoutDelayMonths: 0,
   };
-  const hasCommissionPlan = false; // temporarily unlinked
-  const commissionPlanName: string | undefined = undefined;
+  const hasCommissionPlan = false; // CommissionPlan removed Sub-etapa 3.5
 
-  // ─── Fully-loaded commission data (for D2D plan-aware projections) ──
-
-  let fullyLoadedCommissionData: FullyLoadedCommissionInput | undefined;
-
-  if (commissionPlan) {
-    fullyLoadedCommissionData = {
-      plan: {
-        residualPercent: toNumber(commissionPlan.residualPercent),
-        rates: commissionPlan.planRates.map((r) => ({
-          tierId: r.subscriptionTierId,
-          roleType: r.roleType,
-          upfrontBonus: toNumber(r.upfrontBonus),
-          residualPercent: toNumber(r.residualPercent),
-        })),
-      },
-      overrides: commissionPlan.overrideRules.map((o) => ({
-        roleType: o.roleType,
-        overrideType: o.overrideType,
-        overrideValue: toNumber(o.overrideValue),
-      })),
-      performanceTiers: commissionPlan.performanceTiers.map((pt) => ({
-        minSales: pt.minSales,
-        maxSales: pt.maxSales,
-        bonusMultiplier: toNumber(pt.bonusMultiplier),
-        bonusFlat: toNumber(pt.bonusFlat),
-      })),
-      // Org structure — defaults, user can override in the builder
-      orgStructure: {
-        totalReps: 10,
-        totalTeamLeads: 2,
-        totalRegionalLeaders: 1,
-        avgSalesPerRep: 15,
-      },
-      tierDistribution: tiers.map((t) => ({
-        tierId: t.id,
-        percent: tiers.length > 0 ? Math.round(100 / tiers.length) : 25,
-      })),
-      blendedRevenuePerSub: 0, // computed at runtime from tier data
-    };
-  }
+  // Fully-loaded commission data (D2D) removed in Sub-etapa 3.5 — D2D models
+  // (OrgNode, D2DPartner, CommissionPlan, etc.) dropped. Feature returns
+  // post-Fase 3 with new schema.
+  const fullyLoadedCommissionData = undefined;
 
   // ─── Sales channels (manual — no structured source yet) ────────
 
@@ -376,16 +330,16 @@ export const getFinancialDefaults = cache(async function getFinancialDefaults() 
       tierCredits: tiers.length > 0,
       tierApparel: tiers.some((t) => t.apparelBudget !== null),
       commissionPlan: hasCommissionPlan,
-      commissionPerTierRates: hasCommissionPlan && (commissionPlan?.planRates.length ?? 0) > 0,
-      commissionOverrides: hasCommissionPlan && (commissionPlan?.overrideRules.length ?? 0) > 0,
-      commissionPerformanceTiers: hasCommissionPlan && (commissionPlan?.performanceTiers.length ?? 0) > 0,
+      commissionPerTierRates: false,
+      commissionOverrides: false,
+      commissionPerformanceTiers: false,
       partnerKickbacks: partners.length > 0,
       opexMilestones: hasOpexData,
       productCOGS: hasProductData,
       productFulfillment: hasProductData,
     },
     sources: {
-      commissionPlanName: commissionPlanName,
+      commissionPlanName: undefined,
       productCount: products.length,
       partnerCount: partners.length,
       tierCount: tiers.length,
