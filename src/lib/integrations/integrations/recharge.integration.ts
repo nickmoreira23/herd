@@ -21,25 +21,26 @@ const rechargeManifest: PaymentProviderManifest = {
   category: IntegrationCategory.BILLING,
   capabilities: {
     supportsWebhooks: true,
-    supportsOAuth: true,
+    supportsOAuth: false, // Sub-etapa 10: pivot to API key path
     supportsHmacSignature: true, // wire format is sha256(secret+body), conceptually HMAC-like
     supportsBillingPortal: true,
     supportsTierSync: true,
     webhookEventsHaveStableId: true, // payload.id is the dedup key
   },
+  // Storefront forward-flow events (dashboard-managed registration).
+  // customer/created + customer/updated skipped — implicit via order/charge.
   webhookEvents: [
-    "subscription/created",
-    "subscription/updated",
-    "subscription/cancelled",
-    "subscription/activated",
     "order/created",
     "charge/created",
     "charge/paid",
     "charge/failed",
-    "customer/created",
-    "customer/updated",
+    "charge/refunded",
+    "subscription/created",
+    "subscription/updated",
+    "subscription/cancelled",
+    "subscription/activated",
   ],
-  authType: "oauth2",
+  authType: "api_key",
   version: "1.0.0",
   chargeModel: "subscription",
   supportedCurrencies: ["USD", "CAD", "GBP", "EUR", "AUD"],

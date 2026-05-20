@@ -1155,18 +1155,37 @@ o orphan recovery) revela que o endpoint mistura concerns.
 **Observação (não débito formal):** considerar split em sub-rotas se
 passar de 5 responsabilidades.
 
-# Camada 1 — pause em Sub-etapa 10 (aguardando credenciais Recharge)
+# Camada 1 — Retomada Sub-etapa 10 (API Key path)
 
-Aguardando `RECHARGE_CLIENT_ID` + `RECHARGE_CLIENT_SECRET` do cliente
-(Partner App sandbox). Discovery + spec da Sub-etapa 10 prontas
-(capturadas no chat). Sub-etapas 10, 10.5, 11 e 12 bloqueadas até
-secrets disponíveis.
+Pivot de OAuth Partner App para API Key direta após confirmação do
+engenheiro Recharge da Bucked Up: "none of the other client id client
+secret stuff made any sense for recharge. it's all based on the api key."
 
-Trabalho retomado na Fase 3 (Network MLM removal) enquanto bloqueio
-externo persiste. Quando secrets chegarem, retomar diretamente da
-Sub-etapa 10 — estado do código não tem débito intermediário.
+**Setup atual:**
+- Admin API key em `RECHARGE_API_KEY` (encriptada em `Integration.credentials`).
+- Webhook events registrados manualmente no dashboard Recharge — V1
+  single-tenant (Bucked Up storefront).
+- Storefront tokens: separados, virão quando produto requerer checkout
+  customer-facing.
 
-Tag de marco: `camada-1-pause-pre-recharge` em main.
+**Sub-etapas pendentes da Camada 1:**
+
+- ✅ Sub-etapa 10 (revised) — Recharge API Key integration + webhook outbox
+- ⏳ Sub-etapa 11 — Mapper raw → canonical billing schema
+- ⏳ Sub-etapa 12 — Cutover + observability + done Camada 1
+
+**Tags de marco:**
+- `camada-1-pause-pre-recharge` — início da pausa (pré-Fase 3).
+- `camada-1-resume-post-fase-3` — retomada (post-Fase 3 close).
+
+**Tech debt rastreado (Camada 1 — Recharge V1 → V2):**
+- **Multi-tenant webhook subscription via API.** Atualmente dashboard-
+  managed (manual). Trigger: primeiro tenant adicional além de Bucked Up.
+- **Backfill histórico Recharge** (customers/subscriptions/charges
+  pré-cutover). V1 é forward-flow only. Trigger: produto precisar de
+  analytics histórica.
+- **Storefront Token integration** (browser-side, customer-facing
+  portal). Trigger: HERD UI customer-facing checkout/portal.
 
 ## Boundaries
 

@@ -120,6 +120,13 @@ references:
     title:
       pt-BR: Modelo de Integrações
       en-US: Integration Model
+  herd.category.integrations.payment:
+    level: category
+    id: payment
+    path: docs/handbook/integrations/payment/(overview)
+    title:
+      pt-BR: Pagamento
+      en-US: Payment
   herd.category.networks.corporate-network:
     level: category
     id: corporate-network
@@ -218,6 +225,13 @@ references:
     title:
       pt-BR: Infraestrutura
       en-US: Infrastructure
+  herd.integration.payment.recharge:
+    level: integration
+    id: recharge
+    path: docs/handbook/integrations/payment/recharge
+    title:
+      pt-BR: Recharge
+      en-US: Recharge
   herd.layer.areas:
     level: layer
     id: areas

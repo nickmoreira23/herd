@@ -1,0 +1,36 @@
+id: payment
+uid: herd.category.integrations.payment
+level: category
+technical_category: foundation
+
+title:
+  pt-BR: "Pagamento"
+  en-US: "Payment"
+description:
+  pt-BR: "Integrações de pagamento e billing. Providers que processam cobrança recorrente, assinaturas, refunds, dunning."
+  en-US: "Payment and billing integrations. Providers that handle recurring billing, subscriptions, refunds, dunning."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-20
+updated: 2026-05-20
+
+parent: herd.layer.integrations
+children:
+  - herd.integration.payment.recharge
+consumes: []
+consumed_by: []
+related: []
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

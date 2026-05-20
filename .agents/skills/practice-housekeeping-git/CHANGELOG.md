@@ -2,6 +2,16 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.2 — 2026-05-20
+
+Anchor entry. PR (Sub-etapa 10 revised — Recharge API key integration +
+webhook outbox) toca `src/lib/services/`, `src/lib/webhooks/handlers/`,
+`src/lib/integrations/`, `src/app/api/{integrations,webhooks}/recharge/**`,
+`docs/handbook/integrations/payment/**`, `AGENTS.md`, `scripts/`. Inclui
+toques em `docs/handbook/**` (freshness/validate disparam) + `.agents/skills/**`
+(este próprio anchor) — path-filter trigger garantido via dois caminhos.
+Anchor proativo nas fases pós-Fase 3 (lição cravada na v1.2.1).
+
 ## 1.2.1 — 2026-05-20
 
 Anchor entry. PR #41 (Sub-etapa 3.10 — final pass + close-out) tocou

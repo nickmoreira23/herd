@@ -1,3 +1,6 @@
+import { prisma } from "@/lib/prisma";
+import { decrypt } from "@/lib/encryption";
+
 const BASE_URL = "https://api.rechargeapps.com";
 
 // ─── Recharge API Types ─────────────────────────────────────────────
@@ -63,6 +66,34 @@ export class RechargeService {
 
   constructor(apiToken: string) {
     this.apiToken = apiToken;
+  }
+
+  /**
+   * Factory that loads encrypted credentials from the platform-wide
+   * Recharge `Integration` row (single-tenant in V1 — see AGENTS.md
+   * "Integration is single-tenant"). Throws if not connected.
+   *
+   * Replaces the boilerplate `findUnique + decrypt + JSON.parse + new
+   * RechargeService(...)` previously duplicated across the 4 admin routes.
+   */
+  static async fromIntegration(): Promise<RechargeService> {
+    const integration = await prisma.integration.findUnique({
+      where: { slug: "recharge" },
+    });
+    if (!integration?.credentials) {
+      throw new Error("Recharge integration not connected (no credentials)");
+    }
+    if (integration.authType && integration.authType !== "api_key") {
+      throw new Error(
+        `Recharge integration authType is ${integration.authType}, expected 'api_key'`,
+      );
+    }
+    const decrypted = decrypt(integration.credentials);
+    const creds = JSON.parse(decrypted) as { apiToken: string };
+    if (!creds.apiToken) {
+      throw new Error("Recharge credentials missing apiToken");
+    }
+    return new RechargeService(creds.apiToken);
   }
 
   private async request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -169,6 +200,10 @@ export class RechargeService {
   }
 
   // ── Webhooks ──
+  //
+  // @todo Programmatic webhook registration via Recharge API.
+  // Dashboard-managed for now (single tenant, V1). Migrate to programmatic
+  // when multi-tenant lands — webhook URLs will need to be per-tenant.
 
   async listWebhooks(): Promise<RechargeWebhook[]> {
     const data = await this.request<{ webhooks: RechargeWebhook[] }>("/webhooks");
