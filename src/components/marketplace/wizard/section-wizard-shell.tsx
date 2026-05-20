@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { WizardProgress } from "@/components/network/profiles/wizard/wizard-progress";
+import { WizardProgress } from "@/components/shared/wizard-progress";
 import { useMarketplaceWizardStore } from "@/stores/marketplace-section-wizard-store";
 import type { EligibleBlock } from "@/lib/marketplace/types";
 import type { ComponentNode } from "@/types/landing-page";

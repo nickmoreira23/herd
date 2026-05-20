@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { WizardProgress } from "@/components/network/profiles/wizard/wizard-progress";
+import { WizardProgress } from "@/components/shared/wizard-progress";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useT } from "@/lib/i18n/locale-context";
 import {

@@ -2,6 +2,14 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.1.3 — 2026-05-19
+
+Anchor entry. PR #33 (Sub-etapa 3.4 — Commission/D2D/Network components
+cleanup) toca apenas `src/**` (zero `.agents/skills/**`,
+`docs/handbook/**`, `schemas/**`). Mesmo path-filter pattern dos PR
+#31/#32. Anchor adicionado proativamente neste mesmo push para
+disparar freshness+validate sem segundo round.
+
 ## 1.1.2 — 2026-05-19
 
 Anchor entry. PR #32 (Sub-etapa 3.3 — remove RBAC + /api/network/* +
