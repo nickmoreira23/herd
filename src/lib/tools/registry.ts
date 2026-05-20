@@ -13,7 +13,8 @@ import { chatTool } from "./tools/chat.tool";
 import { marketplaceTool } from "./tools/marketplace.tool";
 import { dashboardTool } from "./tools/dashboard.tool";
 import { knowledgeTool } from "./tools/knowledge.tool";
-import { networkTool } from "./tools/network.tool";
+import { organizationTool } from "./tools/organization.tool";
+import { profileTool } from "./tools/profile.tool";
 import { handbookTool } from "./tools/handbook.tool";
 import { ledgerTool } from "./tools/ledger.tool";
 
@@ -130,7 +131,8 @@ const standaloneTools: Record<string, Tool> = {
   marketplace: marketplaceTool,
   dashboard: dashboardTool,
   knowledge: knowledgeTool,
-  network: networkTool,
+  organization: organizationTool,
+  profile: profileTool,
   handbook: handbookTool,
   ledger: ledgerTool,
 };
