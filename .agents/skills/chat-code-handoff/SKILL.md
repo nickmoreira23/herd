@@ -166,6 +166,82 @@ Cravado nesta skill após observação direta em:
 
 ---
 
+## Lições cravadas pós-criação (v0.2.0 — Fase 3)
+
+Lições acumuladas durante a execução de Fase 3 (Sub-etapas 3.5 → 3.8),
+cravadas após pause-and-reports ou perdas de tempo identificadas em retrospect.
+
+### L1 — Discovery cobre reverse rels em TODOS preserved models
+
+Para sub-etapas de DROP migration, discovery não pode mapear reverse rels
+apenas no model principal preservado. Precisa mapear em todos os preserved
+models que tocam o cluster alvo.
+
+**Como aplicar:** para cada model preservado que pode ter reverse rel para
+o alvo, rodar `grep -A 100 "^model PreservedX" prisma/schema.prisma | grep "<TargetType>\[\]"`.
+
+**Caso real (3.6):** discovery inicial não mapeou reverse rels de
+`SubscriptionTier` e `RankTier` para `CommissionTierRate` / `MonthlyPerformance`
+— `prisma validate` pegou durante execução, exigiu Edit adicional.
+
+### L2 — Code consumers via `prisma.X` literals, não só nomes de model
+
+`grep \bModelName\b` não pega consumers que usam `prisma.modelName.findMany`,
+`include: { modelName }`, ou destructuring de relations.
+
+**Como aplicar:** após edição preliminar do schema, rodar `npx prisma generate`
+em um branch/worktree temporário e ler os tsc errors. A surface de errors é
+o cluster real de consumers a tratar.
+
+**Caso real (3.6):** Tarefa 0.5 (worktree throwaway + tsc surface check) na
+discovery antecipada da 3.6 revelou 20 files reais vs 13 estimados pela spec.
+Sem essa Tarefa 0.5, sub-etapa teria pausado mid-flight.
+
+### L3 — Para renames de model, sempre `grep "^model NewName"` antes
+
+Antes de assumir que rename de model é mecânico, confirmar que o nome alvo
+não existe como model independente. Caso contrário, o "rename" é decisão
+de produto (merge, drop, ou rename para outro nome) — não operação mecânica.
+
+**Caso real (3.5.5):** spec inicial assumia rename `PartnerBrand → Perk` como
+mecânico. Discovery 3.5.5 revelou: `Perk` já existia como model paralelo com
+stack completo (zero rows, 11 consumer files). Spec foi totalmente reescrita
+após pause-and-report (drop PartnerBrand inteiro). Sem essa verificação prévia,
+teria sido bloqueio destrutivo.
+
+### L4 — `npm run build` local em worktree é expected failure
+
+Turbopack rejeita symlinks cross-worktree de `node_modules`. Build local
+em worktree falha mesmo com código correto.
+
+**Como aplicar:** validar build via CI, não local. Outros gates (tsc, lint,
+tests) rodam normalmente no worktree (com node_modules symlinkado — ver L5).
+Aceitar falha de `npm run build` no worktree como conhecida.
+
+**Caso real (3.7, 3.8):** ambas as sub-etapas tentaram build local, falharam
+no symlink; CI validou green. Procedimento cravado: pular build local.
+
+### L5 — Pre-commit hook em worktree precisa de symlink de node_modules
+
+Para que `lint && typecheck && test` rodem no pre-commit hook dentro de um
+worktree (`node_modules` é um diretório com tooling, não checkado-in), criar
+symlink temporário para o `node_modules` do main repo. Remover antes do push.
+
+**Como aplicar:**
+
+```bash
+cd .claude/worktrees/<branch>/
+ln -sfn /<abs-path-main-repo>/node_modules node_modules
+# ... rodar gates / fazer commits ...
+rm node_modules
+git push
+```
+
+**Caso real (3.7, 3.8):** pre-commit hook quebrou silenciosamente sem o
+symlink. Workaround documentado e replicado nas duas sub-etapas.
+
+---
+
 ## Referência
 
 - Skill global: `anthropic-skills:chat-code-handoff` (protocolo geral)

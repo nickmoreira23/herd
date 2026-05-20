@@ -18,7 +18,8 @@ updated: 2026-05-03
 parent: herd.layer.areas
 children:
   - herd.tool.identity.knowledge
-  - herd.tool.identity.network
+  - herd.tool.identity.organization
+  - herd.tool.identity.profile
 consumes: []
 consumed_by: []
 related: []

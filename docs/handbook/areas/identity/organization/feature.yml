@@ -1,0 +1,45 @@
+id: organization
+uid: herd.tool.identity.organization
+level: tool
+technical_category: tool
+
+title:
+  pt-BR: "Organization"
+  en-US: "Organization"
+description:
+  pt-BR: "Estrutura institucional — brand kit, departamentos, locais, horários, org chart, e diretório de membros. A visão 'empresa como um todo'."
+  en-US: "Institutional structure — brand kit, departments, locations, business hours, org chart, and member directory. The 'company as a whole' view."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-20
+updated: 2026-05-20
+
+parent: herd.category.areas.identity
+children: []
+consumes:
+  - herd.block.miscellaneous.contacts
+consumed_by: []
+related:
+  - herd.tool.identity.profile
+
+source_paths:
+  - "src/lib/tools/tools/organization.tool.ts"
+  - "src/app/admin/organization"
+  - "src/components/organization"
+
+admin_paths:
+  - "/admin/organization"
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

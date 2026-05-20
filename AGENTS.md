@@ -1050,7 +1050,71 @@ await adminClient.$executeRaw`
 Este é o único caminho confiável. Reinventar via timestamps mockados ou
 clock injection criaria divergência entre o DB real e a expectativa do test.
 
+# Fase 3 close-out — Network MLM removal (2026-05-18 → 2026-05-20)
+
+Fase 3 removeu o conceito de Network MLM e estruturas associadas. Sumário
+do que saiu e do que ficou. Para o histórico transactional, ver tags em
+origin com prefixo `archive/sub-etapa-3-*` (PRs #31 a #39).
+
+**Schema:**
+- 24 tabelas dropadas: 13 Network*, 7 Commission*, 4 D2D / Partner.
+- 6 enums dropados: `OrgRoleType`, `AgreementStatus`, `LedgerEntryType`,
+  `LedgerEntrySource`, `OverrideEffect`, `PayoutCadence`.
+- `NetworkProfile` cleanup: removidas colunas `parentId`, `profileTypeId`,
+  `networkType` — identidade pura (14 campos).
+- `NetworkProfileType` + `NetworkCompensationPlan` dropados.
+- `PartnerBrand` + `PartnerTierAssignment` dropados (Perk + PerkTierAssignment
+  já existiam paralelos; concept consolidado em Perk).
+- Reverse rels limpas em `SubscriptionTier` e `RankTier`.
+
+**Code:**
+- `src/lib/permissions.ts` (RBAC zumbi) deletado.
+- 11 rotas `/api/network/*` + 17 pages `/admin/network/*` deletadas.
+- ~16 rotas Commission/Partner/D2D + ~7 components legacy deletadas.
+- 12 validators dedicados deletados.
+- 8 rotas `/api/partners/*` + 3 pages `/admin/blocks/partners/*` deletadas.
+- `networkTool` substituído por `organizationTool` + `profileTool`.
+- `area: string` promovido para `Area` union literal (6 áreas canonicais).
+
+**Preservado intencionalmente:**
+- `NetworkProfile` model — identidade pura (14 campos, 7 reverse rels para
+  preserved models). É o User do HERD; rename para `User` está cravado em
+  Tech debt.
+- Enum `NetworkType` — `Department` ainda usa.
+- Enum `ProfileStatus` — `NetworkProfile.status` usa.
+- `Perk` + `PerkTierAssignment` + `PerkStatus` — catálogo canonical de benefícios.
+- `wizard-progress.tsx` movido para `src/components/shared/`.
+
+**Aprendizados cravados em skills:**
+- `chat-code-handoff` v0.2.0 — 5 lições de discovery patterns (L1-L5).
+- `practice-housekeeping-git` v1.2.0 — seção worktree operations.
+
 # Tech debt — rastreado
+
+Débitos com trigger explícito de resolução. Não tocar sem trigger ou
+produto decidir.
+
+## Camada 1
+
+- **Multi-tenant Recharge connect** (Sub-etapa 10). Tokens hoje em
+  `Integration.credentials` platform-wide. Trigger: primeiro cliente
+  enterprise que pedir multi-Recharge.
+- **OAuth callback hardening** (Sub-etapa 10.5). HMAC-signed state +
+  `requireSuperAdmin` na rota de connect. Trigger: quando Sub-etapa 10
+  retomar.
+
+## Fase 3
+
+- **Rename `NetworkProfile` → `User` + `ProfileStatus` → `UserStatus`.**
+  `NetworkProfile` é o User do HERD; nome cosmético antigo permanece por
+  inércia para evitar churn de imports em ~40 arquivos. Trigger: produto
+  requer identidade explícita "User" como conceito (ou primeiro feature
+  novo que torna `NetworkProfile` confuso na leitura).
+- **`validate-handbook-graph` não valida `source_paths` físicos.** Entry
+  stale apontando para arquivo deletado passou CI em 3.7 (entry `network`
+  ficou apontando para `network.tool.ts` que foi deletado, descoberto na
+  discovery 3.9 e cleaned up nesta sub-etapa). Trigger: próximo refactor
+  do validator OU próximo caso de stale entry detectado em discovery.
 
 ## Cron auth fail-open quando `CRON_SECRET` unset
 

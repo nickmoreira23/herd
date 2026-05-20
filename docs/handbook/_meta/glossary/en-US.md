@@ -320,12 +320,6 @@ OAuth + read/write + inbound webhooks + state synchronization + signature valida
 
 top-level feature with people structure (profiles, roles, permissions, promoters, onboarding).
 
-### Directory (R2.5)
-
-**From [Network](/admin/handbook/areas/identity/network):**
-
-will cover lookup — searching people.
-
 ### Doc-first
 
 **From [R1.5 — Re-investigation R3-R8 Reclassifications](/admin/handbook/refactor/r1-5-reclassifications-revision):**
@@ -610,12 +604,6 @@ Representation `(amountCents: bigint, currency)` — never a bare `number` or `D
 
 principle that a tool's name should reflect how the team talks about the tool day-to-day.
 
-### Network (R2)
-
-**From [Network](/admin/handbook/areas/identity/network):**
-
-provisional unified identity-management tool.
-
 ### Notification area
 
 **From [Notification](/admin/handbook/areas/notification):**
@@ -639,12 +627,6 @@ architectural pattern where an agnostic primitive (Plan) declares rules referenc
 **From [R2.5 — Network Split (Organization + Directory)](/admin/handbook/refactor/r2-5-network-split):**
 
 top-level feature with institutional structure (multimarket, market, company, departments, institutional channels).
-
-### Organization (R2.5)
-
-**From [Network](/admin/handbook/areas/identity/network):**
-
-will cover structure — departments, channels, hierarchy.
 
 ### Origin tracking
 

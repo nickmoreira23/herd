@@ -1,0 +1,45 @@
+id: profile
+uid: herd.tool.identity.profile
+level: tool
+technical_category: tool
+
+title:
+  pt-BR: "Profile"
+  en-US: "Profile"
+description:
+  pt-BR: "Perfil pessoal do usuário — identidade, avatar, preferências, locale e configurações de conta. A visão 'eu como indivíduo'."
+  en-US: "Personal user profile — identity, avatar, preferences, locale, and account settings. The 'me as an individual' view."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-20
+updated: 2026-05-20
+
+parent: herd.category.areas.identity
+children: []
+consumes:
+  - herd.block.miscellaneous.contacts
+consumed_by: []
+related:
+  - herd.tool.identity.organization
+
+source_paths:
+  - "src/lib/tools/tools/profile.tool.ts"
+  - "src/app/admin/profile"
+  - "src/components/profile"
+
+admin_paths:
+  - "/admin/profile"
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

@@ -1,0 +1,46 @@
+id: perks
+uid: herd.block.financial.perks
+level: block
+technical_category: block
+
+title:
+  pt-BR: "Perks"
+  en-US: "Perks"
+description:
+  pt-BR: "Catálogo de benefícios oferecidos a membros — internos da própria empresa ou externos via parceiros. Cada perk pode ser configurado por tier de subscription."
+  en-US: "Catalog of benefits offered to members — internal from the company itself or external via partners. Each perk is configurable per subscription tier."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-20
+updated: 2026-05-20
+
+parent: herd.category.blocks.financial
+children: []
+consumes: []
+consumed_by: []
+related:
+  - herd.block.financial.subscriptions
+
+source_paths:
+  - "src/lib/blocks/blocks/perks.block.ts"
+  - "src/app/admin/blocks/perks"
+  - "src/app/api/perks"
+  - "src/components/perks"
+  - "src/lib/validators/perk.ts"
+
+admin_paths:
+  - "/admin/blocks/perks"
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

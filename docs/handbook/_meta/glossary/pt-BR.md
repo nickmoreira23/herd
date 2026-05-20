@@ -316,12 +316,6 @@ estado atual sem dimensão temporal de fechamento — dinâmico, atualiza contin
 
 top-level feature com estrutura de pessoas (profiles, roles, permissions, promoters, onboarding).
 
-### Directory (R2.5)
-
-**From [Network](/admin/handbook/areas/identity/network):**
-
-vai cobrir lookup — busca de pessoas.
-
 ### Distinção package vs product-group
 
 **From [R3 — Packages Refinement](/admin/handbook/refactor/r3-packages-refinement):**
@@ -624,12 +618,6 @@ Representação `(amountCents: bigint, currency)` — nunca `number` ou `Decimal
 
 princípio de que tool name deve refletir como o time fala da tool no dia-a-dia.
 
-### Network (R2)
-
-**From [Network](/admin/handbook/areas/identity/network):**
-
-tool unificada provisional de gestão de identidade.
-
 ### Notification area
 
 **From [Notificação](/admin/handbook/areas/notification):**
@@ -653,12 +641,6 @@ pattern arquitetural onde primitivo agnóstico (Plan) declara regras referencian
 **From [R2.5 — Network Split (Organization + Directory)](/admin/handbook/refactor/r2-5-network-split):**
 
 top-level feature com estrutura institucional (multimarket, market, company, departments, channels institucionais).
-
-### Organization (R2.5)
-
-**From [Network](/admin/handbook/areas/identity/network):**
-
-vai cobrir estrutura — departments, channels, hierarquia.
 
 ### Origin tracking
 
