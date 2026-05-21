@@ -7,8 +7,8 @@ title:
   pt-BR: "Braintree"
   en-US: "Braintree"
 description:
-  pt-BR: "Provider de pagamentos Braintree (PayPal). One-time charges + subscriptions com suporte a Apple Pay, Google Pay, PayPal, Venmo, Credit Card. Sandbox-first (Camada 2)."
-  en-US: "Braintree payment provider (PayPal). One-time charges + subscriptions with support for Apple Pay, Google Pay, PayPal, Venmo, Credit Card. Sandbox-first (Camada 2)."
+  pt-BR: "Provider de pagamentos Braintree (PayPal). One-time charges + subscriptions com suporte a Apple Pay, Google Pay, PayPal, Venmo, Credit Card. Backend completo em sandbox (Camada 2)."
+  en-US: "Braintree payment provider (PayPal). One-time charges + subscriptions with support for Apple Pay, Google Pay, PayPal, Venmo, Credit Card. Backend complete in sandbox (Camada 2)."
 
 status: active
 owners: ["@nick"]
@@ -25,9 +25,27 @@ related:
   - herd.integration.payment.recharge
 
 source_paths:
+  # Service + Integration adapter (Sub-etapa 13)
   - "src/lib/services/braintree.ts"
   - "src/lib/integrations/integrations/braintree.integration.ts"
   - "scripts/seed-braintree-integration.ts"
+  # Webhook handler + tenant resolver (Sub-etapa 14)
+  - "src/app/api/webhooks/braintree/route.ts"
+  - "src/lib/webhooks/handlers/braintree.handler.ts"
+  - "src/lib/webhooks/tenant-resolver.ts"
+  # Mapper layer (Sub-etapa 15)
+  - "src/lib/mappers/braintree/index.ts"
+  - "src/lib/mappers/braintree/types.ts"
+  - "src/lib/mappers/braintree/map-payment-provider.ts"
+  - "src/lib/mappers/braintree/map-customer.ts"
+  - "src/lib/mappers/braintree/map-subscription.ts"
+  - "src/lib/mappers/braintree/map-charge.ts"
+  - "src/lib/mappers/braintree/map-payment-method.ts"
+  - "src/lib/mappers/braintree/map-charge-status.ts"
+  - "src/lib/mappers/braintree/map-subscription-status.ts"
+  - "src/lib/mappers/braintree/map-amount-cents.ts"
+  # Test webhook helper (Sub-etapa 17)
+  - "scripts/test-braintree-webhook.ts"
 
 admin_paths: []
 

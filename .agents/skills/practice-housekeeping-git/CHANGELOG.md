@@ -2,6 +2,24 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.11 — 2026-05-21
+
+Anchor entry. PR (Sub-etapa 17 — Camada 2 closeout). Test webhook CLI
+helper (`scripts/test-braintree-webhook.ts` + `npm run braintree:test-webhook`),
+handbook update bilingual (feature.yml source_paths expandido para 16
+paths; pt-BR.md + en-US.md com webhook pipeline + mapper layer +
+Control Panel setup + smoke procedure + production cutover steps),
+AGENTS.md seção "Camada 2 closeout", `docs/discovery/Plano_Camada_2.md`
+formalizado (paridade Plano_Fase_3.md shape).
+
+Sub-etapa 16 removida — programmatic webhook registration não é
+possível em Braintree (SDK não expõe API). Tech debt conditional na
+Braintree publicar mutations GraphQL.
+
+Tag `camada-2-complete` aplicada pós-merge em main.
+
+Refs: Sub-etapa 17, Camada 2 closeout.
+
 ## 1.2.10 — 2026-05-21
 
 Anchor entry. PR (Sub-etapa 15 — Braintree mapper raw → canonical billing

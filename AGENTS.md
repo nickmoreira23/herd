@@ -1486,6 +1486,101 @@ Trigger refactor para `src/lib/mappers/_shared/`: chegada do 3º provider.
 
 **Tag de marco:** `camada-2-start` em main (Sub-etapa 13 entrega).
 
+## Camada 2 closeout (cravada na Sub-etapa 17)
+
+Camada 2 — Braintree backend integration **completa em sandbox**.
+Production cutover é tech debt rastreado. Pipeline end-to-end pronto:
+adapter + service + webhook handler + mapper + dispatcher + dedup +
+outbox + worker + tenant resolver.
+
+**Janela:** 2026-05-21 (sub-etapas 13 → 17 em sequência rápida).
+
+**Sub-etapas entregues:**
+
+- **13** — Adapter manifest + Service + Auth (3-key) + Seed (PR #48,
+  archive `archive/sub-etapa-13-braintree-adapter-6cb2f0b`)
+- **14** — Webhook handler + outbox + tenant extractor (PR #49,
+  archive `archive/sub-etapa-14-braintree-webhook-c3b20a2`)
+- **15** — Mapper raw → canonical billing schema (PR #50,
+  archive `archive/sub-etapa-15-braintree-mapper-1648c5a`)
+- **17** — Closeout: test webhook CLI + handbook + Plano_Camada_2.md + tag
+
+**Sub-etapa 16 removida.** Programmatic webhook registration **não é
+possível em Braintree**. SDK npm v3.37 não expõe API de
+`webhookEndpoint` (apenas `webhookNotification` + `webhookTesting`).
+Control Panel UI é o único caminho de setup. Tech debt cravado:
+quando Braintree publicar mutations GraphQL para webhook destinations,
+revisitar.
+
+**Decisões arquiteturais cravadas:**
+
+- **SDK vs fetch é per-provider.** Braintree usa SDK (signing complexo
+  + maturidade SDK + Bucked Up precedent). Recharge usa fetch (signing
+  literal sha256 com pegadinha anti-HMAC merecendo controle direto).
+  Não há regra geral.
+- **3-key auth:** `merchantId` + `publicKey` + `privateKey` +
+  `environment` (sandbox/production). Encrypted como JSON blob em
+  `Integration.credentials`. `authType: "api_key"`.
+- **Webhook signing via SDK helper:** `gateway.webhookNotification.parse()`.
+  Primeiro provider sem verifier file dedicado em
+  `src/lib/webhooks/verifiers/`.
+- **Form-encoded body:** Braintree usa
+  `application/x-www-form-urlencoded`. Route handler usa
+  `request.formData()` (divergente dos outros 3 providers).
+- **Dedup composite:** `${kind}:${subjectId}:${timestamp.toISOString()}`.
+  Braintree não emite event_id estável.
+- **Tenant resolver:** switch por kind + 1-tenant fallback para sample
+  notifications.
+- **Customer fallback:** synthetic stub `tenant_${tenantId}_fallback`
+  para payloads sem customer.id. Idempotente.
+- **V1 skipped:** Refund mapping, canonical Dispute table (audit-only
+  via IWE), DunningAttempt, ChargeLineItem, BillingEvent audit row.
+- **Webhook registration:** Control Panel UI manual. Test webhook via
+  "Check URL" no painel ou `npm run braintree:test-webhook` (script
+  local que bypassa Braintree).
+- **SDK quirks documentados:** `gw.webhookTesting.sampleNotification`
+  é instance method, `notification.timestamp` é string ISO,
+  samples não incluem customerId.
+
+**Lições cravadas:**
+
+- **SDK vs fetch decision é per-provider**, não regra geral. Critério:
+  complexidade de signing + maturidade SDK + bundle size.
+- **Programmatic registration constraint** — Braintree não tem API.
+  Documentar em integrações futuras que aceitam UI-only setup.
+- **L7 cravado durante Camada 2:** `npm run build` local obrigatório
+  para PRs tocando route handlers (Cache Components quirk).
+- **practice-housekeeping-git v1.2.8 → v1.2.11** (4 anchors em Camada 2).
+
+**Tech debt rastreado pós-Camada 2:**
+
+- **Production cutover Braintree.** Trigger: smoke sandbox validado +
+  cliente requerer go-live.
+- **Webhook scope expansion** (12 → ~30 topics).
+- **Canonical Dispute table.** Trigger: dashboards de chargeback rate.
+- **Marketplace integration** (sub-merchants Braintree). Trigger:
+  modelo de negócio expandir.
+- **Refund + DunningAttempt mappers.** Trigger: histórico estruturado.
+- **ChargeLineItem Braintree.** Trigger: split per-item.
+- **BillingEvent audit row Braintree.** Trigger: audit log estruturado.
+- **Multi-tenant Braintree** + remoção de 1-tenant fallback.
+- **E2E integration test Braintree.**
+- **`_shared/map-amount-cents`** factor-out. Trigger: 3º provider.
+- **Programmatic webhook registration.** Trigger: Braintree publicar
+  mutations GraphQL para `webhookDestination`.
+
+**Estado final Camada 2:**
+
+- Pipeline end-to-end pronto em sandbox.
+- 12 webhook topics manifesto V1.
+- 32 novos unit tests (9 webhook handler + 23 mapper).
+- Seed Braintree ativo em DEV.
+- Production cutover steps documentados no handbook.
+- Sub-etapa 16 cravada como "não-aplicável Braintree".
+
+**Indicador de fechamento:** tag `camada-2-complete` em main (aplicada
+pós-merge da Sub-etapa 17).
+
 ## Boundaries
 
 - Never edit `mcp/generated/`, `schemas/feature.schema.json`,
