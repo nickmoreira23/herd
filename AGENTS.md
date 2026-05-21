@@ -1340,25 +1340,95 @@ ficou com fetch porque API é simples e webhook signing tinha pegadinha
 anti-HMAC que merecia controle direto; Braintree usa SDK porque o
 contrário.
 
-**Webhook scope V1 (13 topics):**
+**Webhook scope V1 (12 topics):**
 
 - Subscription (6): `subscription_charged_successfully`,
   `subscription_charged_unsuccessfully`, `subscription_canceled`,
   `subscription_trial_ended`, `subscription_went_past_due`,
   `subscription_expired`
-- Transaction (4): `transaction_settled`, `transaction_settlement_declined`,
-  `transaction_settlement_pending`, `transaction_disbursed`
+- Transaction (3): `transaction_settled`, `transaction_settlement_declined`,
+  `transaction_disbursed` (`transaction_settlement_pending` removido em
+  Sub-etapa 14 — deprecated no SDK npm v3.37).
 - Dispute (3): `dispute_opened`, `dispute_lost`, `dispute_won`
+
+### Webhook pipeline (Sub-etapa 14)
+
+**Format:** `application/x-www-form-urlencoded` com 2 fields:
+`bt_signature` + `bt_payload`. Route handler usa
+`await request.formData()` (divergente de Recharge/Gorgias/Intercom
+que parseiam JSON via `request.arrayBuffer()`).
+
+**Verification:** SDK `gateway.webhookNotification.parse(bt_signature,
+bt_payload)` faz verify + parse numa única chamada. **Sem verifier
+file dedicado** — Braintree é o primeiro provider sem
+`WebhookVerifier` class em `src/lib/webhooks/verifiers/`. Justificativa:
+SDK encapsula a assinatura proprietária e expor uma classe verifier
+seria wrapper sem valor.
+
+**SDK quirks descobertos em Sub-etapa 14:**
+
+- `gateway.webhookTesting.sampleNotification(kind, id)` é método
+  **de instância** do gateway (não `braintree.Test.WebhookTesting`
+  static). Retorna `{bt_signature, bt_payload}` sincronamente —
+  apesar do typing de `@types/braintree` v3.4 sugerir `Promise`.
+- `notification.timestamp` é **string ISO-8601** em runtime, não
+  `Date`. Route handler coerce defensivamente via `new Date(...)`.
+- Sample notifications **NÃO incluem `customerId`** em nenhuma das 3
+  classes (subscription/transaction/dispute). 1-tenant fallback em
+  `tenant-resolver.ts` é essencial para testes; produção real envia
+  customerId.
+
+**Dedup composite key:** `${kind}:${subjectId}:${timestamp.toISOString()}`.
+Braintree não emite event_id estável; composite é resistente a retries
+provider-side (24h prod, 3h sandbox). `subjectId` extraído via switch
+por kind (`subject.subscription.id` / `subject.transaction.id` /
+`subject.dispute.id`).
+
+**Tenant resolution:**
+- `extractExternalId("braintree", notification)` em `tenant-resolver.ts`
+  faz switch por kind:
+  - subscription → `subject.subscription.customerId`
+  - transaction → `subject.transaction.customer.id` ou `customerId`
+  - dispute → `subject.dispute.transaction.customerId`
+- V1 1-tenant fallback: se nenhum customerId extraído E existe
+  exatamente 1 `MemberConnection` com `integration.slug = "braintree"`,
+  resolve para esse tenant. Trigger para remover: multi-tenant
+  Braintree (tech debt em "Camada 2 V1 → V2").
+
+**Handler V1 — raw-IWE-only:**
+
+- Route handler escreve `IntegrationWebhookEvent` atomicamente com
+  `webhook_dedup` + `emitDomainEvent("webhook.braintree", ...)`.
+- `braintreeHandler` em `src/lib/webhooks/handlers/braintree.handler.ts`
+  é um observability shim — confirma o outbox round-trip mas não
+  faz mapper dispatch (Sub-etapa 15).
+- `HANDLER_REGISTRY` ganhou entry `"webhook.braintree": braintreeHandler`.
+
+**Testing fixtures runtime-generated:** Tests não comitam fixtures
+JSON. Geram `{bt_signature, bt_payload}` em runtime via
+`gw.webhookTesting.sampleNotification(kind, id)` com credentials
+determinísticas no `freshGateway()` helper. Roundtrip parse valida o
+contrato SDK.
 
 **Tech debt rastreado (Camada 2):**
 
 - **Production cutover Braintree** (sandbox → production). Trigger:
   smoke test sandbox validado + cliente requerer.
-- **Webhook scope expansion** (13 → ~30 disponíveis). Trigger: produto
+- **Webhook scope expansion** (12 → ~30 disponíveis). Trigger: produto
   requerer events extras (`partner_merchant_*`, `payment_method_*`,
   `disbursement_*`).
 - **Marketplace integration** (sub-merchants Braintree). Trigger:
   Bucked Up modelo de negócio expandir para multi-vendor.
+- **Mapper dispatch + BillingEvent audit Braintree** (Sub-etapa 15).
+  Handler V1 hoje é raw-only.
+- **Multi-tenant Braintree** + remoção do 1-tenant fallback em
+  `tenant-resolver.ts`. Trigger: primeiro tenant Braintree adicional.
+- **E2E integration test Braintree (`braintree-e2e.integration.test.ts`).**
+  Sub-etapa 14 cobriu por unit tests (verifier + extractor); e2e
+  análogo a `gorgias-e2e.integration.test.ts` (route handler → worker
+  pickup → IWE row + DomainEvent row) fica como follow-up. Trigger:
+  Sub-etapa 17 smoke real, ou se houver regressão silenciosa
+  detectada após Sub-etapa 15.
 
 **Tag de marco:** `camada-2-start` em main (Sub-etapa 13 entrega).
 

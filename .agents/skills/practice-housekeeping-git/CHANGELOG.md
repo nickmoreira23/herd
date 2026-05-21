@@ -2,6 +2,22 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.9 — 2026-05-21
+
+Anchor entry. PR (Sub-etapa 14 — Braintree webhook handler + outbox +
+tenant extractor, Camada 2). Pipeline form-encoded + SDK verify + dedup
+composite + atomic IWE + outbox emit. 9 unit tests (3 verifier roundtrip
++ 6 tenant extractor). Manifest cravado em 12 topics (removido
+`transaction_settlement_pending` deprecated). `testConnection()` bug
+cosmético da Sub-etapa 13 corrigido via `clientToken.generate({})`.
+
+E2E integration test (análogo a `gorgias-e2e.integration.test.ts`)
+deferido como tech debt em AGENTS.md — unit tests cobrem o contrato
+SDK; e2e fica para Sub-etapa 17 smoke real ou follow-up se regressão
+silenciosa detectada.
+
+Refs: Sub-etapa 14, Camada 2.
+
 ## 1.2.8 — 2026-05-21
 
 Anchor entry. PR (Sub-etapa 13 — Braintree adapter + service + seed,

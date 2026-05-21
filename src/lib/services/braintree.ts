@@ -79,19 +79,28 @@ export class BraintreeService {
 
   /**
    * Read-only ping to verify the gateway can authenticate. Safe to run
-   * against production — only lists merchant accounts (no PII fetched).
+   * against production — generates an ephemeral clientToken, no side
+   * effects, no PII fetched.
+   *
+   * Sub-etapa 14 fix: previous implementation used `merchantAccount.all()`
+   * which returns a `PaginatedResponseStream`, not `{ids: string[]}` as the
+   * old cast assumed. `clientToken.generate({})` returns a simple typed
+   * response object and is the canonical Braintree health check.
    */
-  async testConnection(): Promise<{
-    ok: boolean;
-    merchantAccountId?: string;
-  }> {
+  async testConnection(): Promise<{ ok: boolean; environment: string }> {
     try {
-      const response = await this.gateway.merchantAccount.all();
-      // `response` is a collection — pull the first id as a probe.
-      const firstId = (
-        response as unknown as { ids?: string[] }
-      ).ids?.[0];
-      return { ok: true, merchantAccountId: firstId ?? "unknown" };
+      const result = await this.gateway.clientToken.generate({});
+      if (!result.success) {
+        throw new Error(
+          `clientToken.generate failed: ${JSON.stringify(result)}`,
+        );
+      }
+      // `gateway.config.environment` is a Braintree Environment instance
+      // with `.server` (URL); `.server` is the canonical identifier.
+      const env = (
+        this.gateway.config as unknown as { environment: { server: string } }
+      ).environment.server;
+      return { ok: true, environment: env };
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       throw new Error(`Braintree testConnection failed: ${msg}`);

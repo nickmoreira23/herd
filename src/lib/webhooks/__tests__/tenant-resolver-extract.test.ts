@@ -70,9 +70,75 @@ describe("extractExternalId — per-provider payload shapes", () => {
     });
   });
 
+  describe("braintree", () => {
+    it("subscription kind reads subject.subscription.customerId", () => {
+      expect(
+        extractExternalId("braintree", {
+          kind: "subscription_charged_successfully",
+          subject: { subscription: { id: "sub_1", customerId: "cust_abc" } },
+        }),
+      ).toBe("cust_abc");
+    });
+
+    it("transaction kind reads subject.transaction.customer.id (preferred)", () => {
+      expect(
+        extractExternalId("braintree", {
+          kind: "transaction_settled",
+          subject: {
+            transaction: { id: "txn_1", customer: { id: "cust_xyz" } },
+          },
+        }),
+      ).toBe("cust_xyz");
+    });
+
+    it("transaction kind falls back to subject.transaction.customerId", () => {
+      expect(
+        extractExternalId("braintree", {
+          kind: "transaction_disbursed",
+          subject: { transaction: { id: "txn_2", customerId: "cust_fallback" } },
+        }),
+      ).toBe("cust_fallback");
+    });
+
+    it("dispute kind reads subject.dispute.transaction.customerId", () => {
+      expect(
+        extractExternalId("braintree", {
+          kind: "dispute_opened",
+          subject: {
+            dispute: {
+              id: "disp_1",
+              transaction: { id: "txn_disp", customerId: "cust_disp" },
+            },
+          },
+        }),
+      ).toBe("cust_disp");
+    });
+
+    it("returns null for SDK sample notifications (no customerId — fallback path)", () => {
+      // Mirrors the shape returned by gw.webhookTesting.sampleNotification —
+      // customerId is intentionally omitted.
+      expect(
+        extractExternalId("braintree", {
+          kind: "subscription_charged_successfully",
+          subject: { subscription: { id: "sub_test" } },
+        }),
+      ).toBeNull();
+    });
+
+    it("returns null for unknown kinds outside subscription/transaction/dispute", () => {
+      expect(
+        extractExternalId("braintree", {
+          kind: "partner_merchant_connected",
+          subject: { partnerMerchant: { id: "pm_1" } },
+        }),
+      ).toBeNull();
+    });
+  });
+
   it("returns null for non-object payloads", () => {
     expect(extractExternalId("gorgias", null)).toBeNull();
     expect(extractExternalId("intercom", "string")).toBeNull();
     expect(extractExternalId("recharge", 42)).toBeNull();
+    expect(extractExternalId("braintree", undefined)).toBeNull();
   });
 });
