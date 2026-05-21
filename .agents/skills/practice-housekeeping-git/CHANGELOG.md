@@ -2,6 +2,19 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.10 — 2026-05-21
+
+Anchor entry. PR (Sub-etapa 15 — Braintree mapper raw → canonical billing
+schema, Camada 2). 10 arquivos em `src/lib/mappers/braintree/` (paridade
+Sub-etapa 11 Recharge). Handler V1 raw-only → dispatcher por kind
+(subscription_/transaction_/dispute_). Synthetic customer stub fallback
+para sample fixtures sem customer.id. 23 unit tests (status mapping +
+amount cents helpers). Tech debt cravado: BillingEvent audit, canonical
+Dispute table, Refund/DunningAttempt mappers — todos com trigger
+explícito em AGENTS.md.
+
+Refs: Sub-etapa 15, Camada 2.
+
 ## 1.2.9 — 2026-05-21
 
 Anchor entry. PR (Sub-etapa 14 — Braintree webhook handler + outbox +
