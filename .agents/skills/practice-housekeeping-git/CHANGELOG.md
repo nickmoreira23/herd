@@ -2,6 +2,19 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.6 — 2026-05-21
+
+Anchor entry. PR (Sub-etapa 12 — cutover minimal: cron worker + health
+endpoint + DLQ doc). Operationaliza Camada 1: worker domain-events existia
+como CLI mas Railway não disparava. Sub-etapa cria a cron route + health
+endpoint + AGENTS.md section "Observability — Camada 1 minimal".
+
+Spec previa refactor de `process-pending-batch.ts` mas função
+equivalente (`processPendingEvents`) já existia em `process-pending-events.ts`.
+Refactor descartado; cron route reutiliza a função existente direto.
+
+Refs: Sub-etapa 12.
+
 ## 1.2.5 — 2026-05-21
 
 Anchor entry. PR (Sub-etapa 11 — mapper Recharge raw → canonical billing
