@@ -258,6 +258,35 @@ desenvolvedor assume que `.env` é "automágico".
 **Caso real (10.0.1):** Sub-etapa 10 entregou `scripts/seed-recharge-integration.ts`
 sem essa linha. Bloqueou execução pós-merge. Hotfix Sub-etapa 10.0.1 cravou.
 
+### L7 — `npm run build` local obrigatório para sub-etapas tocando route handlers ou next.config
+
+CI atual no GitHub roda `tsc + lint + tests` mas **NÃO roda `npm run build`**
+(Next.js full compilation). Sub-etapas que introduzem route handlers, server
+actions, ou modificam `next.config.ts` podem passar todos os gates de CI
+e ainda falhar em produção (Railway/Vercel build).
+
+**Como aplicar:** spec deve incluir `npm run build` como gate local
+obrigatório nas Tarefas, junto com tsc/lint/test, quando:
+
+- Cria/modifica arquivo em `src/app/**/route.ts`
+- Cria/modifica server actions
+- Modifica `next.config.ts`
+- Mudança suspeita de afetar Next.js compile (RSC, streaming, cache)
+
+**Onde rodar:** `npm run build` em worktree falha por Turbopack rejeitar
+symlink cross-worktree de `node_modules` (L4). Rodar no main repo com fix
+temporariamente copiado, depois `git checkout` para reverter. Cost: ~2 min,
+worth it.
+
+**Caso real (12.0.1):** Sub-etapa 12 introduziu 2 route handlers com
+`export const dynamic = "force-dynamic"`. CI passou (tsc + lint + test ✓).
+Railway build falhou com `"dynamic" is not compatible with nextConfig.cacheComponents`.
+Hotfix Sub-etapa 12.0.1 removeu as duas linhas.
+
+**Bonus context:** Next.js 16 com `cacheComponents: true` (Cache Components)
+torna route handlers auto-dinâmicos por inferência quando lêem env/DB.
+`force-dynamic` é redundante + incompatível.
+
 ---
 
 ## Referência

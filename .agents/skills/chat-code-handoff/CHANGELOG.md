@@ -1,5 +1,14 @@
 # CHANGELOG — chat-code-handoff (project-local)
 
+## v0.2.2 — 2026-05-21
+
+- L7: `npm run build` local obrigatório para sub-etapas tocando route
+  handlers ou `next.config.ts`. CI roda `tsc + lint + test` mas não
+  roda full Next.js build — Railway/Vercel pode falhar com erros que
+  passaram em CI. Rodar no main repo (não worktree, per L4).
+
+Refs: Sub-etapa 12.0.1.
+
 ## v0.2.1 — 2026-05-20
 
 - L6: Scripts CLI standalone via `tsx` precisam `import "dotenv/config"`

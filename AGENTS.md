@@ -1435,6 +1435,25 @@ Use the helpers in `src/lib/i18n/notify.ts` instead of `toast.*` directly:
 These are required for all user-facing notifications in migrated features.
 They centralize translation handling and make the i18n contract explicit.
 
+# Next.js 16 Cache Components conventions (cravada na Sub-etapa 12.0.1)
+
+`next.config.ts` ativa `cacheComponents: true`. Implicações:
+
+- **NÃO usar** `export const dynamic = "force-dynamic"` em route handlers —
+  incompatível com Cache Components. Build falha com
+  `"dynamic" is not compatible with nextConfig.cacheComponents`.
+- Route handlers que lêem env (`process.env.X`) ou DB (Prisma queries) são
+  auto-detectados como dinâmicos por inferência. Directive explícita é
+  redundante.
+- Server components default = cacheable. Adicionar `<Suspense>` ao redor
+  de componentes que leem dados não-cacheados quando necessário.
+
+**Gate obrigatório para PRs tocando route handlers ou `next.config.ts`:**
+rodar `npm run build` local antes do commit. CI (`tsc + lint + test`) NÃO
+pega esses erros — eles só aparecem em `next build`. Rodar no main repo
+(não worktree, per `chat-code-handoff` L4 + L7) — Turbopack rejeita symlink
+cross-worktree de `node_modules`.
+
 # Pre-commit hooks
 
 Pre-commit hooks run via [`simple-git-hooks`](https://github.com/toplenboren/simple-git-hooks),
