@@ -28,7 +28,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
  * `tenant_id = NULL` → false → 0 rows. The bypass role is the only way.
  */
 
-type Provider = "gorgias" | "intercom" | "recharge";
+type Provider = "gorgias" | "intercom" | "recharge" | "braintree";
 
 export type TenantResolution =
   | { ok: true; tenantId: string }
@@ -65,6 +65,12 @@ function getAdminClient(): PrismaClient {
  *  - Intercom: `app_id` at top level, or `app.id_code` for newer payloads.
  *  - Recharge: `customer.id` (per-shop customer), or `merchant_id` for some
  *    event types.
+ *  - Braintree: the payload is an SDK-parsed `WebhookNotification`. Customer
+ *    id lives under different paths per kind — `subscription.customerId`,
+ *    `transaction.customer.id` or `transaction.customerId`,
+ *    `dispute.transaction.customerId`. The SDK's sample fixtures
+ *    intentionally omit customerId, so the resolver applies a 1-tenant
+ *    fallback (see `resolveTenantFromPayload`).
  *
  * Returns null if no recognizable identifier is present — the caller treats
  * that as "no tenant resolvable" and returns 400.
@@ -98,6 +104,42 @@ function extractExternalId(provider: Provider, payload: unknown): string | null 
       if (customerId) return customerId;
       return stringify(p["merchant_id"]) ?? stringify(p["shop_id"]);
     }
+    case "braintree": {
+      // The Braintree webhook payload is a parsed `WebhookNotification`
+      // (subject + kind + timestamp). Customer id location varies by kind.
+      const kind = stringify(p["kind"]);
+      const subject = p["subject"] as Record<string, unknown> | undefined;
+      if (!kind || !subject) return null;
+
+      if (kind.startsWith("subscription_")) {
+        const sub = subject["subscription"] as
+          | Record<string, unknown>
+          | undefined;
+        return stringify(sub?.["customerId"]);
+      }
+      if (kind.startsWith("transaction_")) {
+        const txn = subject["transaction"] as
+          | Record<string, unknown>
+          | undefined;
+        if (!txn) return null;
+        const customerObj = txn["customer"] as
+          | Record<string, unknown>
+          | undefined;
+        return (
+          stringify(customerObj?.["id"]) ?? stringify(txn["customerId"])
+        );
+      }
+      if (kind.startsWith("dispute_")) {
+        const disp = subject["dispute"] as
+          | Record<string, unknown>
+          | undefined;
+        const txn = disp?.["transaction"] as
+          | Record<string, unknown>
+          | undefined;
+        return stringify(txn?.["customerId"]);
+      }
+      return null;
+    }
   }
 }
 
@@ -106,14 +148,36 @@ export async function resolveTenantFromPayload(
   payload: unknown,
 ): Promise<TenantResolution> {
   const externalId = extractExternalId(provider, payload);
+  const admin = getAdminClient();
+
+  // V1 1-tenant fallback for Braintree: SDK sample fixtures and some real
+  // payloads omit customer id. While there's a single MemberConnection for
+  // braintree (Camada 2 V1 — Bucked Up sandbox-only), resolve to that one.
+  // Trigger to remove: multi-tenant Braintree (tech debt em AGENTS.md).
+  if (provider === "braintree" && !externalId) {
+    const connections = await admin.memberConnection.findMany({
+      where: { integration: { slug: "braintree" } },
+      take: 2,
+      select: { tenantId: true },
+    });
+    if (connections.length === 1) {
+      return { ok: true, tenantId: connections[0]!.tenantId };
+    }
+    return {
+      ok: false,
+      reason:
+        connections.length === 0
+          ? "no MemberConnection found for braintree (V1 fallback requires exactly 1)"
+          : "multiple MemberConnections found for braintree — V1 1-tenant fallback requires exactly 1 (customer id missing from payload)",
+    };
+  }
+
   if (!externalId) {
     return {
       ok: false,
       reason: `cannot extract external id from ${provider} payload`,
     };
   }
-
-  const admin = getAdminClient();
 
   const connection = await admin.memberConnection.findFirst({
     where: {

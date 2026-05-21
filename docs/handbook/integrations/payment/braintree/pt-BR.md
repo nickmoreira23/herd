@@ -56,10 +56,10 @@ Não consume actions do orchestrator hoje. Stack mínima para receber webhooks e
 
 **Smoke test (Sub-etapa 17):** evento sintético no Braintree sandbox → confirmar `IntegrationWebhookEvent` row no DB + `BillingEvent` audit + canonical rows (Charge/Subscription) populadas.
 
-**Webhook events V1 (13 kinds):**
+**Webhook events V1 (12 kinds):**
 
 - Subscription: `subscription_charged_successfully`, `subscription_charged_unsuccessfully`, `subscription_canceled`, `subscription_trial_ended`, `subscription_went_past_due`, `subscription_expired`
-- Transaction: `transaction_settled`, `transaction_settlement_declined`, `transaction_settlement_pending`, `transaction_disbursed`
+- Transaction: `transaction_settled`, `transaction_settlement_declined`, `transaction_disbursed` (`transaction_settlement_pending` removido em Sub-etapa 14 — deprecated no SDK atual)
 - Dispute: `dispute_opened`, `dispute_lost`, `dispute_won`
 
 **Tech debt rastreado em AGENTS.md (seção Camada 2):**

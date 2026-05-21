@@ -21,9 +21,14 @@ import type { PaymentProviderManifest } from "../payment/payment-manifest.schema
  * a one-call verify-and-parse helper. No anti-HMAC guard needed (unlike
  * Recharge).
  *
- * Webhook events V1 (13 kinds): see `webhookEvents` below. Other ~17
+ * Webhook events V1 (12 kinds): see `webhookEvents` below. Other ~17
  * available kinds (`partner_merchant_*`, `payment_method_*`, etc.) are
  * tech debt rastreado em AGENTS.md — expand when product needs them.
+ *
+ * Note (Sub-etapa 14): `transaction_settlement_pending` was removed from
+ * the list — it is not in Braintree's current SDK enum
+ * (`braintree.WebhookNotification.Kind`), indicating the kind is
+ * deprecated. If the kind reappears in future SDK versions, re-add.
  */
 const braintreeManifest: PaymentProviderManifest = {
   slug: "braintree",
@@ -48,7 +53,8 @@ const braintreeManifest: PaymentProviderManifest = {
     // Transaction lifecycle
     "transaction_settled",
     "transaction_settlement_declined",
-    "transaction_settlement_pending",
+    // Note: transaction_settlement_pending removed in Sub-etapa 14
+    // (not in current Braintree SDK enum — deprecated).
     "transaction_disbursed",
     // Disputes (audit-only via BillingEvent V1)
     "dispute_opened",
