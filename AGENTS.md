@@ -1185,8 +1185,63 @@ secret stuff made any sense for recharge. it's all based on the api key."
 **Sub-etapas pendentes da Camada 1:**
 
 - ✅ Sub-etapa 10 (revised) — Recharge API Key integration + webhook outbox
-- ⏳ Sub-etapa 11 — Mapper raw → canonical billing schema
+- ✅ Sub-etapa 11 — Mapper raw → canonical billing schema
 - ⏳ Sub-etapa 12 — Cutover + observability + done Camada 1
+
+## Mapper architecture (cravada na Sub-etapa 11)
+
+Pattern para transformar payloads raw de billing providers em rows
+canônicas no schema da Sub-etapa 9.
+
+**Layout:** `src/lib/mappers/<provider>/` com funções puras, uma por
+entidade. Primeiro provider implementado: `recharge` (8 arquivos —
+types, helpers, e um mapper por entidade canonical).
+
+**Conventions:**
+
+- Cada mapper: `(client, payload, ctx) => Promise<string | void>`.
+  Retorna o `id` (UUID) da row canônica para downstream FK refs.
+- `client: PrismaClient | Prisma.TransactionClient` — recebe o cliente
+  do handler, herda a Prisma Extension de tenancy automaticamente.
+- `ctx`: `{ tenantId, providerId, ...resolvedRefs }`. Refs já resolvidas
+  upstream (ex: `customerId` quando o mapper de Charge é chamado).
+- Idempotência via `prisma.X.upsert` com unique constraint do schema
+  (`@@unique([providerId, externalId])` no caso de billing rows).
+- Amounts: providers que retornam strings/dollars convertem para cents
+  Int via helper canonical. Recharge usa `map-amount-cents.ts`.
+- Status enums: providers com vocabulário próprio mapeiam para enums
+  canônicos (`ChargeStatus`) via helper. Loud-fail em unknown values.
+- `provider_data` JSONB sempre preservado com payload completo do topic
+  atual — Sub-etapa 9 cravou isso como source-of-truth para reprocessamento.
+
+**Handler-mapper relationship:**
+
+- Handler (`recharge.handler.ts`) é o dispatcher: parse outbox event →
+  upsert `PaymentProvider` → resolve customer → invoca mapper apropriado
+  → grava IWE legacy + BillingEvent audit.
+- Mappers são **puros** — não decidem topic, não escrevem audit, só
+  fazem upsert da entidade canonical.
+- Stub helpers (`ensureSubscriptionStub`, `ensureCustomerByExternalId`)
+  permitem ordem de chegada não-determinística (charge antes de sub
+  cria stub que próximo `subscription/*` enriquece via upsert update).
+
+**Schema deviations preservadas (Sub-etapa 11 Opção A):**
+
+- `BillingCustomer` tem só `email` + `name?` — Recharge `first_name +
+  last_name` consolidam em `name`. `phone` e outros campos vivem em
+  `provider_data` JSONB.
+- `Subscription.customerId` / `Charge.customerId` (não `billingCustomerId`).
+- `ChargeLineItem` tem `amountCents` mas não `quantity` — Recharge
+  `quantity` per line preservada em `provider_data`.
+- `Subscription.status: String` (não enum). Recharge `active/cancelled/
+  expired` persistidos verbatim.
+- `Charge.status: ChargeStatus` (único enum em billing). Mapping table
+  cravado em `map-charge-status.ts`.
+
+**Próximo provider:** Stripe (quando vier) segue o mesmo layout
+(`src/lib/mappers/stripe/` com mesma assinatura). Adicionar AGENT.md
+para provider quando o segundo entrar — primeiro provider documenta o
+pattern; segundo confirma a convenção.
 
 **Tags de marco:**
 - `camada-1-pause-pre-recharge` — início da pausa (pré-Fase 3).

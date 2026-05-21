@@ -2,6 +2,20 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.5 — 2026-05-21
+
+Anchor entry. PR (Sub-etapa 11 — mapper Recharge raw → canonical billing
+schema). Cria `src/lib/mappers/recharge/` (8 files), refator
+`recharge.handler.ts` para dispatcher por topic, 2 test files com 18
+testes para helpers puros (`mapChargeStatus` + `mapAmountCents`).
+
+Integration tests com fixtures Recharge sintéticos diferidos como
+follow-up (Sub-etapa 11.0.1 ou ad-hoc após primeiro payload real em
+produção fornecer fixture canonical). Mappers são funções puras com
+upserts via constraints — risco baixo de regressão silenciosa.
+
+Refs: Sub-etapa 11.
+
 ## 1.2.4 — 2026-05-20
 
 Anchor entry. PR (Sub-etapa 10.0.2 — programmatic Recharge webhook
