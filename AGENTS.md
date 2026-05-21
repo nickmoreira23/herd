@@ -1410,6 +1410,57 @@ JSON. Geram `{bt_signature, bt_payload}` em runtime via
 determinísticas no `freshGateway()` helper. Roundtrip parse valida o
 contrato SDK.
 
+### Mapper layer (Sub-etapa 15)
+
+**Layout:** `src/lib/mappers/braintree/` (10 arquivos). Paridade arquitetural
+com `src/lib/mappers/recharge/` (Sub-etapa 11). Funções puras
+`(client, payload, ctx) => Promise<string | null>` com idempotência via
+`(providerId, externalId)` unique upserts.
+
+**Escopo V1 (5 entidades canonical):**
+
+- `mapBraintreeCustomer` — BillingCustomer (firstName + lastName → name)
+- `mapBraintreeSubscription` + `ensureBraintreeSubscriptionStub`
+- `mapBraintreeCharge` — Subscription stub se transaction tem subscriptionId
+- `mapBraintreePaymentMethod` — silent skip se sem `paymentMethodToken`
+- `upsertBraintreePaymentProvider` — catalog row helper
+
+**Status helpers (loud-fail em unknown):**
+
+- `mapBraintreeChargeStatus`: 13 Transaction.Status → 8 canonical ChargeStatus.
+  - settled/settlement_confirmed → SUCCESS
+  - settlement_declined/processor_declined/gateway_rejected/failed → FAILED
+  - voided/authorization_expired → CANCELLED
+  - submitted_for_settlement/settling/settlement_pending/authorizing/authorized → PENDING
+- `mapBraintreeSubscriptionStatus`: Title Case + espaço → lowercase + underscore
+  (ex: `"Past Due"` → `"past_due"`). `Subscription.status` canonical é `String`.
+
+**`map-amount-cents.ts` duplicado:** copy direto do Recharge mapper (Opção A).
+Trigger refactor para `src/lib/mappers/_shared/`: chegada do 3º provider.
+
+**Handler dispatcher (`braintree.handler.ts`, refator Sub-etapa 14 → 15):**
+
+- `subscription_*` → ensureCustomer → mapSubscription + para cada item em
+  `subscription.transactions[]` chama mapCharge + mapPaymentMethod.
+- `transaction_*` → ensureCustomer → mapCharge + mapPaymentMethod.
+- `dispute_*` → audit-only via IWE upstream (V1).
+
+**Customer resolution com synthetic stub fallback:**
+
+- `customer.id`/`customerId` presente → upsert real
+- Ausente (sample fixtures) → upsert synthetic
+  `externalId = "tenant_${tenantId}_fallback"`, idempotente.
+- Stubs convergem cross-replay; produção real sempre tem customer.id.
+
+**Skipped V1 (tech debt abaixo):**
+
+- `BillingEvent` audit row (entityId @db.Uuid incompatível com dispute.id
+  string; Subscription/Charge têm UUIDs válidos mas adoption deferido).
+- Refund mapping (no manifest topic V1).
+- DunningAttempt.
+- ChargeLineItem (Braintree não tem split equivalente Recharge).
+- Canonical Dispute table.
+
 **Tech debt rastreado (Camada 2):**
 
 - **Production cutover Braintree** (sandbox → production). Trigger:
@@ -1419,16 +1470,19 @@ contrato SDK.
   `disbursement_*`).
 - **Marketplace integration** (sub-merchants Braintree). Trigger:
   Bucked Up modelo de negócio expandir para multi-vendor.
-- **Mapper dispatch + BillingEvent audit Braintree** (Sub-etapa 15).
-  Handler V1 hoje é raw-only.
+- **BillingEvent audit Braintree + canonical Dispute table.** Trigger:
+  Sub-etapa 17 smoke real OU produto requerer audit log estruturado.
+- **Refund + DunningAttempt mappers Braintree.** Trigger: scope expansion
+  webhooks OU produto requerer histórico estruturado.
 - **Multi-tenant Braintree** + remoção do 1-tenant fallback em
-  `tenant-resolver.ts`. Trigger: primeiro tenant Braintree adicional.
+  `tenant-resolver.ts` + synthetic customer stub em handler. Trigger:
+  primeiro tenant Braintree adicional.
 - **E2E integration test Braintree (`braintree-e2e.integration.test.ts`).**
-  Sub-etapa 14 cobriu por unit tests (verifier + extractor); e2e
-  análogo a `gorgias-e2e.integration.test.ts` (route handler → worker
-  pickup → IWE row + DomainEvent row) fica como follow-up. Trigger:
-  Sub-etapa 17 smoke real, ou se houver regressão silenciosa
-  detectada após Sub-etapa 15.
+  Sub-etapas 14-15 cobriram por unit tests; e2e análogo a
+  `gorgias-e2e.integration.test.ts` fica como follow-up. Trigger:
+  Sub-etapa 17 smoke real.
+- **`_shared/map-amount-cents.ts` factor-out.** Trigger: 3º provider
+  precisando da mesma função (hoje duplicada Recharge + Braintree).
 
 **Tag de marco:** `camada-2-start` em main (Sub-etapa 13 entrega).
 
