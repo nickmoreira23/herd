@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { processPendingEvents } from "@/lib/domain-events/process-pending-events";
 
-export const dynamic = "force-dynamic";
+// Next.js 16 Cache Components: route handlers reading env or DB are
+// auto-detected as dynamic. `export const dynamic = "force-dynamic"`
+// is incompatible with `cacheComponents` (`next.config.ts`) and unnecessary.
+// See AGENTS.md "Next.js 16 Cache Components conventions".
 
 /**
  * Sub-etapa 12 — Cron trigger for the domain-events outbox worker.

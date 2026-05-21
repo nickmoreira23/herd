@@ -2,6 +2,14 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.7 — 2026-05-21
+
+Anchor entry. PR (Sub-etapa 12.0.1 — hotfix Next 16 Cache Components
+incompatibility). Removidas 2 linhas `export const dynamic = "force-dynamic"`
+das routes introduzidas em Sub-etapa 12. Build local validado em main repo.
+
+Refs: Sub-etapa 12.0.1.
+
 ## 1.2.6 — 2026-05-21
 
 Anchor entry. PR (Sub-etapa 12 — cutover minimal: cron worker + health
