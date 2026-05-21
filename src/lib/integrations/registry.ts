@@ -20,12 +20,14 @@ import { PaymentProviderManifestSchema } from "./payment/payment-manifest.schema
  * route — fail fast, not on first user.
  */
 
+import { braintreeAdapter } from "./integrations/braintree.integration";
 import { gorgiasAdapter } from "./integrations/gorgias.integration";
 import { intercomAdapter } from "./integrations/intercom.integration";
 import { rechargeAdapter } from "./integrations/recharge.integration";
 import { recallAdapter } from "./integrations/recall.integration";
 
 const adapters: IntegrationAdapter[] = [
+  braintreeAdapter,
   gorgiasAdapter,
   intercomAdapter,
   rechargeAdapter,

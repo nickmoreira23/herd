@@ -10,11 +10,19 @@ import {
 import type { IntegrationAdapter } from "../adapter.interface";
 
 describe("integration adapter registry — production state", () => {
-  it("registers the 4 guinea-pig adapters", () => {
+  it("registers the production adapters", () => {
+    // Sub-etapa 13 (Camada 2): braintree added as the 5th adapter, alongside
+    // the 4 Sub-etapa 7 guinea-pigs (gorgias / intercom / recall-ai / recharge).
     const slugs = getAllAdapters()
       .map((a) => a.slug)
       .sort();
-    expect(slugs).toEqual(["gorgias", "intercom", "recall-ai", "recharge"]);
+    expect(slugs).toEqual([
+      "braintree",
+      "gorgias",
+      "intercom",
+      "recall-ai",
+      "recharge",
+    ]);
   });
 
   it("lookup by slug returns the correct adapter", () => {
@@ -32,7 +40,8 @@ describe("integration adapter registry — production state", () => {
   });
 
   it("registry size equals registered adapter count (no silent drops)", () => {
-    expect(integrationAdapterRegistry.size).toBe(4);
+    // Sub-etapa 13: 4 → 5 with braintree.
+    expect(integrationAdapterRegistry.size).toBe(5);
   });
 
   it("recharge resolves with PaymentProviderManifest shape (BILLING/PAYMENT + payment fields)", () => {

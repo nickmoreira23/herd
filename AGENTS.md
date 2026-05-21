@@ -1313,6 +1313,55 @@ pattern; segundo confirma a convenção.
 - **Storefront Token integration** (browser-side, customer-facing
   portal). Trigger: HERD UI customer-facing checkout/portal.
 
+# Camada 2 — Braintree backend integration (cravada na Sub-etapa 13)
+
+Segundo billing provider em paralelo a Recharge. Backend-only nesta camada
+(UI checkout vem com Fase 5 Marketplace).
+
+**Auth model:** triplet de API credentials (`merchantId` + `publicKey` +
+`privateKey`) + environment indicator (`sandbox` | `production`).
+Encrypted em `Integration.credentials` como JSON blob via AES-256-GCM
+(mesma pipeline da Camada 1).
+
+**Environment:** sandbox primeiro (Camada 2 V1). Production cutover é
+tech debt rastreado — trigger: smoke test sandbox validado + cliente
+requerer go-live.
+
+**SDK vs fetch — decisão per-provider:** Camada 2 usa `braintree` npm
+SDK (v3.37+). Decisão divergente de Recharge (fetch direto). Razões:
+(1) signature verification proprietária com helpers built-in; (2) API
+surface maior + GraphQL via SDK; (3) maturidade do SDK. Custo: ~5MB
+bundle.
+
+**Convenção cravada:** decisão SDK vs fetch é per-provider, baseada em
+(a) complexidade de webhook signing, (b) maturidade da SDK do provedor,
+(c) bundle size acceptable em backend. Não há regra única — Recharge
+ficou com fetch porque API é simples e webhook signing tinha pegadinha
+anti-HMAC que merecia controle direto; Braintree usa SDK porque o
+contrário.
+
+**Webhook scope V1 (13 topics):**
+
+- Subscription (6): `subscription_charged_successfully`,
+  `subscription_charged_unsuccessfully`, `subscription_canceled`,
+  `subscription_trial_ended`, `subscription_went_past_due`,
+  `subscription_expired`
+- Transaction (4): `transaction_settled`, `transaction_settlement_declined`,
+  `transaction_settlement_pending`, `transaction_disbursed`
+- Dispute (3): `dispute_opened`, `dispute_lost`, `dispute_won`
+
+**Tech debt rastreado (Camada 2):**
+
+- **Production cutover Braintree** (sandbox → production). Trigger:
+  smoke test sandbox validado + cliente requerer.
+- **Webhook scope expansion** (13 → ~30 disponíveis). Trigger: produto
+  requerer events extras (`partner_merchant_*`, `payment_method_*`,
+  `disbursement_*`).
+- **Marketplace integration** (sub-merchants Braintree). Trigger:
+  Bucked Up modelo de negócio expandir para multi-vendor.
+
+**Tag de marco:** `camada-2-start` em main (Sub-etapa 13 entrega).
+
 ## Boundaries
 
 - Never edit `mcp/generated/`, `schemas/feature.schema.json`,

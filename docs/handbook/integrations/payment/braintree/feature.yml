@@ -1,0 +1,45 @@
+id: braintree
+uid: herd.integration.payment.braintree
+level: integration
+technical_category: foundation
+
+title:
+  pt-BR: "Braintree"
+  en-US: "Braintree"
+description:
+  pt-BR: "Provider de pagamentos Braintree (PayPal). One-time charges + subscriptions com suporte a Apple Pay, Google Pay, PayPal, Venmo, Credit Card. Sandbox-first (Camada 2)."
+  en-US: "Braintree payment provider (PayPal). One-time charges + subscriptions with support for Apple Pay, Google Pay, PayPal, Venmo, Credit Card. Sandbox-first (Camada 2)."
+
+status: active
+owners: ["@nick"]
+since: 2026-05-21
+updated: 2026-05-21
+
+parent: herd.category.integrations.payment
+children: []
+consumes:
+  - herd.block.financial.charges
+  - herd.block.financial.subscriptions
+consumed_by: []
+related:
+  - herd.integration.payment.recharge
+
+source_paths:
+  - "src/lib/services/braintree.ts"
+  - "src/lib/integrations/integrations/braintree.integration.ts"
+  - "scripts/seed-braintree-integration.ts"
+
+admin_paths: []
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog
