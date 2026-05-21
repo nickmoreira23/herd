@@ -2,6 +2,15 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.8 — 2026-05-21
+
+Anchor entry. PR (Sub-etapa 13 — Braintree adapter + service + seed,
+Camada 2 start). Primeiro provider a usar SDK npm (`braintree` v3.37)
+em vez de fetch direto. Decisão SDK vs fetch cravada como per-provider
+em AGENTS.md.
+
+Refs: Sub-etapa 13, Camada 2 start.
+
 ## 1.2.7 — 2026-05-21
 
 Anchor entry. PR (Sub-etapa 12.0.1 — hotfix Next 16 Cache Components

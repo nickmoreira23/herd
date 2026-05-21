@@ -225,6 +225,13 @@ references:
     title:
       pt-BR: Infraestrutura
       en-US: Infrastructure
+  herd.integration.payment.braintree:
+    level: integration
+    id: braintree
+    path: docs/handbook/integrations/payment/braintree
+    title:
+      pt-BR: Braintree
+      en-US: Braintree
   herd.integration.payment.recharge:
     level: integration
     id: recharge

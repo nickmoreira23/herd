@@ -17,6 +17,7 @@ updated: 2026-05-20
 
 parent: herd.layer.integrations
 children:
+  - herd.integration.payment.braintree
   - herd.integration.payment.recharge
 consumes: []
 consumed_by: []
