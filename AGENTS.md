@@ -210,6 +210,63 @@ Cross-context communication uses an outbox pattern in the `domain_events` table.
 The Phase 1 etapa 1.8 establishes the infrastructure but leaves the registry
 empty — actual events start being emitted in Phase 2.
 
+# Observability — Camada 1 minimal (cravada na Sub-etapa 12)
+
+**Health endpoint:** `GET /api/health` returns:
+- `db.connected` — DB ping status
+- `outbox.pending` — events still pickable (attempts < MAX_ATTEMPTS, no `processedAt`)
+- `outbox.exhausted` — events with `attempts >= 5` (DLQ proxy)
+- `outbox.lastProcessedAt` — timestamp of the most recent successfully-processed event
+
+Returns 200 on success, 503 if the DB is unreachable.
+
+**Worker invocation in production:** `GET /api/cron/domain-events-sync`
+invokes `processPendingEvents({ limit: 50 })`.
+
+- Auth: `Authorization: Bearer ${CRON_SECRET}` header.
+- Triggered by Railway scheduled job (every 1 min, V1).
+- Single-responsibility: pick up to 50 pending events, run handlers, update
+  outbox state. Each event in its own tx — partial success across batch.
+- Standalone CLI still available: `npm run worker:domain-events`.
+
+**DLQ — eventos exhausted:**
+
+When an event reaches `attempts >= MAX_ATTEMPTS` (5) and still fails,
+`processPendingEvents` sets `nextAttemptAt = null` and leaves
+`processedAt = null`. The event becomes non-pickable — `findPendingEvents`
+filters it out via the `attempts < MAX_ATTEMPTS` predicate. It stays in
+`domain_events` permanently with `lastError` populated.
+
+**Query canonical para listar eventos exhausted:**
+
+```sql
+SELECT id, "eventType", "aggregateType", "aggregateId",
+       attempts, "lastError", "createdAt"
+FROM domain_events
+WHERE "processedAt" IS NULL
+  AND attempts >= 5
+ORDER BY "createdAt" DESC;
+```
+
+**Reprocessing manual:** after fixing the root cause, reset the event so
+the next worker run picks it up again:
+
+```sql
+UPDATE domain_events
+SET attempts = 0,
+    "nextAttemptAt" = NOW(),
+    "lastError" = NULL
+WHERE id = '<event-uuid>';
+```
+
+**Tech debt rastreado (Camada 1 V1 → V2):**
+- Structured logging (pino). Trigger: external dashboards/alerting.
+- `/api/metrics` Prometheus-style endpoint. Trigger: produto requer dashboards.
+- Admin UI for DLQ inspection + one-click reprocess. Trigger: 5+ eventos
+  exhausted acumulados, ou primeira ops complaint sobre query SQL manual.
+- Cron auth fail-open quando `CRON_SECRET` unset (já cravado em Tech debt).
+- Per-handler success/fail stats nas últimas 24h. Trigger: análise de erro pattern.
+
 # Financial engine: invariants and meta-rules
 
 The CFO-grade projection engine (`src/lib/financial-engine.ts`) and its
