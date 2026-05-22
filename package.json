@@ -20,6 +20,7 @@
     "db:seed:ledger": "tsx prisma/seeds/seed-ledger.ts",
     "seed:recharge": "tsx scripts/seed-recharge-integration.ts",
     "seed:braintree": "tsx scripts/seed-braintree-integration.ts",
+    "braintree:test-webhook": "tsx scripts/test-braintree-webhook.ts",
     "recharge:register-webhooks": "tsx scripts/register-recharge-webhooks.ts",
     "recharge:list-webhooks": "tsx scripts/list-recharge-webhooks.ts",
     "recharge:delete-webhook": "tsx scripts/delete-recharge-webhook.ts",
