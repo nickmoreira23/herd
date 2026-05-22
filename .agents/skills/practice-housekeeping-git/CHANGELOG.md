@@ -2,6 +2,25 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.18 — 2026-05-22
+
+Anchor entry. PR (Sub-etapa 17.0.7 — `headers()` opt-out em cron routes).
+Sub-etapa 17.0.6 cravou `unstable_noStore()` de `next/cache` como fix
+para cron routes cacheados, mas Railway prod confirmou que **noStore é
+no-op em Next 16 + Cache Components**: deploy `8057148` ativo há 12 min
+ainda retornava `x-nextjs-cache: HIT` + `cache-control: s-maxage=31536000`.
+
+Fix definitivo: trocar para `headers()` from `next/headers` — ler de
+Dynamic API força handler dinâmico per-request. Aplicado nos 4 cron
+routes. AGENTS.md "Next.js 16 Cache Components" tem nova seção "Fix
+canônico (Sub-etapa 17.0.7)" + nota "Não funciona em Next 16:
+unstable_noStore".
+
+Lição cravada: `unstable_noStore` é deprecated/no-op em Next 16. Use
+`headers()`/`cookies()` from `next/headers` para forçar dinamismo.
+
+Refs: Sub-etapa 17.0.7.
+
 ## 1.2.17 — 2026-05-22
 
 Anchor entry. PR (Sub-etapa 17.0.6 — `noStore()` em cron routes).

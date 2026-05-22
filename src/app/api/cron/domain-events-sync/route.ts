@@ -1,22 +1,25 @@
-import { unstable_noStore as noStore } from "next/cache";
+import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { processPendingEvents } from "@/lib/domain-events/process-pending-events";
 
-// Next.js 16 Cache Components quirk (Sub-etapa 17.0.6):
+// Next.js 16 Cache Components quirk — cron GET handlers (Sub-etapa 17.0.7):
 //
-// Cron GET handlers can slip through the "env + DB auto-detect as dynamic"
-// rule and get statically cached at Railway's edge — observed in prod with
-// `cache-control: s-maxage=31536000` + `x-nextjs-cache: HIT`, returning the
-// same `{picked:0, ...}` body for ~25 minutes. Likely cause: `dotenv` reads
-// happen at module init (outside request scope) and `request.headers.get()`
-// from the GET param does not reliably opt the route out of caching the
-// way `headers()` from `next/headers` does.
+// `unstable_noStore()` from `next/cache` (tried in Sub-etapa 17.0.6) is a
+// no-op in Next 16 + Cache Components. Railway prod confirmed: even after
+// deploy with `noStore()`, edge still served `x-nextjs-cache: HIT` with
+// `cache-control: s-maxage=31536000`, body `{picked:0, succeeded:0, ...}`
+// for ~25 minutes despite pending events in DB. `request.headers.get(...)`
+// from the GET param also does not opt-out of caching.
 //
-// `noStore()` is the canonical hammer in Next 16: invoked at the top of
-// the handler, it forces the route to be treated as fully dynamic — no
-// cache, no static, no SWR. Apply on every cron endpoint until Next 16
-// stabilizes a cleaner API (`connection()` is in some preview builds but
-// not in our installed version).
+// **Canonical opt-out in Next 16: `headers()` from `next/headers`.**
+//
+// Reading from `headers()` is a Dynamic API — it forces the route to
+// render dynamically per-request. The CDN/edge cannot prerender the
+// response because the actual header values come from the runtime
+// request, not build time.
+//
+// This file demonstrates the pattern; all 4 cron routes (`events-sync`,
+// `meetings-sync`, `knowledge-apps-sync`) use the same approach.
 //
 // `export const dynamic = "force-dynamic"` is NOT used — incompatible
 // with `cacheComponents: true` in next.config.ts (build fails).
@@ -45,17 +48,20 @@ import { processPendingEvents } from "@/lib/domain-events/process-pending-events
  * block, so RLS is enforced at the handler boundary.
  */
 export async function GET(request: Request): Promise<Response> {
-  noStore();
+  // Opt-out of static caching: reading from `headers()` (a Dynamic API)
+  // signals Next.js to treat the route as dynamic per-request. The return
+  // value is intentionally discarded — `request.headers.get(...)` below
+  // does the actual extraction. See module docblock for the rationale.
+  await headers();
+
+  const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) {
     console.warn(
       "[cron:domain-events-sync] CRON_SECRET not set — proceeding without auth check (tech debt rastreado em AGENTS.md)",
     );
-  } else {
-    const authHeader = request.headers.get("authorization");
-    if (authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    }
+  } else if (authHeader !== `Bearer ${cronSecret}`) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
   try {

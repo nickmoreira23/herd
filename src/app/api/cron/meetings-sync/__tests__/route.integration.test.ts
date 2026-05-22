@@ -2,6 +2,13 @@ import { describe, it, expect, beforeAll, beforeEach, afterAll, vi } from "vites
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
+// Sub-etapa 17.0.7: mock `headers()` from `next/headers` (called by the
+// cron handler for Cache Components opt-out). Returns empty Headers —
+// the handler discards the return value and reads from `request.headers`.
+vi.mock("next/headers", () => ({
+  headers: vi.fn(async () => new Headers()),
+}));
+
 /**
  * Sub-etapa 8.5.1 — end-to-end cron route coverage for PROCESSING orphan
  * recovery.

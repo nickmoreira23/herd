@@ -1841,16 +1841,36 @@ permaneceu por 25 min apesar de eventos pendentes. Provável causa:
 `request.headers.get(...)` do param do GET não opt-out do cache de forma
 confiável (diferente de `headers()` do `next/headers`).
 
-**Fix canônico:** importar `unstable_noStore as noStore` de `next/cache`
-e chamar `noStore()` na primeira linha de `GET()`. Aplicado nos 4 cron
-routes existentes em Sub-etapa 17.0.6:
+**Fix canônico (Sub-etapa 17.0.7):** **`headers()` from `next/headers`** —
+ler de uma Dynamic API força o handler a ser dinâmico per-request. CDN/edge
+não consegue prerender porque os valores reais dos headers só existem em
+runtime. Substitui `request.headers.get(...)` (do GET param) por
+`(await headers()).get(...)`.
+
+```typescript
+import { headers } from "next/headers";
+
+export async function GET(_request: Request) {
+  const headersList = await headers();
+  const authHeader = headersList.get("authorization");
+  // ... rest of handler
+}
+```
+
+**Não funciona em Next 16 + Cache Components:** `unstable_noStore()` de
+`next/cache` — tentado em Sub-etapa 17.0.6, confirmou-se **no-op** em
+Railway prod (cache persistiu `x-nextjs-cache: HIT` por horas mesmo após
+deploy do código com `noStore()` chamado). Pattern foi substituído em
+Sub-etapa 17.0.7 nos 4 cron routes:
+
 - `src/app/api/cron/domain-events-sync/route.ts`
 - `src/app/api/cron/events-sync/route.ts`
 - `src/app/api/cron/meetings-sync/route.ts`
 - `src/app/api/cron/knowledge-apps-sync/route.ts`
 
-Repetir o pattern em qualquer cron novo. `export const dynamic = "force-dynamic"`
-**continua proibido** (incompatível com `cacheComponents: true`).
+Repetir o pattern em qualquer cron novo (ou route handler com risco de
+cache estático). `export const dynamic = "force-dynamic"` **continua
+proibido** (incompatível com `cacheComponents: true`).
 
 **Gate obrigatório para PRs tocando route handlers ou `next.config.ts`:**
 rodar `npm run build` local antes do commit. CI (`tsc + lint + test`) NÃO
