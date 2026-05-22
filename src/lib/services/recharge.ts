@@ -122,6 +122,20 @@ export class RechargeService {
     return { shop: data.shop.name || data.shop.shop, email: data.shop.email };
   }
 
+  /**
+   * Returns the Recharge shop id as a string. Used by the
+   * `seed:connection` script to auto-discover `externalUserId` for
+   * Recharge `MemberConnection` rows when no env var is set.
+   *
+   * Convention (see AGENTS.md "Convenção `externalUserId` per-provider"):
+   * Recharge `externalUserId` may be the shop id, customer id, or
+   * merchant id. The seed defaults to shop id when discovering via API.
+   */
+  async getShopId(): Promise<string> {
+    const data = await this.request<{ shop: RechargeShop }>("/shop");
+    return String(data.shop.id);
+  }
+
   // ── Plans / Products ──
 
   async listPlans(params?: { page?: number; limit?: number }): Promise<RechargePlan[]> {

@@ -1243,7 +1243,13 @@ secret stuff made any sense for recharge. it's all based on the api key."
 
 - ✅ Sub-etapa 10 (revised) — Recharge API Key integration + webhook outbox
 - ✅ Sub-etapa 11 — Mapper raw → canonical billing schema
-- ⏳ Sub-etapa 12 — Cutover + observability + done Camada 1
+- ✅ Sub-etapa 12 — Cutover + observability + done Camada 1
+- 🚫 Sub-etapa 12.0.2 — OBSOLETA (substituída por Sub-etapa 17.0.8
+  — smoke validation harness reutilizável cravado preventivamente
+  pós-Camada 2; ver tag `camada-1-smoke-validated` e seção
+  "Camada 1 smoke-validated").
+- ✅ Sub-etapa 17.0.8 — Camada 1 smoke-validated (Plano_Camada_1.md
+  + smoke harness + tenant seed enhancement)
 
 ## Mapper architecture (cravada na Sub-etapa 11)
 
@@ -1695,6 +1701,61 @@ valida 6 checks end-to-end contra um deploy. Cobre env vars,
 credentials decrypt, member connection, service ping, webhook delivery,
 e outbox processing. Rodar em DEV + Railway production após qualquer
 fix em integration path.
+
+## Camada 1 smoke-validated (cravada na Sub-etapa 17.0.8)
+
+Aplicação preventiva das lições Camada 2 a Camada 1 antes do primeiro
+evento Recharge natural chegar. Discovery confirmou Camada 1 é
+arquiteturalmente OK (cravado canonical desde Sub-etapa 10) — somente
+1 gap real (`MemberConnection` Recharge vazio em DEV) + paridade de
+ferramentas de smoke/test-webhook com Camada 2.
+
+**Cross-provider learning crystallized:** Camada 1 recebeu **1 hotfix**
+(seed enhancement) vs Camada 2 que recebeu **7 hotfixes** (env conventions
++ route withTenant + handler unwrap + dispatch refactor + tenant
+resolver fallback + headers() opt-out + smoke harness). A assimetria
+não é qualidade — é ordem de chegada: o primeiro provider estabelece
+o canonical pattern, o segundo exercita-o e revela gaps que com 1 só
+caso não apareciam. **Aplicar lessons preventivamente ao primeiro
+provider** (este sub-etapa) é mais barato que reagir em produção.
+
+**Deliverables Sub-etapa 17.0.8:**
+
+- `RechargeService.getShopId()` — public method para `/shop` query.
+  Usado pelo seed para auto-discovery de `externalUserId` quando
+  env var ausente.
+- `seed-member-connection.ts` enhancement — Recharge branch usa
+  `RECHARGE_API_KEY` + `getShopId()` quando
+  `RECHARGE_SHOP_ID`/`RECHARGE_MERCHANT_ID` ausentes. Mantém
+  precedence: env var → API → throw com hint claro.
+- `scripts/test-recharge-webhook.ts` — CLI helper análogo a
+  `test-braintree-webhook.ts`. Hardcoded `charge/created` fixture +
+  canonical `sha256(secret + body)` signing (anti-HMAC literal).
+  `npm run recharge:test-webhook -- --base-url=...`.
+- `scripts/validate-camada-1-smoke.ts` — paridade
+  `validate-camada-2-smoke.ts`. 6 checks: env vars
+  (`RECHARGE_API_KEY`, `RECHARGE_WEBHOOK_SECRET`, etc.) + Integration
+  decrypt (apiToken) + MemberConnection Recharge + `RechargeService.testConnection`
+  (/shop ping) + Webhook delivery (sha256(secret+body)) + Outbox
+  processing autônomo (cron driven internally).
+- `docs/discovery/Plano_Camada_1.md` — formalização retroativa em
+  paridade com `Plano_Camada_2.md`.
+- Tag de marco `camada-1-smoke-validated` (após Nick rodar DEV +
+  Railway 6/6).
+
+**Sub-etapa 12.0.2 OBSOLETA.** Plano original previa "smoke real
+Recharge" como entrega separada mas 17.0.8 absorveu o escopo num
+único pacote reutilizável. Cross-referência preservada em
+`Plano_Camada_1.md`.
+
+**Convenção cross-provider cravada — smoke harness é template.**
+Próximo billing provider (hipotético "Camada 3") clona
+`validate-camada-2-smoke.ts` ou `validate-camada-1-smoke.ts` (mesmo
+shape — diferem só em vocabulário) e ajusta env vars + signing
+convention + webhook fixture. Não há "framework genérico" planejado
+— a duplicação shallow é mais barata que abstração premature, e cada
+provider tem peculiaridades de signing que fariam o framework
+acumular branches per-provider.
 
 ## Boundaries
 
