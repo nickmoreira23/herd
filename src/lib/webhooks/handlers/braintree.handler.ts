@@ -88,18 +88,40 @@ export async function braintreeHandler(
     const providerId = await upsertBraintreePaymentProvider(client, tenantId);
     const ctx: DispatchCtx = { tenantId, providerId };
 
+    // Sub-etapa 17.0.5 fix — unwrap subject.
+    //
+    // Route handler emits `payload.body = notification.subject`, which is a
+    // **wrapper** — `{transaction: {...}}` for transaction_* kinds,
+    // `{subscription: {...}}` for subscription_*, `{dispute: {...}}` for
+    // dispute_*. Previously the dispatcher cast `body` directly as the
+    // entity type, so `body.status` was undefined and
+    // `mapBraintreeChargeStatus` crashed with
+    // `Cannot read properties of undefined (reading 'toLowerCase')`.
+    //
+    // The route's emit shape is correct (preserves the full SDK subject
+    // for reprocessing / future fields); the handler must unwrap.
+    const subject = body as Record<string, unknown> | null | undefined;
+
     if (kind.startsWith("subscription_")) {
-      await dispatchSubscriptionEvent(
-        client,
-        body as BraintreeSubscriptionPayload,
-        ctx,
-      );
+      const subscription = subject?.subscription as
+        | BraintreeSubscriptionPayload
+        | undefined;
+      if (!subscription) {
+        throw new Error(
+          `braintree handler: kind=${kind} missing subject.subscription`,
+        );
+      }
+      await dispatchSubscriptionEvent(client, subscription, ctx);
     } else if (kind.startsWith("transaction_")) {
-      await dispatchTransactionEvent(
-        client,
-        body as BraintreeTransactionPayload,
-        ctx,
-      );
+      const transaction = subject?.transaction as
+        | BraintreeTransactionPayload
+        | undefined;
+      if (!transaction) {
+        throw new Error(
+          `braintree handler: kind=${kind} missing subject.transaction`,
+        );
+      }
+      await dispatchTransactionEvent(client, transaction, ctx);
     } else if (kind.startsWith("dispute_")) {
       // V1: dispute canonical mapping deferred. IWE raw row já preserva o
       // payload completo upstream. Tech debt: canonical Dispute table.
