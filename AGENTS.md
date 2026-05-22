@@ -1826,10 +1826,31 @@ They centralize translation handling and make the i18n contract explicit.
   incompatível com Cache Components. Build falha com
   `"dynamic" is not compatible with nextConfig.cacheComponents`.
 - Route handlers que lêem env (`process.env.X`) ou DB (Prisma queries) são
-  auto-detectados como dinâmicos por inferência. Directive explícita é
-  redundante.
+  auto-detectados como dinâmicos por inferência **na maioria dos casos**.
+  Directive explícita é redundante.
 - Server components default = cacheable. Adicionar `<Suspense>` ao redor
   de componentes que leem dados não-cacheados quando necessário.
+
+**Exception: cron GET handlers (cravada na Sub-etapa 17.0.6).** Cron
+endpoints podem escapar do auto-detect e ser estaticamente cacheados na
+edge do Railway (`x-nextjs-cache: HIT`, `cache-control: s-maxage=31536000`).
+Sintoma: `/api/cron/*` retorna o mesmo body por horas sem o handler real
+executar — confirmou-se via prod smoke onde `picked=0 succeeded=0`
+permaneceu por 25 min apesar de eventos pendentes. Provável causa:
+`dotenv` reads em module init (fora do request scope) e
+`request.headers.get(...)` do param do GET não opt-out do cache de forma
+confiável (diferente de `headers()` do `next/headers`).
+
+**Fix canônico:** importar `unstable_noStore as noStore` de `next/cache`
+e chamar `noStore()` na primeira linha de `GET()`. Aplicado nos 4 cron
+routes existentes em Sub-etapa 17.0.6:
+- `src/app/api/cron/domain-events-sync/route.ts`
+- `src/app/api/cron/events-sync/route.ts`
+- `src/app/api/cron/meetings-sync/route.ts`
+- `src/app/api/cron/knowledge-apps-sync/route.ts`
+
+Repetir o pattern em qualquer cron novo. `export const dynamic = "force-dynamic"`
+**continua proibido** (incompatível com `cacheComponents: true`).
 
 **Gate obrigatório para PRs tocando route handlers ou `next.config.ts`:**
 rodar `npm run build` local antes do commit. CI (`tsc + lint + test`) NÃO

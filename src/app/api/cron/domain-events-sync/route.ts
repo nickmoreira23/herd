@@ -1,9 +1,25 @@
+import { unstable_noStore as noStore } from "next/cache";
 import { NextResponse } from "next/server";
 import { processPendingEvents } from "@/lib/domain-events/process-pending-events";
 
-// Next.js 16 Cache Components: route handlers reading env or DB are
-// auto-detected as dynamic. `export const dynamic = "force-dynamic"`
-// is incompatible with `cacheComponents` (`next.config.ts`) and unnecessary.
+// Next.js 16 Cache Components quirk (Sub-etapa 17.0.6):
+//
+// Cron GET handlers can slip through the "env + DB auto-detect as dynamic"
+// rule and get statically cached at Railway's edge — observed in prod with
+// `cache-control: s-maxage=31536000` + `x-nextjs-cache: HIT`, returning the
+// same `{picked:0, ...}` body for ~25 minutes. Likely cause: `dotenv` reads
+// happen at module init (outside request scope) and `request.headers.get()`
+// from the GET param does not reliably opt the route out of caching the
+// way `headers()` from `next/headers` does.
+//
+// `noStore()` is the canonical hammer in Next 16: invoked at the top of
+// the handler, it forces the route to be treated as fully dynamic — no
+// cache, no static, no SWR. Apply on every cron endpoint until Next 16
+// stabilizes a cleaner API (`connection()` is in some preview builds but
+// not in our installed version).
+//
+// `export const dynamic = "force-dynamic"` is NOT used — incompatible
+// with `cacheComponents: true` in next.config.ts (build fails).
 // See AGENTS.md "Next.js 16 Cache Components conventions".
 
 /**
@@ -29,6 +45,7 @@ import { processPendingEvents } from "@/lib/domain-events/process-pending-events
  * block, so RLS is enforced at the handler boundary.
  */
 export async function GET(request: Request): Promise<Response> {
+  noStore();
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) {
     console.warn(

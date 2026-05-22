@@ -2,6 +2,29 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.17 — 2026-05-22
+
+Anchor entry. PR (Sub-etapa 17.0.6 — `noStore()` em cron routes).
+Smoke em Railway prod revelou que `/api/cron/domain-events-sync`
+estava sendo cacheado em edge — response `{picked:0,succeeded:0,...}`
+retornada com `x-nextjs-cache: HIT` + `cache-control: s-maxage=31536000`
+por ~25 min sem o handler real executar. Sintoma colateral: cron-job.org
+502 emails + `outbox.pending` estagnado em prod DB.
+
+Fix: importar `unstable_noStore as noStore` de `next/cache` e chamar
+`noStore()` na primeira linha do `GET()` de **todos os 4 cron routes**:
+- `domain-events-sync` (causa imediata do smoke fail)
+- `events-sync` + `meetings-sync` + `knowledge-apps-sync` (proativo —
+  mesmo pattern, mesmo sintoma latente)
+
+AGENTS.md "Next.js 16 Cache Components conventions" atualizado com a
+exception cravada. `export const dynamic = "force-dynamic"` continua
+proibido (incompatível com `cacheComponents: true`).
+
+DEV não exibia o bug (Turbopack dev mode não cacheia route handlers).
+
+Refs: Sub-etapa 17.0.6.
+
 ## 1.2.16 — 2026-05-22
 
 Anchor entry. PR (Sub-etapa 17.0.5 — Braintree handler unwrap +

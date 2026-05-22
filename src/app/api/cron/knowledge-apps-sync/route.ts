@@ -1,5 +1,9 @@
+import { unstable_noStore as noStore } from "next/cache";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+
+// noStore() opts out of Next 16 Cache Components static caching (Sub-etapa
+// 17.0.6 — cron handlers can otherwise be HIT-cached at the edge).
 import { getValidAccessToken } from "@/lib/apps/token-refresh";
 import { decrypt } from "@/lib/encryption";
 import { OuraService } from "@/lib/services/oura";
@@ -17,6 +21,7 @@ import { transformDataPoint } from "@/lib/apps/data-transformer";
  * Protected by CRON_SECRET header to prevent unauthorized access.
  */
 export async function GET(request: Request) {
+  noStore();
   // Verify cron secret
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
