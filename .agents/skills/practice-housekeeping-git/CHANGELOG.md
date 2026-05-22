@@ -2,6 +2,26 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.15 — 2026-05-22
+
+Anchor entry. PR (Sub-etapa 17.0.4 — Braintree route `withTenant` wrap).
+Smoke real em DEV (pós Sub-etapa 17.0.3 + `.env.local` cleanup) parou
+em Check 5 com 500: `new row violates row-level security policy for
+table "IntegrationWebhookEvent"` (code 42501). Route handler escrevia
+IWE direto na transaction sem `withTenant(tenant.tenantId, ...)`, então
+`app.tenant_id` GUC não estava setado e a policy strict rejeitava o
+INSERT (a policy tightened de permissive `USING true` para strict em
+sub-etapa subsequente sem que o Braintree route fosse atualizado).
+
+Discovery confirmou cross-handler sweep: bug isolado a Braintree
+(V1 raw-only design da Sub-etapa 14 — Gorgias/Intercom/Recharge
+escrevem IWE só no outbox handler que JÁ usa `withTenant`).
+
+Fix: wrap `prisma.$transaction(...)` com `withTenant(tenant.tenantId,
+...)` no route handler Braintree. Padrão idêntico aos outbox handlers.
+
+Refs: Sub-etapa 17.0.4.
+
 ## 1.2.14 — 2026-05-22
 
 Anchor entry. PR (Sub-etapa 17.0.3 — encryption key alignment + smoke
