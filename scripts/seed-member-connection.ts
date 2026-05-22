@@ -107,6 +107,34 @@ function resolveExternalIdFromEnv(slug: SupportedSlug): string | null {
 }
 
 /**
+ * Sub-etapa 17.0.8 — auto-discover Recharge shop_id via API when no env
+ * var is set. Uses `RECHARGE_API_KEY` (same token persisted encrypted in
+ * `Integration.credentials`) to query `/shop` and return `shop.id`.
+ *
+ * Returns null if `RECHARGE_API_KEY` is unset or the request fails, so
+ * the caller falls back to the canonical "set env var or pass --external-id"
+ * error.
+ */
+async function resolveRechargeShopIdViaApi(): Promise<string | null> {
+  const token = process.env.RECHARGE_API_KEY;
+  if (!token) return null;
+  try {
+    const { RechargeService } = await import("../src/lib/services/recharge");
+    const svc = new RechargeService(token);
+    const id = await svc.getShopId();
+    console.log(`  Recharge shop_id auto-discovered via API: ${id}`);
+    return id;
+  } catch (err) {
+    console.warn(
+      `  [seed:connection] Recharge API shop_id discovery failed: ${
+        err instanceof Error ? err.message : String(err)
+      }`,
+    );
+    return null;
+  }
+}
+
+/**
  * Admin client bound to `DATABASE_URL` (role `postgres`, bypasses RLS).
  * See module-level docblock for the rationale.
  */
@@ -199,16 +227,23 @@ async function main(): Promise<void> {
       externalUserId = args.externalId;
     } else {
       const fromEnv = resolveExternalIdFromEnv(slug);
-      if (!fromEnv) {
-        const envHint =
-          slug === "braintree"
-            ? "BRAINTREE_MERCHANT_ID"
-            : "RECHARGE_SHOP_ID or RECHARGE_MERCHANT_ID";
+      if (fromEnv) {
+        externalUserId = fromEnv;
+      } else if (slug === "recharge") {
+        // Sub-etapa 17.0.8 — fallback to Recharge API auto-discovery.
+        const fromApi = await resolveRechargeShopIdViaApi();
+        if (!fromApi) {
+          throw new Error(
+            `Cannot resolve externalUserId for recharge. Set RECHARGE_SHOP_ID (or RECHARGE_MERCHANT_ID) in .env, OR set RECHARGE_API_KEY for API auto-discovery, OR pass --external-id=<id>.`,
+          );
+        }
+        externalUserId = fromApi;
+      } else {
+        const envHint = "BRAINTREE_MERCHANT_ID";
         throw new Error(
           `Cannot resolve externalUserId. Set ${envHint} in .env OR pass --external-id=<id>.`,
         );
       }
-      externalUserId = fromEnv;
     }
     const fingerprint =
       externalUserId.length > 12

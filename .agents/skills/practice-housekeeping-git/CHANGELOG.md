@@ -2,6 +2,35 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.19 — 2026-05-22
+
+Anchor entry. PR (Sub-etapa 17.0.8 — Camada 1 smoke-validated). Aplicação
+preventiva das lições Camada 2 a Camada 1 antes do primeiro evento
+Recharge natural chegar.
+
+Discovery confirmou Camada 1 arquiteturalmente OK (cravado canonical
+desde Sub-etapa 10): Sub-etapas 17.0.4 (route withTenant) e 17.0.5
+(handler unwrap) NÃO se aplicam a Recharge — pattern já estava
+correto. Único gap real: `MemberConnection` Recharge vazio em DEV
+(seed só era escrito em integration tests).
+
+Deliverables:
+- `RechargeService.getShopId()` (public method para `/shop` query).
+- `seed-member-connection.ts` enhancement (Recharge auto-discovery via API).
+- `scripts/test-recharge-webhook.ts` (CLI helper análogo Braintree).
+- `scripts/validate-camada-1-smoke.ts` (paridade `validate-camada-2-smoke.ts`).
+- `docs/discovery/Plano_Camada_1.md` (formalização retroativa).
+- AGENTS.md seção "Camada 1 smoke-validated" + Sub-etapa 12.0.2 OBSOLETA.
+
+Cross-provider learning crystallized: 1 hotfix Camada 1 vs 7 hotfixes
+Camada 2 não é qualidade — é ordem de chegada. Primeiro provider
+estabelece pattern; segundo exercita-o e revela gaps.
+
+Tag de marco: `camada-1-smoke-validated` (aplicada por Nick após DEV +
+Railway 6/6 pós-merge).
+
+Refs: Sub-etapa 17.0.8.
+
 ## 1.2.18 — 2026-05-22
 
 Anchor entry. PR (Sub-etapa 17.0.7 — `headers()` opt-out em cron routes).
