@@ -1581,6 +1581,57 @@ revisitar.
 **Indicador de fechamento:** tag `camada-2-complete` em main (aplicada
 pós-merge da Sub-etapa 17).
 
+## Tenant activation flow (cravada na Sub-etapa 17.0.1)
+
+**Conceito:** `Integration` é catalog **platform-wide** (Recharge / Braintree
+existem como providers disponíveis). `MemberConnection` é o registro
+"tenant X com profile Y ativou integration Z". O webhook tenant resolver
+depende dessa row para escopar payload — sem `MemberConnection`, o
+webhook retorna 400.
+
+**Gap revelado pós-Camada 2:** `MemberConnection` só era escrita em
+integration tests. Nenhum caminho de produção (UI ou seed) existia.
+Webhooks reais (Recharge OR Braintree) falhariam 400 "tenant not found"
+no ingress — gap silencioso até o smoke da Sub-etapa 17 expor.
+
+**Caminho V1 (cravado):** script seed
+`npm run seed:connection -- --slug=<provider>` (aliases:
+`seed:braintree-connection`, `seed:recharge-connection`). Idempotent via
+`@@unique([profileId, integrationId])`. Auto-detect single org/profile
+ou requer `--tenant=<id>` / `--profile=<id>` flags se houver múltiplos.
+`externalUserId` lê do `.env` (`BRAINTREE_MERCHANT_ID`,
+`RECHARGE_SHOP_ID` / `RECHARGE_MERCHANT_ID`) ou via `--external-id`.
+
+**Tech debt rastreado:** activation flow via UI/CLI customer-facing.
+Trigger: Fase 4 (Organization) cravar admin UI para gestão de
+integrações OR Fase 5 (Marketplace) precisar onboarding flow.
+
+**Resolver fallback V1 (Recharge + Braintree):** `tenant-resolver.ts`
+aplica fallback "1-tenant lookup" em **dois cenários**:
+- (a) `externalId` não extraído do payload (samples / minimal payloads).
+- (b) `externalId` extraído mas não bate em nenhuma `MemberConnection`
+  (drift entre seed e payload — ex: seed usou `merchant_id`, payload
+  veio com `customer.id`).
+
+Em ambos, se houver **exatamente 1** `MemberConnection` para o provider,
+resolve para esse tenant. **Trigger remover:** primeiro tenant Braintree
+ou Recharge adicional (paridade per-provider).
+
+**Convenção `externalUserId` per-provider:**
+
+| Provider | externalUserId semantics |
+|---|---|
+| Gorgias | `account_id` (conta Gorgias) |
+| Intercom | `app_id` (workspace Intercom) |
+| Recharge | `customer.id` (primary) ou `shop_id`/`merchant_id` (fallback) |
+| Braintree | customer id Braintree (extraído via kind switch) |
+
+**Pattern para novos providers:** novo provider precisa
+(1) seed `Integration` row,
+(2) seed `MemberConnection` row (via `seed:connection` ou novo alias),
+(3) cravar `extractExternalUserId` switch case no resolver,
+(4) decidir se entra em `FALLBACK_PROVIDERS` (recomendado V1 sandbox).
+
 ## Boundaries
 
 - Never edit `mcp/generated/`, `schemas/feature.schema.json`,
