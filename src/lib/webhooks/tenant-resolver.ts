@@ -150,35 +150,34 @@ export async function resolveTenantFromPayload(
   const externalId = extractExternalId(provider, payload);
   const admin = getAdminClient();
 
-  // V1 1-tenant fallback for Braintree: SDK sample fixtures and some real
-  // payloads omit customer id. While there's a single MemberConnection for
-  // braintree (Camada 2 V1 — Bucked Up sandbox-only), resolve to that one.
-  // Trigger to remove: multi-tenant Braintree (tech debt em AGENTS.md).
-  if (provider === "braintree" && !externalId) {
-    const connections = await admin.memberConnection.findMany({
-      where: { integration: { slug: "braintree" } },
-      take: 2,
-      select: { tenantId: true },
-    });
-    if (connections.length === 1) {
-      return { ok: true, tenantId: connections[0]!.tenantId };
-    }
-    return {
-      ok: false,
-      reason:
-        connections.length === 0
-          ? "no MemberConnection found for braintree (V1 fallback requires exactly 1)"
-          : "multiple MemberConnections found for braintree — V1 1-tenant fallback requires exactly 1 (customer id missing from payload)",
-    };
-  }
+  // V1 1-tenant fallback for billing providers (braintree + recharge).
+  // Applies in two cases:
+  //   (a) externalId could not be extracted from the payload (SDK sample
+  //       fixtures or minimal payloads omit customer id), OR
+  //   (b) externalId was extracted but no MemberConnection matches it
+  //       (e.g. seed used `merchant_id` but payload sent `customer.id`,
+  //       or first webhook arrived before any per-customer seed existed).
+  //
+  // In both cases, if there is exactly ONE MemberConnection for the
+  // provider, resolve to its tenant. Trigger to remove: multi-tenant
+  // Recharge/Braintree (tech debt em AGENTS.md "Tenant activation flow").
+  const FALLBACK_PROVIDERS = ["braintree", "recharge"] as const;
+  const supportsFallback = (FALLBACK_PROVIDERS as readonly string[]).includes(
+    provider,
+  );
 
+  // Case (a): no externalId.
   if (!externalId) {
-    return {
-      ok: false,
-      reason: `cannot extract external id from ${provider} payload`,
-    };
+    if (!supportsFallback) {
+      return {
+        ok: false,
+        reason: `cannot extract external id from ${provider} payload`,
+      };
+    }
+    return await resolveSingleConnectionFallback(admin, provider);
   }
 
+  // Normal path — try external id match first.
   const connection = await admin.memberConnection.findFirst({
     where: {
       externalUserId: externalId,
@@ -187,14 +186,45 @@ export async function resolveTenantFromPayload(
     select: { tenantId: true },
   });
 
-  if (!connection) {
-    return {
-      ok: false,
-      reason: `no MemberConnection found for ${provider} external_id=${externalId}`,
-    };
+  if (connection) {
+    return { ok: true, tenantId: connection.tenantId };
   }
 
-  return { ok: true, tenantId: connection.tenantId };
+  // Case (b): externalId present but no match. Fallback if supported.
+  if (supportsFallback) {
+    return await resolveSingleConnectionFallback(admin, provider);
+  }
+
+  return {
+    ok: false,
+    reason: `no MemberConnection found for ${provider} external_id=${externalId}`,
+  };
+}
+
+/**
+ * V1 1-tenant fallback: if there is exactly ONE MemberConnection for the
+ * provider, use its tenantId. Zero or more than one is a denial reason.
+ * Only invoked for providers in `FALLBACK_PROVIDERS` (braintree, recharge).
+ */
+async function resolveSingleConnectionFallback(
+  admin: PrismaClient,
+  provider: Provider,
+): Promise<TenantResolution> {
+  const connections = await admin.memberConnection.findMany({
+    where: { integration: { slug: provider } },
+    take: 2,
+    select: { tenantId: true },
+  });
+  if (connections.length === 1) {
+    return { ok: true, tenantId: connections[0]!.tenantId };
+  }
+  return {
+    ok: false,
+    reason:
+      connections.length === 0
+        ? `no MemberConnection found for ${provider} (V1 1-tenant fallback requires exactly 1)`
+        : `multiple MemberConnections found for ${provider} — V1 1-tenant fallback requires exactly 1`,
+  };
 }
 
 /**

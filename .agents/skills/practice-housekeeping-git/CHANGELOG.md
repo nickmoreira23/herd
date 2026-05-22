@@ -2,6 +2,24 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.12 — 2026-05-21
+
+Anchor entry. PR (Sub-etapa 17.0.1 — hotfix post-Camada 2). Gap
+arquitetural revelado pelo smoke da Sub-etapa 17: `MemberConnection`
+table vazia em DEV, zero caminho de produção (UI ou seed) criava rows.
+Webhooks reais Recharge/Braintree falhariam 400.
+
+Entregas:
+- `scripts/seed-member-connection.ts` parametrizado por `--slug`
+- 3 npm aliases: `seed:connection`, `seed:braintree-connection`,
+  `seed:recharge-connection`
+- Resolver `tenant-resolver.ts` generalizado: fallback 1-tenant aplica
+  para braintree + recharge em 2 cenários (no externalId + externalId
+  no match)
+- AGENTS.md: seção "Tenant activation flow" cravada
+
+Refs: Sub-etapa 17.0.1, hotfix post-Camada 2.
+
 ## 1.2.11 — 2026-05-21
 
 Anchor entry. PR (Sub-etapa 17 — Camada 2 closeout). Test webhook CLI
