@@ -1632,6 +1632,70 @@ ou Recharge adicional (paridade per-provider).
 (3) cravar `extractExternalUserId` switch case no resolver,
 (4) decidir se entra em `FALLBACK_PROVIDERS` (recomendado V1 sandbox).
 
+## Environment configuration conventions (cravada na Sub-etapa 17.0.3)
+
+**Lição cravada:** `ENCRYPTION_KEY` drift entre `.env` e `.env.local` causou
+bug latente. Next.js runtime carrega `.env.local` primeiro (spurious key)
+enquanto scripts via `tsx + dotenv/config` carregam apenas `.env`
+(canonical). Handler decrypt falhava 500 silenciosamente em runtime,
+embora scripts funcionassem. Discovery cirúrgica pegou comparando
+fingerprints sha256 das duas keys.
+
+**Convenção cravada:**
+
+- **`.env`** — source of truth da config canonical do dev environment.
+  Bate com Railway production em vars críticas (ENCRYPTION_KEY,
+  DATABASE_URL, NEXTAUTH_*, CRON_SECRET, integration credentials, ...).
+- **`.env.local`** — overrides locais APENAS. Reserve para:
+  - Vars dev-only sem equivalente prod (ex.: `DEEPGRAM_API_KEY` quando
+    local difere do team, `INTERNAL_TICK_SECRET`).
+  - Personal API keys diferentes do team default.
+
+**NÃO colocar em `.env.local`:**
+- `ENCRYPTION_KEY` — deve ser única cross-env para decrypt das credentials
+  persistidas funcionar (gravadas com uma key, lidas com outra → falha).
+- `DATABASE_URL` / `DIRECT_URL` / `RUNTIME_DATABASE_URL` — runtime
+  precisa de URL stable.
+- `NEXTAUTH_URL` / `NEXTAUTH_SECRET` — auth flow precisa stability.
+- Qualquer var que afete decrypt de dados persistidos no DB.
+
+**Validação rápida (rodar antes de PRs touching encryption / auth):**
+
+```bash
+node -e "
+const fs = require('fs');
+const crypto = require('crypto');
+['ENCRYPTION_KEY', 'DATABASE_URL', 'NEXTAUTH_URL'].forEach(v => {
+  ['env', 'env.local'].forEach(f => {
+    try {
+      const content = fs.readFileSync('.' + f, 'utf8');
+      const m = content.match(new RegExp('^' + v + '=(.+)\$', 'm'));
+      if (m) {
+        const val = m[1].trim().replace(/['\"]/g, '');
+        const hash = crypto.createHash('sha256').update(val).digest('hex').slice(0,8);
+        console.log(\`.\${f} \${v}: sha256=\${hash}\`);
+      }
+    } catch {}
+  });
+});
+"
+```
+
+Fingerprints devem bater quando uma var existe em ambos. Mismatch =
+correção imediata.
+
+**Fix `prisma.ts` URL precedence (Sub-etapa 17.0.3):** o resolver agora
+throws explícito quando uma URL env var é setada com **empty string**
+(em vez de silent no-op via `??`). Previne entire class of silent prod
+failures quando vars são setadas sem valor — antes, `RUNTIME_DATABASE_URL=""`
+passava pelo nullish coalescing e quebrava opacamente em `new PrismaPg("")`.
+
+**Smoke validation cravado:** `npm run smoke:camada-2 [-- --base-url=<url>]`
+valida 6 checks end-to-end contra um deploy. Cobre env vars,
+credentials decrypt, member connection, service ping, webhook delivery,
+e outbox processing. Rodar em DEV + Railway production após qualquer
+fix em integration path.
+
 ## Boundaries
 
 - Never edit `mcp/generated/`, `schemas/feature.schema.json`,
