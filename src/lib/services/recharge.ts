@@ -5,10 +5,21 @@ const BASE_URL = "https://api.rechargeapps.com";
 
 // ─── Recharge API Types ─────────────────────────────────────────────
 
+/**
+ * Sub-etapa 17.0.8.1 — Recharge renamed `/shop` to `/store`. Live probe
+ * with 2021-11 API token returns 404 on `/shop` and 200 on `/store` with
+ * payload shape `{ "store": { "id", "name", "email", "currency", ... } }`.
+ * The `shop` field of the legacy payload no longer exists separately
+ * from `name` — both pointed to the same human-readable label.
+ *
+ * Interface name preserved (RechargeShop) because nothing external
+ * imports it today; renaming would churn no callers. If the legacy
+ * `shop` field becomes needed by some consumer, it can be re-introduced
+ * as optional and populated from `name`.
+ */
 export interface RechargeShop {
   id: number;
   email: string;
-  shop: string;
   name: string;
 }
 
@@ -118,8 +129,10 @@ export class RechargeService {
   // ── Connection ──
 
   async testConnection(): Promise<{ shop: string; email: string }> {
-    const data = await this.request<{ shop: RechargeShop }>("/shop");
-    return { shop: data.shop.name || data.shop.shop, email: data.shop.email };
+    // Sub-etapa 17.0.8.1 — endpoint renamed `/shop` → `/store`. Outer
+    // result key kept as `shop` for callers' backward compatibility.
+    const data = await this.request<{ store: RechargeShop }>("/store");
+    return { shop: data.store.name, email: data.store.email };
   }
 
   /**
@@ -132,8 +145,11 @@ export class RechargeService {
    * merchant id. The seed defaults to shop id when discovering via API.
    */
   async getShopId(): Promise<string> {
-    const data = await this.request<{ shop: RechargeShop }>("/shop");
-    return String(data.shop.id);
+    // Sub-etapa 17.0.8.1 — endpoint renamed `/shop` → `/store`. The
+    // method name retains "Shop" for backward compatibility — callers
+    // semantically mean "the merchant's id at Recharge".
+    const data = await this.request<{ store: RechargeShop }>("/store");
+    return String(data.store.id);
   }
 
   // ── Plans / Products ──

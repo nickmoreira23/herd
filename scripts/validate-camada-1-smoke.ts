@@ -238,9 +238,14 @@ async function main(): Promise<void> {
     try {
       const secret = process.env.RECHARGE_WEBHOOK_SECRET!;
       const now = new Date().toISOString();
+      const eventId = Date.now();
+      // Sub-etapa 17.0.8.1 — Recharge ingress requires top-level `id`
+      // for dedup (`webhook_dedup.event_id`). Same id reused for the
+      // nested charge so the mapper-side stays consistent.
       const payload = {
+        id: eventId,
         charge: {
-          id: Date.now(),
+          id: eventId,
           customer_id: null,
           status: "queued",
           total_price: "59.99",
