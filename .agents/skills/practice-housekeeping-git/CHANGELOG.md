@@ -2,6 +2,19 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.13 — 2026-05-21
+
+Anchor entry. PR (Sub-etapa 17.0.2 — fix seed RLS bypass). Smoke real
+em DEV pegou: `seed-member-connection.ts` usava o singleton runtime
+(`@/lib/prisma`, role `herd_app` NOBYPASSRLS) e o INSERT em
+`member_connections` falhou no policy `mc_tenant_isolation` (código
+42501). Fix: script agora instancia `PrismaClient` próprio com
+`PrismaPg(DATABASE_URL)` (role `postgres`, bypass). Mesmo pattern já
+usado em `tenant-resolver.ts` e nos integration tests. Docblock cravado
+no script explicando por que NÃO migrar de volta para o singleton.
+
+Refs: Sub-etapa 17.0.2 (fix-on-hotfix).
+
 ## 1.2.12 — 2026-05-21
 
 Anchor entry. PR (Sub-etapa 17.0.1 — hotfix post-Camada 2). Gap
