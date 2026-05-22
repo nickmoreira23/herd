@@ -1,5 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
+// Sub-etapa 17.0.7: the GET handler now calls `headers()` from `next/headers`
+// to force the route out of static caching (Cache Components opt-out).
+// In vitest there is no Next.js request scope, so `headers()` would throw
+// "called outside a request scope". Mock it to a no-op — the handler
+// discards the return value and reads from `request.headers` for auth.
+vi.mock("next/headers", () => ({
+  headers: vi.fn(async () => new Headers()),
+}));
+
 vi.mock("@/lib/domain-events/process-pending-events", () => ({
   processPendingEvents: vi.fn(),
 }));

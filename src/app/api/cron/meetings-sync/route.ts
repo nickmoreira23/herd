@@ -1,12 +1,13 @@
-import { unstable_noStore as noStore } from "next/cache";
+import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import {
   syncCalendarMeetings,
   checkCompletedRecordings,
 } from "@/lib/meetings/meeting-scheduler";
 
-// noStore() opts out of Next 16 Cache Components static caching (Sub-etapa
-// 17.0.6 — cron handlers can otherwise be HIT-cached at the edge).
+// headers() forces dynamic rendering — opt-out of Next 16 Cache Components
+// static caching. `noStore()` from `next/cache` is no-op in Next 16
+// (Sub-etapa 17.0.6 confirmed via Railway prod). Canonical pattern in 17.0.7.
 import {
   getAgentConfig,
   processCompletedMeeting,
@@ -42,8 +43,9 @@ const PROCESSING_ORPHAN_THRESHOLD_MS = 15 * 60 * 1000;
  * Protected by CRON_SECRET header to prevent unauthorized access.
  */
 export async function GET(request: Request) {
-  noStore();
-  // Verify cron secret
+  // Reading from headers() (Dynamic API) opts the route out of static
+  // caching; return value discarded — see module docblock.
+  await headers();
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {

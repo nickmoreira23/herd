@@ -1,9 +1,10 @@
-import { unstable_noStore as noStore } from "next/cache";
+import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { syncCalendarEvents } from "@/lib/events/event-sync";
 
-// noStore() opts out of Next 16 Cache Components static caching (cron
-// routes can otherwise get HIT-cached at Railway's edge — Sub-etapa 17.0.6).
+// headers() forces dynamic rendering — opt-out of Next 16 Cache Components
+// static caching. `noStore()` from `next/cache` is no-op in Next 16
+// (Sub-etapa 17.0.6 confirmed via Railway prod). Canonical pattern in 17.0.7.
 
 /**
  * GET — Scheduled sync for calendar events.
@@ -15,7 +16,9 @@ import { syncCalendarEvents } from "@/lib/events/event-sync";
  * Protected by CRON_SECRET header to prevent unauthorized access.
  */
 export async function GET(request: Request) {
-  noStore();
+  // Reading from headers() (Dynamic API) opts the route out of static
+  // caching; return value discarded — see module docblock.
+  await headers();
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
