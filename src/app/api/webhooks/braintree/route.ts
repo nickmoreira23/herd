@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { emitDomainEvent } from "@/lib/domain-events";
 import { resolveTenantFromPayload } from "@/lib/webhooks";
 import { BraintreeService } from "@/lib/services/braintree";
+import { withTenant } from "@/lib/tenancy/context";
 
 /**
  * Sub-etapa 14, Camada 2 — Braintree webhook ingress.
@@ -162,42 +163,61 @@ export async function POST(request: Request) {
   }
 
   // 6. Atomic dedup + IWE raw + outbox emit.
+  //
+  // Sub-etapa 17.0.4 fix — RLS via `withTenant`:
+  //   `IntegrationWebhookEvent` is tenant-scoped + RLS strict. The
+  //   runtime singleton (`@/lib/prisma`) connects via
+  //   `RUNTIME_DATABASE_URL` (role `herd_app`, NOBYPASSRLS), so the
+  //   `tx.integrationWebhookEvent.create` below would fail the
+  //   `WITH CHECK` clause (code 42501) unless the `app.tenant_id` GUC
+  //   is set. `withTenant(tenant.tenantId, ...)` sets that GUC via
+  //   `set_config('app.tenant_id', uuid, true)` for the duration of
+  //   the callback (Prisma Extension Caminho B, AGENTS.md "Row Level
+  //   Security"). Passing `data.tenantId` on the create is NOT enough
+  //   — the GUC is what the policy reads.
+  //
+  //   `webhookDedup` is platform-wide (no RLS) and `emitDomainEvent`
+  //   writes to `domain_events` (also platform-wide), so they don't
+  //   need the wrap. But wrapping the entire `$transaction` keeps the
+  //   3 writes atomic and the GUC scope clean.
   try {
-    await prisma.$transaction(async (tx) => {
-      await tx.webhookDedup.create({
-        data: { provider: PROVIDER, eventId: dedupKey },
-      });
+    await withTenant(tenant.tenantId, async () => {
+      await prisma.$transaction(async (tx) => {
+        await tx.webhookDedup.create({
+          data: { provider: PROVIDER, eventId: dedupKey },
+        });
 
-      // Raw IWE audit (V1 paridade Recharge Sub-etapa 10 inicial).
-      // tenantId NOT NULL on the schema; we resolved it above.
-      await tx.integrationWebhookEvent.create({
-        data: {
-          tenantId: tenant.tenantId,
-          integrationId: integration.id,
-          eventType: kind,
-          payload: JSON.stringify({
-            kind,
-            timestamp,
-            subject: notification.subject,
-          }),
-        },
-      });
-
-      await emitDomainEvent(
-        {
-          aggregateType: "webhook",
-          aggregateId: tenant.tenantId,
-          eventType: EVENT_TYPE,
-          payload: {
+        // Raw IWE audit (V1 paridade Recharge Sub-etapa 10 inicial).
+        // tenantId NOT NULL on the schema; we resolved it above.
+        await tx.integrationWebhookEvent.create({
+          data: {
             tenantId: tenant.tenantId,
-            braintree_kind: kind,
-            braintree_subject_id: subjectId,
-            braintree_timestamp: timestamp,
-            body: notification.subject,
+            integrationId: integration.id,
+            eventType: kind,
+            payload: JSON.stringify({
+              kind,
+              timestamp,
+              subject: notification.subject,
+            }),
           },
-        },
-        tx,
-      );
+        });
+
+        await emitDomainEvent(
+          {
+            aggregateType: "webhook",
+            aggregateId: tenant.tenantId,
+            eventType: EVENT_TYPE,
+            payload: {
+              tenantId: tenant.tenantId,
+              braintree_kind: kind,
+              braintree_subject_id: subjectId,
+              braintree_timestamp: timestamp,
+              body: notification.subject,
+            },
+          },
+          tx,
+        );
+      });
     });
   } catch (err) {
     if (isPrismaUniqueViolation(err)) {
