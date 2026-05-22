@@ -2,6 +2,37 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.14 — 2026-05-22
+
+Anchor entry. PR (Sub-etapa 17.0.3 — encryption key alignment + smoke
+validation cravado). Discovery cirúrgica pós Sub-etapa 17.0.2 revelou
+2 bugs latentes:
+
+1. ENCRYPTION_KEY drift entre `.env` e `.env.local` — Next.js runtime
+   carrega `.env.local` primeiro (spurious key), scripts via tsx +
+   dotenv/config carregam `.env` (canonical). Handler decrypt fail 500
+   silent em runtime.
+2. `src/lib/prisma.ts` URL precedence via `??` — empty string passava
+   pelo nullish coalescing → crash opaco em `new PrismaPg("")`.
+
+Entregas:
+- `src/lib/prisma.ts`: `resolveConnectionString()` helper com explicit
+  empty-string throw.
+- `scripts/validate-camada-2-smoke.ts`: 6 checks end-to-end (env,
+  decrypt, member connection, service, webhook, outbox).
+- `npm run smoke:camada-2 [-- --base-url=<url>]`.
+- AGENTS.md: seção "Environment configuration conventions" cravada
+  (.env vs .env.local rules + validation snippet + prisma.ts fix +
+  smoke runner doc).
+
+Manual action por Nick antes do smoke phase (não é parte do PR):
+- Remover `ENCRYPTION_KEY` de `.env.local` (spurious — sha256 8851d4ac).
+  `.env` ENCRYPTION_KEY (sha256 bc9fb7da) é canonical e bate com prod.
+
+Versão pulou v1.2.13 (já usada em Sub-etapa 17.0.2).
+
+Refs: Sub-etapa 17.0.3.
+
 ## 1.2.13 — 2026-05-21
 
 Anchor entry. PR (Sub-etapa 17.0.2 — fix seed RLS bypass). Smoke real
