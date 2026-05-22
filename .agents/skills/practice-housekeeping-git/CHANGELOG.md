@@ -2,6 +2,32 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.16 — 2026-05-22
+
+Anchor entry. PR (Sub-etapa 17.0.5 — Braintree handler unwrap +
+smoke autonomous). Smoke real pós Sub-etapa 17.0.4 revelou que o
+braintreeHandler crashava com
+`Cannot read properties of undefined (reading 'toLowerCase')` no
+`mapBraintreeChargeStatus`. Root cause:
+
+- Route emit shape: `payload.body = notification.subject` =
+  `{transaction: {...}}` (wrapper)
+- Handler dispatch cast `body` direto como `BraintreeTransactionPayload`
+  → `body.status` undefined → mapper crash
+
+Fix: handler unwrap explicit. Extract `subject.transaction`,
+`subject.subscription`, `subject.dispute` antes do dispatch. Loud-fail
+se a key esperada faltar.
+
+Smoke autonomous: Check 6 deixou de depender de cron externo. Agora
+POSTs `/api/cron/domain-events-sync` com `Bearer ${CRON_SECRET}`,
+parsea o response shape `{picked, succeeded, failed, noHandler,
+exhausted}`, e exige `succeeded > 0 && failed === 0`. Funciona idem
+em DEV (sem scheduled cron) e prod (segundo trigger não atrapalha).
+CRON_SECRET adicionado em Check 1 required vars.
+
+Refs: Sub-etapa 17.0.5.
+
 ## 1.2.15 — 2026-05-22
 
 Anchor entry. PR (Sub-etapa 17.0.4 — Braintree route `withTenant` wrap).

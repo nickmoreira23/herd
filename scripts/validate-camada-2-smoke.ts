@@ -73,6 +73,7 @@ async function main(): Promise<void> {
       "BRAINTREE_ENVIRONMENT",
       "ENCRYPTION_KEY",
       "DATABASE_URL",
+      "CRON_SECRET", // Check 6 drives the cron route itself (Sub-etapa 17.0.5).
     ];
     const missing = required.filter((k) => !process.env[k]);
     if (missing.length > 0) {
@@ -287,54 +288,88 @@ async function main(): Promise<void> {
     }
   }
 
-  // === Check 6: Outbox processing ===
+  // === Check 6: Outbox processing (autonomous — drives cron internally) ===
+  //
+  // Sub-etapa 17.0.5 refactor: instead of waiting passively for an external
+  // cron (cron-job.org → Railway), the smoke now POSTs to
+  // /api/cron/domain-events-sync itself with the local CRON_SECRET. Works
+  // identically in DEV (no scheduled cron) and against Railway prod (just
+  // a second trigger besides the regular schedule). Idempotent — the cron
+  // handler picks pending events, processes them, marks them done.
   if (webhookSucceeded) {
-    log("");
-    log("Waiting 75s for cron to process outbox (cron runs every 1min)...");
-    await new Promise((r) => setTimeout(r, 75_000));
-
-    try {
-      const healthResponse = await fetch(`${args.baseUrl.replace(/\/$/, "")}/api/health`);
-      const healthBody = (await healthResponse.json()) as {
-        outbox?: { lastProcessedAt?: string | null };
-      };
-      const lastProcessed = healthBody.outbox?.lastProcessedAt;
-
-      if (lastProcessed) {
-        const lastProcessedDate = new Date(lastProcessed);
-        const secondsAgo =
-          (Date.now() - lastProcessedDate.getTime()) / 1000;
-
-        if (secondsAgo < 120) {
-          results.push({
-            name: "Outbox processing",
-            ok: true,
-            detail: `lastProcessedAt ${Math.round(secondsAgo)}s ago`,
-          });
-          passCount++;
-        } else {
-          results.push({
-            name: "Outbox processing",
-            ok: false,
-            error: `lastProcessedAt is stale: ${Math.round(secondsAgo)}s ago. Cron may not be running.`,
-          });
-          failCount++;
-        }
-      } else {
-        results.push({
-          name: "Outbox processing",
-          ok: false,
-          error: "lastProcessedAt is null",
-        });
-        failCount++;
-      }
-    } catch (err) {
+    const cronSecret = process.env.CRON_SECRET;
+    if (!cronSecret) {
       results.push({
         name: "Outbox processing",
         ok: false,
-        error: (err as Error).message,
+        error:
+          "CRON_SECRET not set in env (smoke now drives the cron itself; set CRON_SECRET to enable Check 6).",
       });
       failCount++;
+    } else {
+      try {
+        const cronUrl = `${args.baseUrl.replace(/\/$/, "")}/api/cron/domain-events-sync`;
+        const cronResponse = await fetch(cronUrl, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${cronSecret}` },
+        });
+
+        if (cronResponse.status !== 200) {
+          const body = await cronResponse.text();
+          results.push({
+            name: "Outbox processing",
+            ok: false,
+            error: `cron returned status=${cronResponse.status} body=${body.slice(0, 200)}`,
+          });
+          failCount++;
+        } else {
+          const cronBody = (await cronResponse.json()) as {
+            picked?: number;
+            succeeded?: number;
+            failed?: number;
+            noHandler?: number;
+            exhausted?: number;
+          };
+
+          const picked = cronBody.picked ?? 0;
+          const succeeded = cronBody.succeeded ?? 0;
+          const failed = cronBody.failed ?? 0;
+          const detail = `picked=${picked} succeeded=${succeeded} failed=${failed} noHandler=${cronBody.noHandler ?? 0} exhausted=${cronBody.exhausted ?? 0}`;
+
+          // Require at least one succeeded — the Braintree event we just
+          // emitted in Check 5 should land here. Failed > 0 still flags
+          // a problem (handler error) even if 1 succeeded.
+          if (succeeded > 0 && failed === 0) {
+            results.push({
+              name: "Outbox processing",
+              ok: true,
+              detail,
+            });
+            passCount++;
+          } else if (succeeded > 0 && failed > 0) {
+            results.push({
+              name: "Outbox processing",
+              ok: false,
+              error: `mixed: ${detail}. Some handlers failed — inspect domain_events.lastError`,
+            });
+            failCount++;
+          } else {
+            results.push({
+              name: "Outbox processing",
+              ok: false,
+              error: `no events succeeded: ${detail}`,
+            });
+            failCount++;
+          }
+        }
+      } catch (err) {
+        results.push({
+          name: "Outbox processing",
+          ok: false,
+          error: (err as Error).message,
+        });
+        failCount++;
+      }
     }
   } else {
     results.push({
