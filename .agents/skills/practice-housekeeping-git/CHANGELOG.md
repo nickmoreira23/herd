@@ -2,6 +2,33 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.20 — 2026-05-22
+
+Anchor entry. PR (Sub-etapa 17.0.8.1 — Recharge smoke hotfixes). Smoke
+real DEV pós-merge 17.0.8 falhou 4/6 e revelou 2 bugs cobertos por
+discovery insuficiente da sub-etapa anterior:
+
+**Bug 1 — `/shop` endpoint dead.** Recharge renomeou para `/store`. Live
+probe com `RECHARGE_API_KEY` real: 404 em `/shop`, 200 em `/store` com
+shape `{ "store": { "id", "name", "email", ... } }`. Fix: `RechargeService`
+agora bate em `/store`. Interface `RechargeShop` e métodos `testConnection`/
+`getShopId` preservam nomes por backward-compat (`shop`/`Shop` é apenas
+nomenclatura interna).
+
+**Bug 2 — fixture smoke sem top-level `id`.** Route handler Recharge
+extrai `event_id` de `parsed.id` (top-level) e rejeita 400 quando ausente.
+Meu fixture original em `test-recharge-webhook.ts` + `validate-camada-1-smoke.ts`
+só tinha `charge.id` aninhado. Fix: adicionar top-level `id` em ambos
+fixtures (mesmo valor de `charge.id` para consistência mapper-side).
+
+**Lição cravada — discovery via live probe.** Sub-etapa 17.0.8 não
+exercitou o smoke real (apenas tsc + tests). Os 2 bugs aparecem **só
+quando** o smoke roda contra DEV com chave real. Convenção: validações
+de endpoint/API de provider externo merecem `curl` live probe na
+discovery antes de cravar service code.
+
+Refs: Sub-etapa 17.0.8.1.
+
 ## 1.2.19 — 2026-05-22
 
 Anchor entry. PR (Sub-etapa 17.0.8 — Camada 1 smoke-validated). Aplicação

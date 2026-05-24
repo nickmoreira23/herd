@@ -1721,9 +1721,13 @@ provider** (este sub-etapa) é mais barato que reagir em produção.
 
 **Deliverables Sub-etapa 17.0.8:**
 
-- `RechargeService.getShopId()` — public method para `/shop` query.
+- `RechargeService.getShopId()` — public method para query da loja.
   Usado pelo seed para auto-discovery de `externalUserId` quando
-  env var ausente.
+  env var ausente. **Endpoint corrigido em Sub-etapa 17.0.8.1:**
+  Recharge renomeou `/shop` → `/store` (live probe com API 2021-11
+  retorna 404 em `/shop`, 200 em `/store` com payload
+  `{ "store": { "id", "name", "email", ... } }`). Método e interface
+  preservam nomenclatura `Shop` por backward compatibility.
 - `seed-member-connection.ts` enhancement — Recharge branch usa
   `RECHARGE_API_KEY` + `getShopId()` quando
   `RECHARGE_SHOP_ID`/`RECHARGE_MERCHANT_ID` ausentes. Mantém

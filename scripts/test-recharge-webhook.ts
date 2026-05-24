@@ -53,9 +53,14 @@ function parseArgs(argv: string[]): Args {
 function buildFixture(): { topic: string; payload: Record<string, unknown> } {
   const now = new Date().toISOString();
   const id = Date.now();
+  // Sub-etapa 17.0.8.1 — Recharge ingress route extracts `event_id`
+  // from top-level `parsed.id`, rejecting 400 if absent. The hardcoded
+  // smoke fixture must therefore expose a top-level `id`; the nested
+  // `charge.id` is preserved for the handler-side mapper dispatch.
   return {
     topic: "charge/created",
     payload: {
+      id,
       charge: {
         id,
         customer_id: null,
