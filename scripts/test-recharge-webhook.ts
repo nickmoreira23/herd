@@ -53,32 +53,36 @@ function parseArgs(argv: string[]): Args {
 function buildFixture(): { topic: string; payload: Record<string, unknown> } {
   const now = new Date().toISOString();
   const id = Date.now();
-  // Sub-etapa 17.0.8.1 — Recharge ingress route extracts `event_id`
-  // from top-level `parsed.id`, rejecting 400 if absent. The hardcoded
-  // smoke fixture must therefore expose a top-level `id`; the nested
-  // `charge.id` is preserved for the handler-side mapper dispatch.
+  // Sub-etapa 17.0.10 — Recharge `charge/*` webhook payload is FLAT
+  // (not wrapped under `{charge: {...}}`). Route handler casts `body
+  // as RechargeChargePayload` and the outbox handler reads
+  // `body.customer.first_name`. See `src/lib/mappers/recharge/types.ts`
+  // `RechargeChargePayload` for the canonical shape.
   return {
     topic: "charge/created",
     payload: {
       id,
-      charge: {
-        id,
-        customer_id: null,
-        status: "queued",
-        total_price: "59.99",
-        scheduled_at: now,
-        processed_at: null,
-        created_at: now,
-        updated_at: now,
-        line_items: [
-          {
-            subscription_id: null,
-            title: "HERD smoke charge/created",
-            quantity: 1,
-            price: "59.99",
-          },
-        ],
+      customer: {
+        id: 999000001,
+        email: "smoke-test@herd.example",
+        first_name: "Smoke",
+        last_name: "Test",
       },
+      status: "queued",
+      total_price: "59.99",
+      currency: "USD",
+      scheduled_at: now,
+      processed_at: null,
+      created_at: now,
+      updated_at: now,
+      line_items: [
+        {
+          subscription_id: null,
+          title: "HERD smoke charge/created",
+          quantity: 1,
+          price: "59.99",
+        },
+      ],
     },
   };
 }
