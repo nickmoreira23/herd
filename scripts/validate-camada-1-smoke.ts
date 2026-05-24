@@ -239,29 +239,36 @@ async function main(): Promise<void> {
       const secret = process.env.RECHARGE_WEBHOOK_SECRET!;
       const now = new Date().toISOString();
       const eventId = Date.now();
-      // Sub-etapa 17.0.8.1 — Recharge ingress requires top-level `id`
-      // for dedup (`webhook_dedup.event_id`). Same id reused for the
-      // nested charge so the mapper-side stays consistent.
+      // Sub-etapa 17.0.10 — Recharge `charge/*` webhook payload is FLAT.
+      // The route handler casts `body as RechargeChargePayload` and the
+      // handler reads `body.customer.first_name` directly. Earlier
+      // fixtures wrapping under `{charge: {...}}` produced
+      // `Cannot read properties of undefined (reading 'first_name')`
+      // in the outbox handler. See `src/lib/mappers/recharge/types.ts`
+      // `RechargeChargePayload` for the canonical shape.
       const payload = {
         id: eventId,
-        charge: {
-          id: eventId,
-          customer_id: null,
-          status: "queued",
-          total_price: "59.99",
-          scheduled_at: now,
-          processed_at: null,
-          created_at: now,
-          updated_at: now,
-          line_items: [
-            {
-              subscription_id: null,
-              title: `validate_smoke_${Date.now()}`,
-              quantity: 1,
-              price: "59.99",
-            },
-          ],
+        customer: {
+          id: 999000001,
+          email: "smoke-test@herd.example",
+          first_name: "Smoke",
+          last_name: "Test",
         },
+        status: "queued",
+        total_price: "59.99",
+        currency: "USD",
+        scheduled_at: now,
+        processed_at: null,
+        created_at: now,
+        updated_at: now,
+        line_items: [
+          {
+            subscription_id: null,
+            title: `validate_smoke_${Date.now()}`,
+            quantity: 1,
+            price: "59.99",
+          },
+        ],
       };
       const body = JSON.stringify(payload);
       // Canonical: sha256(secret + body) hex literal. NOT HMAC.

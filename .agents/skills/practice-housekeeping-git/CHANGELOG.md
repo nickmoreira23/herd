@@ -2,6 +2,30 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.21 — 2026-05-24
+
+Anchor entry. PR (Sub-etapa 17.0.10 — Recharge smoke fixture flat shape).
+Smoke real DEV pós-merge 17.0.8.1 atingiu 5/6 — Check 6 (outbox processing)
+falhou com `Cannot read properties of undefined (reading 'first_name')`.
+
+**Root cause:** fixture wrapped charge fields under `{charge: {...}}` mas
+o canonical `RechargeChargePayload` (em `src/lib/mappers/recharge/types.ts`)
+é **flat** — `id`, `customer: {id, email, first_name, last_name}`,
+`status`, `total_price`, `currency`, `line_items` todos top-level.
+
+Route handler casta `body as RechargeChargePayload` (sem unwrap) e o
+outbox handler lê `body.customer.first_name` diretamente. Com wrapper
+`{charge: {...}}`, `body.customer` ficava undefined.
+
+Fix: flatten payload em `validate-camada-1-smoke.ts` + `test-recharge-webhook.ts`
+e adicionar `customer` object canonical.
+
+Lição cravada: discovery de payload shape merece sample real do provider OU
+inspeção do mapper types antes de cravar fixture. Tests passam porque eles
+não exercitam o handler real — só smoke real fecha o loop.
+
+Refs: Sub-etapa 17.0.10.
+
 ## 1.2.20 — 2026-05-22
 
 Anchor entry. PR (Sub-etapa 17.0.8.1 — Recharge smoke hotfixes). Smoke
