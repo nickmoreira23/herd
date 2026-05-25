@@ -9,11 +9,11 @@ uid: herd.category.networks.corporate-network
 
 # Corporate Network
 
-The Corporate Network is HERD's internal representation of a specific company. It includes the organizational structure, internal communication channels, user profiles, departments, and permissions. Every company that uses HERD operates within its own Corporate Network with strict data isolation.
+The Corporate Network is ComeçaAI's internal representation of a specific company. It includes the organizational structure, internal communication channels, user profiles, departments, and permissions. Every company that uses ComeçaAI operates within its own Corporate Network with strict data isolation.
 
 ## Business
 
-The Corporate Network is HERD's primary tenant-isolation boundary. When a customer adopts HERD, what they get is a Corporate Network: a private space for their internal structure, with its own users, channels, departments, and permissions. No data crosses Corporate Network boundaries except through explicit Market Network mechanisms.
+The Corporate Network is ComeçaAI's primary tenant-isolation boundary. When a customer adopts ComeçaAI, what they get is a Corporate Network: a private space for their internal structure, with its own users, channels, departments, and permissions. No data crosses Corporate Network boundaries except through explicit Market Network mechanisms.
 
 This isolation matters commercially: customers expect their internal data — who works there, which department someone belongs to, what permissions they have — to be theirs alone. The Corporate Network is the container that guarantees that contract. It is also the unit on which billing, support tickets, and configuration are scoped.
 
@@ -21,7 +21,7 @@ This isolation matters commercially: customers expect their internal data — wh
 
 ## Product
 
-<!-- TODO: How users (admins, members) interact with Corporate Network surfaces in HERD's admin UI. /admin/organization, /admin/network, profile editor, channel management. -->
+<!-- TODO: How users (admins, members) interact with Corporate Network surfaces in ComeçaAI's admin UI. /admin/organization, /admin/network, profile editor, channel management. -->
 
 ## Architecture
 

@@ -36,7 +36,7 @@ const SYSTEM_AGENTS: SystemAgent[] = [
   // Orchestrator
   {
     key: "orchestrator",
-    name: "HERD AI",
+    name: "ComeçaAI AI",
     description:
       "Main orchestrator agent with access to all blocks and capabilities across the platform.",
     category: "MULTIMODAL",
@@ -45,7 +45,7 @@ const SYSTEM_AGENTS: SystemAgent[] = [
     modelId: "claude-sonnet-4-20250514",
     maxTokens: 8192,
     systemPrompt:
-      "You are the HERD AI assistant — the main orchestrator for HERD OS, a subscription operations platform. You can search any data and execute actions across all blocks. Be helpful, concise, and action-oriented.",
+      "You are the ComeçaAI AI assistant — the main orchestrator for ComeçaAI, a subscription operations platform. You can search any data and execute actions across all blocks. Be helpful, concise, and action-oriented.",
     isConversational: true,
     confirmationTier: "tiered",
     autoNavigate: false,
@@ -62,7 +62,7 @@ const SYSTEM_AGENTS: SystemAgent[] = [
     modelId: "claude-sonnet-4-20250514",
     maxTokens: 8192,
     systemPrompt:
-      "You are the Plans Architect — HERD's AI specialist for managing subscription plans. You have full control over ALL plan configuration and benefit assignments across every plan.",
+      "You are the Plans Architect — ComeçaAI's AI specialist for managing subscription plans. You have full control over ALL plan configuration and benefit assignments across every plan.",
     isConversational: true,
     confirmationTier: "tiered",
     autoNavigate: false,
@@ -79,7 +79,7 @@ const SYSTEM_AGENTS: SystemAgent[] = [
     modelId: "claude-sonnet-4-20250514",
     maxTokens: 8192,
     systemPrompt:
-      "You are the Projections Architect — HERD's AI specialist for financial modeling and scenario analysis. You can create, modify, compare, and analyze financial projection models. You understand MRR, margins, LTV/CAC, breakeven analysis, 24-month cohort projections, commission structures (including residual delays), and profit split distributions.\n\nIMPORTANT: When the user is editing a model, you receive their LIVE EDITOR STATE with every message — the current assumptions and calculated results in real time. When the user asks about a metric, explains a value, or wants to understand their model, ALWAYS use this live editor data first. Do NOT use saved scenarios or system defaults unless the user specifically asks about a saved model. Walk through the math step by step using the actual numbers from the live state.\n\nAlways explain the business impact of assumption changes clearly.",
+      "You are the Projections Architect — ComeçaAI's AI specialist for financial modeling and scenario analysis. You can create, modify, compare, and analyze financial projection models. You understand MRR, margins, LTV/CAC, breakeven analysis, 24-month cohort projections, commission structures (including residual delays), and profit split distributions.\n\nIMPORTANT: When the user is editing a model, you receive their LIVE EDITOR STATE with every message — the current assumptions and calculated results in real time. When the user asks about a metric, explains a value, or wants to understand their model, ALWAYS use this live editor data first. Do NOT use saved scenarios or system defaults unless the user specifically asks about a saved model. Walk through the math step by step using the actual numbers from the live state.\n\nAlways explain the business impact of assumption changes clearly.",
     isConversational: true,
     confirmationTier: "simple",
     autoNavigate: false,
@@ -115,7 +115,7 @@ const SYSTEM_AGENTS: SystemAgent[] = [
       scope,
       modelId: "claude-haiku-4-5-20251001",
       maxTokens: 4096,
-      systemPrompt: `You are the ${name} — a specialist AI assistant for the ${name.replace(" Agent", "")} block in HERD OS. You can search data and execute actions within your block. Be helpful, concise, and action-oriented.`,
+      systemPrompt: `You are the ${name} — a specialist AI assistant for the ${name.replace(" Agent", "")} block in ComeçaAI. You can search data and execute actions within your block. Be helpful, concise, and action-oriented.`,
       isConversational: true,
       confirmationTier: "simple",
       autoNavigate: false,

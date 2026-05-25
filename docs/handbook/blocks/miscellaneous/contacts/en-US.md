@@ -1,6 +1,6 @@
 ---
 title: Contacts
-description: Single source of truth for people in HERD — leads, customers, partners, employees.
+description: Single source of truth for people in ComeçaAI — leads, customers, partners, employees.
 locale: en-US
 uid: herd.block.miscellaneous.contacts
 ---
@@ -9,7 +9,7 @@ uid: herd.block.miscellaneous.contacts
 
 # Contacts
 
-The Contacts block is HERD's single source of truth for people. Every individual the platform tracks — leads, customers, partners, employees — is a Contact, with a stable identity that persists across deals, meetings, and campaigns. Contacts are the most-consumed block in HERD; nearly every tool reads from this block, and several blocks (meetings, deals, campaigns) link back to it.
+The Contacts block is ComeçaAI's single source of truth for people. Every individual the platform tracks — leads, customers, partners, employees — is a Contact, with a stable identity that persists across deals, meetings, and campaigns. Contacts are the most-consumed block in ComeçaAI; nearly every tool reads from this block, and several blocks (meetings, deals, campaigns) link back to it.
 
 ## Business
 
@@ -19,11 +19,11 @@ Knowing who a person is, what they care about, and what touchpoints they've had 
 
 ## Product
 
-<!-- TODO: How users (sales, marketing, support) interact with contacts in HERD's admin UI. List/detail views, filters, segmentation by lifecycle stage, integration with related blocks. -->
+<!-- TODO: How users (sales, marketing, support) interact with contacts in ComeçaAI's admin UI. List/detail views, filters, segmentation by lifecycle stage, integration with related blocks. -->
 
 ## Architecture
 
-The Contacts block owns the `Contact` Prisma model and exposes CRUD via REST endpoints under `src/app/api/contacts/`. UI surfaces live in `src/components/contacts/` and `src/app/admin/blocks/contacts/`. The block manifest at `src/lib/blocks/blocks/contacts.block.ts` declares the block's capabilities to HERD's chat orchestrator (search via DataProviders, action execution).
+The Contacts block owns the `Contact` Prisma model and exposes CRUD via REST endpoints under `src/app/api/contacts/`. UI surfaces live in `src/components/contacts/` and `src/app/admin/blocks/contacts/`. The block manifest at `src/lib/blocks/blocks/contacts.block.ts` declares the block's capabilities to ComeçaAI's chat orchestrator (search via DataProviders, action execution).
 
 The block exposes one block-group day-1: `leads`, a curated view of contacts in early-stage commercial qualification. Block-groups are intra-block — they share the same Prisma model and CRUD endpoints as the parent block, with semantic tagging or filtering applied.
 

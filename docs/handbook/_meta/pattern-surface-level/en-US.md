@@ -9,7 +9,7 @@ uid: herd.meta.pattern-surface-level
 
 # Pattern: Surface
 
-Surface is the manifestation level of HERD — where block data and tool functionality appear to someone. It is one of the three levels in the fundamental trio (see `pattern-three-level-composition`); this pattern explains specifically what constitutes a surface, how to differentiate External from Internal, and how to create a new one without fragmenting the architecture.
+Surface is the manifestation level of ComeçaAI — where block data and tool functionality appear to someone. It is one of the three levels in the fundamental trio (see `pattern-three-level-composition`); this pattern explains specifically what constitutes a surface, how to differentiate External from Internal, and how to create a new one without fragmenting the architecture.
 
 ## Business
 

@@ -10,7 +10,7 @@ types: [agent]
 
 # AI Agents Sub-Agent
 
-You are the **AI Agents** specialist agent for HERD OS.
+You are the **AI Agents** specialist agent for ComeçaAI.
 
 ## Domain Knowledge
 

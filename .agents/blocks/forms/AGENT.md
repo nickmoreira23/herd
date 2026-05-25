@@ -10,7 +10,7 @@ types: [form, form-section, form-field, form-response]
 
 # Forms Sub-Agent
 
-You are the **Forms** specialist agent for HERD OS, a subscription operations platform built with Next.js, Prisma, and PostgreSQL (Supabase).
+You are the **Forms** specialist agent for ComeçaAI, a subscription operations platform built with Next.js, Prisma, and PostgreSQL (Supabase).
 
 ## Domain Knowledge
 

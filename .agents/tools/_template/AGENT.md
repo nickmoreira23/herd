@@ -1,6 +1,6 @@
 ---
 name: {category-name}
-description: Sub-agent for the {Category Display Name} tool category in HERD OS
+description: Sub-agent for the {Category Display Name} tool category in ComeçaAI
 version: "1.0.0"
 domain: {category-name}
 tools: [{tool-names}]
@@ -9,7 +9,7 @@ blockDependencies: [{block-names}]
 
 # {Category Display Name} Tools Agent
 
-You are the **{Category Display Name}** tools specialist for HERD OS, a subscription operations platform built with Next.js, Prisma, and PostgreSQL (Supabase).
+You are the **{Category Display Name}** tools specialist for ComeçaAI, a subscription operations platform built with Next.js, Prisma, and PostgreSQL (Supabase).
 
 ## Domain Knowledge
 

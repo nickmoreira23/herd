@@ -7,10 +7,10 @@ title:
   en-US: llms.txt
 description:
   pt-BR: Arquivo público em /llms.txt seguindo a convenção llmstxt.org — orienta
-    LLMs sobre o que o HERD é, onde encontrar conteúdo canônico, e como acessar
+    LLMs sobre o que o ComeçaAI é, onde encontrar conteúdo canônico, e como acessar
     programaticamente.
   en-US: Public file at /llms.txt following the llmstxt.org convention — guides
-    LLMs about what HERD is, where to find canonical content, and how to access
+    LLMs about what ComeçaAI is, where to find canonical content, and how to access
     it programmatically.
 status: active
 owners:

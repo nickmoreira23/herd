@@ -1,6 +1,6 @@
 ---
 name: new-feature
-description: Scaffolds the 4-artifact Handbook contract for a new HERD entry (feature.yml + bilingual Markdown stubs) at the layer/category/feature hierarchy. Use this skill ALWAYS when the user says "new block", "new tool", "new integration", "new solution", "new network", "new category", "new meta entry", "create handbook entry", or "scaffold feature". Run `npm run gen:feature` to invoke. The script asks interactively which type of entry (feature individual / category overview / meta), then layer/category/id/metadata, validates against the Zod schema, and writes the files. It does NOT run gen:all automatically — you review first.
+description: Scaffolds the 4-artifact Handbook contract for a new ComeçaAI entry (feature.yml + bilingual Markdown stubs) at the layer/category/feature hierarchy. Use this skill ALWAYS when the user says "new block", "new tool", "new integration", "new solution", "new network", "new category", "new meta entry", "create handbook entry", or "scaffold feature". Run `npm run gen:feature` to invoke. The script asks interactively which type of entry (feature individual / category overview / meta), then layer/category/id/metadata, validates against the Zod schema, and writes the files. It does NOT run gen:all automatically — you review first.
 license: Apache-2.0
 metadata:
   herd:

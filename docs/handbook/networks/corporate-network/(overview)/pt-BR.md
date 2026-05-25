@@ -9,11 +9,11 @@ uid: herd.category.networks.corporate-network
 
 # Rede Corporativa
 
-A Corporate Network é a representação interna do HERD de uma empresa específica. Inclui a estrutura organizacional, canais de comunicação interna, profiles de usuários, departamentos e permissões. Toda empresa que usa o HERD opera dentro da sua própria Corporate Network com isolamento estrito de dados.
+A Corporate Network é a representação interna do ComeçaAI de uma empresa específica. Inclui a estrutura organizacional, canais de comunicação interna, profiles de usuários, departamentos e permissões. Toda empresa que usa o ComeçaAI opera dentro da sua própria Corporate Network com isolamento estrito de dados.
 
 ## Business
 
-A Corporate Network é a fronteira primária de tenant-isolation do HERD. Quando um cliente adota o HERD, o que ele recebe é uma Corporate Network: um espaço privado para a estrutura interna dele, com seus usuários, channels, departamentos e permissões. Nenhum dado cruza fronteiras de Corporate Network exceto por mecanismos explícitos da Market Network.
+A Corporate Network é a fronteira primária de tenant-isolation do ComeçaAI. Quando um cliente adota o ComeçaAI, o que ele recebe é uma Corporate Network: um espaço privado para a estrutura interna dele, com seus usuários, channels, departamentos e permissões. Nenhum dado cruza fronteiras de Corporate Network exceto por mecanismos explícitos da Market Network.
 
 Esse isolamento importa comercialmente: clientes esperam que dados internos — quem trabalha lá, qual departamento alguém pertence, que permissões tem — sejam só deles. A Corporate Network é o container que garante esse contrato. É também a unidade na qual billing, tickets de suporte e configuração são escopados.
 
@@ -21,7 +21,7 @@ Esse isolamento importa comercialmente: clientes esperam que dados internos — 
 
 ## Product
 
-<!-- TODO: Como usuários (admins, membros) interagem com superfícies de Corporate Network no admin UI do HERD. /admin/organization, /admin/network, profile editor, gerenciamento de channels. -->
+<!-- TODO: Como usuários (admins, membros) interagem com superfícies de Corporate Network no admin UI do ComeçaAI. /admin/organization, /admin/network, profile editor, gerenciamento de channels. -->
 
 ## Architecture
 

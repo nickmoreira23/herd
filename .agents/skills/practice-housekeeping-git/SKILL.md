@@ -1,6 +1,6 @@
 ---
 name: practice-housekeeping-git
-description: Workflow para limpeza de branches git em lote com preservação histórica. Use quando o repo acumular branches órfãs, stacks de trabalho mergeado, sub-agent scratch branches, ou fragmentação que dificulte navegação. Aplicado na Fase 0 do Plano Central HERD (Sub-etapas 0.3a, 0.3b, 0.3c, 0.3d.1, 0.3d.2 — 47 branches deletadas, 48 tags archive criadas).
+description: Workflow para limpeza de branches git em lote com preservação histórica. Use quando o repo acumular branches órfãs, stacks de trabalho mergeado, sub-agent scratch branches, ou fragmentação que dificulte navegação. Aplicado na Fase 0 do Plano Central ComeçaAI (Sub-etapas 0.3a, 0.3b, 0.3c, 0.3d.1, 0.3d.2 — 47 branches deletadas, 48 tags archive criadas).
 license: Apache-2.0
 title: Git Housekeeping — Archive + Batch Delete
 version: "1.1"
@@ -9,7 +9,7 @@ status: stable
 metadata:
   herd:
     classification: practice
-    abstract: Procedimento de 3 fases (Discovery → Decisão → Execução) para cleanup de branches git com preservação 100% reversível via tags archive. Codifica aprendizado da Fase 0 (Housekeeping git + re-baseline doc) do Plano Central HERD.
+    abstract: Procedimento de 3 fases (Discovery → Decisão → Execução) para cleanup de branches git com preservação 100% reversível via tags archive. Codifica aprendizado da Fase 0 (Housekeeping git + re-baseline doc) do Plano Central ComeçaAI.
 ---
 
 # Git Housekeeping — Archive + Batch Delete
@@ -164,7 +164,7 @@ Workflows com `paths:` filter listados como required em branch protection ficam 
 
 Se executar fora da branch alvo, gh tenta usar branch atual (frequentemente `main`) e falha com "head branch is the same as base branch". Sempre passar `--head <branch> --base main` explicitamente em automação.
 
-## Exemplo completo — Fase 0 HERD
+## Exemplo completo — Fase 0 ComeçaAI
 
 Aplicação prática deste skill resultou em:
 

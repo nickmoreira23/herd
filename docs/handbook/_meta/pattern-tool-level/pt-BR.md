@@ -1,6 +1,6 @@
 ---
 title: "Pattern: Tool"
-description: "Tool como unidade comercial e operacional do HERD: dois modos, naming natural, manifest em registry."
+description: "Tool como unidade comercial e operacional do ComeçaAI: dois modos, naming natural, manifest em registry."
 locale: pt-BR
 uid: herd.meta.pattern-tool-level
 ---
@@ -9,11 +9,11 @@ uid: herd.meta.pattern-tool-level
 
 # Pattern: Tool
 
-Tool é o nível de manipulação rica do HERD — onde regras de negócio, autoria e UI completa moram. Toda capability nasce como trio (ver `pattern-three-level-composition`); este pattern explica especificamente o nível Tool: o que é, o que não é, e como criar uma nova sem fragmentar a arquitetura.
+Tool é o nível de manipulação rica do ComeçaAI — onde regras de negócio, autoria e UI completa moram. Toda capability nasce como trio (ver `pattern-three-level-composition`); este pattern explica especificamente o nível Tool: o que é, o que não é, e como criar uma nova sem fragmentar a arquitetura.
 
 ## Business
 
-Tool é a unidade comercial do HERD. Pode ser ativada por plano comercial, monetizada individualmente, e composta em pacotes (Solutions, conceito futuro). Cada tool tem objetivo de negócio claro — gerar valor que justifique seu próprio espaço.
+Tool é a unidade comercial do ComeçaAI. Pode ser ativada por plano comercial, monetizada individualmente, e composta em pacotes (Solutions, conceito futuro). Cada tool tem objetivo de negócio claro — gerar valor que justifique seu próprio espaço.
 
 A consequência prática é seletiva: se uma "feature" candidata não tem objetivo comercial próprio, ela provavelmente é parte de outra tool (uma surface, um block, ou uma sub-rotina interna). Tools não são guarda-chuvas técnicos — são produtos. Esse rigor evita o crescimento por acreção que faz roadmaps comerciais virarem listas indistintas de "features".
 
@@ -91,7 +91,7 @@ Não confundir: Area diz *onde a tool mora no produto*; Tool Category diz *como 
 
 ## Glossary
 
-- **Tool**: unidade de manipulação rica — UI, regras, manifest, registry. Unidade comercial do HERD.
+- **Tool**: unidade de manipulação rica — UI, regras, manifest, registry. Unidade comercial do ComeçaAI.
 - **Tool Category**: agrupamento runtime de tools por afinidade de orquestração (Finances, Legal, Marketing, Sales, Operations, Foundation). Não é tool em si.
 - **Area**: macro-divisão estrutural do produto (Organization, Identity, Communication, Transaction, Workflow, Notification). Tools vivem dentro de areas.
 - **Manifest**: declaração TypeScript que descreve a tool — identidade, paths, capabilities, block family.
@@ -101,4 +101,4 @@ Não confundir: Area diz *onde a tool mora no produto*; Tool Category diz *como 
 
 ## Changelog
 
-- **2026-05-04 (v1.0)** — Pattern cravado em sessão arquitetural R2.5 expandida (maio/2026). Estabelece tool como unidade comercial e operacional do HERD com dois modos formais (standalone + embedded), naming por linguagem natural, e geração de Block Family inteira em vez de block único.
+- **2026-05-04 (v1.0)** — Pattern cravado em sessão arquitetural R2.5 expandida (maio/2026). Estabelece tool como unidade comercial e operacional do ComeçaAI com dois modos formais (standalone + embedded), naming por linguagem natural, e geração de Block Family inteira em vez de block único.

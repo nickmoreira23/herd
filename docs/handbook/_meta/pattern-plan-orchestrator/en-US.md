@@ -11,7 +11,7 @@ uid: herd.meta.pattern-plan-orchestrator
 
 Plans is an **agnostic** tool that attaches to any profile-type — internal or external — declaring how that profile is remunerated, recognized, capacitated, ranked, and pointed. The central insight: **a Plan does not store its own events**. A Plan declares rules referencing other tools that store the events.
 
-This pattern is, alongside Three-Level Composition and Source Attribution, one of HERD's architectural pillars. Without it, every new combination of "profile type + remuneration structure" would require a dedicated tool — an approach that does not scale and that we explicitly reject.
+This pattern is, alongside Three-Level Composition and Source Attribution, one of ComeçaAI's architectural pillars. Without it, every new combination of "profile type + remuneration structure" would require a dedicated tool — an approach that does not scale and that we explicitly reject.
 
 ## Business
 
@@ -21,7 +21,7 @@ The naive approach would be to create one tool per structure: "Career Plans tool
 
 The settled approach — agnostic Plan — fixes this: **a single tool, Plans, that attaches to any profile-type and declares rules combining references to other tools**. The company configures Plans once and gets total flexibility.
 
-The commercial consequence is direct. HERD can serve everything from small businesses (1 profile-type, 1 simple plan-type) to large enterprises (multiple profile-types, sophisticated plans crossing multiple progression tools) with the same architecture.
+The commercial consequence is direct. ComeçaAI can serve everything from small businesses (1 profile-type, 1 simple plan-type) to large enterprises (multiple profile-types, sophisticated plans crossing multiple progression tools) with the same architecture.
 
 ## Product
 

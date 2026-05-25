@@ -1,7 +1,7 @@
 /**
  * Block Generator Script
  *
- * Scaffolds all required files for a new HERD block following the standard architecture.
+ * Scaffolds all required files for a new ComeçaAI block following the standard architecture.
  *
  * Usage:
  *   npx tsx scripts/create-block.ts --name "rewards" --display "Rewards" --model "Reward"
@@ -384,7 +384,7 @@ write(
 export const ${camel}Block: BlockManifest = {
   name: "${name}",
   displayName: "${display}",
-  description: "${display} management for HERD OS.",
+  description: "${display} management for ComeçaAI.",
   domain: "foundation",
   types: ["${name}"],
   capabilities: ["read", "create", "update", "delete"],
@@ -469,7 +469,7 @@ write(
   join(agentDir, "AGENT.md"),
   `---
 name: ${name}
-description: Sub-agent for the ${display} block in HERD OS
+description: Sub-agent for the ${display} block in ComeçaAI
 version: "1.0.0"
 domain: ${name}
 capabilities: [read, create, update, delete]
@@ -479,11 +479,11 @@ types: [${name}]
 
 # ${display} Sub-Agent
 
-You are the **${display}** specialist agent for HERD OS.
+You are the **${display}** specialist agent for ComeçaAI.
 
 ## Domain Knowledge
 
-The ${display} block manages ${display.toLowerCase()} within the HERD subscription operations platform.
+The ${display} block manages ${display.toLowerCase()} within the ComeçaAI subscription operations platform.
 
 ## Owned Files
 

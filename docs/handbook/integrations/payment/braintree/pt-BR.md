@@ -9,7 +9,7 @@ uid: herd.integration.payment.braintree
 
 # Braintree
 
-Provider de pagamentos Braintree (subsidiária PayPal). Segundo billing provider de HERD, paralelo a Recharge. Inaugura **Camada 2** (backend-only para Fase 5; UI checkout vem com Marketplace).
+Provider de pagamentos Braintree (subsidiária PayPal). Segundo billing provider de ComeçaAI, paralelo a Recharge. Inaugura **Camada 2** (backend-only para Fase 5; UI checkout vem com Marketplace).
 
 Camada 2 entregue em sub-etapas 13 → 17 (2026-05-21). Pipeline end-to-end pronto em sandbox: adapter + service + webhook handler + mapper layer + dispatcher + dedup + outbox + worker.
 

@@ -74,7 +74,7 @@ Behavior:
 
 Examples:
   npm run recharge:register-webhooks
-  npm run recharge:register-webhooks -- --base-url https://herd.example.com
+  npm run recharge:register-webhooks -- --base-url https://comecaai.example.com
   npm run recharge:register-webhooks -- --dry-run
   npm run recharge:register-webhooks -- --delete-obsolete
 `);

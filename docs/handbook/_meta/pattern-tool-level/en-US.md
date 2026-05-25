@@ -1,6 +1,6 @@
 ---
 title: "Pattern: Tool"
-description: "Tool as HERD's commercial and operational unit: two modes, natural-language naming, manifest in registry."
+description: "Tool as ComeçaAI's commercial and operational unit: two modes, natural-language naming, manifest in registry."
 locale: en-US
 uid: herd.meta.pattern-tool-level
 ---
@@ -9,11 +9,11 @@ uid: herd.meta.pattern-tool-level
 
 # Pattern: Tool
 
-Tool is the rich-manipulation level of HERD — where business rules, authoring, and full UI live. Every capability is born as a trio (see `pattern-three-level-composition`); this pattern explains the Tool level specifically: what it is, what it isn't, and how to create a new one without fragmenting the architecture.
+Tool is the rich-manipulation level of ComeçaAI — where business rules, authoring, and full UI live. Every capability is born as a trio (see `pattern-three-level-composition`); this pattern explains the Tool level specifically: what it is, what it isn't, and how to create a new one without fragmenting the architecture.
 
 ## Business
 
-Tool is HERD's commercial unit. It can be activated by a commercial plan, monetized individually, and composed into bundles (Solutions, a future concept). Each tool has a clear business goal — generating value that justifies its own space.
+Tool is ComeçaAI's commercial unit. It can be activated by a commercial plan, monetized individually, and composed into bundles (Solutions, a future concept). Each tool has a clear business goal — generating value that justifies its own space.
 
 The practical consequence is selective: if a candidate "feature" has no business goal of its own, it is probably part of another tool (a surface, a block, or an internal sub-routine). Tools are not technical umbrellas — they are products. This rigor avoids accretive growth that turns commercial roadmaps into indistinct lists of "features".
 
@@ -91,7 +91,7 @@ Don't conflate them: Area says *where the tool lives in the product*; Tool Categ
 
 ## Glossary
 
-- **Tool**: rich-manipulation unit — UI, rules, manifest, registry. HERD's commercial unit.
+- **Tool**: rich-manipulation unit — UI, rules, manifest, registry. ComeçaAI's commercial unit.
 - **Tool Category**: runtime grouping of tools by orchestration affinity (Finances, Legal, Marketing, Sales, Operations, Foundation). Not a tool itself.
 - **Area**: structural macro-division of the product (Organization, Identity, Communication, Transaction, Workflow, Notification). Tools live inside areas.
 - **Manifest**: TypeScript declaration describing the tool — identity, paths, capabilities, block family.
@@ -101,4 +101,4 @@ Don't conflate them: Area says *where the tool lives in the product*; Tool Categ
 
 ## Changelog
 
-- **2026-05-04 (v1.0)** — Pattern settled in the R2.5 expanded architectural session (May 2026). Establishes Tool as HERD's commercial and operational unit with two formal modes (standalone + embedded), natural-language naming, and whole-Block-Family generation rather than single-block.
+- **2026-05-04 (v1.0)** — Pattern settled in the R2.5 expanded architectural session (May 2026). Establishes Tool as ComeçaAI's commercial and operational unit with two formal modes (standalone + embedded), natural-language naming, and whole-Block-Family generation rather than single-block.

@@ -9,17 +9,17 @@ uid: herd.block.miscellaneous.meetings
 
 # Reuniões
 
-O block de Reuniões representa interações de cliente em um calendário — sales calls, sessões de suporte, syncs internos. Cada reunião referencia um ou mais Contacts, opcionalmente um Deal, e sincroniza com provedores de calendário externos (Google, Microsoft, etc.) através da camada de integrations. Reuniões são o artefato mais comum vinculado a tempo no fluxo comercial do HERD.
+O block de Reuniões representa interações de cliente em um calendário — sales calls, sessões de suporte, syncs internos. Cada reunião referencia um ou mais Contacts, opcionalmente um Deal, e sincroniza com provedores de calendário externos (Google, Microsoft, etc.) através da camada de integrations. Reuniões são o artefato mais comum vinculado a tempo no fluxo comercial do ComeçaAI.
 
 ## Business
 
-Reuniões são onde relações comerciais avançam. Todo deal que fecha passa por reuniões; todo cliente que churna tem histórico de reuniões que pode ser analisado. Rastrear reuniões dentro do HERD — em vez de apenas nas ferramentas de calendário — mantém a relação com o cliente coerente entre sistemas e acessível para agents (sales reps, orchestrator de IA) sem context-switching.
+Reuniões são onde relações comerciais avançam. Todo deal que fecha passa por reuniões; todo cliente que churna tem histórico de reuniões que pode ser analisado. Rastrear reuniões dentro do ComeçaAI — em vez de apenas nas ferramentas de calendário — mantém a relação com o cliente coerente entre sistemas e acessível para agents (sales reps, orchestrator de IA) sem context-switching.
 
 <!-- TODO: 2-3 parágrafos sobre signal comercial: frequência de reuniões como indicador de saúde, time-to-first-meeting como métrica de funil, outcomes de reunião como preditor de deal. -->
 
 ## Product
 
-<!-- TODO: Como usuários agendam, conduzem, documentam reuniões dentro do HERD. Calendar view, meeting detail, vinculação de contact, captura de notas, automação de follow-up. -->
+<!-- TODO: Como usuários agendam, conduzem, documentam reuniões dentro do ComeçaAI. Calendar view, meeting detail, vinculação de contact, captura de notas, automação de follow-up. -->
 
 ## Architecture
 
@@ -29,7 +29,7 @@ Meetings consomem contacts (toda reunião precisa referenciar pelo menos um cont
 
 O block expõe um block-group day-1: `discovery-calls`, uma view curada de reuniões marcadas como primeira conversa com prospect.
 
-<!-- TODO: 2-3 parágrafos sobre detalhes do schema, semântica de sync de calendário, resolução de conflitos quando calendário e HERD divergem, tratamento de recorrência. -->
+<!-- TODO: 2-3 parágrafos sobre detalhes do schema, semântica de sync de calendário, resolução de conflitos quando calendário e ComeçaAI divergem, tratamento de recorrência. -->
 
 ## Operations
 

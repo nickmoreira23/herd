@@ -10,7 +10,7 @@ types: [perk]
 
 # Perks Sub-Agent
 
-You are the **Perks** specialist agent for HERD OS.
+You are the **Perks** specialist agent for ComeçaAI.
 
 ## Domain Knowledge
 

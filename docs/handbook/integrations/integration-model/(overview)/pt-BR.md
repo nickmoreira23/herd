@@ -1,6 +1,6 @@
 ---
 title: Modelo de Integrações
-description: Arquitetura conceitual das integrações do HERD — eixo horizontal vs. vertical e eixo raso vs. profundo.
+description: Arquitetura conceitual das integrações do ComeçaAI — eixo horizontal vs. vertical e eixo raso vs. profundo.
 locale: pt-BR
 uid: herd.category.integrations.integration-model
 ---
@@ -9,23 +9,23 @@ uid: herd.category.integrations.integration-model
 
 # Modelo de Integrações
 
-Toda conexão externa no HERD é uma integração. Não existe conceito secundário ("connector", "extension", "plugin") — um guarda-chuva único, uma raiz de código (`src/lib/integrations/`), uma superfície de admin (`/admin/integrations`). O modelo de integrações descreve como as integrações são organizadas e o porquê.
+Toda conexão externa no ComeçaAI é uma integração. Não existe conceito secundário ("connector", "extension", "plugin") — um guarda-chuva único, uma raiz de código (`src/lib/integrations/`), uma superfície de admin (`/admin/integrations`). O modelo de integrações descreve como as integrações são organizadas e o porquê.
 
 ## Business
 
-Integrações dão aos operadores do HERD acesso às ferramentas que já utilizam. Recharge para assinaturas, Gorgias para suporte, Slack para notificações, Zoom para meetings. Em vez de reconstruir o que esses sistemas fazem, o HERD se conecta a eles via protocolos padrão (OAuth, webhooks, APIs REST).
+Integrações dão aos operadores do ComeçaAI acesso às ferramentas que já utilizam. Recharge para assinaturas, Gorgias para suporte, Slack para notificações, Zoom para meetings. Em vez de reconstruir o que esses sistemas fazem, o ComeçaAI se conecta a eles via protocolos padrão (OAuth, webhooks, APIs REST).
 
-O catálogo de integrações é limitado por finalidade, não por contagem de vendors. O HERD espera manter dezenas de integrações ao longo de sua vida — não centenas. Cada integração carrega um custo real de manutenção: gestão de credenciais, rotação de tokens OAuth, validação de assinatura de webhooks, drift de versão de API. Adicionar uma integração é um compromisso arquitetural, não uma entrada de configuração.
+O catálogo de integrações é limitado por finalidade, não por contagem de vendors. O ComeçaAI espera manter dezenas de integrações ao longo de sua vida — não centenas. Cada integração carrega um custo real de manutenção: gestão de credenciais, rotação de tokens OAuth, validação de assinatura de webhooks, drift de versão de API. Adicionar uma integração é um compromisso arquitetural, não uma entrada de configuração.
 
 ## Product
 
-Da perspectiva de um operador, uma integração é algo que ele habilita uma vez, configura minimamente e depois esquece. O admin UI em `/admin/integrations` lista as integrações disponíveis por categoria, mostra o status de conexão e exibe eventuais erros de sincronização. Integrações baseadas em OAuth levam o operador por um fluxo de consentimento padrão; integrações via API token solicitam uma chave que o HERD armazena criptografada.
+Da perspectiva de um operador, uma integração é algo que ele habilita uma vez, configura minimamente e depois esquece. O admin UI em `/admin/integrations` lista as integrações disponíveis por categoria, mostra o status de conexão e exibe eventuais erros de sincronização. Integrações baseadas em OAuth levam o operador por um fluxo de consentimento padrão; integrações via API token solicitam uma chave que o ComeçaAI armazena criptografada.
 
 Uma vez conectada, uma integração pode rodar silenciosamente em background (sincronizando assinaturas, roteando webhooks) ou expor superfícies de uso ativo (navegar tickets do Gorgias, buscar gravações do Zoom). A profundidade dessa experiência depende da profundidade da integração — ver Architecture.
 
 ## Architecture
 
-A arquitetura de integrações do HERD tem dois eixos independentes.
+A arquitetura de integrações do ComeçaAI tem dois eixos independentes.
 
 ### Eixo 1 — Horizontal vs. Vertical
 
@@ -72,7 +72,7 @@ Retirando uma integração: definir `status` como `DISABLED` no banco, revogar a
 
 ## Glossary
 
-- **Integration**: Conexão entre o HERD e um serviço externo específico, identificada por um `slug` (ex.: `recharge`, `gorgias`, `zoom`).
+- **Integration**: Conexão entre o ComeçaAI e um serviço externo específico, identificada por um `slug` (ex.: `recharge`, `gorgias`, `zoom`).
 - **Integração rasa**: OAuth + chamadas de API somente-leitura. Sem webhooks de entrada ou sincronização de estado.
 - **Integração profunda**: OAuth + read/write + webhooks de entrada + sincronização de estado + validação de assinatura + deduplicação.
 - **Integração horizontal**: Usa a infraestrutura de integração compartilhada (armazenamento de tokens, tabela de webhooks, sync logs) sem models específicos de domínio.

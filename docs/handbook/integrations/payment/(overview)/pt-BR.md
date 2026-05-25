@@ -11,7 +11,7 @@ Categoria que agrupa integrações de billing/pagamento. Providers desta categor
 
 ## Business
 
-Toda receita recorrente do HERD passa por algum payment provider externo. Esta categoria padroniza como esses providers são integrados (manifest, capabilities, webhook events) e mapeados para o schema billing canonical.
+Toda receita recorrente do ComeçaAI passa por algum payment provider externo. Esta categoria padroniza como esses providers são integrados (manifest, capabilities, webhook events) e mapeados para o schema billing canonical.
 
 ## Product
 

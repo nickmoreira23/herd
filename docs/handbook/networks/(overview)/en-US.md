@@ -1,6 +1,6 @@
 ---
 title: Networks
-description: Layer that organizes the different types of networks HERD supports — corporate, market, and multi-market.
+description: Layer that organizes the different types of networks ComeçaAI supports — corporate, market, and multi-market.
 locale: en-US
 uid: herd.layer.networks
 ---
@@ -9,17 +9,17 @@ uid: herd.layer.networks
 
 # Networks
 
-The Networks layer is HERD's foundational organization of relationships among entities. A network is a context where actors interact, exchange resources, and produce value. HERD organizes networks at three scales: a single company's internal network (Corporate Network), a market connecting multiple companies (Market Network), and federated systems spanning multiple markets (Multi-Market Network).
+The Networks layer is ComeçaAI's foundational organization of relationships among entities. A network is a context where actors interact, exchange resources, and produce value. ComeçaAI organizes networks at three scales: a single company's internal network (Corporate Network), a market connecting multiple companies (Market Network), and federated systems spanning multiple markets (Multi-Market Network).
 
 ## Business
 
-Networks are HERD's primary lens for representing how organizations operate. A Corporate Network captures how a single company organizes its internal structure: people, channels, profiles, departments. A Market Network represents the broader ecosystem in which the company operates: customers, partners, suppliers. The distinction matters because internal coordination problems differ structurally from market interaction problems.
+Networks are ComeçaAI's primary lens for representing how organizations operate. A Corporate Network captures how a single company organizes its internal structure: people, channels, profiles, departments. A Market Network represents the broader ecosystem in which the company operates: customers, partners, suppliers. The distinction matters because internal coordination problems differ structurally from market interaction problems.
 
 <!-- TODO: 2-3 more paragraphs on the strategic value of networks-as-organizing-principle, examples of decisions a company makes differently when their CRM/automation tool understands network types natively. -->
 
 ## Product
 
-<!-- TODO: How users (admins, sales, marketing) interact with networks in HERD's admin UI. Switching between network views, configuring network-specific settings, network analytics. -->
+<!-- TODO: How users (admins, sales, marketing) interact with networks in ComeçaAI's admin UI. Switching between network views, configuring network-specific settings, network analytics. -->
 
 ## Architecture
 

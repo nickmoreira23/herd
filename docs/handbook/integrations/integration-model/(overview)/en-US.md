@@ -1,6 +1,6 @@
 ---
 title: Integration Model
-description: Conceptual architecture of HERD integrations — horizontal vs. vertical axis and shallow vs. deep axis.
+description: Conceptual architecture of ComeçaAI integrations — horizontal vs. vertical axis and shallow vs. deep axis.
 locale: en-US
 uid: herd.category.integrations.integration-model
 ---
@@ -9,23 +9,23 @@ uid: herd.category.integrations.integration-model
 
 # Integration Model
 
-All external connections in HERD are integrations. There is no secondary concept ("connector", "extension", "plugin") — one umbrella, one code root (`src/lib/integrations/`), one admin surface (`/admin/integrations`). The integration model describes how integrations are organized and why.
+All external connections in ComeçaAI are integrations. There is no secondary concept ("connector", "extension", "plugin") — one umbrella, one code root (`src/lib/integrations/`), one admin surface (`/admin/integrations`). The integration model describes how integrations are organized and why.
 
 ## Business
 
-Integrations give HERD's operators access to the tools they already use. Recharge for subscriptions, Gorgias for support, Slack for notifications, Zoom for meetings. Rather than rebuild what those systems do, HERD connects to them via standard protocols (OAuth, webhooks, REST APIs).
+Integrations give ComeçaAI's operators access to the tools they already use. Recharge for subscriptions, Gorgias for support, Slack for notifications, Zoom for meetings. Rather than rebuild what those systems do, ComeçaAI connects to them via standard protocols (OAuth, webhooks, REST APIs).
 
-The integration catalog is bounded by purpose, not by vendor count. HERD expects to maintain dozens of integrations across its lifetime — not hundreds. Each integration carries a real maintenance cost: credential management, OAuth token rotation, webhook signature validation, API version drift. Adding an integration is an architectural commitment, not a configuration entry.
+The integration catalog is bounded by purpose, not by vendor count. ComeçaAI expects to maintain dozens of integrations across its lifetime — not hundreds. Each integration carries a real maintenance cost: credential management, OAuth token rotation, webhook signature validation, API version drift. Adding an integration is an architectural commitment, not a configuration entry.
 
 ## Product
 
-From an operator's perspective, an integration is something they enable once, configure minimally, and then forget. The admin UI at `/admin/integrations` lists available integrations by category, shows connection status, and surfaces any sync errors. OAuth-based integrations take the operator through a standard consent flow; API-token integrations ask for a key that HERD stores encrypted.
+From an operator's perspective, an integration is something they enable once, configure minimally, and then forget. The admin UI at `/admin/integrations` lists available integrations by category, shows connection status, and surfaces any sync errors. OAuth-based integrations take the operator through a standard consent flow; API-token integrations ask for a key that ComeçaAI stores encrypted.
 
 Once connected, an integration may run silently in the background (syncing subscriptions, routing webhooks) or expose active-use surfaces (browsing Gorgias tickets, pulling Zoom recordings). The depth of that experience depends on the integration's depth — see Architecture.
 
 ## Architecture
 
-HERD's integration architecture has two independent axes.
+ComeçaAI's integration architecture has two independent axes.
 
 ### Axis 1 — Horizontal vs. Vertical
 
@@ -72,7 +72,7 @@ Retiring an integration: set `status` to `DISABLED` in the database, revoke the 
 
 ## Glossary
 
-- **Integration**: A connection between HERD and a specific external service, identified by a `slug` (e.g., `recharge`, `gorgias`, `zoom`).
+- **Integration**: A connection between ComeçaAI and a specific external service, identified by a `slug` (e.g., `recharge`, `gorgias`, `zoom`).
 - **Shallow integration**: OAuth + read-only API calls. No inbound webhooks or state synchronization.
 - **Deep integration**: OAuth + read/write + inbound webhooks + state synchronization + signature validation + deduplication.
 - **Horizontal integration**: Uses the shared integration infra (token store, webhook table, sync logs) without domain-specific models.

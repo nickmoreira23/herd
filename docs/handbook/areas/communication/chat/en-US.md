@@ -9,7 +9,7 @@ uid: herd.tool.communication.chat
 
 # Chat
 
-HERD's conversational tool. Bridge between user and the rest of the system via natural language.
+ComeçaAI's conversational tool. Bridge between user and the rest of the system via natural language.
 
 ## Business
 

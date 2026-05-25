@@ -9,7 +9,7 @@ uid: herd.meta.pattern-source-attribution
 
 # Pattern: Source Attribution
 
-Todo block de events em qualquer tool do HERD carrega um **campo polimórfico `source`** apontando para o registro de origem que causou o evento. O source identifica três coisas: o block de origem (`source_block`), o id do registro específico (`source_id`), e o tipo de evento que ocorreu (`source_type`). Sem essa atribuição, três capabilities críticas se tornam impossíveis: drill-down, auditoria e reversão automática.
+Todo block de events em qualquer tool do ComeçaAI carrega um **campo polimórfico `source`** apontando para o registro de origem que causou o evento. O source identifica três coisas: o block de origem (`source_block`), o id do registro específico (`source_id`), e o tipo de evento que ocorreu (`source_type`). Sem essa atribuição, três capabilities críticas se tornam impossíveis: drill-down, auditoria e reversão automática.
 
 ## Business
 

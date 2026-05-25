@@ -8,7 +8,7 @@ R2 introduz Areas como macro-divisões do produto onde Tools são posicionadas. 
 
 Areas são camada estrutural acima de Tools — macro-divisões do produto (Communication, Transaction, Workflow, Notification, Identity, Infrastructure). Permitem agrupar tools por função no produto, oferecendo navegação coerente. Pillars/Modules foram eliminados em favor de simplicidade — Areas + Tools cobrem o que precisamos.
 
-Para clientes do HERD, R2 não muda nada de imediato — é foundation técnica. O efeito user-facing aterrissa no Commit 4 (sidebar reorganizado por area).
+Para clientes do ComeçaAI, R2 não muda nada de imediato — é foundation técnica. O efeito user-facing aterrissa no Commit 4 (sidebar reorganizado por area).
 
 ## Product
 

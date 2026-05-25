@@ -1,6 +1,6 @@
 ---
 title: Handbook
-description: Sistema de documentação do HERD — 4 artefatos, hierarquia comercial plural, doc-first.
+description: Sistema de documentação do ComeçaAI — 4 artefatos, hierarquia comercial plural, doc-first.
 locale: pt-BR
 uid: herd.meta.handbook
 ---
@@ -9,31 +9,31 @@ uid: herd.meta.handbook
 
 # Handbook
 
-O Handbook é o sistema de documentação do HERD. Toda feature da plataforma — block, tool, area, integration ou solution — é descrita aqui usando um template consistente, para que humanos, agentes de IA internos (Claude Code) e agentes de IA externos (ChatGPT, Claude Desktop via MCP) consigam construir um modelo mental correto do HERD sem precisar ler código-fonte.
+O Handbook é o sistema de documentação do ComeçaAI. Toda feature da plataforma — block, tool, area, integration ou solution — é descrita aqui usando um template consistente, para que humanos, agentes de IA internos (Claude Code) e agentes de IA externos (ChatGPT, Claude Desktop via MCP) consigam construir um modelo mental correto do ComeçaAI sem precisar ler código-fonte.
 
 Esta entry documenta o próprio Handbook: o que cada nível comercial significa, quais são as categorias técnicas canônicas, como o `feature.yml` funciona, como ler ou escrever uma entry do Handbook, e como o sistema se mantém consistente sob mudança.
 
 ## Business
 
-O Handbook existe porque a superfície de produto do HERD é grande e está em crescimento. Conforme blocks, tools, top-level features e integrations se multiplicam, saber o que cada um é, por que existe, a quem serve, e como se relaciona com os outros vira o gargalo central de onboarding — tanto para humanos entrando no time quanto para agentes pedidos a fazer trabalho no codebase.
+O Handbook existe porque a superfície de produto do ComeçaAI é grande e está em crescimento. Conforme blocks, tools, top-level features e integrations se multiplicam, saber o que cada um é, por que existe, a quem serve, e como se relaciona com os outros vira o gargalo central de onboarding — tanto para humanos entrando no time quanto para agentes pedidos a fazer trabalho no codebase.
 
 O custo de documentação ruim em um codebase colaborado por IA é materialmente mais alto que em um tradicional. Quando um agente não sabe o que uma feature é, ele não pergunta — ele chuta. Chutes produzem código que compila, roda, e silenciosamente faz a coisa errada. O Handbook elimina as condições sob as quais um agente chuta, fornecendo uma descrição única, canônica, e legível por máquina de toda feature que ele possa tocar.
 
-Para os clientes do HERD, o Handbook é invisível — mas seus efeitos não são. Entrega de features mais rápida e consistente; menos regressões causadas por semântica mal entendida; workflows guiados por agentes (via MCP) que funcionam porque o agente tem acesso à mesma documentação que um engenheiro sênior consultaria.
+Para os clientes do ComeçaAI, o Handbook é invisível — mas seus efeitos não são. Entrega de features mais rápida e consistente; menos regressões causadas por semântica mal entendida; workflows guiados por agentes (via MCP) que funcionam porque o agente tem acesso à mesma documentação que um engenheiro sênior consultaria.
 
-O Handbook também é o substrato para o posicionamento do HERD como Market Network Platform. Quando a plataforma federar entre corporate networks, o Handbook é o contrato que permite agentes em uma network descobrirem e raciocinarem sobre capacidades em outra sem trabalho de integração ad-hoc.
+O Handbook também é o substrato para o posicionamento do ComeçaAI como Market Network Platform. Quando a plataforma federar entre corporate networks, o Handbook é o contrato que permite agentes em uma network descobrirem e raciocinarem sobre capacidades em outra sem trabalho de integração ad-hoc.
 
 ## Product
 
 O Handbook aparece em três lugares.
 
-Para humanos no time, vive em `/admin/handbook` dentro do próprio HERD, com uma sidebar à esquerda agrupando entries por layer (Networks, Solutions, Tools, Blocks, Integrations) e um sumário pegajoso em cada entry mostrando as seis perspectives.
+Para humanos no time, vive em `/admin/handbook` dentro do próprio ComeçaAI, com uma sidebar à esquerda agrupando entries por layer (Networks, Solutions, Tools, Blocks, Integrations) e um sumário pegajoso em cada entry mostrando as seis perspectives.
 
 Para o Claude Code trabalhando no repo, vive em `docs/handbook/{layer}/{category}/{feature-id}/{pt-BR,en-US}.md` — lido diretamente do filesystem, pareado com os pacotes `SKILL.md` relevantes em `.agents/skills/`.
 
 Para agentes externos (ChatGPT, Claude Desktop) conectando via MCP, aparece através de duas tools: `search(query)` retorna UIDs de features que casam; `fetch(id)` retorna o conteúdo Markdown completo de uma entry junto com seu graph de metadata (consumes, consumed_by, related).
 
-Um usuário lendo o Handbook no admin do HERD vê: o título da entry, badge de status (active / draft / deprecated / archived / deferred), versão, data da última atualização, e as seis perspectives como seções colapsáveis. Cross-references renderizam como links clicáveis para outras entries.
+Um usuário lendo o Handbook no admin do ComeçaAI vê: o título da entry, badge de status (active / draft / deprecated / archived / deferred), versão, data da última atualização, e as seis perspectives como seções colapsáveis. Cross-references renderizam como links clicáveis para outras entries.
 
 ## Architecture
 
@@ -199,7 +199,7 @@ Atravessam a hierarquia comercial. Definidas no campo `technical_category` do `f
 
 ### Decision tree: classificando uma nova feature
 
-Ao introduzir uma nova feature no HERD, percorra a árvore abaixo para classificá-la.
+Ao introduzir uma nova feature no ComeçaAI, percorra a árvore abaixo para classificá-la.
 
 ```mermaid
 flowchart TD
@@ -274,7 +274,7 @@ Exemplo: `domain-events` tem `level: tool` (entry-folha de tool na navegação) 
 
 ### The 4 artifacts per feature
 
-Toda feature no HERD é descrita por até quatro artifacts, ligados pelo `id` e pelo `uid`:
+Toda feature no ComeçaAI é descrita por até quatro artifacts, ligados pelo `id` e pelo `uid`:
 
 1. **Handbook entry** em `docs/handbook/{layer}/{category}/{id}/{pt-BR.md, en-US.md}` — prosa bilíngue para humanos.
 2. **`feature.yml`** no mesmo diretório — metadata canônico, a join key.
@@ -373,14 +373,14 @@ Limitação: diagramas Mermaid são lazy-rendered na abertura da seção. Diagra
 |---|---|---|
 | block | bloco | Single source of truth para um tipo de dado. Possui Prisma models. technical_category canônica. |
 | block-group | grupo de bloco | Coleção curada intra-block (ex: packages dentro de products). technical_category canônica; sem CRUD independente. |
-| corporate-network | rede corporativa | Subtipo de Network — uma empresa inteira como tenant do HERD. |
+| corporate-network | rede corporativa | Subtipo de Network — uma empresa inteira como tenant do ComeçaAI. |
 | feature.yml | feature.yml | Arquivo de metadata canônico por feature. A join key entre os quatro artifacts. |
 | foundation | fundação | Dimensão temática do `technical_category` para infraestrutura compartilhada (i18n, auth, ledger). |
-| Handbook | Handbook | Sistema de documentação do HERD. Esta entry documenta ele. |
+| Handbook | Handbook | Sistema de documentação do ComeçaAI. Esta entry documenta ele. |
 | integration | integração | Conexão com um sistema externo. Sem dado próprio. Camada de navegação. |
 | level | nível | Posição estrutural na navegação do Handbook. Valores: `layer`, `category`, `meta`, `block`, `tool` (hoje). |
 | market-network | rede de mercado | Subtipo de Network futuro — redes de empresas dentro de um mercado. |
-| MCP | MCP | Model Context Protocol. Como agentes externos (ChatGPT, Claude Desktop) consomem docs do HERD. |
+| MCP | MCP | Model Context Protocol. Como agentes externos (ChatGPT, Claude Desktop) consomem docs do ComeçaAI. |
 | multi-market-network | rede multi-mercado | Subtipo de Network futuro distante — redes de mercados interconectadas. |
 | network | rede | Categoria top-of-pyramid agrupando os subtipos vendidos (Corporate, Market, Multi-market). |
 | perspective | perspectiva | Uma das seis seções de uma entry de Handbook: Business, Product, Architecture, Operations, Glossary, Changelog. |

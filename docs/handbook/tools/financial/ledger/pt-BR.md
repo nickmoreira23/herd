@@ -9,7 +9,7 @@ uid: herd.tool.financial.ledger
 
 # Ledger
 
-Sistema de registro imutável de eventos financeiros append-only, base para auditoria, conciliação e cálculos derivados. É a "verdade transacional" do HERD para qualquer movimento monetário — comissões, pagamentos, reversões, saldos. Implementado em `src/lib/ledger/` com modelo double-entry (débito/crédito) e invariantes enforced no nível do banco (Postgres triggers + CHECK constraints).
+Sistema de registro imutável de eventos financeiros append-only, base para auditoria, conciliação e cálculos derivados. É a "verdade transacional" do ComeçaAI para qualquer movimento monetário — comissões, pagamentos, reversões, saldos. Implementado em `src/lib/ledger/` com modelo double-entry (débito/crédito) e invariantes enforced no nível do banco (Postgres triggers + CHECK constraints).
 
 ## Business
 
@@ -21,7 +21,7 @@ O custo de não ter o ledger é alto: erros silenciosos em comissões só aparec
 
 ## Product
 
-Quem interage com o Ledger no HERD são desenvolvedores, e indiretamente equipes de finance/audit via dashboards alimentados pelas mesmas APIs. Não há UI de "edição" — o Ledger é append-only por design. Há uma UI de **inspeção** em `/admin/ledger/` (Plano de Contas + Journal Entries) que mostra accounts, saldos e entries em ordem cronológica.
+Quem interage com o Ledger no ComeçaAI são desenvolvedores, e indiretamente equipes de finance/audit via dashboards alimentados pelas mesmas APIs. Não há UI de "edição" — o Ledger é append-only por design. Há uma UI de **inspeção** em `/admin/ledger/` (Plano de Contas + Journal Entries) que mostra accounts, saldos e entries em ordem cronológica.
 
 Eventos gravados hoje cobrem o ciclo financeiro: cobrança de cliente, repasse de comissão a parceiro, estorno por cancelamento, débito/crédito entre contas internas da plataforma. Cada evento de negócio que envolve dinheiro produz **um** `JournalEntry` com 2+ `JournalLine`s que somam zero por moeda. Cada line aponta para um `Account` (código kebab tipo `platform:revenue:brl`) com direção (`D` débito ou `C` crédito).
 

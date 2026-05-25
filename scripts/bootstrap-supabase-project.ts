@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * Bootstrap a fresh Supabase project for HERD — TS companion to
+ * Bootstrap a fresh Supabase project for ComeçaAI — TS companion to
  * `scripts/bootstrap-supabase-project.sh`. Same effect (idempotent
  * herd_app role + GRANTs + enable-rls.sql), implemented via `pg`
  * directly so it runs in environments without `psql` installed.

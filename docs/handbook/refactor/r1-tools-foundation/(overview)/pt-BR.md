@@ -8,7 +8,7 @@ R1 reconcilia a infraestrutura de tools existente — `Tool` interface, `ToolCat
 
 R1 não é mecânica — é descoberta. R0.2 cravou um `ToolManifest` minimalista assumindo greenfield. A realidade no código tinha `Tool` rica (10 campos funcionais) e `ToolCategoryManifest` (agrupador) já em produção, alimentando `/admin/tools/*` e o orquestrador de chat. Reconciliar agora evita duas dívidas: (a) construir paralelo concorrente em R3–R5 quando re-classificarmos campaigns, subscriptions, marketplace; (b) deixar `tool-category` (camada arquitetural real, distinta de Solution) sem nome canônico.
 
-Para os clientes do HERD, invisível. Para o time e agentes, R1 fecha a lacuna entre "o que está documentado como existir" e "o que existe de fato no código".
+Para os clientes do ComeçaAI, invisível. Para o time e agentes, R1 fecha a lacuna entre "o que está documentado como existir" e "o que existe de fato no código".
 
 ## Product
 

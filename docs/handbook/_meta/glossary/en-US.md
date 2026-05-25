@@ -484,7 +484,7 @@ concrete entity attached to a specific context, derived from a template.
 
 **From [Integration Model](/admin/handbook/integrations/integration-model):**
 
-A connection between HERD and a specific external service, identified by a `slug` (e.g., `recharge`, `gorgias`, `zoom`).
+A connection between ComeçaAI and a specific external service, identified by a `slug` (e.g., `recharge`, `gorgias`, `zoom`).
 
 ### Integration surface
 
@@ -1004,11 +1004,11 @@ Client-invokable function in MCP. Each tool has a name, description, input schem
 
 **From [Pattern: Three-Level Composition](/admin/handbook/meta/pattern-three-level-composition):**
 
-rich manipulation level — UI, rules, registry, manifest. The commercial and operational unit of HERD.
+rich manipulation level — UI, rules, registry, manifest. The commercial and operational unit of ComeçaAI.
 
 **From [Pattern: Tool](/admin/handbook/meta/pattern-tool-level):**
 
-rich-manipulation unit — UI, rules, manifest, registry. HERD's commercial unit.
+rich-manipulation unit — UI, rules, manifest, registry. ComeçaAI's commercial unit.
 
 ### Tool Category
 
@@ -1038,7 +1038,7 @@ macro-division for customer-facing commercial-exchange tools.
 
 **From [Pattern: Three-Level Composition](/admin/handbook/meta/pattern-three-level-composition):**
 
-the Tool + Block Family + Surface composition that defines every HERD capability.
+the Tool + Block Family + Surface composition that defines every ComeçaAI capability.
 
 ### type guard
 

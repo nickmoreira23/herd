@@ -2,6 +2,17 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.24 — 2026-05-25
+
+Anchor Sub-etapa 18.1: rename batch cosmético HERD → ComeçaAI em
+docs/ (~179 arquivos), .agents/ (~43 arquivos), scripts/ (~23
+ocorrências), AGENTS.md (~6 refs). Heurística cravada: refs
+históricos (tense passado) preservados, refs operacionais (presente/
+futuro) renomeados. UIDs `herd.tool.*`, `herd.block.*`, `herd.layer.*`
+etc. preservados (estáveis por definição arquitetural).
+Preserva: herd-production.up.railway.app (Sub-etapa 28.5 cutover),
+nickmoreira23/herd (GitHub repo decisão separada).
+
 ## 1.2.23 — 2026-05-25
 
 Anchor Sub-etapa 18: Foundation Fase 4 — rename HERD → ComeçaAI cirúrgico

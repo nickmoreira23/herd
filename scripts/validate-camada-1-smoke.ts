@@ -250,7 +250,7 @@ async function main(): Promise<void> {
         id: eventId,
         customer: {
           id: 999000001,
-          email: "smoke-test@herd.example",
+          email: "smoke-test@comecaai.example",
           first_name: "Smoke",
           last_name: "Test",
         },

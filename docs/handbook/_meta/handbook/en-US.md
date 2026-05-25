@@ -1,6 +1,6 @@
 ---
 title: Handbook
-description: HERD's documentation system — 4 artifacts, plural commercial hierarchy, doc-first.
+description: ComeçaAI's documentation system — 4 artifacts, plural commercial hierarchy, doc-first.
 locale: en-US
 uid: herd.meta.handbook
 ---
@@ -9,31 +9,31 @@ uid: herd.meta.handbook
 
 # Handbook
 
-The Handbook is HERD's documentation system. Every feature in the platform — block, tool, area, integration, or solution — is described here using a consistent template, so that humans, internal AI agents (Claude Code), and external AI agents (ChatGPT, Claude Desktop via MCP) can all build a correct mental model of HERD without reading source code.
+The Handbook is ComeçaAI's documentation system. Every feature in the platform — block, tool, area, integration, or solution — is described here using a consistent template, so that humans, internal AI agents (Claude Code), and external AI agents (ChatGPT, Claude Desktop via MCP) can all build a correct mental model of ComeçaAI without reading source code.
 
 This entry documents the Handbook itself: what each commercial level means, what the canonical technical categories are, how `feature.yml` works, how to read or write a Handbook entry, and how the system stays consistent under change.
 
 ## Business
 
-The Handbook exists because HERD's product surface is large and growing. As blocks, tools, top-level features, and integrations multiply, knowing what each one is, why it exists, who it serves, and how it relates to the others becomes the central onboarding bottleneck — both for humans joining the team and for agents asked to do work in the codebase.
+The Handbook exists because ComeçaAI's product surface is large and growing. As blocks, tools, top-level features, and integrations multiply, knowing what each one is, why it exists, who it serves, and how it relates to the others becomes the central onboarding bottleneck — both for humans joining the team and for agents asked to do work in the codebase.
 
 The cost of bad documentation in an AI-collaborated codebase is materially higher than in a traditional one. When an agent doesn't know what a feature is, it doesn't ask — it guesses. Guesses produce code that compiles, runs, and quietly does the wrong thing. The Handbook eliminates the conditions under which an agent guesses by providing a single, canonical, machine-readable description of every feature it might touch.
 
-For HERD's clients, the Handbook is invisible — but its effects are not. Faster, more consistent feature delivery; fewer regressions caused by misunderstood semantics; agent-driven workflows (via MCP) that work because the agent has access to the same documentation a senior engineer would consult.
+For ComeçaAI's clients, the Handbook is invisible — but its effects are not. Faster, more consistent feature delivery; fewer regressions caused by misunderstood semantics; agent-driven workflows (via MCP) that work because the agent has access to the same documentation a senior engineer would consult.
 
-The Handbook is also the substrate for HERD's positioning as a Market Network Platform. When the platform federates across corporate networks, the Handbook is the contract that lets agents in one network discover and reason about capabilities in another without bespoke integration work.
+The Handbook is also the substrate for ComeçaAI's positioning as a Market Network Platform. When the platform federates across corporate networks, the Handbook is the contract that lets agents in one network discover and reason about capabilities in another without bespoke integration work.
 
 ## Product
 
 The Handbook surfaces in three places.
 
-For humans on the team, it lives at `/admin/handbook` inside HERD itself, with a left sidebar grouping entries by layer (Networks, Solutions, Tools, Blocks, Integrations) and a sticky table of contents on each entry showing the six perspectives.
+For humans on the team, it lives at `/admin/handbook` inside ComeçaAI itself, with a left sidebar grouping entries by layer (Networks, Solutions, Tools, Blocks, Integrations) and a sticky table of contents on each entry showing the six perspectives.
 
 For Claude Code working in the repo, it lives at `docs/handbook/{layer}/{category}/{feature-id}/{pt-BR,en-US}.md` — read directly from the filesystem, paired with the relevant `SKILL.md` packages in `.agents/skills/`.
 
 For external agents (ChatGPT, Claude Desktop) connecting via MCP, it surfaces through two tools: `search(query)` returns matching feature UIDs; `fetch(id)` returns the full Markdown content of an entry plus its metadata graph (consumes, consumed_by, related).
 
-A user reading the Handbook in HERD's admin sees: an entry's title, status badge (active / draft / deprecated / archived / deferred), version, last-updated date, and the six perspectives as collapsible sections. Cross-references render as clickable links to other entries.
+A user reading the Handbook in ComeçaAI's admin sees: an entry's title, status badge (active / draft / deprecated / archived / deferred), version, last-updated date, and the six perspectives as collapsible sections. Cross-references render as clickable links to other entries.
 
 ## Architecture
 
@@ -199,7 +199,7 @@ Cut across the commercial hierarchy. Defined in the `technical_category` field o
 
 ### Decision tree: classifying a new feature
 
-When introducing a new feature into HERD, walk the tree below to classify it.
+When introducing a new feature into ComeçaAI, walk the tree below to classify it.
 
 ```mermaid
 flowchart TD
@@ -274,7 +274,7 @@ Example: `domain-events` has `level: tool` (tool leaf entry in navigation) + `te
 
 ### The 4 artifacts per feature
 
-Every feature in HERD is described by up to four artifacts, joined by the `id` and `uid`:
+Every feature in ComeçaAI is described by up to four artifacts, joined by the `id` and `uid`:
 
 1. **Handbook entry** at `docs/handbook/{layer}/{category}/{id}/{pt-BR.md, en-US.md}` — bilingual prose for humans.
 2. **`feature.yml`** at the same directory — canonical metadata, the join key.
@@ -373,14 +373,14 @@ Limitation: Mermaid diagrams are lazy-rendered on section open. Diagrams in sect
 |---|---|---|
 | block | bloco | Single source of truth for a data type. Owns Prisma models. Canonical technical_category. |
 | block-group | grupo de bloco | Intra-block curated collection (e.g., packages in products). Canonical technical_category; no independent CRUD. |
-| corporate-network | rede corporativa | Network subtype — an entire company as a HERD tenant. |
+| corporate-network | rede corporativa | Network subtype — an entire company as a ComeçaAI tenant. |
 | feature.yml | feature.yml | Canonical metadata file per feature. The join key across the four artifacts. |
 | foundation | fundação | Thematic dimension of `technical_category` for shared infrastructure (i18n, auth, ledger). |
-| Handbook | Handbook | HERD's documentation system. This entry documents it. |
+| Handbook | Handbook | ComeçaAI's documentation system. This entry documents it. |
 | integration | integração | Connection to an external system. No own data. Navigation layer. |
 | level | nível | Structural position in Handbook navigation. Values: `layer`, `category`, `meta`, `block`, `tool` (today). |
 | market-network | rede de mercado | Future Network subtype — networks of companies within a market. |
-| MCP | MCP | Model Context Protocol. How external agents (ChatGPT, Claude Desktop) consume HERD docs. |
+| MCP | MCP | Model Context Protocol. How external agents (ChatGPT, Claude Desktop) consume ComeçaAI docs. |
 | multi-market-network | rede multi-mercado | Far-future Network subtype — networks of interconnected markets. |
 | network | rede | Top-of-pyramid category grouping the sold subtypes (Corporate, Market, Multi-market). |
 | perspective | perspectiva | One of the six sections of a Handbook entry: Business, Product, Architecture, Operations, Glossary, Changelog. |

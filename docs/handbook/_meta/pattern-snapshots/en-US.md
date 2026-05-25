@@ -60,7 +60,7 @@ Three inviolable rules:
 
 ### Distinction between state-block types
 
-Common vocabulary conflates "current state" with "history". HERD distinguishes four formal types — each with its own suffix:
+Common vocabulary conflates "current state" with "history". ComeçaAI distinguishes four formal types — each with its own suffix:
 
 | Suffix | Function | Period? |
 |---|---|---|

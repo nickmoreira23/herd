@@ -9,7 +9,7 @@ uid: herd.tool.financial.ledger
 
 # Ledger
 
-Immutable append-only event log of financial events, foundational for audit, reconciliation, and derived calculations. The Ledger is HERD's "transactional truth" for any monetary movement — commissions, payments, reversals, balances. Implemented in `src/lib/ledger/` with a double-entry model (debit/credit) and invariants enforced at the database level (Postgres triggers + CHECK constraints).
+Immutable append-only event log of financial events, foundational for audit, reconciliation, and derived calculations. The Ledger is ComeçaAI's "transactional truth" for any monetary movement — commissions, payments, reversals, balances. Implemented in `src/lib/ledger/` with a double-entry model (debit/credit) and invariants enforced at the database level (Postgres triggers + CHECK constraints).
 
 ## Business
 
@@ -21,7 +21,7 @@ The cost of not having a Ledger is high: silent commission bugs surface weeks la
 
 ## Product
 
-The audiences interacting with the Ledger in HERD are developers, and indirectly finance/audit teams via dashboards backed by the same APIs. There is **no editing UI** — the Ledger is append-only by design. There is an **inspection UI** at `/admin/ledger/` (Chart of Accounts + Journal Entries) showing accounts, balances, and entries in chronological order.
+The audiences interacting with the Ledger in ComeçaAI are developers, and indirectly finance/audit teams via dashboards backed by the same APIs. There is **no editing UI** — the Ledger is append-only by design. There is an **inspection UI** at `/admin/ledger/` (Chart of Accounts + Journal Entries) showing accounts, balances, and entries in chronological order.
 
 Events recorded today cover the financial cycle: customer charges, commission payouts to partners, cancellation reversals, internal platform-to-platform debits/credits. Each business event involving money produces **one** `JournalEntry` with 2+ `JournalLine`s that sum to zero per currency. Each line points to an `Account` (kebab code like `platform:revenue:brl`) with a direction (`D` debit or `C` credit).
 

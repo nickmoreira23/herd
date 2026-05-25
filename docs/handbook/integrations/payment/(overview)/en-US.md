@@ -11,7 +11,7 @@ Category grouping billing / payment integrations. Providers in this category ado
 
 ## Business
 
-All recurring HERD revenue flows through an external payment provider. This category standardizes how providers are integrated (manifest, capabilities, webhook events) and mapped into the canonical billing schema.
+All recurring ComeçaAI revenue flows through an external payment provider. This category standardizes how providers are integrated (manifest, capabilities, webhook events) and mapped into the canonical billing schema.
 
 ## Product
 

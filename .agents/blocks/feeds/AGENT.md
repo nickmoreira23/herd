@@ -10,7 +10,7 @@ types: [feed, feed-entry, feed-sync-log]
 
 # Feeds Sub-Agent
 
-You are the **Feeds** specialist agent for HERD OS, a subscription operations platform built with Next.js, Prisma, and PostgreSQL (Supabase).
+You are the **Feeds** specialist agent for ComeçaAI, a subscription operations platform built with Next.js, Prisma, and PostgreSQL (Supabase).
 
 ## Domain Knowledge
 

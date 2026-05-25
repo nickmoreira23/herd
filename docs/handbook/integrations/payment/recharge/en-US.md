@@ -11,7 +11,7 @@ Subscription billing provider used by the Bucked Up storefront (Shopify-native).
 
 ## Business
 
-Recharge processes recurring billing for subscriptions sold on the storefront. All Bucked Up revenue reconciled in HERD originates there. The integration lets finance/ops answer, in a canonical place, questions like "how many charges failed this month", "which subscription drives the most MRR", etc., without logging into the Recharge dashboard.
+Recharge processes recurring billing for subscriptions sold on the storefront. All Bucked Up revenue reconciled in ComeçaAI originates there. The integration lets finance/ops answer, in a canonical place, questions like "how many charges failed this month", "which subscription drives the most MRR", etc., without logging into the Recharge dashboard.
 
 ## Product
 
@@ -21,7 +21,7 @@ Current setup (V1):
 - **Webhook registration:** manual via Recharge dashboard. URL: `${DEPLOY_URL}/api/webhooks/recharge`. 9 events registered: `order/created`, `charge/{created,paid,failed,refunded}`, `subscription/{created,updated,cancelled,activated}`.
 - **Admin views:** `/api/integrations/recharge/{charges,customers,plans,subscriptions}` for read-only inspection.
 
-Storefront Token (browser-side, customer-facing portal) is tech debt — comes when HERD's customer-facing UI is born.
+Storefront Token (browser-side, customer-facing portal) is tech debt — comes when ComeçaAI's customer-facing UI is born.
 
 ## Architecture
 

@@ -1,15 +1,15 @@
 ---
 title: "Pattern: Composição em Três Níveis"
-description: "Padrão arquitetural fundamental do HERD: toda capability é trio Tool + Block Family + Surface."
+description: "Padrão arquitetural fundamental do ComeçaAI: toda capability é trio Tool + Block Family + Surface."
 locale: pt-BR
 uid: herd.meta.pattern-three-level-composition
 ---
 
-> Para agentes de IA: este pattern é uma invariante arquitetural do HERD. Quando criar tools, blocks ou surfaces novos, consulte este pattern para garantir consistência. Decisões aqui foram cravadas em sessão arquitetural extensa de maio/2026 e referenciam o documento "HERD — Arquitetura Final".
+> Para agentes de IA: este pattern é uma invariante arquitetural do ComeçaAI. Quando criar tools, blocks ou surfaces novos, consulte este pattern para garantir consistência. Decisões aqui foram cravadas em sessão arquitetural extensa de maio/2026 e referenciam o documento "ComeçaAI — Arquitetura Final".
 
 # Pattern: Composição em Três Níveis
 
-Todo o produto HERD se organiza em três níveis composicionais: **Tool** (onde se manipula), **Block Family** (onde dados moram) e **Surface** (onde aparece). Cada capability nova nasce como trio. Não há features fora desse padrão — quando algo não cabe no trio, é sinal de que a definição da feature ainda não está madura.
+Todo o produto ComeçaAI se organiza em três níveis composicionais: **Tool** (onde se manipula), **Block Family** (onde dados moram) e **Surface** (onde aparece). Cada capability nova nasce como trio. Não há features fora desse padrão — quando algo não cabe no trio, é sinal de que a definição da feature ainda não está madura.
 
 ## Business
 
@@ -33,7 +33,7 @@ Exemplo canônico — Products family:
 - **Block Family**: `products` (registros principais como "Moon Milk"), `products-categories` (agrupamentos opcionais como Beverages), e blocks correlacionados conforme a tool cresce.
 - **Surfaces**: o `Marketplace` (External Surface — página pública) consome `products` para montar o catálogo. Um modal "Quick add product" no contexto de uma cotação é uma Internal Surface que invoca a Products tool inline.
 
-Mesmo padrão se repete em Plans, Recognition, Remuneration, Knowledge, Network — toda capability central do HERD é trio.
+Mesmo padrão se repete em Plans, Recognition, Remuneration, Knowledge, Network — toda capability central do ComeçaAI é trio.
 
 ## Architecture
 
@@ -107,7 +107,7 @@ Em qualquer dos casos, **pause-and-report**. Não invente nível ausente para fa
 
 ## Glossary
 
-- **Tool**: nível de manipulação rica — UI, regras, registry, manifest. Unidade comercial e operacional do HERD.
+- **Tool**: nível de manipulação rica — UI, regras, registry, manifest. Unidade comercial e operacional do ComeçaAI.
 - **Block Family**: agrupamento de blocks correlacionados gerados por uma tool.
 - **Block**: categoria de dado dentro de uma family — single source of truth daquele tipo de registro.
 - **Block Group**: agrupamento opcional intra-block, para organização interna.
@@ -117,7 +117,7 @@ Em qualquer dos casos, **pause-and-report**. Não invente nível ausente para fa
 - **Internal Surface**: surface dentro da plataforma (tab embedded, modal, inline component, cross-area embed).
 - **Standalone Mode**: tool acessada em seu path canônico, com workflow completo.
 - **Embedded Mode**: tool invocada inline em outro contexto, sem sair da surface chamadora.
-- **Trio**: a composição Tool + Block Family + Surface que define toda capability do HERD.
+- **Trio**: a composição Tool + Block Family + Surface que define toda capability do ComeçaAI.
 
 ## Changelog
 

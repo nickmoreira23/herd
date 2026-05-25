@@ -7,8 +7,8 @@ title:
   pt-BR: "Contatos"
   en-US: "Contacts"
 description:
-  pt-BR: "Single source of truth para pessoas no HERD: leads, clientes, parceiros, funcionários."
-  en-US: "Single source of truth for people in HERD: leads, customers, partners, employees."
+  pt-BR: "Single source of truth para pessoas no ComeçaAI: leads, clientes, parceiros, funcionários."
+  en-US: "Single source of truth for people in ComeçaAI: leads, customers, partners, employees."
 
 status: active
 owners: ["@nick"]

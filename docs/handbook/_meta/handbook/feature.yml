@@ -7,8 +7,8 @@ title:
   pt-BR: "Handbook"
   en-US: "Handbook"
 description:
-  pt-BR: "Sistema de documentação do HERD: arquitetura, conventions e operação."
-  en-US: "HERD's documentation system: architecture, conventions, and operations."
+  pt-BR: "Sistema de documentação do ComeçaAI: arquitetura, conventions e operação."
+  en-US: "ComeçaAI's documentation system: architecture, conventions, and operations."
 
 status: active
 owners: ["@nick"]
@@ -42,7 +42,7 @@ perspectives:
   - changelog
 
 metadata:
-  herd:
+  comecaai:
     is_meta: true
     documents_concepts:
       - level
