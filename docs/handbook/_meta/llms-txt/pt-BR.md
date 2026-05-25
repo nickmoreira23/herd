@@ -1,6 +1,6 @@
 ---
 title: llms.txt
-description: Arquivo público em /llms.txt seguindo a convenção llmstxt.org — orienta LLMs sobre o que o HERD é, onde encontrar conteúdo canônico, e como acessar programaticamente.
+description: Arquivo público em /llms.txt seguindo a convenção llmstxt.org — orienta LLMs sobre o que o ComeçaAI é, onde encontrar conteúdo canônico, e como acessar programaticamente.
 locale: pt-BR
 uid: herd.meta.llms-txt
 ---
@@ -9,11 +9,11 @@ uid: herd.meta.llms-txt
 
 # llms.txt
 
-Arquivo público em `/llms.txt` seguindo a convenção [llmstxt.org](https://llmstxt.org). Análogo a `robots.txt` (que orienta search engines), mas para LLMs: quando um agente faz fetch de um domain do HERD, lê `/llms.txt` para descobrir o que é o produto, onde está o Handbook canônico, e como conectar via MCP.
+Arquivo público em `/llms.txt` seguindo a convenção [llmstxt.org](https://llmstxt.org). Análogo a `robots.txt` (que orienta search engines), mas para LLMs: quando um agente faz fetch de um domain do ComeçaAI, lê `/llms.txt` para descobrir o que é o produto, onde está o Handbook canônico, e como conectar via MCP.
 
 ## Business
 
-Quando você compartilha um link do HERD com um agente de IA (Claude, ChatGPT, Cursor, etc.), o agente tipicamente faz uma exploração inicial: tenta entender o domain. Sem `llms.txt`, ele infere do HTML, sitemap, ou conhecimento prévio. Com `llms.txt`, ele recebe um briefing curto e direcionado: link para Handbook home, lista de layers documentados, ponteiro para o servidor MCP.
+Quando você compartilha um link do ComeçaAI com um agente de IA (Claude, ChatGPT, Cursor, etc.), o agente tipicamente faz uma exploração inicial: tenta entender o domain. Sem `llms.txt`, ele infere do HTML, sitemap, ou conhecimento prévio. Com `llms.txt`, ele recebe um briefing curto e direcionado: link para Handbook home, lista de layers documentados, ponteiro para o servidor MCP.
 
 Isso aumenta significativamente a chance do agente conseguir trabalhar com o produto sem briefing manual. Para code review automatizado, geração de spec, onboarding de agentes novos, ou simples Q&A sobre o produto, `llms.txt` é a forma mais barata de cravar contexto autoritativo.
 
@@ -25,7 +25,7 @@ Isso aumenta significativamente a chance do agente conseguir trabalhar com o pro
 
 Estrutura do arquivo gerado:
 
-1. **Header** `# HERD` + blockquote com descrição curta + contagem total de entries.
+1. **Header** `# ComeçaAI` + blockquote com descrição curta + contagem total de entries.
 2. **Documentation**: link para Handbook home.
 3. **Layers**: 5 layers fixos com title + description em en-US.
 4. **Categories**: todas as categories ordenadas por layer (Networks → Solutions → Tools → Blocks → Integrations).

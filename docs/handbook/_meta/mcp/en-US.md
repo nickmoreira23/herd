@@ -13,7 +13,7 @@ Model Context Protocol server that exposes the Handbook as a navigable resource 
 
 ## Business
 
-The MCP server exists so AI assistants can answer questions about HERD using canonical documentation instead of guessing or inferring from code. When an assistant is asked "how does the ledger work in HERD?", it calls `search` to discover the entry, then `fetch` to read the full markdown — landing on the same content a human sees at `/admin/handbook/...`.
+The MCP server exists so AI assistants can answer questions about ComeçaAI using canonical documentation instead of guessing or inferring from code. When an assistant is asked "how does the ledger work in ComeçaAI?", it calls `search` to discover the entry, then `fetch` to read the full markdown — landing on the same content a human sees at `/admin/handbook/...`.
 
 Without the MCP server, every new conversation starts from scratch: the assistant reads code, infers semantics, and produces plausible but non-canonical answers. With MCP, the assistant hits a versioned source (Handbook commits) and quotes what it read. This is particularly important for automated code review, spec generation, and onboarding new agents.
 
@@ -39,9 +39,9 @@ Typical Claude Desktop config:
 ```json
 {
   "mcpServers": {
-    "herd-docs": {
+    "comecaai-docs": {
       "command": "tsx",
-      "args": ["/path/to/herd/mcp/index.ts"]
+      "args": ["/path/to/comecaai/mcp/index.ts"]
     }
   }
 }

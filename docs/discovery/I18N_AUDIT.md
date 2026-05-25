@@ -332,8 +332,8 @@ locale String @default("pt-BR")
 | Plugin | Pros | Cons |
 |---|---|---|
 | `react/jsx-no-literals` (de `eslint-plugin-react`) | **Já é dep transitiva** via `eslint-config-next`. Zero deps novas. Flagua qualquer JSX text literal. Configurável (`allowedStrings`, `ignoreProps`). Funciona com TS. | Não entende o sistema i18n específico — só bane literais. Sem autofix. Falsos positivos em ícones / chars únicos requerem `allowedStrings` config. |
-| `eslint-plugin-i18next` | Targetado a i18n. Flagua chaves missing em `t("key")`. Entende i18next. | Acoplado a i18next library; HERD não usa. Precisaria wrapper ou custom resolver. |
-| `eslint-plugin-formatjs` | Validação ICU excelente, missing-id detection, locale parity checks. | Acoplado a `react-intl` / FormatJS. HERD não usa. Custo de adoção alto. |
+| `eslint-plugin-i18next` | Targetado a i18n. Flagua chaves missing em `t("key")`. Entende i18next. | Acoplado a i18next library; ComeçaAI não usa. Precisaria wrapper ou custom resolver. |
+| `eslint-plugin-formatjs` | Validação ICU excelente, missing-id detection, locale parity checks. | Acoplado a `react-intl` / FormatJS. ComeçaAI não usa. Custo de adoção alto. |
 
 ### Recomendação para 1.5.2: `react/jsx-no-literals`
 

@@ -13,7 +13,7 @@ The Tools layer organizes individual tools by **functional nature** — what kin
 
 ## Business
 
-Tools are HERD's atomic units of execution. Each tool does one thing well: send a sequence of emails, generate an invoice, validate a contract clause. Tools are reusable building blocks that compose into Solutions.
+Tools are ComeçaAI's atomic units of execution. Each tool does one thing well: send a sequence of emails, generate an invoice, validate a contract clause. Tools are reusable building blocks that compose into Solutions.
 
 Tools are categorized by their **technical/functional nature** — Marketing, Finance, Legal, Sales, HR, Operations. This taxonomy answers "what kind of tool is this?" and helps users discover tools by domain expertise. It contrasts with Solutions, which answer "what value does this deliver, and to whom?"
 
@@ -21,7 +21,7 @@ Tools are categorized by their **technical/functional nature** — Marketing, Fi
 
 ## Product
 
-<!-- TODO: How users (admins, end-users) discover and configure tools in HERD's admin UI. Tool catalog, category browser, configuration UI per tool. -->
+<!-- TODO: How users (admins, end-users) discover and configure tools in ComeçaAI's admin UI. Tool catalog, category browser, configuration UI per tool. -->
 
 ## Architecture
 

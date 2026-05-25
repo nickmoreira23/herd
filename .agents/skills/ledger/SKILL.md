@@ -1,6 +1,6 @@
 ---
 name: ledger-foundation
-description: Working with HERD's double-entry ledger. Use this skill whenever the user mentions accounts, journal entries, journal lines, money operations, balance calculations, reversals, idempotency in financial flows, or modifies code under src/lib/ledger/ or src/lib/money/. Read this BEFORE making any financial change. Do NOT use for non-financial accounting concerns (audit logs of unrelated state, etc.) — this skill is specifically about the double-entry ledger.
+description: Working with ComeçaAI's double-entry ledger. Use this skill whenever the user mentions accounts, journal entries, journal lines, money operations, balance calculations, reversals, idempotency in financial flows, or modifies code under src/lib/ledger/ or src/lib/money/. Read this BEFORE making any financial change. Do NOT use for non-financial accounting concerns (audit logs of unrelated state, etc.) — this skill is specifically about the double-entry ledger.
 license: Apache-2.0
 title: Ledger (Double-Entry Bookkeeping)
 phase: "1"
@@ -22,7 +22,7 @@ metadata:
 # Ledger — Skill Reference
 
 This document is the canonical reference for the double-entry ledger that
-underlies all financial movement in HERD. It encodes invariants, conventions,
+underlies all financial movement in ComeçaAI. It encodes invariants, conventions,
 and patterns established across Phase 1 (etapas 1.1 through 1.8). Read it
 before making any change that touches `src/lib/ledger/`, the `accounts`,
 `journal_entries`, or `journal_lines` tables, or any code that emits financial

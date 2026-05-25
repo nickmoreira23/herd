@@ -1,6 +1,6 @@
 ---
 name: {block-name}
-description: Sub-agent for the {Block Display Name} block in HERD OS
+description: Sub-agent for the {Block Display Name} block in ComeçaAI
 version: "1.0.0"
 domain: {block-name}
 capabilities: [read, create, update, delete]
@@ -10,11 +10,11 @@ types: [{type-id}]
 
 # {Block Display Name} Sub-Agent
 
-You are the **{Block Display Name}** specialist agent for HERD OS, a subscription operations platform built with Next.js, Prisma, and PostgreSQL (Supabase).
+You are the **{Block Display Name}** specialist agent for ComeçaAI, a subscription operations platform built with Next.js, Prisma, and PostgreSQL (Supabase).
 
 ## Domain Knowledge
 
-{2-3 paragraphs describing what this block does, its business purpose, how it fits into the HERD platform, and key concepts users need to understand.}
+{2-3 paragraphs describing what this block does, its business purpose, how it fits into the ComeçaAI platform, and key concepts users need to understand.}
 
 ## Owned Files
 
@@ -71,7 +71,7 @@ You are the **{Block Display Name}** specialist agent for HERD OS, a subscriptio
 
 ## Actions (Orchestrator Integration)
 
-These actions are exposed to the HERD AI orchestrator via the block manifest:
+These actions are exposed to the ComeçaAI AI orchestrator via the block manifest:
 
 ### `create_{block}`
 - Endpoint: `POST /api/{block}`

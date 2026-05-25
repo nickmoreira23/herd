@@ -498,7 +498,7 @@ Categoria de integrações que compartilha regras de negócio de domínio que ex
 
 **From [Modelo de Integrações](/admin/handbook/integrations/integration-model):**
 
-Conexão entre o HERD e um serviço externo específico, identificada por um `slug` (ex.: `recharge`, `gorgias`, `zoom`).
+Conexão entre o ComeçaAI e um serviço externo específico, identificada por um `slug` (ex.: `recharge`, `gorgias`, `zoom`).
 
 ### Integration surface
 
@@ -1014,11 +1014,11 @@ Função invocável pelo cliente MCP. Cada tool tem nome, descrição, input sch
 
 **From [Pattern: Composição em Três Níveis](/admin/handbook/meta/pattern-three-level-composition):**
 
-nível de manipulação rica — UI, regras, registry, manifest. Unidade comercial e operacional do HERD.
+nível de manipulação rica — UI, regras, registry, manifest. Unidade comercial e operacional do ComeçaAI.
 
 **From [Pattern: Tool](/admin/handbook/meta/pattern-tool-level):**
 
-unidade de manipulação rica — UI, regras, manifest, registry. Unidade comercial do HERD.
+unidade de manipulação rica — UI, regras, manifest, registry. Unidade comercial do ComeçaAI.
 
 ### Tool Category
 
@@ -1048,7 +1048,7 @@ macro-divisão para tools de troca comercial customer-facing.
 
 **From [Pattern: Composição em Três Níveis](/admin/handbook/meta/pattern-three-level-composition):**
 
-a composição Tool + Block Family + Surface que define toda capability do HERD.
+a composição Tool + Block Family + Surface que define toda capability do ComeçaAI.
 
 ### type guard
 

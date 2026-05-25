@@ -1,6 +1,6 @@
 ---
 name: domain-events-foundation
-description: Working with HERD's domain events outbox pattern. Use this skill whenever the user mentions emitting events, event handlers, the domain_events table, retry policy, idempotency keys, or modifies code under src/lib/domain-events/. Read this BEFORE making any change to event emission, handler registration, or the worker. Do NOT use for unrelated event-like patterns (UI events, analytics events) — this skill is specifically about the domain events outbox.
+description: Working with ComeçaAI's domain events outbox pattern. Use this skill whenever the user mentions emitting events, event handlers, the domain_events table, retry policy, idempotency keys, or modifies code under src/lib/domain-events/. Read this BEFORE making any change to event emission, handler registration, or the worker. Do NOT use for unrelated event-like patterns (UI events, analytics events) — this skill is specifically about the domain events outbox.
 license: Apache-2.0
 title: Domain Events Outbox
 phase: "1"
@@ -27,7 +27,7 @@ metadata:
 # Domain Events — Skill Reference
 
 This document is the canonical reference for the domain events outbox that
-underlies asynchronous communication between bounded contexts in HERD. It
+underlies asynchronous communication between bounded contexts in ComeçaAI. It
 encodes invariants, conventions, and patterns established in Phase 1, etapa
 1.8. Read it before making any change that touches `src/lib/domain-events/`,
 the `domain_events` table, or any code that emits or handles events.

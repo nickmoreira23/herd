@@ -9,11 +9,11 @@ uid: herd.layer.solutions
 
 # Solutions
 
-The Solutions layer organizes feature packages by **business value**, not by technical nature. A Solution answers "what value do we deliver, and to whom?" — for a market, for a department, for a segment. Solutions compose tools, blocks, and integrations from across HERD into coherent value propositions.
+The Solutions layer organizes feature packages by **business value**, not by technical nature. A Solution answers "what value do we deliver, and to whom?" — for a market, for a department, for a segment. Solutions compose tools, blocks, and integrations from across ComeçaAI into coherent value propositions.
 
 ## Business
 
-A Solution is HERD's commercial unit of articulation. When a customer says "we need help with sales pipeline acceleration," they're describing a Solution. The Solution may compose Marketing Tools, Finance Tools, and integrations from multiple categories — but the customer doesn't care about the composition. They care about the outcome.
+A Solution is ComeçaAI's commercial unit of articulation. When a customer says "we need help with sales pipeline acceleration," they're describing a Solution. The Solution may compose Marketing Tools, Finance Tools, and integrations from multiple categories — but the customer doesn't care about the composition. They care about the outcome.
 
 This distinguishes Solutions from Tools. Tools are organized by **what they are** (Marketing Tools, Finance Tools, Legal Tools). Solutions are organized by **who they serve and what value they deliver** (Healthcare Solutions, Sales Department Solutions, SMB Solutions). The same tool may participate in multiple Solutions; the same Solution may compose tools across multiple categories.
 

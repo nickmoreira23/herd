@@ -1,6 +1,6 @@
 ---
 name: practice-financial-engine
-description: Working with HERD's CFO-grade projection engine. Use this skill whenever the user mentions financial projections, scenario modeling, MRR/ARR, cohort revenue, or modifies code under `src/lib/financial-engine.ts`, `src/components/financials/`, or `src/lib/financial-engine.*.test.ts`. Read this BEFORE making any change to the engine, its KPI surface, or its UI consumers. Do NOT use for unrelated forecasting concerns — this skill is specifically about the projection engine that powers the board-meeting view.
+description: Working with ComeçaAI's CFO-grade projection engine. Use this skill whenever the user mentions financial projections, scenario modeling, MRR/ARR, cohort revenue, or modifies code under `src/lib/financial-engine.ts`, `src/components/financials/`, or `src/lib/financial-engine.*.test.ts`. Read this BEFORE making any change to the engine, its KPI surface, or its UI consumers. Do NOT use for unrelated forecasting concerns — this skill is specifically about the projection engine that powers the board-meeting view.
 license: Apache-2.0
 title: Financial Projection Engine
 version: "1.0"

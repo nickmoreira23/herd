@@ -9,7 +9,7 @@ uid: herd.tool.infrastructure.domain-events
 
 # Eventos de Domínio
 
-O sistema de eventos de domínio é o mecanismo do HERD para comunicação assíncrona entre bounded contexts. Um produtor em um contexto registra que algo aconteceu — uma transação foi paga, uma comissão foi calculada, um usuário se cadastrou — e qualquer número de consumidores em outros contextos pode reagir a esse fato depois, sem que o produtor precise conhecê-los.
+O sistema de eventos de domínio é o mecanismo do ComeçaAI para comunicação assíncrona entre bounded contexts. Um produtor em um contexto registra que algo aconteceu — uma transação foi paga, uma comissão foi calculada, um usuário se cadastrou — e qualquer número de consumidores em outros contextos pode reagir a esse fato depois, sem que o produtor precise conhecê-los.
 
 Eventos são emitidos **dentro da mesma transação** que produziu a mudança de estado subjacente. A linha do evento existe se e somente se a mudança existe — sem evento sem mudança, sem mudança sem evento. Um worker separado pega eventos pendentes e despacha para handlers.
 
@@ -19,7 +19,7 @@ O gargalo que isto resolve é **acoplamento entre contextos**. Sem um log de eve
 
 Com domain events, o produtor emite um fato e esquece. Consumidores se inscrevem registrando um handler. Novos consumidores não tocam o produtor; consumidores com falha não quebram o produtor; testes são por handler em vez de por fan-out.
 
-O custo é assincronia — consumidores veem fatos depois do produtor commitar, não em lockstep. Para os domínios do HERD (financeiro, ciclo de vida de usuário, notificações) esse delay é aceitável; o decoupling vale a pena.
+O custo é assincronia — consumidores veem fatos depois do produtor commitar, não em lockstep. Para os domínios do ComeçaAI (financeiro, ciclo de vida de usuário, notificações) esse delay é aceitável; o decoupling vale a pena.
 
 ## Product
 

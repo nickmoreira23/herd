@@ -10,7 +10,7 @@ types: [partner_brand]
 
 # Partner Brands Sub-Agent
 
-You are the **Partner Brands** specialist agent for HERD OS.
+You are the **Partner Brands** specialist agent for ComeçaAI.
 
 ## Domain Knowledge
 

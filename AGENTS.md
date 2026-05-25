@@ -6,7 +6,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Block Sub-Agent Architecture
 
-HERD uses a block-based architecture where each feature module ("block") is self-contained and composable.
+ComeçaAI uses a block-based architecture where each feature module ("block") is self-contained and composable.
 
 ## For Developers (Claude Code Agents)
 
@@ -365,7 +365,7 @@ the script is defense-in-depth.
 
 ## Handbook (doc-first)
 
-HERD uses a 4-artifact doc system organized into a 3-level hierarchy. Before
+ComeçaAI uses a 4-artifact doc system organized into a 3-level hierarchy. Before
 writing code that creates, modifies, or deprecates a feature, check the
 change-type matrix in `docs/handbook/_meta/handbook/en-US.md` (Operations
 perspective) for required artifacts.
@@ -538,7 +538,7 @@ deterministic output (the "Last updated" line is derived from the
 
 ## Documentation discipline
 
-The Handbook (`docs/handbook/`) is the source of truth for what HERD
+The Handbook (`docs/handbook/`) is the source of truth for what ComeçaAI
 is, how it works, and how to operate it. It complements (not replaces)
 inline code comments and READMEs.
 
@@ -1135,7 +1135,7 @@ origin com prefixo `archive/sub-etapa-3-*` (PRs #31 a #39).
 
 **Preservado intencionalmente:**
 - `NetworkProfile` model — identidade pura (14 campos, 7 reverse rels para
-  preserved models). É o User do HERD; rename para `User` está cravado em
+  preserved models). É o User do ComeçaAI; rename para `User` está cravado em
   Tech debt.
 - Enum `NetworkType` — `Department` ainda usa.
 - Enum `ProfileStatus` — `NetworkProfile.status` usa.
@@ -1163,7 +1163,7 @@ produto decidir.
 ## Fase 3
 
 - **Rename `NetworkProfile` → `User` + `ProfileStatus` → `UserStatus`.**
-  `NetworkProfile` é o User do HERD; nome cosmético antigo permanece por
+  `NetworkProfile` é o User do ComeçaAI; nome cosmético antigo permanece por
   inércia para evitar churn de imports em ~40 arquivos. Trigger: produto
   requer identidade explícita "User" como conceito (ou primeiro feature
   novo que torna `NetworkProfile` confuso na leitura).
@@ -1342,7 +1342,7 @@ pattern; segundo confirma a convenção.
   pré-cutover). V1 é forward-flow only. Trigger: produto precisar de
   analytics histórica.
 - **Storefront Token integration** (browser-side, customer-facing
-  portal). Trigger: HERD UI customer-facing checkout/portal.
+  portal). Trigger: ComeçaAI UI customer-facing checkout/portal.
 
 # Camada 2 — Braintree backend integration (cravada na Sub-etapa 13)
 

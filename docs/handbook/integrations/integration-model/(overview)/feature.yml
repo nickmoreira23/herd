@@ -7,8 +7,8 @@ title:
   pt-BR: "Modelo de Integrações"
   en-US: "Integration Model"
 description:
-  pt-BR: "Arquitetura conceitual das integrações do HERD: eixo horizontal vs. vertical (infraestrutura compartilhada vs. especialização por domínio) e eixo raso vs. profundo (OAuth+read vs. webhooks+sync+dedup)."
-  en-US: "Conceptual architecture of HERD integrations: horizontal vs. vertical axis (shared infra vs. domain specialization) and shallow vs. deep axis (OAuth+read vs. webhooks+sync+dedup)."
+  pt-BR: "Arquitetura conceitual das integrações do ComeçaAI: eixo horizontal vs. vertical (infraestrutura compartilhada vs. especialização por domínio) e eixo raso vs. profundo (OAuth+read vs. webhooks+sync+dedup)."
+  en-US: "Conceptual architecture of ComeçaAI integrations: horizontal vs. vertical axis (shared infra vs. domain specialization) and shallow vs. deep axis (OAuth+read vs. webhooks+sync+dedup)."
 
 status: active
 owners: ["@nick"]

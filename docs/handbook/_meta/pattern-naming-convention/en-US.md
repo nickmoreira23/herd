@@ -9,7 +9,7 @@ uid: herd.meta.pattern-naming-convention
 
 # Pattern: Naming Convention
 
-Clear naming reduces friction across product, design, engineering, and business. HERD adopts precise but non-mechanical conventions — the rule is **natural language** when applicable (tools), and **canonical conventions** where shared vocabulary has value (blocks).
+Clear naming reduces friction across product, design, engineering, and business. ComeçaAI adopts precise but non-mechanical conventions — the rule is **natural language** when applicable (tools), and **canonical conventions** where shared vocabulary has value (blocks).
 
 This pattern consolidates three rules: how to name tools, how to name blocks (including canonical suffixes), and how to avoid the classic confusion between Profile (tool), profile-types (block), and profiles (block).
 

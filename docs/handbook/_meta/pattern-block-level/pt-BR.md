@@ -9,7 +9,7 @@ uid: herd.meta.pattern-block-level
 
 # Pattern: Block
 
-Block é o nível de dado do HERD — single source of truth de um tipo de registro. Blocks vivem em famílias geradas por tools (ver `pattern-tool-level`); este pattern explica a estrutura interna de uma family, as convenções de naming, e os sufixos canônicos que codificam semântica.
+Block é o nível de dado do ComeçaAI — single source of truth de um tipo de registro. Blocks vivem em famílias geradas por tools (ver `pattern-tool-level`); este pattern explica a estrutura interna de uma family, as convenções de naming, e os sufixos canônicos que codificam semântica.
 
 ## Business
 
@@ -85,7 +85,7 @@ Permite drill-down ("ganhei 30 pts por quê?" → click → abre venda original)
 
 ### Distinção entre tipos de blocks de estado
 
-Vocabulário comum confunde "estado atual" com "histórico". O HERD distingue:
+Vocabulário comum confunde "estado atual" com "histórico". O ComeçaAI distingue:
 
 - `-progress`: estado contínuo, sem período. Ex: level atual em `recognition-progress`.
 - `-balances`: saldo dinâmico, atualiza on event. Ex: `points-balances`, `remuneration-balances`.

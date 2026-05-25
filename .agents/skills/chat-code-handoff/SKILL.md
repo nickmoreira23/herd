@@ -5,10 +5,10 @@ overrides: anthropic-skills:chat-code-handoff
 version: 0.1.0
 ---
 
-# chat-code-handoff (HERD project-local addendum)
+# chat-code-handoff (ComeçaAI project-local addendum)
 
 > **Project-local override** da skill global `anthropic-skills:chat-code-handoff`.
-> Adiciona regras HERD-específicas estabelecidas empiricamente durante Fase 0 + Camada 1 + Fase 3.
+> Adiciona regras ComeçaAI-específicas estabelecidas empiricamente durante Fase 0 + Camada 1 + Fase 3.
 >
 > A skill global continua sendo a referência principal para o protocolo geral.
 > Este documento adiciona uma regra cravada que tem precedência sobre orientações
@@ -292,5 +292,5 @@ torna route handlers auto-dinâmicos por inferência quando lêem env/DB.
 ## Referência
 
 - Skill global: `anthropic-skills:chat-code-handoff` (protocolo geral)
-- Practice-housekeeping-git: padrões git HERD-específicos para sub-etapas
+- Practice-housekeeping-git: padrões git ComeçaAI-específicos para sub-etapas
 - AGENTS.md: contexto operacional do projeto

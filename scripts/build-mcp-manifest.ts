@@ -29,14 +29,14 @@ async function main() {
     "sha256:" + createHash("sha256").update(sourceContent.join("\n")).digest("hex");
 
   const manifest = {
-    name: "herd-docs-mcp",
+    name: "comecaai-docs-mcp",
     version: "0.1.0",
-    description: "Read-only access to HERD's Handbook, SKILLs, and feature graph.",
+    description: "Read-only access to ComeçaAI's Handbook, SKILLs, and feature graph.",
     tools: [
       {
         name: "search",
         annotations: {
-          title: "Search HERD Handbook",
+          title: "Search ComeçaAI Handbook",
           readOnlyHint: true,
           idempotentHint: true,
           destructiveHint: false,
@@ -46,7 +46,7 @@ async function main() {
       {
         name: "fetch",
         annotations: {
-          title: "Fetch HERD Handbook entry",
+          title: "Fetch ComeçaAI Handbook entry",
           readOnlyHint: true,
           idempotentHint: true,
           destructiveHint: false,

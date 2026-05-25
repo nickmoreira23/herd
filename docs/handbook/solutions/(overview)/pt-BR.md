@@ -9,11 +9,11 @@ uid: herd.layer.solutions
 
 # Soluções
 
-A camada de Solutions organiza pacotes de funcionalidades por **valor de negócio**, não por natureza técnica. Uma Solution responde "que valor a gente entrega, e para quem?" — para um mercado, para um departamento, para um segmento. Solutions compõem tools, blocks e integrations de toda a estrutura do HERD em propostas de valor coerentes.
+A camada de Solutions organiza pacotes de funcionalidades por **valor de negócio**, não por natureza técnica. Uma Solution responde "que valor a gente entrega, e para quem?" — para um mercado, para um departamento, para um segmento. Solutions compõem tools, blocks e integrations de toda a estrutura do ComeçaAI em propostas de valor coerentes.
 
 ## Business
 
-Uma Solution é a unidade comercial de articulação do HERD. Quando um cliente diz "preciso de ajuda com aceleração de pipeline de vendas", está descrevendo uma Solution. A Solution pode compor Marketing Tools, Finance Tools e integrations de múltiplas categorias — mas o cliente não se importa com a composição. Ele se importa com o outcome.
+Uma Solution é a unidade comercial de articulação do ComeçaAI. Quando um cliente diz "preciso de ajuda com aceleração de pipeline de vendas", está descrevendo uma Solution. A Solution pode compor Marketing Tools, Finance Tools e integrations de múltiplas categorias — mas o cliente não se importa com a composição. Ele se importa com o outcome.
 
 Isso distingue Solutions de Tools. Tools são organizadas por **o que elas são** (Marketing Tools, Finance Tools, Legal Tools). Solutions são organizadas por **quem elas atendem e que valor entregam** (Healthcare Solutions, Sales Department Solutions, SMB Solutions). A mesma tool pode participar de múltiplas Solutions; a mesma Solution pode compor tools de múltiplas categories.
 

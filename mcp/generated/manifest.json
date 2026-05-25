@@ -1,12 +1,12 @@
 {
-  "name": "herd-docs-mcp",
+  "name": "comecaai-docs-mcp",
   "version": "0.1.0",
-  "description": "Read-only access to HERD's Handbook, SKILLs, and feature graph.",
+  "description": "Read-only access to ComeçaAI's Handbook, SKILLs, and feature graph.",
   "tools": [
     {
       "name": "search",
       "annotations": {
-        "title": "Search HERD Handbook",
+        "title": "Search ComeçaAI Handbook",
         "readOnlyHint": true,
         "idempotentHint": true,
         "destructiveHint": false,
@@ -16,7 +16,7 @@
     {
       "name": "fetch",
       "annotations": {
-        "title": "Fetch HERD Handbook entry",
+        "title": "Fetch ComeçaAI Handbook entry",
         "readOnlyHint": true,
         "idempotentHint": true,
         "destructiveHint": false,
@@ -28,5 +28,5 @@
   "feature_count": 63,
   "skill_count": 7,
   "generated_at": "2026-05-25",
-  "source_files_hash": "sha256:b0093cad6ef166486444d4900c18687d0b79814fec90bd877fdd4f9ef07b12c2"
+  "source_files_hash": "sha256:58d2a1075f41736e50440ff5913996536811d200fcad7027fff8bf64ccf268e2"
 }

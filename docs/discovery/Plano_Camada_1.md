@@ -14,7 +14,7 @@ das Sub-etapas 5-12 (entrega original Recharge) + 17.0.1 + 17.0.3 +
 
 ## Visão geral
 
-Camada 1 integra Recharge como primeiro billing provider em HERD.
+Camada 1 integra Recharge como primeiro billing provider em ComeçaAI.
 **Backend only.** UI checkout customer-facing fica para Fase 5
 (Marketplace + Interface). Camada 1 é referência arquitetural canonical
 da qual Camada 2 (Braintree) reaproveitou 100% de schema, outbox, worker,

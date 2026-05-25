@@ -85,9 +85,9 @@ function buildLlmsTxt(): string {
 
   const lines: string[] = [];
 
-  lines.push("# HERD");
+  lines.push("# ComeçaAI");
   lines.push("");
-  lines.push("> HERD is an AI-native B2B platform for marketing networks.");
+  lines.push("> ComeçaAI is an AI-native B2B platform for marketing networks.");
   lines.push(
     `> Currently ${entries.length} documented entries across 5 layers ` +
       `(Networks, Solutions, Tools, Blocks, Integrations) plus a meta namespace.`,

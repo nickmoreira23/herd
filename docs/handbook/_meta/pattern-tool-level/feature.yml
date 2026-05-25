@@ -7,8 +7,8 @@ title:
   pt-BR: "Pattern: Tool"
   en-US: "Pattern: Tool"
 description:
-  pt-BR: "Tool é a unidade comercial e operacional do HERD: sistema rico de manipulação com UI, regras e dois modos (standalone e embedded). Naming por linguagem natural; gera Block Family, não block único."
-  en-US: "Tool is HERD's commercial and operational unit: a rich manipulation system with UI, rules, and two modes (standalone and embedded). Natural-language naming; generates a Block Family, not a single block."
+  pt-BR: "Tool é a unidade comercial e operacional do ComeçaAI: sistema rico de manipulação com UI, regras e dois modos (standalone e embedded). Naming por linguagem natural; gera Block Family, não block único."
+  en-US: "Tool is ComeçaAI's commercial and operational unit: a rich manipulation system with UI, rules, and two modes (standalone and embedded). Natural-language naming; generates a Block Family, not a single block."
 
 status: active
 owners: ["@nick"]

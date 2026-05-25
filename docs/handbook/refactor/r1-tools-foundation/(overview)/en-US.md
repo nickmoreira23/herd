@@ -8,7 +8,7 @@ R1 reconciles the existing tools infrastructure — the `Tool` interface, `ToolC
 
 R1 is not mechanical — it is discovery. R0.2 introduced a minimalist `ToolManifest` assuming greenfield. The reality in code had a rich `Tool` (10 functional fields) and `ToolCategoryManifest` (aggregator) already in production, feeding `/admin/tools/*` and the chat orchestrator. Reconciling now avoids two debts: (a) building a competing parallel in R3–R5 when reclassifying campaigns, subscriptions, marketplace; (b) leaving `tool-category` (a real architectural layer, distinct from Solution) without a canonical name.
 
-For HERD's clients, invisible. For the team and agents, R1 closes the gap between "what is documented as existing" and "what actually exists in code".
+For ComeçaAI's clients, invisible. For the team and agents, R1 closes the gap between "what is documented as existing" and "what actually exists in code".
 
 ## Product
 

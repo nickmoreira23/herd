@@ -1,6 +1,6 @@
-# HERD
+# ComeçaAI
 
-> HERD is an AI-native B2B platform for marketing networks.
+> ComeçaAI is an AI-native B2B platform for marketing networks.
 > Currently 63 documented entries across 5 layers (Networks, Solutions, Tools, Blocks, Integrations) plus a meta namespace.
 
 ## Documentation
@@ -9,7 +9,7 @@
 
 ## Layers
 
-- [Networks](https://herd.app/admin/handbook/networks): Layer that organizes the different types of networks HERD supports: corporate, market, and multi-market.
+- [Networks](https://herd.app/admin/handbook/networks): Layer that organizes the different types of networks ComeçaAI supports: corporate, market, and multi-market.
 - [Solutions](https://herd.app/admin/handbook/solutions): Layer that organizes feature packages focused on business value: by market, by department, by segment.
 - [Tools](https://herd.app/admin/handbook/tools): Layer that organizes tools by functional nature: financial, legal, marketing, sales.
 - [Blocks](https://herd.app/admin/handbook/blocks): Layer that organizes data blocks by nature: identity, media, time, commercial, financial.
@@ -25,7 +25,7 @@
 - [Infrastructure](https://herd.app/admin/handbook/tools/infrastructure): Cross-cutting functional tools that sustain other features without belonging to a specific business domain — events, queues, observability.
 - [Financial](https://herd.app/admin/handbook/blocks/financial): Financial data primitives — records, flows, immutable events — that serve as the foundation for tools and product flows.
 - [Miscellaneous](https://herd.app/admin/handbook/blocks/miscellaneous): Blocks not yet classified into a specific category. Temporary accommodation — debt to resolve during backfill.
-- [Integration Model](https://herd.app/admin/handbook/integrations/integration-model): Conceptual architecture of HERD integrations: horizontal vs. vertical axis (shared infra vs. domain specialization) and shallow vs. deep axis (OAuth+read vs. webhooks+sync+dedup).
+- [Integration Model](https://herd.app/admin/handbook/integrations/integration-model): Conceptual architecture of ComeçaAI integrations: horizontal vs. vertical axis (shared infra vs. domain specialization) and shallow vs. deep axis (OAuth+read vs. webhooks+sync+dedup).
 - [Payment](https://herd.app/admin/handbook/integrations/payment): Payment and billing integrations. Providers that handle recurring billing, subscriptions, refunds, dunning.
 - [Communication](https://herd.app/admin/handbook/areas/communication): Communication between people in the system. Tools that enable conversation, messaging, and human-human or human-agent interaction.
 - [Identity](https://herd.app/admin/handbook/areas/identity): Identity and knowledge area. Tools that manage who is in the system (people, organizations) and what the system knows.
@@ -47,8 +47,8 @@
 ## Meta
 
 - [Glossary](https://herd.app/admin/handbook/meta/glossary): Global glossary aggregated from terms defined across all Handbook entries.
-- [Handbook](https://herd.app/admin/handbook/meta/handbook): HERD's documentation system: architecture, conventions, and operations.
-- [llms.txt](https://herd.app/admin/handbook/meta/llms-txt): Public file at /llms.txt following the llmstxt.org convention — guides LLMs about what HERD is, where to find canonical content, and how to access it programmatically.
+- [Handbook](https://herd.app/admin/handbook/meta/handbook): ComeçaAI's documentation system: architecture, conventions, and operations.
+- [llms.txt](https://herd.app/admin/handbook/meta/llms-txt): Public file at /llms.txt following the llmstxt.org convention — guides LLMs about what ComeçaAI is, where to find canonical content, and how to access it programmatically.
 - [MCP Server](https://herd.app/admin/handbook/meta/mcp): Model Context Protocol server that exposes the Handbook as a navigable resource for AI assistants via stdio (local clients) and HTTP (remote clients).
 - [Pattern: Block](https://herd.app/admin/handbook/meta/pattern-block-level): Blocks are single sources of truth for data types, organized into families (Block Family → Block → Block Group → Record). Always plural; canonical suffixes define each block's semantics.
 - [Pattern: Manage Types/Sets](https://herd.app/admin/handbook/meta/pattern-manage-types): UX pattern for tools managing templates + instances together. Header sub-action 'Manage types' (or 'Manage sets') opens template manager. Main listing shows instances.
@@ -57,8 +57,8 @@
 - [Pattern: Snapshots](https://herd.app/admin/handbook/meta/pattern-snapshots): Snapshots are frozen state photos at a point in time, with a configurable period (not fixed monthly). Distinct from progress/balances/positions — each suffix encodes state semantics.
 - [Pattern: Source Attribution](https://herd.app/admin/handbook/meta/pattern-source-attribution): Every event in any block carries a polymorphic source field (source_block + source_id + source_type) pointing to the originating record. Enables drill-down, audit, and automatic reversal.
 - [Pattern: Surface](https://herd.app/admin/handbook/meta/pattern-surface-level): Surfaces are concrete manifestations where block data and tool functionality appear. They split into External (public page, embed, integration) and Internal (tab, modal, inline). Same mechanism, different locations.
-- [Pattern: Three-Level Composition](https://herd.app/admin/handbook/meta/pattern-three-level-composition): HERD's fundamental architectural pattern: every capability is a Tool (manipulation) + Block Family (data) + Surface (manifestation) trio. Without the trio, the feature doesn't fit.
-- [Pattern: Tool](https://herd.app/admin/handbook/meta/pattern-tool-level): Tool is HERD's commercial and operational unit: a rich manipulation system with UI, rules, and two modes (standalone and embedded). Natural-language naming; generates a Block Family, not a single block.
+- [Pattern: Three-Level Composition](https://herd.app/admin/handbook/meta/pattern-three-level-composition): ComeçaAI's fundamental architectural pattern: every capability is a Tool (manipulation) + Block Family (data) + Surface (manifestation) trio. Without the trio, the feature doesn't fit.
+- [Pattern: Tool](https://herd.app/admin/handbook/meta/pattern-tool-level): Tool is ComeçaAI's commercial and operational unit: a rich manipulation system with UI, rules, and two modes (standalone and embedded). Natural-language naming; generates a Block Family, not a single block.
 
 ## Programmatic access
 

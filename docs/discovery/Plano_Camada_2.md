@@ -11,7 +11,7 @@ state, idêntico a `archive/sub-etapa-13-braintree-adapter-6cb2f0b^`).
 
 ## Visão geral
 
-Camada 2 integra Braintree como segundo billing provider em HERD,
+Camada 2 integra Braintree como segundo billing provider em ComeçaAI,
 paralelo a Recharge (Camada 1). **Backend only.** UI checkout fica
 para Fase 5 (Marketplace + Interface).
 

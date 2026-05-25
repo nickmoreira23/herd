@@ -13,7 +13,7 @@ A camada de Tools organiza ferramentas individuais por **natureza funcional** �
 
 ## Business
 
-Tools são as unidades atômicas de execução do HERD. Cada tool faz uma coisa bem: enviar uma sequência de emails, gerar um invoice, validar uma cláusula contratual. Tools são building blocks reutilizáveis que compõem Solutions.
+Tools são as unidades atômicas de execução do ComeçaAI. Cada tool faz uma coisa bem: enviar uma sequência de emails, gerar um invoice, validar uma cláusula contratual. Tools são building blocks reutilizáveis que compõem Solutions.
 
 Tools são categorizadas pela sua **natureza técnica/funcional** — Marketing, Finance, Legal, Sales, HR, Operations. Essa taxonomia responde "que tipo de ferramenta é essa?" e ajuda usuários a descobrir tools por domínio de expertise. Contrasta com Solutions, que respondem "que valor isso entrega, e para quem?".
 
@@ -21,7 +21,7 @@ Tools são categorizadas pela sua **natureza técnica/funcional** — Marketing,
 
 ## Product
 
-<!-- TODO: Como usuários (admins, end-users) descobrem e configuram tools no admin UI do HERD. Tool catalog, category browser, configuration UI por tool. -->
+<!-- TODO: Como usuários (admins, end-users) descobrem e configuram tools no admin UI do ComeçaAI. Tool catalog, category browser, configuration UI por tool. -->
 
 ## Architecture
 

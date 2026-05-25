@@ -8,7 +8,7 @@ R2 introduces Areas as product macro-divisions where Tools are positioned. It re
 
 Areas are a structural layer above Tools — product macro-divisions (Communication, Transaction, Workflow, Notification, Identity, Infrastructure). They allow grouping tools by their function in the product, providing coherent navigation. Pillars/Modules were eliminated in favor of simplicity — Areas + Tools cover what we need.
 
-For HERD customers, R2 changes nothing immediately — it is technical foundation. The user-facing effect lands in Commit 4 (sidebar reorganized by area).
+For ComeçaAI customers, R2 changes nothing immediately — it is technical foundation. The user-facing effect lands in Commit 4 (sidebar reorganized by area).
 
 ## Product
 

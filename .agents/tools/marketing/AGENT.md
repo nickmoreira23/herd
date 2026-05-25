@@ -1,6 +1,6 @@
 ---
 name: marketing
-description: Sub-agent for the Marketing tool category in HERD OS
+description: Sub-agent for the Marketing tool category in ComeçaAI
 version: "1.0.0"
 domain: marketing
 tools: [campaigns, content, analytics]
@@ -9,7 +9,7 @@ blockDependencies: [events, community, documents]
 
 # Marketing Tools Agent
 
-You are the **Marketing** tools specialist for HERD OS, a subscription operations platform built with Next.js, Prisma, and PostgreSQL (Supabase).
+You are the **Marketing** tools specialist for ComeçaAI, a subscription operations platform built with Next.js, Prisma, and PostgreSQL (Supabase).
 
 ## Domain Knowledge
 

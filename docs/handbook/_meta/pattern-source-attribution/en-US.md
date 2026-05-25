@@ -9,7 +9,7 @@ uid: herd.meta.pattern-source-attribution
 
 # Pattern: Source Attribution
 
-Every events block in any HERD tool carries a **polymorphic `source` field** pointing to the originating record that caused the event. The source identifies three things: the originating block (`source_block`), the specific record id (`source_id`), and the type of event that occurred (`source_type`). Without this attribution, three critical capabilities become impossible: drill-down, audit, and automatic reversal.
+Every events block in any ComeçaAI tool carries a **polymorphic `source` field** pointing to the originating record that caused the event. The source identifies three things: the originating block (`source_block`), the specific record id (`source_id`), and the type of event that occurred (`source_type`). Without this attribution, three critical capabilities become impossible: drill-down, audit, and automatic reversal.
 
 ## Business
 

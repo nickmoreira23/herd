@@ -1,6 +1,6 @@
 ---
 title: llms.txt
-description: Public file at /llms.txt following the llmstxt.org convention — guides LLMs about what HERD is, where to find canonical content, and how to access it programmatically.
+description: Public file at /llms.txt following the llmstxt.org convention — guides LLMs about what ComeçaAI is, where to find canonical content, and how to access it programmatically.
 locale: en-US
 uid: herd.meta.llms-txt
 ---
@@ -9,11 +9,11 @@ uid: herd.meta.llms-txt
 
 # llms.txt
 
-Public file at `/llms.txt` following the [llmstxt.org](https://llmstxt.org) convention. Analogous to `robots.txt` (which guides search engine crawlers) but for LLMs: when an AI agent fetches a HERD domain, it reads `/llms.txt` to discover what the product is, where the canonical Handbook lives, and how to connect via MCP.
+Public file at `/llms.txt` following the [llmstxt.org](https://llmstxt.org) convention. Analogous to `robots.txt` (which guides search engine crawlers) but for LLMs: when an AI agent fetches a ComeçaAI domain, it reads `/llms.txt` to discover what the product is, where the canonical Handbook lives, and how to connect via MCP.
 
 ## Business
 
-When you share a HERD link with an AI agent (Claude, ChatGPT, Cursor, etc.), the agent typically does an initial discovery pass to understand the domain. Without `llms.txt`, it infers from HTML, sitemap, or prior knowledge. With `llms.txt`, it gets a short, focused briefing: link to the Handbook home, list of documented layers, pointer to the MCP server.
+When you share a ComeçaAI link with an AI agent (Claude, ChatGPT, Cursor, etc.), the agent typically does an initial discovery pass to understand the domain. Without `llms.txt`, it infers from HTML, sitemap, or prior knowledge. With `llms.txt`, it gets a short, focused briefing: link to the Handbook home, list of documented layers, pointer to the MCP server.
 
 This significantly increases the agent's chance of working with the product without manual briefing. For automated code review, spec generation, onboarding new agents, or plain Q&A about the product, `llms.txt` is the cheapest way to ground authoritative context.
 
@@ -25,7 +25,7 @@ This significantly increases the agent's chance of working with the product with
 
 Structure of the generated file:
 
-1. **Header** `# HERD` + blockquote with short description + total entry count.
+1. **Header** `# ComeçaAI` + blockquote with short description + total entry count.
 2. **Documentation**: link to Handbook home.
 3. **Layers**: 5 fixed layers with title + en-US description.
 4. **Categories**: all categories ordered by layer (Networks → Solutions → Tools → Blocks → Integrations).

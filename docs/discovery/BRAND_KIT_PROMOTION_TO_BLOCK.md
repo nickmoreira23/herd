@@ -15,7 +15,7 @@ agents, surfaces, forms, landing pages, etc. — to provide consistent
 visual tone across contexts.
 
 Therefore brand-kit must be promoted to a **reusable block** in the
-HERD block architecture (similar to how Companies, Products, etc. are
+ComeçaAI block architecture (similar to how Companies, Products, etc. are
 top-level blocks).
 
 ## Status

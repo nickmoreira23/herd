@@ -9,7 +9,7 @@ uid: herd.tool.infrastructure.domain-events
 
 # Domain Events
 
-The domain events system is HERD's mechanism for communicating across bounded contexts asynchronously. A producer in one context records that something happened — a transaction was paid, a commission was computed, a user signed up — and any number of consumers in other contexts can react to that fact later, without the producer needing to know they exist.
+The domain events system is ComeçaAI's mechanism for communicating across bounded contexts asynchronously. A producer in one context records that something happened — a transaction was paid, a commission was computed, a user signed up — and any number of consumers in other contexts can react to that fact later, without the producer needing to know they exist.
 
 Events are emitted **inside the same transaction** that produced the underlying state change. The event row exists if and only if the change exists — no event without the change, no change without the event. A separate worker picks pending events and dispatches them to handlers.
 
@@ -19,7 +19,7 @@ The bottleneck this solves is **coupling between contexts**. Without an event lo
 
 With domain events, the producer emits one fact and forgets. Consumers subscribe by registering a handler. New consumers don't touch the producer; failed consumers don't break the producer; testing is per-handler instead of per-fan-out.
 
-The cost is asynchrony — consumers see facts after the producer commits, not in lockstep. For HERD's domains (financial, user lifecycle, notifications) that delay is acceptable; the decoupling is worth it.
+The cost is asynchrony — consumers see facts after the producer commits, not in lockstep. For ComeçaAI's domains (financial, user lifecycle, notifications) that delay is acceptable; the decoupling is worth it.
 
 ## Product
 

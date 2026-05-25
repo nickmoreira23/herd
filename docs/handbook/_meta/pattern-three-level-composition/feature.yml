@@ -7,8 +7,8 @@ title:
   pt-BR: "Pattern: Composição em Três Níveis"
   en-US: "Pattern: Three-Level Composition"
 description:
-  pt-BR: "Padrão arquitetural fundamental do HERD: toda capability é trio Tool (manipulação) + Block Family (dados) + Surface (manifestação). Sem o trio, a feature não cabe na arquitetura."
-  en-US: "HERD's fundamental architectural pattern: every capability is a Tool (manipulation) + Block Family (data) + Surface (manifestation) trio. Without the trio, the feature doesn't fit."
+  pt-BR: "Padrão arquitetural fundamental do ComeçaAI: toda capability é trio Tool (manipulação) + Block Family (dados) + Surface (manifestação). Sem o trio, a feature não cabe na arquitetura."
+  en-US: "ComeçaAI's fundamental architectural pattern: every capability is a Tool (manipulation) + Block Family (data) + Surface (manifestation) trio. Without the trio, the feature doesn't fit."
 
 status: active
 owners: ["@nick"]

@@ -15,13 +15,13 @@ The Market Network connects multiple companies operating in the same market. It 
 
 A Market Network's value is in market intelligence: comparatives, benchmarks, cross-company opportunity discovery. Two companies in the same Market Network can — within explicit consent — see anonymized comparison data, surface joint customers, or discover opportunities to partner. None of this is possible inside a single Corporate Network.
 
-This is what distinguishes HERD from a single-tenant CRM. A Corporate Network alone gives a company internal organization. A Market Network gives a company position within a broader ecosystem. Both layers matter, and they answer different questions: "how do we operate?" vs. "where do we stand?"
+This is what distinguishes ComeçaAI from a single-tenant CRM. A Corporate Network alone gives a company internal organization. A Market Network gives a company position within a broader ecosystem. Both layers matter, and they answer different questions: "how do we operate?" vs. "where do we stand?"
 
 <!-- TODO: 2-3 more paragraphs on the commercial flywheel of Market Networks: how the value of a Market Network grows superlinearly with members, how privacy/consent is preserved, how monetization differs from Corporate Network. -->
 
 ## Product
 
-<!-- TODO: How users (sales, leadership) interact with Market Network surfaces in HERD's admin UI. Market dashboards, segment views, peer benchmarks, opportunity discovery flows. -->
+<!-- TODO: How users (sales, leadership) interact with Market Network surfaces in ComeçaAI's admin UI. Market dashboards, segment views, peer benchmarks, opportunity discovery flows. -->
 
 ## Architecture
 

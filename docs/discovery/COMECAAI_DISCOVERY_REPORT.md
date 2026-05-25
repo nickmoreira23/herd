@@ -1,4 +1,4 @@
-# HERD — Relatório de Descoberta
+# ComeçaAI — Relatório de Descoberta
 
 Gerado em: 2026-04-29T21:25:07Z
 
@@ -36,7 +36,7 @@ Gerado em: 2026-04-29T21:25:07Z
 ## 2. Estrutura de diretórios (até 2 níveis)
 
 ```
-HERD/
+ComeçaAI/
 ├── .agents/
 │   ├── blocks/                 # 34 dirs: _template, agents, apps, audios, campaigns, companies,
 │   │                           # contacts, deals, documents, events, experiences, feedbacks, forms,
@@ -49,7 +49,7 @@ HERD/
 ├── .claire/                    # propósito não documentado (sem README)
 ├── .git/
 ├── .github/                    # vazio — sem workflows
-├── HERD/                       # vault Obsidian (Welcome.md + .obsidian/) — ver nota abaixo
+├── ComeçaAI/                       # vault Obsidian (Welcome.md + .obsidian/) — ver nota abaixo
 ├── docs/                       # criado por esta etapa (discovery/)
 ├── prisma/
 │   ├── schema.prisma           # 114 modelos (~40k linhas)
@@ -101,7 +101,7 @@ HERD/
 
 **Comentário sobre organização**: monorepo simples (não Nx/Turborepo), app único Next.js, **feature-based** dentro de cada camada (`src/components/{feature}/`, `src/lib/{feature}/`, `src/app/api/{feature}/`, `.agents/blocks/{block}/`). Há uma camada de meta-organização sob `src/lib/blocks/` (registro de "blocos" — features de domínio) e `src/lib/tools/` (registro de "tools" — categorias de ferramentas que compõem blocos). Cada bloco/categoria tem manifest declarativo + agente Markdown próprio.
 
-**Sobre o subdir `HERD/`**: é um **vault Obsidian inicializado mas vazio** (`Welcome.md` padrão + `.obsidian/` config). Não tem código, schemas, migrations, ou conteúdo de domínio. Inócuo — registro apenas de presença, sem implicação para a Fase 1.
+**Sobre o subdir `ComeçaAI/`**: é um **vault Obsidian inicializado mas vazio** (`Welcome.md` padrão + `.obsidian/` config). Não tem código, schemas, migrations, ou conteúdo de domínio. Inócuo — registro apenas de presença, sem implicação para a Fase 1.
 
 ## 3. Padrões de organização de código
 
@@ -218,7 +218,7 @@ HERD/
 | **Listing** (exposição com preço/escopo) | **Não existe**. |
 | **Offering** (modalidade de transação) | **Não existe**. |
 | **Transaction** | **Não existe** como modelo de domínio. Apenas a API `prisma.$transaction()` para atomicidade. |
-| **Opportunity** (programa de geração de renda) | **Existe parcialmente** — modelo `Deal` (~linha 3018) é genérico (deal/oportunidade comercial), **sem stages, sem template, sem claims**. A interface `SalesforceOpportunity` em `src/lib/services/salesforce.ts` se refere ao conceito Salesforce, não a um modelo nativo HERD. |
+| **Opportunity** (programa de geração de renda) | **Existe parcialmente** — modelo `Deal` (~linha 3018) é genérico (deal/oportunidade comercial), **sem stages, sem template, sem claims**. A interface `SalesforceOpportunity` em `src/lib/services/salesforce.ts` se refere ao conceito Salesforce, não a um modelo nativo ComeçaAI. |
 | **OpportunityTemplate** | **Não existe**. |
 | **OpportunityStage** | **Não existe** (Deal não tem stages tipadas). |
 | **Claim** (engajamento de parceiro) | **Não existe**. |
@@ -243,7 +243,7 @@ HERD/
 - **"Plan" sobrecarregado em 5 modelos**: `CommissionPlan`, `NetworkCompensationPlan`, `SubscriptionTier`, `PerformanceTier`, `RankTier`. Colisão a resolver na Fase 6 — provável `PartnerPlan`/`PartnershipPlan` para o conceito novo.
 - **`MarketplaceSection.blockNames String[]` é incompatível com `Listing`**. A Fase 2 vai precisar migrar do modelo "seção referencia blocos por nome num array" para "listing com FK para bloco/produto/etc.". Anotado para Fase 2.
 - **`Deal` é genérico** (sem stages tipadas, sem template). A Fase 3 (Opportunities) provavelmente vai **reshape** o `Deal` ao invés de depreciar — Deal vira a base sobre a qual `OpportunityTemplate` e `OpportunityStage` são construídos.
-- **Subdir `HERD/`** na raiz: **vault Obsidian vazio** (Welcome.md padrão + `.obsidian/`). Inócuo para a arquitetura. Apenas registrado.
+- **Subdir `ComeçaAI/`** na raiz: **vault Obsidian vazio** (Welcome.md padrão + `.obsidian/`). Inócuo para a arquitetura. Apenas registrado.
 - **Sem Node version pinado** (`.nvmrc`/`engines`). Risco baixo, mas vale fixar quando entrarmos em CI.
 
 ## 11. Perguntas em aberto
@@ -256,6 +256,6 @@ HERD/
 4. **`prisma db push` → `prisma migrate`** → **Sim, na Etapa 1.1**, com baseline `0_init`. CLAUDE.md atualizado para registrar que `db push` está aposentado.
 5. **Event bus** → **Outbox pattern em Postgres** (tabela `domain_events`), worker simples. Sem Inngest/Trigger.dev nesta fase.
 6. **Test framework** → **Vitest**, configurado na Etapa 1.1.
-7. **Subdir `HERD/`** → **Inspecionado**. É um **vault Obsidian vazio** (Welcome.md + .obsidian/). Inócuo.
+7. **Subdir `ComeçaAI/`** → **Inspecionado**. É um **vault Obsidian vazio** (Welcome.md + .obsidian/). Inócuo.
 
-**Nenhuma pergunta nova surgiu da inspeção do `HERD/`.** Considero a base de descoberta fechada — pronto para receber a Etapa 1.1.
+**Nenhuma pergunta nova surgiu da inspeção do `ComeçaAI/`.** Considero a base de descoberta fechada — pronto para receber a Etapa 1.1.

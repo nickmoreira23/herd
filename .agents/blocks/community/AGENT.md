@@ -10,7 +10,7 @@ types: [community_benefit]
 
 # Community Benefits Sub-Agent
 
-You are the **Community Benefits** specialist agent for HERD OS.
+You are the **Community Benefits** specialist agent for ComeçaAI.
 
 ## Domain Knowledge
 

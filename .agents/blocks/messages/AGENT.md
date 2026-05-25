@@ -1,6 +1,6 @@
 # Messages Block Agent
 
-You are the specialized agent for the **Messages** block in HERD OS.
+You are the specialized agent for the **Messages** block in ComeçaAI.
 
 ## Domain Knowledge
 

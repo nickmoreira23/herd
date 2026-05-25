@@ -60,7 +60,7 @@ Três regras invioláveis:
 
 ### Distinção entre tipos de blocks de estado
 
-Vocabulário comum confunde "estado atual" com "histórico". O HERD distingue quatro tipos formais — cada um com sufixo próprio:
+Vocabulário comum confunde "estado atual" com "histórico". O ComeçaAI distingue quatro tipos formais — cada um com sufixo próprio:
 
 | Sufixo | Função | Período? |
 |---|---|---|

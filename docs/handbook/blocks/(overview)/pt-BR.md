@@ -9,11 +9,11 @@ uid: herd.layer.blocks
 
 # Blocos
 
-A camada de Blocks é a fundação do HERD para **primitivos de dados** — entidades que a plataforma rastreia com identidades estáveis e semântica de CRUD. Contacts, Meetings, Deals, Documents, Images: cada um é um Block. Blocks são os primitivos mais consumidos no HERD; tools e solutions lêem e escrevem em blocks constantemente.
+A camada de Blocks é a fundação do ComeçaAI para **primitivos de dados** — entidades que a plataforma rastreia com identidades estáveis e semântica de CRUD. Contacts, Meetings, Deals, Documents, Images: cada um é um Block. Blocks são os primitivos mais consumidos no ComeçaAI; tools e solutions lêem e escrevem em blocks constantemente.
 
 ## Business
 
-Um Block é a unidade atômica de *o que o HERD sabe*. Enquanto Tools executam e Solutions entregam valor, Blocks são *o dado em si*. Toda interação comercial ou cria novas instances de Block (novo Contact, novo Meeting, novo Deal) ou modifica instances existentes (mudanças de lifecycle de Contact, progressão de stage de Deal).
+Um Block é a unidade atômica de *o que o ComeçaAI sabe*. Enquanto Tools executam e Solutions entregam valor, Blocks são *o dado em si*. Toda interação comercial ou cria novas instances de Block (novo Contact, novo Meeting, novo Deal) ou modifica instances existentes (mudanças de lifecycle de Contact, progressão de stage de Deal).
 
 Blocks são categorizados por **natureza de dado** — Identity (contacts, profiles), Media (documents, images, videos), Time (meetings, scheduling), Commercial (deals, pipelines), Financial (invoices, payments). Essa taxonomia organiza o data model de forma que humanos e agentes de IA podem navegar intuitivamente.
 
@@ -21,13 +21,13 @@ Blocks são categorizados por **natureza de dado** — Identity (contacts, profi
 
 ## Product
 
-<!-- TODO: Como usuários (vendas, marketing, suporte, admins) interagem com blocks no admin UI do HERD. Views de list/detail por tipo de block, filtros e segmentação, bulk operations, navegação entre blocks relacionados. -->
+<!-- TODO: Como usuários (vendas, marketing, suporte, admins) interagem com blocks no admin UI do ComeçaAI. Views de list/detail por tipo de block, filtros e segmentação, bulk operations, navegação entre blocks relacionados. -->
 
 ## Architecture
 
 A camada de Blocks no Handbook organiza documentação hierarquicamente. Block categories são introduzidas lazily — criadas quando o primeiro block de uma category é documentado. Day-1 a camada de Blocks tem uma category, `miscellaneous`, que abriga blocks (`contacts`, `meetings`) ainda não classificados em sua category final. A category miscellaneous vai diminuir conforme a etapa de backfill avança.
 
-Cada Block no HERD é dono de um Prisma model e expõe CRUD via endpoints REST. Blocks suportam cross-references via `consumes` e `consumed_by` no Handbook graph: um Meeting consome um Contact (toda reunião deve linkar pelo menos um contact), e um Contact é consumed_by Meetings (referenciado de muitos meetings).
+Cada Block no ComeçaAI é dono de um Prisma model e expõe CRUD via endpoints REST. Blocks suportam cross-references via `consumes` e `consumed_by` no Handbook graph: um Meeting consome um Contact (toda reunião deve linkar pelo menos um contact), e um Contact é consumed_by Meetings (referenciado de muitos meetings).
 
 <!-- TODO: 2-3 parágrafos sobre implicações arquiteturais: como schemas de Block são versionados, como políticas RLS são uniformes entre blocks, como block-groups (organização intra-block, ex: contacts.leads) funcionam. -->
 

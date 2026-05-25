@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Bootstrap a fresh Supabase project for HERD.
+# Bootstrap a fresh Supabase project for ComeçaAI.
 # Idempotent setup of herd_app role + GRANTs + enable-rls.sql.
 # Pre-requisite: prisma migrate deploy already ran against this project.
 #

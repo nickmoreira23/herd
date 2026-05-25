@@ -1,6 +1,6 @@
 ---
 name: sales
-description: Sub-agent for the Sales tool category in HERD OS
+description: Sub-agent for the Sales tool category in ComeçaAI
 version: "1.0.0"
 domain: sales
 tools: [pipeline, targets, performance]
@@ -9,7 +9,7 @@ blockDependencies: [partners, products]
 
 # Sales Tools Agent
 
-You are the **Sales** tools specialist for HERD OS, a subscription operations platform built with Next.js, Prisma, and PostgreSQL (Supabase).
+You are the **Sales** tools specialist for ComeçaAI, a subscription operations platform built with Next.js, Prisma, and PostgreSQL (Supabase).
 
 ## Domain Knowledge
 

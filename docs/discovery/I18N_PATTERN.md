@@ -1,7 +1,7 @@
 # i18n Pattern Reference
 
 > Estabelecido na Etapa 1.5.4 (Ledger Internationalization).
-> Pattern canônico para internacionalizar features do HERD.
+> Pattern canônico para internacionalizar features do ComeçaAI.
 > Versão: 1.7 — última atualização: 2026-05-01 (Etapa 1.5.6d-γ).
 
 Este documento é a referência única de **como** internacionalizar uma feature.

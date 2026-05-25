@@ -9,7 +9,7 @@ uid: herd.meta.pattern-naming-convention
 
 # Pattern: Naming Convention
 
-Naming claro reduz fricção entre product, design, engineering e business. O HERD adota convenções precisas mas não mecânicas — a regra é **linguagem natural** decidir quando aplicável (tools), e **convenções canônicas** quando há valor em vocabulário compartilhado (blocks).
+Naming claro reduz fricção entre product, design, engineering e business. O ComeçaAI adota convenções precisas mas não mecânicas — a regra é **linguagem natural** decidir quando aplicável (tools), e **convenções canônicas** quando há valor em vocabulário compartilhado (blocks).
 
 Este pattern consolida três regras: como nomear tools, como nomear blocks (incluindo sufixos canônicos), e como evitar a confusão clássica entre Profile (tool), profile-types (block) e profiles (block).
 

@@ -11,7 +11,7 @@ uid: herd.meta.pattern-plan-orchestrator
 
 Plans é tool **agnóstica** que se atrela a qualquer profile-type — interno ou externo — declarando como aquele profile é remunerado, reconhecido, capacitado, ranqueado e pontuado. O insight central: **Plan não armazena eventos próprios**. Plan declara regras referenciando outras tools que armazenam os eventos.
 
-Este pattern é, junto com Three-Level Composition e Source Attribution, um dos pilares arquiteturais do HERD. Sem ele, cada nova combinação de "tipo de profile + estrutura de remuneração" exigiria uma tool dedicada — abordagem que não escala e que recusamos explicitamente.
+Este pattern é, junto com Three-Level Composition e Source Attribution, um dos pilares arquiteturais do ComeçaAI. Sem ele, cada nova combinação de "tipo de profile + estrutura de remuneração" exigiria uma tool dedicada — abordagem que não escala e que recusamos explicitamente.
 
 ## Business
 
@@ -21,7 +21,7 @@ A abordagem ingênua seria criar uma tool por estrutura: "Career Plans tool", "C
 
 A abordagem cravada — Plan agnóstico — resolve isso: **uma única tool, Plans, que se atrela a qualquer profile-type e declara regras combinando referências a outras tools**. A empresa configura Plans uma vez e ganha flexibilidade total.
 
-A consequência comercial é direta. HERD pode atender desde negócios pequenos (1 profile-type, 1 plan-type simples) até empresas grandes (múltiplos profile-types, planos sofisticados que atravessam múltiplas tools de progression) com a mesma arquitetura.
+A consequência comercial é direta. ComeçaAI pode atender desde negócios pequenos (1 profile-type, 1 plan-type simples) até empresas grandes (múltiplos profile-types, planos sofisticados que atravessam múltiplas tools de progression) com a mesma arquitetura.
 
 ## Product
 

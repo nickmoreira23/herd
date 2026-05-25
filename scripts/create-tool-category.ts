@@ -1,7 +1,7 @@
 /**
  * Tool Category Generator Script
  *
- * Scaffolds all required files for a new HERD tool category following the
+ * Scaffolds all required files for a new ComeçaAI tool category following the
  * standard architecture.
  *
  * Usage:
@@ -88,7 +88,7 @@ write(
 export const ${name}Category: ToolCategoryManifest = {
   name: "${name}",
   displayName: "${display}",
-  description: "${display} tools for HERD OS.",
+  description: "${display} tools for ComeçaAI.",
   icon: "Wrench",
   color: "#6b7280",
   domain: "${name}",
@@ -140,7 +140,7 @@ write(
   join(agentDir, "AGENT.md"),
   `---
 name: ${name}
-description: Sub-agent for the ${display} tool category in HERD OS
+description: Sub-agent for the ${display} tool category in ComeçaAI
 version: "1.0.0"
 domain: ${name}
 tools: [${tools.join(", ")}]
@@ -149,11 +149,11 @@ blockDependencies: []
 
 # ${display} Tools Agent
 
-You are the **${display}** tools specialist for HERD OS, a subscription operations platform built with Next.js, Prisma, and PostgreSQL (Supabase).
+You are the **${display}** tools specialist for ComeçaAI, a subscription operations platform built with Next.js, Prisma, and PostgreSQL (Supabase).
 
 ## Domain Knowledge
 
-The ${display} category provides tools for managing ${tools.join(", ")} within HERD OS. All tools are currently in development (coming-soon status).
+The ${display} category provides tools for managing ${tools.join(", ")} within ComeçaAI. All tools are currently in development (coming-soon status).
 
 ## Tools
 

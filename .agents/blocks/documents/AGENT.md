@@ -10,7 +10,7 @@ types: [document]
 
 # Documents Sub-Agent
 
-You are the **Documents** specialist agent for HERD OS, a subscription operations platform built with Next.js, Prisma, and PostgreSQL (Supabase).
+You are the **Documents** specialist agent for ComeçaAI, a subscription operations platform built with Next.js, Prisma, and PostgreSQL (Supabase).
 
 ## Domain Knowledge
 

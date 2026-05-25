@@ -7,8 +7,8 @@ title:
   pt-BR: "Redes"
   en-US: "Networks"
 description:
-  pt-BR: "Camada que organiza os diferentes tipos de redes que o HERD suporta: corporativas, de mercado e multi-mercado."
-  en-US: "Layer that organizes the different types of networks HERD supports: corporate, market, and multi-market."
+  pt-BR: "Camada que organiza os diferentes tipos de redes que o ComeçaAI suporta: corporativas, de mercado e multi-mercado."
+  en-US: "Layer that organizes the different types of networks ComeçaAI supports: corporate, market, and multi-market."
 
 status: active
 owners: ["@nick"]
