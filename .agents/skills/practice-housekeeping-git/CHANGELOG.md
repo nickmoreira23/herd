@@ -2,6 +2,47 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.22 — 2026-05-25
+
+Anchor entry. PR (Sub-etapa 17.0.11 + 17.0.11.1 — DB isolation DEV/PROD).
+Separou DEV de PROD ao nível de Supabase project. Antes ambos
+compartilhavam `kwhufgbdmqvesfzriolc`; agora DEV é
+`krhkgaghhjudckormcgp` dedicado.
+
+Deliverables:
+
+- **`scripts/bootstrap-supabase-project.sh`** (canonical, psql) +
+  `.ts` companion (`pg`, para ambientes sem psql). Paga dívida da
+  Sub-etapa 4 (role + GRANTs nunca scriptados antes).
+- **`enable-rls.sql` cleanup + expansion:**
+  - 13 stale refs removidas (tabelas dropadas em Fase 3 — Commission*,
+    Partner*, OrgNode*, D2D*).
+  - Docblock corrigido (postgres → herd_app no runtime model).
+  - 21 policies `herd_app_full_access` adicionadas, uma por tabela
+    platform-wide. Pattern: `FOR ALL TO herd_app USING (true) WITH
+    CHECK (true)` + idempotent via DROP IF EXISTS + CREATE.
+- **AGENTS.md seção "DB isolation DEV/PROD"** com procedure cravada
+  para novo Supabase project (6 passos).
+- **Tech debt** rastreada: aplicar enable-rls.sql expandido em PROD
+  quando PostgREST API for exposta OU hardening formal.
+
+Lições cravadas durante a sub-etapa (4 surpresas reais):
+
+1. **`.env` quoted values + shell parsing** — `grep + sed` quebra com
+   aspas; use `set -a; source; set +a` ou `dotenv/config` em tsx.
+2. **Supavisor pooler username format** — herd_app puro retorna
+   ENOIDENTIFIER. Precisa `<role>.<project_ref>`.
+3. **`enable-rls.sql` referenciava 13 tabelas dropadas** — Fase 3
+   cleanup nunca chegou no SQL file.
+4. **Original docblock estava errado** — afirmava "postgres bypassa
+   RLS, all good" ignorando que runtime usa herd_app NOBYPASSRLS.
+   Por isso o script nunca foi aplicado em PROD.
+
+PROD baseline auditada pré + pós: 12/12 counts idênticos. Smokes
+Camada 1 + Camada 2 6/6 ambos em DEV isolado.
+
+Refs: Sub-etapa 17.0.11 + 17.0.11.1.
+
 ## 1.2.21 — 2026-05-24
 
 Anchor entry. PR (Sub-etapa 17.0.10 — Recharge smoke fixture flat shape).

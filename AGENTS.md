@@ -1199,6 +1199,31 @@ if (!cronSecret) throw new Error("CRON_SECRET required");
 if (authHeader !== `Bearer ${cronSecret}`) throw new Error("Unauthorized");
 ```
 
+## Aplicar enable-rls.sql expandido em PROD
+
+Atualmente PROD tem 21 tabelas platform-wide **sem RLS** (enable-rls.sql
+nunca foi aplicada). Reaplicar `enable-rls.sql` contra PROD (versão
+Sub-etapa 17.0.11.1) vai habilitar RLS + criar policies
+`herd_app_full_access` permissive nas 21 tabelas. **Não muda
+comportamento de queries herd_app** (policy é permissive), mas adiciona
+defense-in-depth contra Supabase PostgREST exposed (anon/authenticated
+ficam deny-all).
+
+**Trigger para resolver:** quando PostgREST API for exposta para clients
+externos (ex: mobile app consumindo Supabase REST direto), OU durante
+hardening de segurança formal (auditoria, certificação).
+
+**Como aplicar (quando o trigger fire):**
+
+```bash
+# Railway migration job ou direto via psql contra PROD:
+PROD_DIRECT_URL=postgresql://... bash scripts/bootstrap-supabase-project.sh
+```
+
+O bootstrap é idempotente — role herd_app já existe em PROD, GRANTs
+serão re-aplicados sem efeito, enable-rls.sql vai habilitar RLS +
+criar as 21 policies. Zero downtime esperado (DDL é fast).
+
 ## Concerns acumulando em `meetings-sync` cron
 
 A rota cron `src/app/api/cron/meetings-sync/route.ts` hoje executa 4
@@ -1760,6 +1785,86 @@ convention + webhook fixture. Não há "framework genérico" planejado
 — a duplicação shallow é mais barata que abstração premature, e cada
 provider tem peculiaridades de signing que fariam o framework
 acumular branches per-provider.
+
+## DB isolation DEV/PROD (cravada na Sub-etapa 17.0.11 + 17.0.11.1)
+
+Sub-etapa 17.0.11 separou DEV de PROD ao nível de Supabase project.
+Antes: DEV e PROD compartilhavam o mesmo Supabase project
+(`kwhufgbdmqvesfzriolc`) — qualquer write "DEV" batia em PROD silenciosamente.
+Hoje: DEV é Supabase project dedicado (`krhkgaghhjudckormcgp`); PROD
+permanece intacta.
+
+**Setup novo Supabase project (procedure cravada):**
+
+1. Criar Supabase project + capturar 4 vars (`DATABASE_URL` pooler 6543,
+   `DIRECT_URL` pooler 5432, `SUPABASE_URL`, `SUPABASE_ANON_KEY`).
+2. `DATABASE_URL=... DIRECT_URL=... npx prisma migrate deploy` — aplica
+   os 21 migrations (schema + RLS policies tenant-scoped via migrations).
+3. `DIRECT_URL=... npx tsx scripts/bootstrap-supabase-project.ts`
+   (alternativa: `bash scripts/bootstrap-supabase-project.sh`). Cria
+   role `herd_app` NOBYPASSRLS + GRANTs + ALTER DEFAULT PRIVILEGES +
+   aplica `enable-rls.sql` expandido (ver abaixo).
+4. Construir `RUNTIME_DATABASE_URL` com username
+   `herd_app.<project_ref>` (formato Supavisor pooler), password
+   gerada pelo bootstrap. Anotar password em password manager.
+5. Seeds em ordem: `prisma db seed` → `db:seed:ledger` →
+   `seed:recharge` → `seed:braintree` → `backfill-organizations` →
+   `seed:recharge-connection` + `seed:braintree-connection`.
+6. Smoke validation: `smoke:camada-1` + `smoke:camada-2` 6/6 ambos.
+
+**Tooling: bootstrap-supabase-project.{sh,ts} dual:**
+
+- `.sh` — canonical, usa `psql`. Path documentado para CI/humans.
+- `.ts` — paridade funcional via `pg`. Para ambientes sem psql instalado
+  (agent-driven flows). Os dois aplicam exatamente as mesmas DDLs.
+
+**`enable-rls.sql` expansion (Sub-etapa 17.0.11.1):**
+
+O arquivo original cravou `ENABLE ROW LEVEL SECURITY` em 21 tabelas
+platform-wide com docblock errado ("postgres bypassa RLS, all good").
+Em PROD a aplicação nunca foi executada — teria deny-all em herd_app
+(NOBYPASSRLS) e quebrado o app. Em NEW project (Sub-etapa 17.0.11)
+quebrou exatamente como previsto: Camada 1 smoke 2/6 (Integration
+findUnique falhou).
+
+Fix (Sub-etapa 17.0.11.1): adicionar policy permissive
+`FOR ALL TO herd_app USING (true) WITH CHECK (true)` em cada uma das
+21 tabelas. Resultado: defense-in-depth contra anon/authenticated
+(Supabase PostgREST exposed) preservada **e** herd_app opera
+livremente. Idempotent via `DROP POLICY IF EXISTS` + `CREATE POLICY`.
+
+As 21 tabelas cobertas (todas com policy `herd_app_full_access`):
+`Product`, `Agent`, `AgentTierAccess`, `AgentKnowledgeItem`,
+`AgentSkill`, `AgentTool`, `SubscriptionTier`,
+`SubscriptionRedemptionRule`, `TierPricingSnapshot`,
+`FinancialSnapshot`, `OpexCategory`, `OpexMilestoneLevel`, `OpexItem`,
+`OpexMilestone`, `Perk`, `PerkTierAssignment`, `CommunityBenefit`,
+`CommunityBenefitTierAssignment`, `Document`, `Setting`, `Integration`.
+
+**Gotchas cravadas no caminho:**
+
+- **`.env` quoted values + shell parsing.** `DATABASE_URL="postgres://..."`
+  é parseável só via `set -a; source .env; set +a` (ou via `dotenv/config`
+  dentro do tsx). Inline `grep + sed` deixa as aspas e quebra. Documentar
+  no próximo script de bootstrap.
+- **Supavisor pooler username format.** `herd_app` puro retorna
+  `ENOIDENTIFIER (no tenant identifier provided)`. O pooler exige
+  `<role>.<project_ref>` (ex: `herd_app.krhkgaghhjudckormcgp`).
+  Espelha o pattern `postgres.<ref>` já usado em DATABASE_URL.
+- **`enable-rls.sql` referenciava tabelas dropadas em Fase 3.** PR
+  17.0.11 limpou 13 stale refs (Commission*, Partner*, OrgNode*, D2D*).
+  Defensa: validate-handbook-graph não cobre SQL refs; revisitar quando
+  validator ganhar AST DB-aware.
+
+**DEV/PROD isolation effect:**
+
+- `npm run seed:*` em DEV não afeta PROD.
+- Smokes em DEV não criam events em PROD.
+- Schema migrations rodam separadamente em cada project.
+- ENCRYPTION_KEY é a mesma (`Integration.credentials` encriptadas em
+  PROD precisam decrypt em DEV — mesmo provider key).
+- NetworkProfile admin é seed-criado em ambos (não é o "Nick" pessoal
+  — é admin@herd.com via prisma db seed).
 
 ## Boundaries
 
