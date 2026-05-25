@@ -69,12 +69,12 @@ async function seed(): Promise<Seeded> {
   });
 
   const orgA = await adminClient.organization.create({
-    data: { ownerId: profileA.id, slug: `${TEST_PREFIX}-a`, name: "Billing A" },
+    data: { ownerId: profileA.id, slug: `${TEST_PREFIX}-a`, subdomain: `${TEST_PREFIX}-a`, name: "Billing A" },
     select: { id: true },
   });
 
   const orgB = await adminClient.organization.create({
-    data: { ownerId: profileB.id, slug: `${TEST_PREFIX}-b`, name: "Billing B" },
+    data: { ownerId: profileB.id, slug: `${TEST_PREFIX}-b`, subdomain: `${TEST_PREFIX}-b`, name: "Billing B" },
     select: { id: true },
   });
 
@@ -186,6 +186,7 @@ describe("Sub-etapa 9 billing schema — smoke", () => {
       data: {
         ownerId: tempProfile.id,
         slug: `${TEST_PREFIX}-cascade`,
+        subdomain: `${TEST_PREFIX}-cascade`,
         name: "Cascade Test",
       },
       select: { id: true },

@@ -1276,7 +1276,7 @@ export const messages = {
     "Nenhuma parte definida. Adicione partes para dividir o lucro do canal.",
   "financials.builder.profit_split.party_name_label": "Nome da Parte",
   "financials.builder.profit_split.party_name_placeholder":
-    "Ex.: HERD, Investidor, Parceiro",
+    "Ex.: ComeçaAI, Investidor, Parceiro",
   "financials.builder.profit_split.split_percent_label": "Divisão %",
   "financials.builder.profit_split.split_percent_tooltip":
     "Que porcentagem do lucro líquido do canal esta parte recebe.",
@@ -1381,7 +1381,7 @@ export const messages = {
   "organization.profile.section.regional_settings": "Configurações Regionais",
   "organization.profile.section.legal": "Legal",
   "organization.profile.field.organization_name": "Nome da Organização",
-  "organization.profile.field.organization_name_placeholder": "ex. HERD",
+  "organization.profile.field.organization_name_placeholder": "ex. ComeçaAI",
   "organization.profile.field.description_label": "Descrição",
   "organization.profile.field.description_placeholder":
     "Breve descrição da sua organização",
@@ -1857,7 +1857,7 @@ export const messages = {
   "partners.form.url_placeholder": "https://...",
   "partners.form.discount_description": "Descrição do Desconto",
   "partners.form.discount_description_placeholder":
-    "ex.: 20% de desconto em todos os produtos para assinantes do HERD",
+    "ex.: 20% de desconto em todos os produtos para assinantes do ComeçaAI",
   "partners.form.kickback_type": "Tipo de Comissão",
   "partners.form.kickback_percent": "Comissão %",
   "partners.form.kickback_amount": "Valor da Comissão ($)",
@@ -3073,8 +3073,8 @@ export const messages = {
     "Revise os mapeamentos de campos. Ajuste os tipos, renomeie campos ou ignore os que não precisar.",
   "tables.import.airtable.steps.mapping.col_airtable_field":
     "Campo do Airtable",
-  "tables.import.airtable.steps.mapping.col_herd_type": "Tipo HERD",
-  "tables.import.airtable.steps.mapping.col_herd_name": "Nome HERD",
+  "tables.import.airtable.steps.mapping.col_internal_type": "Tipo interno",
+  "tables.import.airtable.steps.mapping.col_internal_name": "Nome interno",
   "tables.import.airtable.steps.mapping.col_skip": "Ignorar",
   "tables.import.airtable.steps.mapping.fields_selected":
     "{active} de {total} campos selecionados",
@@ -4082,8 +4082,8 @@ export const messages = {
   "knowledge.airtable.field_mapping.prompt":
     "Revise os mapeamentos de campos. Ajuste tipos, renomeie campos ou pule campos que não precisa.",
   "knowledge.airtable.field_mapping.airtable_field": "Campo do Airtable",
-  "knowledge.airtable.field_mapping.herd_type": "Tipo HERD",
-  "knowledge.airtable.field_mapping.herd_name": "Nome HERD",
+  "knowledge.airtable.field_mapping.internal_type": "Tipo interno",
+  "knowledge.airtable.field_mapping.internal_name": "Nome interno",
   "knowledge.airtable.field_mapping.skip": "Pular",
   "knowledge.airtable.field_mapping.selected_count":
     "{active} de {total} campos selecionados",

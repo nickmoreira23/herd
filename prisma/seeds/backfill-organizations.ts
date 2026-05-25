@@ -45,6 +45,7 @@ async function main() {
       data: {
         ownerId: profile.id,
         slug,
+        subdomain: slug,
         name: `Personal — ${profile.email}`,
       },
     });

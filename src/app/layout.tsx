@@ -18,8 +18,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "HERD OS",
-  description: "Admin & Financial Engine for HERD subscription operations",
+  title: "ComeçaAI",
+  description: "Admin & Financial Engine for ComeçaAI subscription operations",
 };
 
 /**

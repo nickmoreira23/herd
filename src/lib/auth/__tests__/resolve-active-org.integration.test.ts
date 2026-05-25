@@ -40,6 +40,7 @@ beforeAll(async () => {
     data: {
       ownerId: profileWithOrg.id,
       slug: `${TEST_PREFIX}-org`,
+      subdomain: `${TEST_PREFIX}-org`,
       name: "Test Org",
     },
     select: { id: true },

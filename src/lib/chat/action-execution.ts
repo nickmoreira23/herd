@@ -16,7 +16,7 @@ export interface ActionResult {
 export const EXECUTE_ACTION_TOOL = {
   name: "execute_action",
   description:
-    "Execute a block action — create, update, delete, or perform operations on HERD OS data. Use this when the user wants to make changes or perform actions beyond reading data.",
+    "Execute a block action — create, update, delete, or perform operations on ComeçaAI data. Use this when the user wants to make changes or perform actions beyond reading data.",
   input_schema: {
     type: "object" as const,
     properties: {
@@ -146,7 +146,7 @@ async function executeBlockAction(
   // Build request
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    "X-Internal-Agent": "herd-ai",
+    "X-Internal-Agent": "comecaai",
     "X-Agent-User-Id": userId,
   };
 

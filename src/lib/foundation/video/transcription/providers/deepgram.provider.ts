@@ -41,7 +41,7 @@ export class DeepgramVideoTranscriptionProvider
     // Extract audio from video to temp file
     const tempAudioPath = path.join(
       os.tmpdir(),
-      `herd-video-audio-${Date.now()}.mp3`
+      `comecaai-video-audio-${Date.now()}.mp3`
     );
 
     try {
@@ -121,7 +121,7 @@ export class DeepgramVideoTranscriptionProvider
       case "buffer": {
         const tmpPath = path.join(
           os.tmpdir(),
-          `herd-video-${Date.now()}.tmp`
+          `comecaai-video-${Date.now()}.tmp`
         );
         const { writeFile } = await import("fs/promises");
         await writeFile(tmpPath, input.source.data);
@@ -133,7 +133,7 @@ export class DeepgramVideoTranscriptionProvider
         const buffer = Buffer.from(await res.arrayBuffer());
         const tmpPath = path.join(
           os.tmpdir(),
-          `herd-video-${Date.now()}.tmp`
+          `comecaai-video-${Date.now()}.tmp`
         );
         const { writeFile } = await import("fs/promises");
         await writeFile(tmpPath, buffer);

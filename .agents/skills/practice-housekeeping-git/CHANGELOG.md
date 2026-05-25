@@ -2,6 +2,16 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.23 — 2026-05-25
+
+Anchor Sub-etapa 18: Foundation Fase 4 — rename HERD → ComeçaAI cirúrgico
+(src/ runtime) + Organization schema expansion (subdomain, customDomain,
+company profile fields, OrgStatus, OrgSize, AssetType enums, OrganizationAsset
+table). Backfill SQL: admin@herd.com → nick@comecaai.com.br, org slug
+"admin" → "comecaai" com subdomain "app".
+Docs/.agents/scripts rename batch fica para Sub-etapa 18.1 (paralelo).
+Stale branch `chore/camada-1-pause` deletada pré-PR.
+
 ## 1.2.22 — 2026-05-25
 
 Anchor entry. PR (Sub-etapa 17.0.11 + 17.0.11.1 — DB isolation DEV/PROD).

@@ -39,7 +39,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-zinc-950 px-4">
       <Card className="w-full max-w-sm bg-zinc-900 border-zinc-800">
         <CardHeader className="text-center">
-          <div className="text-3xl font-bold text-brand mb-2">HERD OS</div>
+          <div className="text-3xl font-bold text-brand mb-2">ComeçaAI</div>
           <CardTitle className="text-zinc-300 text-lg font-normal">
             Admin Login
           </CardTitle>
@@ -55,7 +55,7 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@herd.com"
+                placeholder="voce@empresa.com"
                 required
                 className="bg-zinc-800 border-zinc-700 text-zinc-100"
               />

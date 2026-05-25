@@ -1251,7 +1251,7 @@ export const messages: Record<MessageKey, string> = {
     "No parties defined. Add parties to split the channel profits.",
   "financials.builder.profit_split.party_name_label": "Party Name",
   "financials.builder.profit_split.party_name_placeholder":
-    "e.g. HERD, Investor, Partner",
+    "e.g. ComeçaAI, Investor, Partner",
   "financials.builder.profit_split.split_percent_label": "Split %",
   "financials.builder.profit_split.split_percent_tooltip":
     "What percentage of the channel's net profit this party receives.",
@@ -1356,7 +1356,7 @@ export const messages: Record<MessageKey, string> = {
   "organization.profile.section.regional_settings": "Regional Settings",
   "organization.profile.section.legal": "Legal",
   "organization.profile.field.organization_name": "Organization Name",
-  "organization.profile.field.organization_name_placeholder": "e.g. HERD",
+  "organization.profile.field.organization_name_placeholder": "e.g. ComeçaAI",
   "organization.profile.field.description_label": "Description",
   "organization.profile.field.description_placeholder":
     "Brief description of your organization",
@@ -1823,7 +1823,7 @@ export const messages: Record<MessageKey, string> = {
   "partners.form.url_placeholder": "https://...",
   "partners.form.discount_description": "Discount Description",
   "partners.form.discount_description_placeholder":
-    "e.g., 20% off all products for HERD subscribers",
+    "e.g., 20% off all products for ComeçaAI subscribers",
   "partners.form.kickback_type": "Kickback Type",
   "partners.form.kickback_percent": "Kickback %",
   "partners.form.kickback_amount": "Kickback Amount ($)",
@@ -3003,8 +3003,8 @@ export const messages: Record<MessageKey, string> = {
     "Review field mappings. Adjust types, rename fields, or skip fields you don't need.",
   "tables.import.airtable.steps.mapping.col_airtable_field":
     "Airtable Field",
-  "tables.import.airtable.steps.mapping.col_herd_type": "HERD Type",
-  "tables.import.airtable.steps.mapping.col_herd_name": "HERD Name",
+  "tables.import.airtable.steps.mapping.col_internal_type": "Internal Type",
+  "tables.import.airtable.steps.mapping.col_internal_name": "Internal Name",
   "tables.import.airtable.steps.mapping.col_skip": "Skip",
   "tables.import.airtable.steps.mapping.fields_selected":
     "{active} of {total} fields selected",
@@ -4008,8 +4008,8 @@ export const messages: Record<MessageKey, string> = {
   "knowledge.airtable.field_mapping.prompt":
     "Review field mappings. Adjust types, rename fields, or skip fields you don’t need.",
   "knowledge.airtable.field_mapping.airtable_field": "Airtable Field",
-  "knowledge.airtable.field_mapping.herd_type": "HERD Type",
-  "knowledge.airtable.field_mapping.herd_name": "HERD Name",
+  "knowledge.airtable.field_mapping.internal_type": "Internal Type",
+  "knowledge.airtable.field_mapping.internal_name": "Internal Name",
   "knowledge.airtable.field_mapping.skip": "Skip",
   "knowledge.airtable.field_mapping.selected_count":
     "{active} of {total} fields selected",
