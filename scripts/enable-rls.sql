@@ -1,14 +1,29 @@
 -- =============================================================
 -- Enable Row-Level Security on all public schema tables
 -- =============================================================
--- Supabase exposes a PostgREST API using the `anon` and
--- `authenticated` roles. Without RLS, those roles have full
--- access to every table. Enabling RLS with no policies = deny
--- all for anon/authenticated, while the `postgres` role (used
--- by Prisma) bypasses RLS as the table owner.
+-- Runtime model (corrigido na Sub-etapa 17.0.11.1):
+-- - Migrations + seeds: postgres role (bypasses RLS as table owner)
+-- - App runtime queries: herd_app role (NOBYPASSRLS) — singleton via
+--   RUNTIME_DATABASE_URL
+-- - PostgREST exposed APIs: anon/authenticated (deny-all unless
+--   explicit policy)
 --
--- Safe to re-run: ALTER TABLE ... ENABLE ROW LEVEL SECURITY
--- is idempotent.
+-- Defense-in-depth: ENABLE ROW LEVEL SECURITY blocks
+-- anon/authenticated by default on platform-wide tables.
+-- herd_app gets explicit `FOR ALL` policies appended at the end
+-- of this file (herd_app_full_access). Tenant-scoped tables use
+-- tenant_isolation policies via migrations.
+--
+-- The previous docblock claimed "postgres bypasses RLS" was
+-- sufficient — true for migrations, false for runtime (herd_app).
+-- Without the herd_app policies the app would dey-all on every
+-- platform-wide table. enable-rls.sql was therefore never applied
+-- to PROD as-was; Sub-etapa 17.0.11.1 fixes the file and applies
+-- it to the new DEV project.
+--
+-- Safe to re-run: ALTER TABLE ... ENABLE ROW LEVEL SECURITY is
+-- idempotent. Policy creation is wrapped in DROP IF EXISTS +
+-- CREATE for re-runnability.
 -- =============================================================
 
 -- Products
@@ -27,26 +42,9 @@ ALTER TABLE "SubscriptionRedemptionRule" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "TierPricingSnapshot" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "FinancialSnapshot" ENABLE ROW LEVEL SECURITY;
 
--- Commission (legacy)
-ALTER TABLE "CommissionStructure" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "CommissionTierRate" ENABLE ROW LEVEL SECURITY;
-
--- Commission (current)
-ALTER TABLE "CommissionPlan" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "CommissionPlanRate" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "OverrideRule" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "PerformanceTier" ENABLE ROW LEVEL SECURITY;
-
--- Partners
-ALTER TABLE "PartnerBrand" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "PartnerTierAssignment" ENABLE ROW LEVEL SECURITY;
-
--- D2D
-ALTER TABLE "D2DPartner" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "OrgNode" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "PartnerAgreement" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "ClawbackRule" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "CommissionLedgerEntry" ENABLE ROW LEVEL SECURITY;
+-- Commission / Partners / D2D / OrgNode — DROPPED in Fase 3 (2026-05-20).
+-- Tables no longer exist; lines removed in Sub-etapa 17.0.11 cleanup.
+-- See AGENTS.md "Fase 3 close-out — Network MLM removal".
 
 -- OpEx
 ALTER TABLE "OpexCategory" ENABLE ROW LEVEL SECURITY;
@@ -70,3 +68,114 @@ ALTER TABLE "Integration" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "IntegrationTierMapping" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "IntegrationWebhookEvent" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "IntegrationSyncLog" ENABLE ROW LEVEL SECURITY;
+
+-- ============================================================================
+-- herd_app permissive policies for platform-wide tables
+-- ============================================================================
+-- Cravado na Sub-etapa 17.0.11.1.
+--
+-- Histórico do gap:
+-- enable-rls.sql original cravou ENABLE ROW LEVEL SECURITY nas 21 tabelas
+-- platform-wide assumindo "postgres role bypassa RLS, all good". Erro:
+-- runtime singleton é herd_app (NOBYPASSRLS), não postgres. Resultado:
+-- deny-all para herd_app em 21 tabelas. Por isso enable-rls.sql nunca
+-- foi aplicada em PROD (teria quebrado o app).
+--
+-- Fix (cravado aqui): adicionar policy permissive `FOR ALL TO herd_app
+-- USING (true)` em cada uma. Mantém defense-in-depth contra anon/
+-- authenticated (Supabase PostgREST exposed), mas permite herd_app
+-- operar livremente.
+--
+-- Idempotent via DROP POLICY IF EXISTS + CREATE POLICY.
+
+-- Products
+DROP POLICY IF EXISTS herd_app_full_access ON public."Product";
+CREATE POLICY herd_app_full_access ON public."Product"
+  FOR ALL TO herd_app USING (true) WITH CHECK (true);
+
+-- AI Agents (5)
+DROP POLICY IF EXISTS herd_app_full_access ON public."Agent";
+CREATE POLICY herd_app_full_access ON public."Agent"
+  FOR ALL TO herd_app USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS herd_app_full_access ON public."AgentTierAccess";
+CREATE POLICY herd_app_full_access ON public."AgentTierAccess"
+  FOR ALL TO herd_app USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS herd_app_full_access ON public."AgentKnowledgeItem";
+CREATE POLICY herd_app_full_access ON public."AgentKnowledgeItem"
+  FOR ALL TO herd_app USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS herd_app_full_access ON public."AgentSkill";
+CREATE POLICY herd_app_full_access ON public."AgentSkill"
+  FOR ALL TO herd_app USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS herd_app_full_access ON public."AgentTool";
+CREATE POLICY herd_app_full_access ON public."AgentTool"
+  FOR ALL TO herd_app USING (true) WITH CHECK (true);
+
+-- Subscription & Pricing (4)
+DROP POLICY IF EXISTS herd_app_full_access ON public."SubscriptionTier";
+CREATE POLICY herd_app_full_access ON public."SubscriptionTier"
+  FOR ALL TO herd_app USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS herd_app_full_access ON public."SubscriptionRedemptionRule";
+CREATE POLICY herd_app_full_access ON public."SubscriptionRedemptionRule"
+  FOR ALL TO herd_app USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS herd_app_full_access ON public."TierPricingSnapshot";
+CREATE POLICY herd_app_full_access ON public."TierPricingSnapshot"
+  FOR ALL TO herd_app USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS herd_app_full_access ON public."FinancialSnapshot";
+CREATE POLICY herd_app_full_access ON public."FinancialSnapshot"
+  FOR ALL TO herd_app USING (true) WITH CHECK (true);
+
+-- OpEx (4)
+DROP POLICY IF EXISTS herd_app_full_access ON public."OpexCategory";
+CREATE POLICY herd_app_full_access ON public."OpexCategory"
+  FOR ALL TO herd_app USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS herd_app_full_access ON public."OpexMilestoneLevel";
+CREATE POLICY herd_app_full_access ON public."OpexMilestoneLevel"
+  FOR ALL TO herd_app USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS herd_app_full_access ON public."OpexItem";
+CREATE POLICY herd_app_full_access ON public."OpexItem"
+  FOR ALL TO herd_app USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS herd_app_full_access ON public."OpexMilestone";
+CREATE POLICY herd_app_full_access ON public."OpexMilestone"
+  FOR ALL TO herd_app USING (true) WITH CHECK (true);
+
+-- Perks & Community (4)
+DROP POLICY IF EXISTS herd_app_full_access ON public."Perk";
+CREATE POLICY herd_app_full_access ON public."Perk"
+  FOR ALL TO herd_app USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS herd_app_full_access ON public."PerkTierAssignment";
+CREATE POLICY herd_app_full_access ON public."PerkTierAssignment"
+  FOR ALL TO herd_app USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS herd_app_full_access ON public."CommunityBenefit";
+CREATE POLICY herd_app_full_access ON public."CommunityBenefit"
+  FOR ALL TO herd_app USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS herd_app_full_access ON public."CommunityBenefitTierAssignment";
+CREATE POLICY herd_app_full_access ON public."CommunityBenefitTierAssignment"
+  FOR ALL TO herd_app USING (true) WITH CHECK (true);
+
+-- Admin & Settings (2)
+DROP POLICY IF EXISTS herd_app_full_access ON public."Document";
+CREATE POLICY herd_app_full_access ON public."Document"
+  FOR ALL TO herd_app USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS herd_app_full_access ON public."Setting";
+CREATE POLICY herd_app_full_access ON public."Setting"
+  FOR ALL TO herd_app USING (true) WITH CHECK (true);
+
+-- Integration catalog (1 — platform-wide).
+-- This is the table that blocked Camada 1 smoke (Integration lookup via slug).
+DROP POLICY IF EXISTS herd_app_full_access ON public."Integration";
+CREATE POLICY herd_app_full_access ON public."Integration"
+  FOR ALL TO herd_app USING (true) WITH CHECK (true);
