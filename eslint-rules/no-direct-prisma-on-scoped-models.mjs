@@ -10,6 +10,21 @@ const SCOPED_MODELS = new Set([
   "integrationTierMapping",
   "integrationWebhookEvent",
   "integrationSyncLog",
+  // Sub-etapa 9 — Payment Provider Layer
+  "paymentProvider",
+  "billingCustomer",
+  "paymentMethod",
+  "subscription",
+  "charge",
+  "chargeLineItem",
+  "invoice",
+  "refund",
+  "dunningAttempt",
+  "portalSession",
+  "billingEvent",
+  // Sub-etapa 19 — Org Structure
+  "department",
+  "location",
 ]);
 
 const TENANT_WRAPPERS = new Set(["withTenant", "withSessionTenant"]);

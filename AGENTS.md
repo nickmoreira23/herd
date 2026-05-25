@@ -615,8 +615,7 @@ debugging based on stale docs is enormous.
 ## Tenancy
 
 `Organization` is the tenant boundary. Each `NetworkProfile` owns one
-personal Organization (1:1, V1). Four tables are tenant-scoped via
-`tenant_id`:
+personal Organization (1:1, V1). Tenant-scoped tables use `tenant_id NOT NULL`:
 
 - `MemberConnection`, `IntegrationTierMapping`, `IntegrationSyncLog` —
   `tenant_id NOT NULL` + FK + index. RLS strict policy applied
@@ -625,6 +624,19 @@ personal Organization (1:1, V1). Four tables are tenant-scoped via
   enabled but permissive policy (`USING true`) until webhook tenant
   resolution lands in Sub-etapa 5/6, when the column becomes NOT NULL
   and the policy tightens to strict.
+- 11 billing tables (`PaymentProvider`, `BillingCustomer`, `PaymentMethod`,
+  `Subscription`, `Charge`, `ChargeLineItem`, `Invoice`, `Refund`,
+  `DunningAttempt`, `PortalSession`, `BillingEvent`) — Sub-etapa 9.
+- `Department`, `Location` — Sub-etapa 19. Both with `tenant_id NOT NULL` +
+  FK + index. RLS strict policy applied. `Department` has composite unique
+  `(tenant_id, slug)` replacing the old global slug unique.
+
+**Chat orchestrator + location provider (Sub-etapa 19).** `LocationProvider`
+is a chat `DataProvider` that queries the now-tenant-scoped `Location` table.
+The provider uses `eslint-disable` inline comments. The chat messages route
+(`src/app/api/chat/agents/[agentKey]/messages/route.ts`) must establish
+`withTenant` context before calling `searchData` for correct tenant isolation.
+This is tracked as tech debt until the chat orchestrator is updated.
 
 **X1 — `Integration` is single-tenant.** The integration catalog is
 plataforma-wide. `Integration.tenantId` stays nullable indefinitely,

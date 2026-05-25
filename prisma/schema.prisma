@@ -580,6 +580,7 @@ model Setting {
 
 model Location {
   id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
   name           String
   type           String   @default("office") // headquarters, office, store, warehouse, other
   street         String?
@@ -595,6 +596,10 @@ model Location {
   notes          String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  tenant Organization @relation("LocationTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
 }
 
 // ========================
@@ -1678,6 +1683,9 @@ model Organization {
   childOrgs Organization[] @relation("OrganizationHierarchy")
   assets    OrganizationAsset[]
 
+  departments Department[] @relation("DepartmentTenant")
+  locations   Location[]   @relation("LocationTenant")
+
   memberConnections        MemberConnection[]        @relation("MemberConnectionTenant")
   integrationTierMappings  IntegrationTierMapping[]  @relation("IntegrationTierMappingTenant")
   integrationWebhookEvents IntegrationWebhookEvent[] @relation("IntegrationWebhookEventTenant")
@@ -1721,8 +1729,9 @@ model OrganizationAsset {
 
 model Department {
   id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String      @map("tenant_id") @db.Uuid
   name        String
-  slug        String      @unique
+  slug        String
   description String?
   parentId    String?     @db.Uuid
   headId      String?     @db.Uuid
@@ -1733,11 +1742,14 @@ model Department {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
-  parent   Department?        @relation("DepartmentHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
-  children Department[]       @relation("DepartmentHierarchy")
-  head     NetworkProfile?    @relation("DepartmentHead", fields: [headId], references: [id], onDelete: SetNull)
+  tenant   Organization     @relation("DepartmentTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+  parent   Department?       @relation("DepartmentHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children Department[]      @relation("DepartmentHierarchy")
+  head     NetworkProfile?   @relation("DepartmentHead", fields: [headId], references: [id], onDelete: SetNull)
   members  DepartmentMember[]
 
+  @@unique([tenantId, slug])
+  @@index([tenantId])
   @@map("departments")
 }
 
