@@ -1635,6 +1635,7 @@ model NetworkProfile {
   messageThreadsAsContact  MessageThread[]                    @relation("ThreadContact")
   messageThreadsAsAssignee MessageThread[]                    @relation("ThreadAssignee")
   ownedOrganization        Organization?                      @relation("OrganizationOwner")
+  uploadedAssets           OrganizationAsset[]                @relation("AssetUploader")
 
   @@map("network_profiles")
 }
@@ -1644,14 +1645,38 @@ model NetworkProfile {
 // ========================
 
 model Organization {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  slug      String   @unique
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug      String    @unique
   name      String
-  ownerId   String   @unique @map("owner_id") @db.Uuid
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  ownerId   String    @unique @map("owner_id") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
 
-  owner NetworkProfile @relation("OrganizationOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  // Sub-etapa 18 — Fase 4 foundation: company profile fields
+  description   String?   @db.Text
+  industry      String?
+  size          OrgSize?
+  foundedYear   Int?      @map("founded_year")
+  websiteUrl    String?   @map("website_url")
+  phone         String?
+  email         String?
+  supportEmail  String?   @map("support_email")
+  salesEmail    String?   @map("sales_email")
+  timezone      String?   @default("UTC")
+  currency      String?   @default("USD")
+  localeDefault String?   @default("en-US") @map("locale_default")
+  dateFormat    String?   @default("YYYY-MM-DD") @map("date_format")
+  subdomain     String    @unique
+  customDomain  String?   @unique @map("custom_domain")
+  parentOrgId   String?   @map("parent_org_id") @db.Uuid
+  status        OrgStatus @default(ACTIVE)
+  brandKit      Json?     @map("brand_kit")
+  businessHours Json?     @map("business_hours")
+
+  owner     NetworkProfile @relation("OrganizationOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  parentOrg Organization?  @relation("OrganizationHierarchy", fields: [parentOrgId], references: [id], onDelete: SetNull)
+  childOrgs Organization[] @relation("OrganizationHierarchy")
+  assets    OrganizationAsset[]
 
   memberConnections        MemberConnection[]        @relation("MemberConnectionTenant")
   integrationTierMappings  IntegrationTierMapping[]  @relation("IntegrationTierMappingTenant")
@@ -1672,6 +1697,22 @@ model Organization {
   billingEvents     BillingEvent[]     @relation("BillingEventTenant")
 
   @@map("organizations")
+}
+
+model OrganizationAsset {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  type           AssetType
+  url            String
+  metadata       Json?
+  uploadedById   String?   @map("uploaded_by_id") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  uploadedBy   NetworkProfile? @relation("AssetUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@map("organization_assets")
 }
 
 // ========================
@@ -3282,4 +3323,37 @@ model BillingEvent {
   @@index([eventType], map: "billing_events_event_type_idx")
   @@index([createdAt], map: "billing_events_created_at_idx")
   @@map("billing_events")
+}
+
+// ========================
+// Organization Enums (Sub-etapa 18 — Fase 4 foundation)
+// ========================
+
+enum OrgSize {
+  SOLO
+  SMALL
+  MID
+  LARGE
+  ENTERPRISE
+
+  @@map("org_size")
+}
+
+enum OrgStatus {
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
+  DELETED
+
+  @@map("org_status")
+}
+
+enum AssetType {
+  LOGO_LIGHT
+  LOGO_DARK
+  LOGO_SQUARE
+  FAVICON
+  OG_IMAGE
+
+  @@map("asset_type")
 }

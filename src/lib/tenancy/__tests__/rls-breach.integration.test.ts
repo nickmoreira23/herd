@@ -68,12 +68,12 @@ async function seed(): Promise<Seeded> {
   });
 
   const orgA = await adminClient.organization.create({
-    data: { ownerId: profileA.id, slug: `${TEST_PREFIX}-a`, name: "Breach A" },
+    data: { ownerId: profileA.id, slug: `${TEST_PREFIX}-a`, subdomain: `${TEST_PREFIX}-a`, name: "Breach A" },
     select: { id: true },
   });
 
   const orgB = await adminClient.organization.create({
-    data: { ownerId: profileB.id, slug: `${TEST_PREFIX}-b`, name: "Breach B" },
+    data: { ownerId: profileB.id, slug: `${TEST_PREFIX}-b`, subdomain: `${TEST_PREFIX}-b`, name: "Breach B" },
     select: { id: true },
   });
 

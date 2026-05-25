@@ -531,10 +531,10 @@ export function AirtableImportModal({
                   {t("tables.import.airtable.steps.mapping.col_airtable_field")}
                 </div>
                 <div className="px-3 py-2">
-                  {t("tables.import.airtable.steps.mapping.col_herd_type")}
+                  {t("tables.import.airtable.steps.mapping.col_internal_type")}
                 </div>
                 <div className="px-3 py-2">
-                  {t("tables.import.airtable.steps.mapping.col_herd_name")}
+                  {t("tables.import.airtable.steps.mapping.col_internal_name")}
                 </div>
                 <div className="px-3 py-2 text-center">
                   {t("tables.import.airtable.steps.mapping.col_skip")}

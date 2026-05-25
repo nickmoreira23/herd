@@ -2091,3 +2091,36 @@ applies: new code is held to the strict ruleset; carve-outs only
 shrink. If your work would add a fourth file to this list, push back —
 the carve-out is a signal to fix the underlying issue, not a place to
 park it.
+
+## Project rename HERD → ComeçaAI (cravada na Sub-etapa 18)
+
+- Brand atual: **ComeçaAI** (renomeação progressiva iniciada Sub-etapa 18 Fase 4).
+- Histórico: projeto começou como "HERD OS", renomeado Sub-etapa 18 (2026-05-25).
+- Runtime referências `src/` atualizadas Sub-etapa 18 (50 arquivos cirúrgicos).
+- Docs/.agents/scripts cosméticos: Sub-etapa 18.1 (tarefa paralela futura).
+- `package.json name`: `comecaai-platform`.
+- Admin email canônico: `nick@comecaai.com.br` (era `admin@herd.com`).
+- `X-Internal-Agent` header: `comecaai`.
+- i18n keys renomeadas: `col_herd_type` → `col_internal_type`, `herd_type` → `internal_type`.
+
+## Organization schema expansion (Sub-etapa 18)
+
+Foundation Fase 4 cravada — Organization agora tem campos:
+
+- **Company profile:** `description`, `industry`, `size` (OrgSize), `foundedYear`, `websiteUrl`, `phone`, `email`, `supportEmail`, `salesEmail`.
+- **Regional:** `timezone` (default UTC), `currency` (default USD), `localeDefault` (default en-US), `dateFormat` (default YYYY-MM-DD).
+- **Domain dual:** `subdomain` (NOT NULL UNIQUE), `customDomain` (nullable UNIQUE partial index).
+- **Hierarchy:** `parentOrgId` (self-ref FK, onDelete SetNull).
+- **Lifecycle:** `status` (OrgStatus enum — ACTIVE, SUSPENDED, ARCHIVED, DELETED).
+- **Branding:** `brandKit` (JSONB), `businessHours` (JSONB).
+
+**Enums novos:** `OrgSize`, `OrgStatus`, `AssetType`.
+
+**Tabela nova:** `organization_assets` (logos, OG images, etc.) — FK para `organizations` (CASCADE) e `network_profiles` (SET NULL).
+
+**Reserved subdomains** (validation em application code, NÃO DB constraint):
+- `app`, `admin`, `api`, `www`, `mail`, `support`, `comecaai`, `auth`.
+
+**Backfill migration (Sub-etapa 18):**
+- `admin@herd.com` profile → `nick@comecaai.com.br` (firstName=Nick, lastName=Moreira).
+- Org slug `admin` → `comecaai`, name → `ComeçaAI`, subdomain → `app`.

@@ -535,10 +535,10 @@ export function AirtableImportModal({
                   {t("knowledge.airtable.field_mapping.airtable_field")}
                 </div>
                 <div className="px-3 py-2">
-                  {t("knowledge.airtable.field_mapping.herd_type")}
+                  {t("knowledge.airtable.field_mapping.internal_type")}
                 </div>
                 <div className="px-3 py-2">
-                  {t("knowledge.airtable.field_mapping.herd_name")}
+                  {t("knowledge.airtable.field_mapping.internal_name")}
                 </div>
                 <div className="px-3 py-2 text-center">
                   {t("knowledge.airtable.field_mapping.skip")}

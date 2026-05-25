@@ -466,7 +466,7 @@ async function main() {
     {
       name: "Recharge",
       slug: "recharge",
-      description: "Subscription billing and recurring payments platform. Connect to sync subscription plans with HERD tiers, manage charges, and automate billing workflows.",
+      description: "Subscription billing and recurring payments platform. Connect to sync subscription plans with ComeçaAI tiers, manage charges, and automate billing workflows.",
       category: "BILLING" as const,
       websiteUrl: "https://rechargepayments.com",
       docsUrl: "https://developer.rechargepayments.com",
@@ -619,7 +619,7 @@ async function main() {
     {
       name: "Airtable",
       slug: "airtable",
-      description: "Cloud-based spreadsheet and database platform. Import tables with all data and media into HERD knowledge tables.",
+      description: "Cloud-based spreadsheet and database platform. Import tables with all data and media into ComeçaAI knowledge tables.",
       category: "OTHER" as const,
       websiteUrl: "https://airtable.com",
       docsUrl: "https://airtable.com/developers/web/api/introduction",
@@ -773,7 +773,7 @@ async function main() {
     {
       name: "Anthropic",
       slug: "anthropic",
-      description: "AI model provider powering Claude. Use Anthropic models for reasoning, analysis, plan building, and agent capabilities throughout HERD.",
+      description: "AI model provider powering Claude. Use Anthropic models for reasoning, analysis, plan building, and agent capabilities throughout ComeçaAI.",
       category: "AI_MODELS" as const,
       websiteUrl: "https://anthropic.com",
       docsUrl: "https://docs.anthropic.com",
@@ -923,7 +923,7 @@ async function main() {
   // Sub-etapa 3.6: NetworkProfileType + NetworkProfileRole removed.
   // Admin user is now plain identity; role derived from ADMIN_EMAIL env in auth.ts.
   console.log("Seeding admin user...");
-  const adminEmail = process.env.ADMIN_EMAIL || "admin@herd.com";
+  const adminEmail = process.env.ADMIN_EMAIL || "nick@comecaai.com.br";
   await prisma.networkProfile.upsert({
     where: { email: adminEmail },
     update: {},
@@ -1062,7 +1062,7 @@ async function main() {
 
   // Assign admin profile as head of Executive if an admin profile exists
   const adminProfile = await prisma.networkProfile.findFirst({
-    where: { email: "admin@herd.com" },
+    where: { email: adminEmail },
   });
   if (adminProfile) {
     await prisma.department.update({

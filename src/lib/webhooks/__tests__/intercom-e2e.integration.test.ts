@@ -95,7 +95,7 @@ async function seed(): Promise<Seeded> {
   });
 
   const org = await adminClient.organization.create({
-    data: { ownerId: profile.id, slug: TEST_PREFIX, name: "Intercom E2E" },
+    data: { ownerId: profile.id, slug: TEST_PREFIX, subdomain: TEST_PREFIX, name: "Intercom E2E" },
     select: { id: true },
   });
 
