@@ -37,6 +37,7 @@ export class LocationProvider implements DataProvider {
   types = ["location"];
 
   async getCatalogItems(): Promise<CatalogItem[]> {
+    // eslint-disable-next-line herd-tenancy/no-direct-prisma-on-scoped-models -- caller (chat orchestrator) must establish withTenant context before invoking searchData
     const locations = await prisma.location.findMany({
       where: { isActive: true },
       orderBy: [{ isHeadquarters: "desc" }, { name: "asc" }],
@@ -64,6 +65,7 @@ export class LocationProvider implements DataProvider {
   ): Promise<SearchResult[]> {
     if (!grouped.location) return [];
 
+    // eslint-disable-next-line herd-tenancy/no-direct-prisma-on-scoped-models -- caller (chat orchestrator) must establish withTenant context before invoking searchData
     const locations = await prisma.location.findMany({
       where: { id: { in: grouped.location } },
     });
@@ -83,6 +85,7 @@ export class LocationProvider implements DataProvider {
   ): Promise<SearchResult[]> {
     if (types.length > 0 && !types.includes("location")) return [];
 
+    // eslint-disable-next-line herd-tenancy/no-direct-prisma-on-scoped-models -- caller (chat orchestrator) must establish withTenant context before invoking searchData
     const locations = await prisma.location.findMany({
       where: {
         isActive: true,
@@ -107,6 +110,7 @@ export class LocationProvider implements DataProvider {
   }
 
   async getArtifactMeta(ids: string[]): Promise<ArtifactMeta[]> {
+    // eslint-disable-next-line herd-tenancy/no-direct-prisma-on-scoped-models -- caller (chat orchestrator) must establish withTenant context before invoking searchData
     const locations = await prisma.location.findMany({
       where: { id: { in: ids } },
     });

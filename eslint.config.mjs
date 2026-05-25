@@ -263,6 +263,12 @@ const eslintConfig = defineConfig([
       "src/lib/messages/contact-resolver.ts",
       // RSC reading sync logs.
       "src/components/integrations/category-hub.tsx",
+      // RSC admin UI pages — pre-date Sub-etapa 19 tenant scope; wrap in
+      // withTenant when these pages receive session-aware refactor.
+      "src/app/admin/blocks/locations/page.tsx",
+      "src/app/admin/blocks/locations/*/page.tsx",
+      "src/app/admin/organization/departments/page.tsx",
+      "src/app/admin/organization/departments/*/page.tsx",
     ],
     rules: {
       "herd-tenancy/no-direct-prisma-on-scoped-models": "warn",

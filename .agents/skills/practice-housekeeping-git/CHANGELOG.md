@@ -2,6 +2,22 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.25 — 2026-05-25
+
+Anchor Sub-etapa 19: tenant scope Department + Location.
+Schema: `tenant_id NOT NULL` FK + composite unique `(tenant_id, slug)` on
+Department (drops global slug unique); `tenant_id NOT NULL` FK on Location
+(preserves PascalCase table name — no @@map). Both in `TENANT_SCOPED_MODELS`.
+Migration: `20260525010000_sub_19_tenant_scope_dept_loc` idempotent + backfill.
+RLS: strict `tenant_id = current_app_tenant_id()::uuid` policy + permissive
+`herd_app_full_access` on both tables. 7 admin routes wrapped with
+`requireSuperAdmin + withTenant`. ESLint rule updated: department + location
++ all 11 billing models added to `SCOPED_MODELS` (rule was out of sync).
+LocationProvider: 4 inline `eslint-disable` comments; chat orchestrator must
+establish withTenant context before searchData (tracked as tech debt).
+Convention cravada: always use `tenantId @map("tenant_id")` in new
+tenant-scoped models — matches TENANT_SCOPED_MODELS injection key.
+
 ## 1.2.24 — 2026-05-25
 
 Anchor Sub-etapa 18.1: rename batch cosmético HERD → ComeçaAI em
