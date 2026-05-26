@@ -2183,3 +2183,25 @@ Foundation Fase 4 cravada — Organization agora tem campos:
 **Backfill migration (Sub-etapa 18):**
 - `admin@herd.com` profile → `nick@comecaai.com.br` (firstName=Nick, lastName=Moreira).
 - Org slug `admin` → `comecaai`, name → `ComeçaAI`, subdomain → `app`.
+
+## Domain routing V2 (Sub-etapa 22)
+
+V2 minimal foundation: Node runtime + tenant resolution + header injection.
+
+**Cravamento V2:**
+- `src/proxy.ts` (Node runtime — replaces `middleware.ts` Edge runtime; Prisma compatible).
+- `src/lib/tenant/org-resolver.ts` — `resolveOrgByHost` with customDomain primary + subdomain fallback. Cache TTL 30s. `isApexDomain` + `extractSubdomain` helpers.
+- `src/lib/tenant/get-org-from-request.ts` — `getOrgIdFromRequest`, `isApexRequest`, `getHostFromRequest` helpers reading proxy-injected headers.
+- Headers `x-org-id`, `x-host`, `x-is-apex` injected in all matched requests.
+- `trustHost: true` + explicit `secret` in Auth.js (resolves MissingSecret error on multi-host).
+- Cleanup `/f` dead matcher (was in `PUBLIC_LOCALE_PREFIXES` but absent from config).
+
+**V2 NÃO inclui (rastreado para futuro):**
+- Cookie domain config `.comecaai.com.br` cross-subdomain → Sub-etapa 22.1.
+- Proxy redirect when subdomain is invalid → Sub-etapa 22.1.
+- Apex login `/api/auth/memberships` endpoint + org selector + auto-redirect → Sub-etapa 22.2.
+
+**Lição cravada — V1 rollback (3 smoke bugs):**
+- `middleware.ts` runs Edge runtime — Prisma/pg fail silently there. `proxy.ts` runs Node runtime (Prisma OK). Migration mandatory for any proxy that touches DB.
+- `secret:` must be explicit when `trustHost: true` — Auth.js v5 raises MissingSecret otherwise. Fallback: `process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET`.
+- `npm install` real in worktree, NOT symlink — Turbopack 16 rejects cross-filesystem symlinks.

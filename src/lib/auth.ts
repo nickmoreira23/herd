@@ -5,6 +5,13 @@ import { prisma } from "@/lib/prisma";
 import { resolveActiveOrgIdForProfile } from "@/lib/auth/resolve-active-org";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  // CRAVADO Sub-etapa 22 V2 — explicit secret resolves MissingSecret error when
+  // trustHost is enabled. NEXTAUTH_SECRET (legacy) takes precedence; AUTH_SECRET
+  // is the canonical Auth.js v5 name. Both are accepted.
+  secret: process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET,
+  // CRAVADO Sub-etapa 22 V2 — required for multi-host / custom-domain support.
+  // Without trustHost, Auth.js rejects requests from hosts other than NEXTAUTH_URL.
+  trustHost: true,
   providers: [
     Credentials({
       name: "Login",
