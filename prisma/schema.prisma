@@ -1633,14 +1633,19 @@ model NetworkProfile {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
+  // Sub-etapa 20 — Membership foundation
+  isSuperAdmin Boolean @default(false) @map("is_super_admin")
+
   departmentMemberships    DepartmentMember[]
   headOfDepartments        Department[]                       @relation("DepartmentHead")
   conversations            ChatConversation[]
   memberConnections        MemberConnection[]
   messageThreadsAsContact  MessageThread[]                    @relation("ThreadContact")
   messageThreadsAsAssignee MessageThread[]                    @relation("ThreadAssignee")
-  ownedOrganization        Organization?                      @relation("OrganizationOwner")
+  ownedOrganizations       Organization[]                     @relation("OrganizationOwner")
   uploadedAssets           OrganizationAsset[]                @relation("AssetUploader")
+  organizationMemberships  OrganizationMember[]
+  invitationsCreated       OrganizationInvitation[]           @relation("InvitationCreatedBy")
 
   @@map("network_profiles")
 }
@@ -1653,7 +1658,7 @@ model Organization {
   id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   slug      String    @unique
   name      String
-  ownerId   String    @unique @map("owner_id") @db.Uuid
+  ownerId   String?   @map("owner_id") @db.Uuid // CRAVADO Sub-etapa 20: nullable (drop em 20.1)
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
 
@@ -1678,13 +1683,15 @@ model Organization {
   brandKit      Json?     @map("brand_kit")
   businessHours Json?     @map("business_hours")
 
-  owner     NetworkProfile @relation("OrganizationOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  parentOrg Organization?  @relation("OrganizationHierarchy", fields: [parentOrgId], references: [id], onDelete: SetNull)
-  childOrgs Organization[] @relation("OrganizationHierarchy")
+  owner     NetworkProfile? @relation("OrganizationOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  parentOrg Organization?   @relation("OrganizationHierarchy", fields: [parentOrgId], references: [id], onDelete: SetNull)
+  childOrgs Organization[]  @relation("OrganizationHierarchy")
   assets    OrganizationAsset[]
 
   departments Department[] @relation("DepartmentTenant")
   locations   Location[]   @relation("LocationTenant")
+  members     OrganizationMember[]
+  invitations OrganizationInvitation[]
 
   memberConnections        MemberConnection[]        @relation("MemberConnectionTenant")
   integrationTierMappings  IntegrationTierMapping[]  @relation("IntegrationTierMappingTenant")
@@ -1721,6 +1728,65 @@ model OrganizationAsset {
 
   @@index([organizationId])
   @@map("organization_assets")
+}
+
+// ========================
+// Membership (Sub-etapa 20)
+// ========================
+
+model OrganizationMember {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId   String           @map("organization_id") @db.Uuid
+  networkProfileId String           @map("network_profile_id") @db.Uuid
+  status           MembershipStatus @default(ACTIVE)
+  joinedAt         DateTime         @default(now()) @map("joined_at")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  networkProfile NetworkProfile   @relation(fields: [networkProfileId], references: [id], onDelete: Cascade)
+  roles          MembershipRole[]
+
+  @@unique([organizationId, networkProfileId])
+  @@index([organizationId])
+  @@index([networkProfileId])
+  @@map("organization_members")
+}
+
+model MembershipRole {
+  id         String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  memberId   String        @map("member_id") @db.Uuid
+  role       MemberRole
+  scopeType  RoleScopeType @default(ORG) @map("scope_type")
+  scopeId    String?       @map("scope_id") @db.Uuid
+  assignedAt DateTime      @default(now()) @map("assigned_at")
+
+  member OrganizationMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId])
+  @@map("membership_roles")
+}
+
+model OrganizationInvitation {
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String           @map("organization_id") @db.Uuid
+  email          String
+  role           MemberRole       @default(MEMBER)
+  status         InvitationStatus @default(PENDING)
+  token          String           @unique @default(dbgenerated("gen_random_uuid()"))
+  createdById    String?          @map("created_by_id") @db.Uuid
+  expiresAt      DateTime?        @map("expires_at")
+  acceptedAt     DateTime?        @map("accepted_at")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    NetworkProfile? @relation("InvitationCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([email])
+  @@index([token])
+  @@map("organization_invitations")
 }
 
 // ========================
@@ -3368,4 +3434,42 @@ enum AssetType {
   OG_IMAGE
 
   @@map("asset_type")
+}
+
+// Sub-etapa 20 — Membership enums
+
+enum MembershipStatus {
+  ACTIVE
+  SUSPENDED
+  INVITED
+  REMOVED
+
+  @@map("membership_status")
+}
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+  DEPARTMENT_HEAD
+  DEPARTMENT_MANAGER
+  DEPARTMENT_MEMBER
+
+  @@map("member_role")
+}
+
+enum RoleScopeType {
+  ORG
+  DEPARTMENT
+
+  @@map("role_scope_type")
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+
+  @@map("invitation_status")
 }

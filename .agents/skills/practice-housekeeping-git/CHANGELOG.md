@@ -2,6 +2,27 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.26 — 2026-05-26
+
+Anchor Sub-etapa 20: OrganizationMember + MembershipRole + OrganizationInvitation
+foundation. Schema: `NetworkProfile.isSuperAdmin Boolean @default(false)`;
+`Organization.ownerId` nullable (dropped `@unique`); `ownedOrganization?` relation
+renamed `ownedOrganizations[]` (one-to-many). 3 new models: `organization_members`
+(N:N with `@@unique([organizationId, networkProfileId])`), `membership_roles`
+(role enum per membership), `organization_invitations` (token-based invites).
+4 new enums: `MembershipStatus`, `MemberRole`, `RoleScopeType`, `InvitationStatus`.
+Migration `20260525020000_sub_20_membership_roles`: idempotent backfill creates
+OrganizationMember + OWNER MembershipRole for all existing `Organization.ownerId` rows.
+Auth: `resolveActiveOrgIdForProfile` dual-read (Membership primary → ownerId fallback);
+`requireSuperAdmin` dual-check (session role → DB `isSuperAdmin` fallback);
+`auth.ts` super_admin branch creates Membership idempotently + sets `isSuperAdmin: true`;
+JWT + session surface `isSuperAdmin`. Backfill seed updated. 6 integration tests updated;
+1 new test for Membership primary path in `resolve-active-org.integration.test.ts`.
+Hotfix cravado: migration dropping `@unique` regenerates shared Prisma client immediately —
+any `findUnique` on that field in main repo breaks at runtime before PR merges. Fix: apply
+compatible code changes to main directly as hotfix (3 files: `resolve-active-org.ts`,
+`backfill-organizations.ts`, `backfill-state.integration.test.ts`).
+
 ## 1.2.25 — 2026-05-25
 
 Anchor Sub-etapa 19: tenant scope Department + Location.

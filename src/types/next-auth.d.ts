@@ -6,6 +6,7 @@ declare module "next-auth" {
       id: string;
       role?: string;
       activeOrgId: string | null;
+      isSuperAdmin?: boolean;
     } & DefaultSession["user"];
   }
 }
@@ -15,5 +16,6 @@ declare module "next-auth/jwt" {
     dbId?: string;
     role?: string;
     activeOrgId: string | null;
+    isSuperAdmin?: boolean;
   }
 }

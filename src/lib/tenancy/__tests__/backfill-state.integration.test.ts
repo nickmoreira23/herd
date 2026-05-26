@@ -23,7 +23,7 @@ describe("Backfill 1:1 invariant — NetworkProfile ↔ Organization (integratio
       select: { id: true },
     });
     const orphans = await prisma.networkProfile.count({
-      where: { ...realFilter, ownedOrganization: null },
+      where: { ...realFilter, ownedOrganizations: { none: {} } },
     });
 
     expect(profileCount).toBe(orgs.length);

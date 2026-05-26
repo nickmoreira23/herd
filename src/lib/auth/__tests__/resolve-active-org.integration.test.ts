@@ -9,62 +9,104 @@ const baseClient = new PrismaClient({ adapter: new PrismaPg(connectionString) })
 
 const TEST_PREFIX = `test-resolve-org-${Date.now()}`;
 
-let profileWithOrg: { id: string };
-let profileWithoutOrg: { id: string };
-let org: { id: string };
+let profileOwner: { id: string };
+let profileMemberOnly: { id: string };
+let profileNoOrg: { id: string };
+let orgViaOwner: { id: string };
+let orgViaMembership: { id: string };
 
 beforeAll(async () => {
-  // NetworkProfileType removed in Sub-etapa 3.6.
-
-  profileWithOrg = await baseClient.networkProfile.create({
+  // Profile 1: has org via ownerId (fallback path) — no Membership row
+  profileOwner = await baseClient.networkProfile.create({
     data: {
-      firstName: "WithOrg",
+      firstName: "Owner",
       lastName: "Test",
-      email: `${TEST_PREFIX}-with@example.com`,
+      email: `${TEST_PREFIX}-owner@example.com`,
       status: "ACTIVE",
     },
     select: { id: true },
   });
 
-  profileWithoutOrg = await baseClient.networkProfile.create({
+  // Profile 2: has org via Membership only (primary path) — no ownerId org
+  profileMemberOnly = await baseClient.networkProfile.create({
     data: {
-      firstName: "WithoutOrg",
+      firstName: "MemberOnly",
       lastName: "Test",
-      email: `${TEST_PREFIX}-without@example.com`,
+      email: `${TEST_PREFIX}-member@example.com`,
       status: "ACTIVE",
     },
     select: { id: true },
   });
 
-  org = await baseClient.organization.create({
+  // Profile 3: no org at all
+  profileNoOrg = await baseClient.networkProfile.create({
     data: {
-      ownerId: profileWithOrg.id,
-      slug: `${TEST_PREFIX}-org`,
-      subdomain: `${TEST_PREFIX}-org`,
-      name: "Test Org",
+      firstName: "NoOrg",
+      lastName: "Test",
+      email: `${TEST_PREFIX}-noop@example.com`,
+      status: "ACTIVE",
     },
     select: { id: true },
+  });
+
+  // Org owned by profileOwner (no Membership row created — tests fallback)
+  orgViaOwner = await baseClient.organization.create({
+    data: {
+      ownerId: profileOwner.id,
+      slug: `${TEST_PREFIX}-owner-org`,
+      subdomain: `${TEST_PREFIX}-owner-org`,
+      name: "Owner Org",
+    },
+    select: { id: true },
+  });
+
+  // Org for Membership primary path (owned by nobody)
+  orgViaMembership = await baseClient.organization.create({
+    data: {
+      slug: `${TEST_PREFIX}-member-org`,
+      subdomain: `${TEST_PREFIX}-member-org`,
+      name: "Member Org",
+    },
+    select: { id: true },
+  });
+
+  // Create Membership row (primary path) for profileMemberOnly
+  const member = await baseClient.organizationMember.create({
+    data: {
+      organizationId: orgViaMembership.id,
+      networkProfileId: profileMemberOnly.id,
+      status: "ACTIVE",
+    },
+    select: { id: true },
+  });
+  await baseClient.membershipRole.create({
+    data: { memberId: member.id, role: "MEMBER", scopeType: "ORG" },
   });
 });
 
 afterAll(async () => {
   await baseClient.organization.deleteMany({
-    where: { id: org.id },
+    where: { id: { in: [orgViaOwner.id, orgViaMembership.id] } },
   });
   await baseClient.networkProfile.deleteMany({
-    where: { id: { in: [profileWithOrg.id, profileWithoutOrg.id] } },
+    where: { id: { in: [profileOwner.id, profileMemberOnly.id, profileNoOrg.id] } },
   });
   await baseClient.$disconnect();
 });
 
 describe("resolveActiveOrgIdForProfile (integration)", () => {
-  it("returns Organization id when profile owns one", async () => {
-    const result = await resolveActiveOrgIdForProfile(profileWithOrg.id);
-    expect(result).toBe(org.id);
+  it("primary path: returns organizationId from active Membership row", async () => {
+    const result = await resolveActiveOrgIdForProfile(profileMemberOnly.id);
+    expect(result).toBe(orgViaMembership.id);
   });
 
-  it("returns null when profile has no Organization", async () => {
-    const result = await resolveActiveOrgIdForProfile(profileWithoutOrg.id);
+  it("fallback path: returns Organization id when profile owns via ownerId (no Membership)", async () => {
+    const result = await resolveActiveOrgIdForProfile(profileOwner.id);
+    expect(result).toBe(orgViaOwner.id);
+  });
+
+  it("returns null when profile has no Organization and no Membership", async () => {
+    const result = await resolveActiveOrgIdForProfile(profileNoOrg.id);
     expect(result).toBeNull();
   });
 });

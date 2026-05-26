@@ -2,12 +2,19 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextResponse } from "next/server";
 
 // Hoist mocks so they are available before imports
-const { authMock } = vi.hoisted(() => ({
+const { authMock, findUniqueMock } = vi.hoisted(() => ({
   authMock: vi.fn(),
+  findUniqueMock: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
   auth: authMock,
+}));
+
+vi.mock("@/lib/prisma", () => ({
+  prisma: {
+    networkProfile: { findUnique: findUniqueMock },
+  },
 }));
 
 import { requireSuperAdmin } from "../require-super-admin";
@@ -43,6 +50,7 @@ describe("requireSuperAdmin", () => {
     authMock.mockResolvedValue({
       user: { id: "user-1", email: "user@example.com", role: "user" },
     });
+    findUniqueMock.mockResolvedValue({ isSuperAdmin: false });
 
     const result = await requireSuperAdmin();
 
@@ -56,6 +64,7 @@ describe("requireSuperAdmin", () => {
     authMock.mockResolvedValue({
       user: { id: "user-1", email: "user@example.com" },
     });
+    findUniqueMock.mockResolvedValue({ isSuperAdmin: false });
 
     const result = await requireSuperAdmin();
 
@@ -63,6 +72,17 @@ describe("requireSuperAdmin", () => {
     const json = await (result as NextResponse).json();
     expect(json.error).toBe("Forbidden: super_admin role required");
     expect((result as NextResponse).status).toBe(403);
+  });
+
+  it("returns session when DB isSuperAdmin flag is true (fallback path)", async () => {
+    const session = { user: { id: "admin-2", email: "admin2@example.com", role: "user" } };
+    authMock.mockResolvedValue(session);
+    findUniqueMock.mockResolvedValue({ isSuperAdmin: true });
+
+    const result = await requireSuperAdmin();
+
+    expect(result).not.toBeInstanceOf(NextResponse);
+    expect(result).toEqual(session);
   });
 
   it("returns the session when user has super_admin role", async () => {

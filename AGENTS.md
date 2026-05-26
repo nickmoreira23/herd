@@ -131,9 +131,25 @@ The check is performed at the start of each route handler, before `try {` and be
 any Prisma queries. The helper uses `apiError` from `@/lib/api-utils` for consistent
 error shape (`{ error: string, details?: unknown }`).
 
-The `org_admin` concept does not exist in Camada 1 (YAGNI — 3 DEV orgs, all yours).
-Introduce `org_admin` alongside a `Membership` table and drop of `NetworkProfile.email @unique`
-when the product becomes real SaaS multi-tenant (same trigger package).
+**Sub-etapa 20 — Membership foundation landed.** `OrganizationMember`,
+`MembershipRole`, and `OrganizationInvitation` tables exist. `NetworkProfile.isSuperAdmin`
+boolean flag added (DB-backed dual-check alongside env check). `Organization.ownerId`
+is now nullable (dropped `@unique`). Pending Sub-etapa 20.1: drop `ownerId` column
+and `email @unique`. Pending Sub-etapa 21: permissions helpers. Pending Sub-etapa 24:
+invitation flow UI/API.
+
+`requireSuperAdmin` dual-check (Sub-etapa 20): session `role === "super_admin"` (primary)
+OR `networkProfile.isSuperAdmin === true` DB fallback. Both paths return the session.
+
+`resolveActiveOrgIdForProfile` dual-read (Sub-etapa 20): Membership lookup primary
+(`organizationMember.findFirst` by `networkProfileId + status ACTIVE`), `organization.findFirst`
+by `ownerId` fallback. Drop fallback in Sub-etapa 20.1 once ownerId column is removed.
+
+**Hotfix cravado (Sub-etapa 20):** When a migration drops a `@unique` constraint, the
+Prisma client is regenerated immediately (shared `node_modules` in worktree setup).
+Any `findUnique` using that field anywhere in the codebase — including the MAIN repo —
+breaks at runtime even before the PR merges. Apply compatible code changes to main
+directly as a hotfix; do not wait for the PR.
 
 ### Status Camada 1 Sub-etapa 3.5
 
@@ -630,6 +646,19 @@ personal Organization (1:1, V1). Tenant-scoped tables use `tenant_id NOT NULL`:
 - `Department`, `Location` — Sub-etapa 19. Both with `tenant_id NOT NULL` +
   FK + index. RLS strict policy applied. `Department` has composite unique
   `(tenant_id, slug)` replacing the old global slug unique.
+
+**Sub-etapa 20 — Membership tables** (NOT tenant-scoped via `tenant_id`; scoped
+via `organization_id` FK instead — these ARE the membership structure, not
+tenant-scoped data tables):
+
+- `organization_members` — N:N between `network_profiles` and `organizations`.
+  `@@unique([organizationId, networkProfileId])`. RLS permissive `herd_app_full_access`.
+- `membership_roles` — roles per membership (OWNER/ADMIN/MEMBER/…, scoped ORG or DEPARTMENT).
+  FK to `organization_members` CASCADE. RLS permissive.
+- `organization_invitations` — pending invitations with token + status. FK to
+  `organizations` CASCADE + `network_profiles` SET NULL (createdBy). RLS permissive.
+
+Enums added (Sub-etapa 20): `MembershipStatus`, `MemberRole`, `RoleScopeType`, `InvitationStatus`.
 
 **Chat orchestrator + location provider (Sub-etapa 19).** `LocationProvider`
 is a chat `DataProvider` that queries the now-tenant-scoped `Location` table.
