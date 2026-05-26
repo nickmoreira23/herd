@@ -1642,7 +1642,6 @@ model NetworkProfile {
   memberConnections        MemberConnection[]
   messageThreadsAsContact  MessageThread[]                    @relation("ThreadContact")
   messageThreadsAsAssignee MessageThread[]                    @relation("ThreadAssignee")
-  ownedOrganizations       Organization[]                     @relation("OrganizationOwner")
   uploadedAssets           OrganizationAsset[]                @relation("AssetUploader")
   organizationMemberships  OrganizationMember[]
   invitationsCreated       OrganizationInvitation[]           @relation("InvitationCreatedBy")
@@ -1658,7 +1657,6 @@ model Organization {
   id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   slug      String    @unique
   name      String
-  ownerId   String?   @map("owner_id") @db.Uuid // CRAVADO Sub-etapa 20: nullable (drop em 20.1)
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
 
@@ -1683,7 +1681,6 @@ model Organization {
   brandKit      Json?     @map("brand_kit")
   businessHours Json?     @map("business_hours")
 
-  owner     NetworkProfile? @relation("OrganizationOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   parentOrg Organization?   @relation("OrganizationHierarchy", fields: [parentOrgId], references: [id], onDelete: SetNull)
   childOrgs Organization[]  @relation("OrganizationHierarchy")
   assets    OrganizationAsset[]

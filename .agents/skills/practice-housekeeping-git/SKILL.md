@@ -355,10 +355,29 @@ git worktree remove .claude/worktrees/<name>
 `npm run lint`, `npm test`, `npm run test:integration`) rodam localmente
 com o symlink em pé.
 
-### `gen:all` no-diff em PRs cosméticos
+### `gen:all` obrigatório quando `.agents/skills/**` muda
 
-Quando o PR não toca `prisma/`, `src/lib/blocks/`, `src/lib/tools/`, ou
-similares que afetam manifests gerados, `npm run gen:all` produz no-diff.
+**Regra:** qualquer PR que adiciona ou modifica um arquivo em `.agents/skills/**`
+**deve** rodar `npm run gen:all` e commitar o diff antes do push. O CI gate
+"Handbook Generated Artifacts / freshness" falha se os artefatos gerados
+estiverem desatualizados.
+
+```bash
+# No worktree (node_modules symlink em pé):
+npm run gen:all
+git add mcp/generated/manifest.json   # geralmente o único arquivo que muda
+git commit -m "chore(gen): regenerate mcp/generated/manifest.json after SKILL update"
+git push origin feat/<name>
+```
+
+**Por que só o manifest.json muda?** `build-mcp-manifest.ts` emite um campo
+`last_updated` com a data atual. Os outros scripts (`xrefmap`, `glossary`,
+`search-index`, `llms-txt`) são determinísticos em relação ao conteúdo de
+`docs/handbook/` — produzem no-diff quando apenas skills mudam.
+
+**Quando produz no-diff total** — PR que não toca `.agents/skills/**`, `prisma/`,
+`src/lib/blocks/`, `src/lib/tools/`, ou `docs/handbook/`. Neste caso `gen:all`
+não precisa ser commitado, mas ainda deve ser rodado para confirmar o no-diff.
 
 **Anchor proativo necessário mesmo assim** — path-filter no CI só dispara
 `freshness` + `validate` quando há mudança em `.agents/skills/**` (ou
@@ -404,6 +423,36 @@ mesmo com X presente no `.env`. Erro confunde porque o app Next funciona.
 
 Padrão de referência: `prisma/seeds/seed-ledger.ts`. Cravado na
 Sub-etapa 10.0.1 após hotfix do `seed-recharge-integration.ts`.
+
+### Column-drop hotfix pattern (v1.2.27 — Sub-etapa 20.1)
+
+When a Prisma migration **drops a column**, the shared `node_modules` Prisma
+client regenerates immediately. Any file in the MAIN repo that references the
+dropped field breaks at TypeScript build time — even before the PR merges.
+
+**Pattern:** apply hotfix commits directly to main before the PR lands.
+
+Files to audit after a column drop (run from main repo root):
+
+```bash
+grep -rn "<droppedField>" src/ prisma/ --include="*.ts" --include="*.tsx"
+```
+
+Common culprits:
+- `src/lib/auth.ts` — admin shortcut block referencing the field
+- `src/lib/auth/resolve-*.ts` — dual-read fallback using the field
+- `prisma/seeds/*.ts` — seed/backfill scripts filtering or writing the field
+- `src/lib/tenancy/__tests__/backfill-state.integration.test.ts` — invariant
+  assertions that reference the dropped relation
+
+**Build gate:** always run `npm run build` from the MAIN repo (not the worktree)
+to catch these breaks before creating the PR. The build includes `tsc` over
+seed files and integration tests that `vitest run` does not cover.
+
+**Precedent:** Sub-etapa 20 (dropped `Organization.ownerId @unique`) and
+Sub-etapa 20.1 (dropped `Organization.ownerId` column entirely) both required
+main-repo hotfixes to `auth.ts`, `resolve-active-org.ts`,
+`backfill-organizations.ts`, and `backfill-state.integration.test.ts`.
 
 ## How to update
 

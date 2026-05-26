@@ -9,25 +9,12 @@ const baseClient = new PrismaClient({ adapter: new PrismaPg(connectionString) })
 
 const TEST_PREFIX = `test-resolve-org-${Date.now()}`;
 
-let profileOwner: { id: string };
 let profileMemberOnly: { id: string };
 let profileNoOrg: { id: string };
-let orgViaOwner: { id: string };
 let orgViaMembership: { id: string };
 
 beforeAll(async () => {
-  // Profile 1: has org via ownerId (fallback path) — no Membership row
-  profileOwner = await baseClient.networkProfile.create({
-    data: {
-      firstName: "Owner",
-      lastName: "Test",
-      email: `${TEST_PREFIX}-owner@example.com`,
-      status: "ACTIVE",
-    },
-    select: { id: true },
-  });
-
-  // Profile 2: has org via Membership only (primary path) — no ownerId org
+  // Profile 1: has org via Membership (primary path)
   profileMemberOnly = await baseClient.networkProfile.create({
     data: {
       firstName: "MemberOnly",
@@ -38,7 +25,7 @@ beforeAll(async () => {
     select: { id: true },
   });
 
-  // Profile 3: no org at all
+  // Profile 2: no org at all
   profileNoOrg = await baseClient.networkProfile.create({
     data: {
       firstName: "NoOrg",
@@ -49,18 +36,7 @@ beforeAll(async () => {
     select: { id: true },
   });
 
-  // Org owned by profileOwner (no Membership row created — tests fallback)
-  orgViaOwner = await baseClient.organization.create({
-    data: {
-      ownerId: profileOwner.id,
-      slug: `${TEST_PREFIX}-owner-org`,
-      subdomain: `${TEST_PREFIX}-owner-org`,
-      name: "Owner Org",
-    },
-    select: { id: true },
-  });
-
-  // Org for Membership primary path (owned by nobody)
+  // Org for Membership primary path
   orgViaMembership = await baseClient.organization.create({
     data: {
       slug: `${TEST_PREFIX}-member-org`,
@@ -86,10 +62,10 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await baseClient.organization.deleteMany({
-    where: { id: { in: [orgViaOwner.id, orgViaMembership.id] } },
+    where: { id: orgViaMembership.id },
   });
   await baseClient.networkProfile.deleteMany({
-    where: { id: { in: [profileOwner.id, profileMemberOnly.id, profileNoOrg.id] } },
+    where: { id: { in: [profileMemberOnly.id, profileNoOrg.id] } },
   });
   await baseClient.$disconnect();
 });
@@ -100,12 +76,7 @@ describe("resolveActiveOrgIdForProfile (integration)", () => {
     expect(result).toBe(orgViaMembership.id);
   });
 
-  it("fallback path: returns Organization id when profile owns via ownerId (no Membership)", async () => {
-    const result = await resolveActiveOrgIdForProfile(profileOwner.id);
-    expect(result).toBe(orgViaOwner.id);
-  });
-
-  it("returns null when profile has no Organization and no Membership", async () => {
+  it("returns null when profile has no Membership", async () => {
     const result = await resolveActiveOrgIdForProfile(profileNoOrg.id);
     expect(result).toBeNull();
   });

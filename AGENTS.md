@@ -133,23 +133,31 @@ error shape (`{ error: string, details?: unknown }`).
 
 **Sub-etapa 20 — Membership foundation landed.** `OrganizationMember`,
 `MembershipRole`, and `OrganizationInvitation` tables exist. `NetworkProfile.isSuperAdmin`
-boolean flag added (DB-backed dual-check alongside env check). `Organization.ownerId`
-is now nullable (dropped `@unique`). Pending Sub-etapa 20.1: drop `ownerId` column
-and `email @unique`. Pending Sub-etapa 21: permissions helpers. Pending Sub-etapa 24:
-invitation flow UI/API.
+boolean flag added (DB-backed dual-check alongside env check).
+
+**Sub-etapa 20.1 — `Organization.ownerId` dropped.** Column `owner_id` removed from
+`organizations` table. Ownership is now exclusively via `OrganizationMember` rows.
+`resolveActiveOrgIdForProfile` is primary-only (Membership lookup). Backfill invariant:
+every real `NetworkProfile` has at least one active `OrganizationMember`. Pending
+Sub-etapa 21: permissions helpers. Pending Sub-etapa 24: invitation flow UI/API.
 
 `requireSuperAdmin` dual-check (Sub-etapa 20): session `role === "super_admin"` (primary)
 OR `networkProfile.isSuperAdmin === true` DB fallback. Both paths return the session.
 
-`resolveActiveOrgIdForProfile` dual-read (Sub-etapa 20): Membership lookup primary
-(`organizationMember.findFirst` by `networkProfileId + status ACTIVE`), `organization.findFirst`
-by `ownerId` fallback. Drop fallback in Sub-etapa 20.1 once ownerId column is removed.
+`resolveActiveOrgIdForProfile` (Sub-etapa 20.1): primary-only via
+`organizationMember.findFirst` by `networkProfileId + status ACTIVE`. ownerId fallback
+removed post-validation.
 
 **Hotfix cravado (Sub-etapa 20):** When a migration drops a `@unique` constraint, the
 Prisma client is regenerated immediately (shared `node_modules` in worktree setup).
 Any `findUnique` using that field anywhere in the codebase — including the MAIN repo —
 breaks at runtime even before the PR merges. Apply compatible code changes to main
 directly as a hotfix; do not wait for the PR.
+
+**Hotfix pattern extended (Sub-etapa 20.1):** When a column is dropped, the Prisma
+client immediately rejects any reference to it — including in seed files, integration
+tests, and auth helpers in the MAIN repo. The same hotfix-to-main pattern applies:
+update all references in main before the PR merges, or build will fail.
 
 ### Status Camada 1 Sub-etapa 3.5
 
@@ -1623,6 +1631,7 @@ revisitar.
 - **L7 cravado durante Camada 2:** `npm run build` local obrigatório
   para PRs tocando route handlers (Cache Components quirk).
 - **practice-housekeeping-git v1.2.8 → v1.2.11** (4 anchors em Camada 2).
+- **practice-housekeeping-git v1.2.27** (Sub-etapa 20.1) — column-drop hotfix pattern: when a column is dropped, the shared Prisma client regenerates immediately and any main-repo file referencing the field breaks at build time. Audit + hotfix main before PR merges.
 
 **Tech debt rastreado pós-Camada 2:**
 
