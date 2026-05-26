@@ -50,30 +50,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             });
           }
 
-          // Ensure OrganizationMember + OWNER role exists (idempotent)
-          const org = await prisma.organization.findFirst({
-            where: { ownerId: user.id },
-            select: { id: true },
-          });
-          if (org) {
-            const existing = await prisma.organizationMember.findUnique({
-              where: {
-                organizationId_networkProfileId: {
-                  organizationId: org.id,
-                  networkProfileId: user.id,
-                },
-              },
-              select: { id: true },
-            });
-            if (!existing) {
-              const member = await prisma.organizationMember.create({
-                data: { organizationId: org.id, networkProfileId: user.id },
-              });
-              await prisma.membershipRole.create({
-                data: { memberId: member.id, role: "OWNER", scopeType: "ORG" },
-              });
-            }
-          }
+          // OrganizationMember rows are guaranteed by Sub-etapa 20 backfill.
+          // ownerId column dropped in Sub-etapa 20.1 — no migration needed here.
 
           await prisma.networkProfile.update({
             where: { id: user.id },

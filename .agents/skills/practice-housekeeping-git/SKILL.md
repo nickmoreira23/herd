@@ -405,6 +405,36 @@ mesmo com X presente no `.env`. Erro confunde porque o app Next funciona.
 Padrão de referência: `prisma/seeds/seed-ledger.ts`. Cravado na
 Sub-etapa 10.0.1 após hotfix do `seed-recharge-integration.ts`.
 
+### Column-drop hotfix pattern (v1.2.27 — Sub-etapa 20.1)
+
+When a Prisma migration **drops a column**, the shared `node_modules` Prisma
+client regenerates immediately. Any file in the MAIN repo that references the
+dropped field breaks at TypeScript build time — even before the PR merges.
+
+**Pattern:** apply hotfix commits directly to main before the PR lands.
+
+Files to audit after a column drop (run from main repo root):
+
+```bash
+grep -rn "<droppedField>" src/ prisma/ --include="*.ts" --include="*.tsx"
+```
+
+Common culprits:
+- `src/lib/auth.ts` — admin shortcut block referencing the field
+- `src/lib/auth/resolve-*.ts` — dual-read fallback using the field
+- `prisma/seeds/*.ts` — seed/backfill scripts filtering or writing the field
+- `src/lib/tenancy/__tests__/backfill-state.integration.test.ts` — invariant
+  assertions that reference the dropped relation
+
+**Build gate:** always run `npm run build` from the MAIN repo (not the worktree)
+to catch these breaks before creating the PR. The build includes `tsc` over
+seed files and integration tests that `vitest run` does not cover.
+
+**Precedent:** Sub-etapa 20 (dropped `Organization.ownerId @unique`) and
+Sub-etapa 20.1 (dropped `Organization.ownerId` column entirely) both required
+main-repo hotfixes to `auth.ts`, `resolve-active-org.ts`,
+`backfill-organizations.ts`, and `backfill-state.integration.test.ts`.
+
 ## How to update
 
 Adicione novos pitfalls ou padrões descobertos em sub-etapas futuras (0.4 reconciliação Camada 1, sub-etapas da Fase 1+). Bump `version` (minor) quando adicionar padrão novo. Bump `version` (major) quando estrutura das 3 fases mudar materialmente.

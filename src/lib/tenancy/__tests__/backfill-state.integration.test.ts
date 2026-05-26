@@ -7,8 +7,8 @@ const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL;
 if (!connectionString) throw new Error("DATABASE_URL or DIRECT_URL required");
 const prisma = new PrismaClient({ adapter: new PrismaPg(connectionString) });
 
-// Picks up Test A deferred from Sub-etapa 1: every NetworkProfile has exactly
-// one Organization (the post-backfill 1:1 invariant the backfill seed claims).
+// Post Sub-etapa 20.1: ownership is via OrganizationMember (ownerId column dropped).
+// Invariant: every real NetworkProfile has at least one active OrganizationMember.
 describe("Backfill 1:1 invariant — NetworkProfile ↔ Organization (integration)", () => {
   afterAll(async () => prisma.$disconnect());
 
@@ -16,17 +16,14 @@ describe("Backfill 1:1 invariant — NetworkProfile ↔ Organization (integratio
   // assertion reflects the production backfill invariant, not transient test seed.
   const realFilter = { email: { not: { startsWith: "test-" } } };
 
-  it("each real NetworkProfile owns exactly one Organization", async () => {
-    const profileCount = await prisma.networkProfile.count({ where: realFilter });
-    const orgs = await prisma.organization.findMany({
-      where: { owner: realFilter },
-      select: { id: true },
-    });
+  it("each real NetworkProfile has at least one active OrganizationMember", async () => {
     const orphans = await prisma.networkProfile.count({
-      where: { ...realFilter, ownedOrganizations: { none: {} } },
+      where: {
+        ...realFilter,
+        organizationMemberships: { none: { status: "ACTIVE" } },
+      },
     });
 
-    expect(profileCount).toBe(orgs.length);
     expect(orphans).toBe(0);
   });
 
