@@ -139,7 +139,16 @@ boolean flag added (DB-backed dual-check alongside env check).
 `organizations` table. Ownership is now exclusively via `OrganizationMember` rows.
 `resolveActiveOrgIdForProfile` is primary-only (Membership lookup). Backfill invariant:
 every real `NetworkProfile` has at least one active `OrganizationMember`. Pending
-Sub-etapa 21: permissions helpers. Pending Sub-etapa 24: invitation flow UI/API.
+Sub-etapa 24: invitation flow UI/API.
+
+**Sub-etapa 21 — Permissions + RBAC foundation landed.** `src/lib/permissions/` module
+delivered: `types.ts` (Actor, Permission, ResourceType, ActionType), `role-permissions.ts`
+(`ROLE_PERMISSIONS` hardcoded V1 — tech debt: DB-driven RolePermission table post-Fase 4),
+`can()` pure function (super_admin bypass, org-scoped, dept-scoped), `getActor()` per-request
+DB lookup (no JWT caching), `requireOrgRole()` route guard (same Session|Response shape as
+`requireSuperAdmin`). 7 routes migrated: departments (list, tree, [id] CRUD, members),
+locations (list, [id] CRUD), org-chart/internal. 6 integration routes intentionally keep
+`requireSuperAdmin` (platform-level). 17 unit tests added.
 
 `requireSuperAdmin` dual-check (Sub-etapa 20): session `role === "super_admin"` (primary)
 OR `networkProfile.isSuperAdmin === true` DB fallback. Both paths return the session.

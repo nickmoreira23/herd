@@ -454,6 +454,20 @@ Sub-etapa 20.1 (dropped `Organization.ownerId` column entirely) both required
 main-repo hotfixes to `auth.ts`, `resolve-active-org.ts`,
 `backfill-organizations.ts`, and `backfill-state.integration.test.ts`.
 
+### requireOrgRole migration pattern (v1.2.28 — Sub-etapa 21)
+
+When migrating route handlers from `requireSuperAdmin` to `requireOrgRole`:
+
+1. **Import swap** — replace `@/lib/auth/require-super-admin` with `@/lib/permissions`.
+2. **Per-method role list** — each HTTP method gets its own role list:
+   - Read-only (GET): `["OWNER", "ADMIN", "MEMBER"]`
+   - Write/Admin (POST, PATCH, DELETE): `["OWNER", "ADMIN"]`
+3. **Return shape is identical** — `Session | Response`; the `if (sessionOrResponse instanceof Response) return sessionOrResponse` guard is unchanged.
+4. **Do NOT migrate integration routes** — `src/app/api/integrations/**` stays `requireSuperAdmin` (platform-level, not org-scoped).
+
+**Tech debt:** `ROLE_PERMISSIONS` in `src/lib/permissions/role-permissions.ts` is
+hardcoded V1. Trigger to make DB-driven: Fase 4 adds custom org roles.
+
 ## How to update
 
 Adicione novos pitfalls ou padrões descobertos em sub-etapas futuras (0.4 reconciliação Camada 1, sub-etapas da Fase 1+). Bump `version` (minor) quando adicionar padrão novo. Bump `version` (major) quando estrutura das 3 fases mudar materialmente.
