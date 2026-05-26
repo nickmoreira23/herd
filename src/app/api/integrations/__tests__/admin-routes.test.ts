@@ -22,6 +22,7 @@ vi.mock("@/lib/auth", () => ({
 // ── Mock @/lib/prisma so no DB connection is required ────────────────────────
 vi.mock("@/lib/prisma", () => ({
   prisma: {
+    networkProfile: { findUnique: vi.fn().mockResolvedValue({ isSuperAdmin: false }) },
     integration: { findUnique: vi.fn() },
     integrationSyncLog: { findMany: vi.fn(), count: vi.fn(), create: vi.fn() },
     integrationTierMapping: { findMany: vi.fn(), create: vi.fn(), delete: vi.fn() },

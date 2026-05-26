@@ -12,7 +12,7 @@ const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const profiles = await prisma.networkProfile.findMany({
-    where: { ownedOrganization: null },
+    where: { ownedOrganizations: { none: {} } },
     select: { id: true, email: true },
   });
 
@@ -20,6 +20,7 @@ async function main() {
 
   let created = 0;
   let collisionsResolved = 0;
+  let membershipsCreated = 0;
 
   for (const profile of profiles) {
     if (!profile.email) {
@@ -41,7 +42,7 @@ async function main() {
 
     organizationSlugSchema.parse(slug);
 
-    await prisma.organization.create({
+    const org = await prisma.organization.create({
       data: {
         ownerId: profile.id,
         slug,
@@ -52,9 +53,39 @@ async function main() {
 
     created++;
     console.log(JSON.stringify({ profileId: profile.id, email: profile.email, slug, action: "created" }));
+
+    // Create Membership + OWNER role (Sub-etapa 20)
+    const member = await prisma.organizationMember.create({
+      data: { organizationId: org.id, networkProfileId: profile.id },
+    });
+    await prisma.membershipRole.create({
+      data: { memberId: member.id, role: "OWNER", scopeType: "ORG" },
+    });
+    membershipsCreated++;
   }
 
-  console.log(`Done. Created: ${created}. Collisions resolved: ${collisionsResolved}.`);
+  // Backfill Membership for profiles that already have an org but no Membership row
+  const orgsWithoutMembership = await prisma.organization.findMany({
+    where: {
+      ownerId: { not: null },
+      members: { none: {} },
+    },
+    select: { id: true, ownerId: true },
+  });
+
+  for (const org of orgsWithoutMembership) {
+    if (!org.ownerId) continue;
+    const member = await prisma.organizationMember.create({
+      data: { organizationId: org.id, networkProfileId: org.ownerId },
+    });
+    await prisma.membershipRole.create({
+      data: { memberId: member.id, role: "OWNER", scopeType: "ORG" },
+    });
+    membershipsCreated++;
+    console.log(JSON.stringify({ orgId: org.id, ownerId: org.ownerId, action: "membership_backfilled" }));
+  }
+
+  console.log(`Done. Created: ${created}. Collisions resolved: ${collisionsResolved}. Memberships: ${membershipsCreated}.`);
 }
 
 main()
