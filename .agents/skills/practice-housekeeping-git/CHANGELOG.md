@@ -2,6 +2,26 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.29 — 2026-05-26
+
+Anchor Sub-etapa 22 V2: Domain routing minimal foundation.
+`middleware.ts` → `proxy.ts` (Node runtime — Prisma compatible; Edge runtime cannot
+load pg). `org-resolver.ts` with customDomain primary + subdomain fallback. Headers
+`x-org-id`, `x-host`, `x-is-apex` injected. `trustHost: true` + explicit `secret`
+in Auth.js (MissingSecret hotfix).
+
+Rollback Sub-etapa 22 V1: escopo ambicioso (cookie domain + apex redirect + org
+selector) caused 3 smoke bugs (auth server error, redirect loops). Replan V2 cravou
+foundation only. Features tracked to Sub-etapas 22.1 + 22.2.
+
+Lessons cravadas:
+- `middleware.ts` = Edge runtime; `proxy.ts` = Node runtime. Any proxy touching DB
+  must use `proxy.ts`.
+- `trustHost: true` requires explicit `secret:` in NextAuth config; without it,
+  Auth.js v5 raises MissingSecret on the first request.
+- `npm install` real in worktree — NOT symlink. Turbopack 16 rejects cross-filesystem
+  symlinks (`ln -s node_modules` pattern from pre-v16 worktrees is broken).
+
 ## 1.2.26 — 2026-05-26
 
 Anchor Sub-etapa 20: OrganizationMember + MembershipRole + OrganizationInvitation

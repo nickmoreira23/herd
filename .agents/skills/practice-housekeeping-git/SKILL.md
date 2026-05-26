@@ -3,8 +3,8 @@ name: practice-housekeeping-git
 description: Workflow para limpeza de branches git em lote com preservação histórica. Use quando o repo acumular branches órfãs, stacks de trabalho mergeado, sub-agent scratch branches, ou fragmentação que dificulte navegação. Aplicado na Fase 0 do Plano Central ComeçaAI (Sub-etapas 0.3a, 0.3b, 0.3c, 0.3d.1, 0.3d.2 — 47 branches deletadas, 48 tags archive criadas).
 license: Apache-2.0
 title: Git Housekeeping — Archive + Batch Delete
-version: "1.1"
-last_updated: "2026-05-15"
+version: "1.2.29"
+last_updated: "2026-05-26"
 status: stable
 metadata:
   herd:

@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import {
   isSupportedLocale,
   normalizeLocale,
   DEFAULT_LOCALE,
 } from "@/lib/i18n/locales";
+import { resolveOrgByHost, isApexDomain } from "@/lib/tenant/org-resolver";
 
 // Surfaces públicas que devem ter prefixo de locale na URL.
 // Admin/api/auth ficam flat (cookie resolve).
@@ -16,18 +16,45 @@ function isPublicLocaleRoute(pathname: string): boolean {
   );
 }
 
-function extractLocaleFromPath(pathname: string): { locale: string; rest: string } | null {
+function extractLocaleFromPath(
+  pathname: string,
+): { locale: string; rest: string } | null {
   const match = pathname.match(/^\/([a-z]{2}-[A-Z]{2})(\/.*)?$/);
   if (!match) return null;
   return { locale: match[1], rest: match[2] ?? "/" };
 }
 
-export function middleware(request: NextRequest) {
+/**
+ * CRAVADO Sub-etapa 22 V2:
+ * - Node runtime (via proxy.ts) — Prisma/pg compatible.
+ * - Resolves tenant via host header.
+ * - Injects x-org-id, x-host, x-is-apex headers.
+ * - Preserves auth gate + locale handling from the former middleware.ts.
+ *
+ * V2 does NOT include:
+ * - Redirect when subdomain is invalid → Sub-etapa 22.1.
+ * - Cookie domain config → Sub-etapa 22.1.
+ * - Apex auto-redirect / org selector → Sub-etapa 22.2.
+ */
+export async function proxy(request: NextRequest) {
+  const host = request.headers.get("host") ?? "";
+  const hostname = host.split(":")[0].toLowerCase();
   const { pathname } = request.nextUrl;
 
-  // ───────────────────────────────────────────────────────────
-  // Auth gate (preserved from before): protect /admin, redirect login.
-  // ───────────────────────────────────────────────────────────
+  // ─── 1. Tenant resolution ────────────────────────────────────────────
+  const orgId = await resolveOrgByHost(host);
+  const isApex = isApexDomain(hostname);
+
+  // Build base request headers forwarded to all subsequent branches.
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", pathname);
+  if (orgId) requestHeaders.set("x-org-id", orgId);
+  requestHeaders.set("x-host", hostname);
+  requestHeaders.set("x-is-apex", String(isApex));
+  const localeOverride = request.nextUrl.searchParams.get("locale");
+  if (localeOverride) requestHeaders.set("x-locale-override", localeOverride);
+
+  // ─── 2. Auth gate (preserved) ────────────────────────────────────────
   const sessionToken =
     request.cookies.get("authjs.session-token")?.value ||
     request.cookies.get("__Secure-authjs.session-token")?.value;
@@ -40,10 +67,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/admin", request.url));
   }
 
-  // ───────────────────────────────────────────────────────────
-  // Public route locale handling — only for the 4 public surfaces.
-  // Admin/api/auth/internal pass through without locale rewriting.
-  // ───────────────────────────────────────────────────────────
+  // ─── 3. Public route locale handling (preserved) ─────────────────────
   const extracted = extractLocaleFromPath(pathname);
   const restAfterLocale = extracted ? extracted.rest : pathname;
   const isPublic = isPublicLocaleRoute(restAfterLocale);
@@ -59,11 +83,6 @@ export function middleware(request: NextRequest) {
 
     // Valid prefix — sync cookie if it differs from URL, then forward.
     const cookieLocale = request.cookies.get("locale")?.value;
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set("x-pathname", pathname);
-    const localeOverride = request.nextUrl.searchParams.get("locale");
-    if (localeOverride) requestHeaders.set("x-locale-override", localeOverride);
-
     const res = NextResponse.next({ request: { headers: requestHeaders } });
     if (cookieLocale !== extracted.locale) {
       res.cookies.set("locale", extracted.locale, {
@@ -95,14 +114,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 308);
   }
 
-  // ───────────────────────────────────────────────────────────
-  // Default path (admin, api, login, etc.): forward x-pathname and
-  // x-locale-override headers as before.
-  // ───────────────────────────────────────────────────────────
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-pathname", pathname);
-  const localeOverride = request.nextUrl.searchParams.get("locale");
-  if (localeOverride) requestHeaders.set("x-locale-override", localeOverride);
+  // ─── 4. Default path — forward enriched headers ───────────────────────
   return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
@@ -112,9 +124,11 @@ export const config = {
     "/login",
     // Public surfaces (with or without locale prefix).
     "/p/:path*",
+    "/f/:path*", // CRAVADO Sub-etapa 22 V2 — fix dead matcher
     "/explore/:path*",
     "/shared/:path*",
     "/:locale/p/:path*",
+    "/:locale/f/:path*", // CRAVADO Sub-etapa 22 V2
     "/:locale/explore/:path*",
     "/:locale/shared/:path*",
   ],
