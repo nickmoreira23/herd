@@ -2,11 +2,11 @@ import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError, parseAndValidate } from "@/lib/api-utils";
 import { createLocationSchema } from "@/lib/validators/locations";
 import type { Prisma } from "@prisma/client";
-import { requireSuperAdmin } from "@/lib/auth/require-super-admin";
+import { requireOrgRole } from "@/lib/permissions";
 import { withTenant } from "@/lib/tenancy/context";
 
 export async function GET(request: Request) {
-  const sessionOrResponse = await requireSuperAdmin();
+  const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN", "MEMBER"]);
   if (sessionOrResponse instanceof Response) return sessionOrResponse;
   const session = sessionOrResponse;
 
@@ -52,7 +52,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const sessionOrResponse = await requireSuperAdmin();
+  const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN"]);
   if (sessionOrResponse instanceof Response) return sessionOrResponse;
   const session = sessionOrResponse;
 
