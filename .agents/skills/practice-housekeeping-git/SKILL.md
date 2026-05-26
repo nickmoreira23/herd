@@ -355,10 +355,29 @@ git worktree remove .claude/worktrees/<name>
 `npm run lint`, `npm test`, `npm run test:integration`) rodam localmente
 com o symlink em pé.
 
-### `gen:all` no-diff em PRs cosméticos
+### `gen:all` obrigatório quando `.agents/skills/**` muda
 
-Quando o PR não toca `prisma/`, `src/lib/blocks/`, `src/lib/tools/`, ou
-similares que afetam manifests gerados, `npm run gen:all` produz no-diff.
+**Regra:** qualquer PR que adiciona ou modifica um arquivo em `.agents/skills/**`
+**deve** rodar `npm run gen:all` e commitar o diff antes do push. O CI gate
+"Handbook Generated Artifacts / freshness" falha se os artefatos gerados
+estiverem desatualizados.
+
+```bash
+# No worktree (node_modules symlink em pé):
+npm run gen:all
+git add mcp/generated/manifest.json   # geralmente o único arquivo que muda
+git commit -m "chore(gen): regenerate mcp/generated/manifest.json after SKILL update"
+git push origin feat/<name>
+```
+
+**Por que só o manifest.json muda?** `build-mcp-manifest.ts` emite um campo
+`last_updated` com a data atual. Os outros scripts (`xrefmap`, `glossary`,
+`search-index`, `llms-txt`) são determinísticos em relação ao conteúdo de
+`docs/handbook/` — produzem no-diff quando apenas skills mudam.
+
+**Quando produz no-diff total** — PR que não toca `.agents/skills/**`, `prisma/`,
+`src/lib/blocks/`, `src/lib/tools/`, ou `docs/handbook/`. Neste caso `gen:all`
+não precisa ser commitado, mas ainda deve ser rodado para confirmar o no-diff.
 
 **Anchor proativo necessário mesmo assim** — path-filter no CI só dispara
 `freshness` + `validate` quando há mudança em `.agents/skills/**` (ou
