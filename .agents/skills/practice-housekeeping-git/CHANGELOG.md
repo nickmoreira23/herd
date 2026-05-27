@@ -2,6 +2,14 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## v1.2.33 — 2026-05-27
+
+- Anchor Sub-etapa 22.1.3: cleanup artefatos Cloudflare órfãos.
+  PR #73 squash trouxe open-next.config.ts, wrangler.toml, build:workers script,
+  e @opennextjs/cloudflare dependency mesmo após branch rejection (Opção A).
+  tsc --noEmit falhava em open-next.config.ts por pkg não instalado.
+  Hotfix remove artefatos. Gates verdes. Bloqueador Sub-etapa 22.2 resolvido.
+
 ## 1.2.32 — 2026-05-27
 
 Hotfix Sub-etapa 22.1.1: DEV TLD changed from .localhost to lvh.me.
