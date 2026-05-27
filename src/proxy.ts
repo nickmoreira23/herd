@@ -4,11 +4,13 @@ import {
   normalizeLocale,
   DEFAULT_LOCALE,
 } from "@/lib/i18n/locales";
-import {
-  resolveOrgByHost,
-  isApexDomain,
-  extractSubdomain,
-} from "@/lib/tenant/org-resolver";
+// Import only pure hostname utilities — no Prisma — so this file remains
+// edge-compatible for Cloudflare Workers builds (OpenNext rejects Node.js
+// middleware). Org resolution (resolveOrgByHost) is deferred to route handlers
+// via getOrgIdFromRequest() which reads x-host and does the DB lookup in
+// Node.js context (Railway/standalone) or returns null (Workers/edge).
+// Tech debt: replace with Cloudflare KV lookup when Workers is production target.
+import { isApexDomain } from "@/lib/tenant/hostname";
 
 // Surfaces públicas que devem ter prefixo de locale na URL.
 // Admin/api/auth ficam flat (cookie resolve).
@@ -33,20 +35,23 @@ function extractLocaleFromPath(
 // (per-hostname isolation). Set in .env for DEV, Railway env vars for PROD.
 const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN ?? undefined;
 
-// APEX_HOST env var (Sub-etapa 22.1): destination when an invalid subdomain is
-// detected (no active org found). DEV: localhost. PROD: comecaai.com.br.
-const APEX_HOST = process.env.APEX_HOST ?? "localhost";
-
 /**
- * CRAVADO Sub-etapa 22 V2:
- * - Node runtime (via proxy.ts) — Prisma/pg compatible.
+ * CRAVADO Sub-etapa 22 V2 (originally):
  * - Resolves tenant via host header.
- * - Injects x-org-id, x-host, x-is-apex headers.
+ * - Injects x-host, x-is-apex headers.
  * - Preserves auth gate + locale handling from the former middleware.ts.
  *
  * CRAVADO Sub-etapa 22.1:
- * - Redirect invalid subdomain (no active org) → apex with ?error=org_not_found.
  * - Locale cookie sets COOKIE_DOMAIN for cross-subdomain persistence.
+ *
+ * Workers-compat refactor (fix/sub-22-1-2-login-server-action):
+ * - Removed resolveOrgByHost (Prisma/Node.js only) from this file so the
+ *   proxy remains edge-compatible for OpenNext Cloudflare builds.
+ * - x-org-id is now resolved lazily in getOrgIdFromRequest() from x-host
+ *   in Node.js route handler context (Railway). Workers deployments fall
+ *   back to session.user.activeOrgId via requireOrgRole JWT fallback.
+ * - Invalid-subdomain redirect removed (required DB lookup).
+ *   Tech debt: restore via Cloudflare KV edge lookup (org-resolver.ts).
  *
  * Does NOT include:
  * - Apex auto-redirect / org selector → Sub-etapa 22.2.
@@ -56,29 +61,18 @@ export async function proxy(request: NextRequest) {
   const hostname = host.split(":")[0].toLowerCase();
   const { pathname } = request.nextUrl;
 
-  // ─── 1. Tenant resolution ────────────────────────────────────────────
-  const orgId = await resolveOrgByHost(host);
+  // ─── 1. Host/apex detection (edge-compatible, no DB) ─────────────────
+  // Note: x-org-id is NOT injected here. Org resolution (resolveOrgByHost)
+  // requires Prisma (Node.js only) and is deferred to getOrgIdFromRequest()
+  // which reads x-host and calls the DB in Node.js route handler context.
+  // See: src/lib/tenant/get-org-from-request.ts
+  // Tech debt: inject x-org-id here once Cloudflare KV replaces Prisma for
+  // edge-compatible tenant resolution (org-resolver.ts comment).
   const isApex = isApexDomain(hostname);
-
-  // ─── 1a. Invalid subdomain redirect (Sub-etapa 22.1) ─────────────────
-  // If the hostname has a subdomain (not apex) but resolves to no active org,
-  // redirect to the apex with an error query param so the apex can surface a
-  // user-facing message. The UI banner for ?error=org_not_found is Sub-etapa 22.2.
-  if (!isApex && !orgId) {
-    const subdomain = extractSubdomain(hostname);
-    if (subdomain) {
-      const apexUrl = request.nextUrl.clone();
-      apexUrl.hostname = APEX_HOST;
-      apexUrl.pathname = "/";
-      apexUrl.search = "?error=org_not_found";
-      return NextResponse.redirect(apexUrl, 302);
-    }
-  }
 
   // Build base request headers forwarded to all subsequent branches.
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-pathname", pathname);
-  if (orgId) requestHeaders.set("x-org-id", orgId);
   requestHeaders.set("x-host", hostname);
   requestHeaders.set("x-is-apex", String(isApex));
   const localeOverride = request.nextUrl.searchParams.get("locale");
