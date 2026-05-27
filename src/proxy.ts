@@ -4,7 +4,11 @@ import {
   normalizeLocale,
   DEFAULT_LOCALE,
 } from "@/lib/i18n/locales";
-import { resolveOrgByHost, isApexDomain } from "@/lib/tenant/org-resolver";
+import {
+  resolveOrgByHost,
+  isApexDomain,
+  extractSubdomain,
+} from "@/lib/tenant/org-resolver";
 
 // Surfaces públicas que devem ter prefixo de locale na URL.
 // Admin/api/auth ficam flat (cookie resolve).
@@ -24,6 +28,15 @@ function extractLocaleFromPath(
   return { locale: match[1], rest: match[2] ?? "/" };
 }
 
+// COOKIE_DOMAIN env var (Sub-etapa 22.1): leading dot enables sharing across
+// subdomains (e.g. .localhost or .comecaai.com.br). Undefined = browser default
+// (per-hostname isolation). Set in .env for DEV, Railway env vars for PROD.
+const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN ?? undefined;
+
+// APEX_HOST env var (Sub-etapa 22.1): destination when an invalid subdomain is
+// detected (no active org found). DEV: localhost. PROD: comecaai.com.br.
+const APEX_HOST = process.env.APEX_HOST ?? "localhost";
+
 /**
  * CRAVADO Sub-etapa 22 V2:
  * - Node runtime (via proxy.ts) — Prisma/pg compatible.
@@ -31,9 +44,11 @@ function extractLocaleFromPath(
  * - Injects x-org-id, x-host, x-is-apex headers.
  * - Preserves auth gate + locale handling from the former middleware.ts.
  *
- * V2 does NOT include:
- * - Redirect when subdomain is invalid → Sub-etapa 22.1.
- * - Cookie domain config → Sub-etapa 22.1.
+ * CRAVADO Sub-etapa 22.1:
+ * - Redirect invalid subdomain (no active org) → apex with ?error=org_not_found.
+ * - Locale cookie sets COOKIE_DOMAIN for cross-subdomain persistence.
+ *
+ * Does NOT include:
  * - Apex auto-redirect / org selector → Sub-etapa 22.2.
  */
 export async function proxy(request: NextRequest) {
@@ -44,6 +59,21 @@ export async function proxy(request: NextRequest) {
   // ─── 1. Tenant resolution ────────────────────────────────────────────
   const orgId = await resolveOrgByHost(host);
   const isApex = isApexDomain(hostname);
+
+  // ─── 1a. Invalid subdomain redirect (Sub-etapa 22.1) ─────────────────
+  // If the hostname has a subdomain (not apex) but resolves to no active org,
+  // redirect to the apex with an error query param so the apex can surface a
+  // user-facing message. The UI banner for ?error=org_not_found is Sub-etapa 22.2.
+  if (!isApex && !orgId) {
+    const subdomain = extractSubdomain(hostname);
+    if (subdomain) {
+      const apexUrl = request.nextUrl.clone();
+      apexUrl.hostname = APEX_HOST;
+      apexUrl.pathname = "/";
+      apexUrl.search = "?error=org_not_found";
+      return NextResponse.redirect(apexUrl, 302);
+    }
+  }
 
   // Build base request headers forwarded to all subsequent branches.
   const requestHeaders = new Headers(request.headers);
@@ -85,11 +115,13 @@ export async function proxy(request: NextRequest) {
     const cookieLocale = request.cookies.get("locale")?.value;
     const res = NextResponse.next({ request: { headers: requestHeaders } });
     if (cookieLocale !== extracted.locale) {
+      // Sub-etapa 22.1: locale cookie uses COOKIE_DOMAIN for cross-subdomain sharing.
       res.cookies.set("locale", extracted.locale, {
         maxAge: 60 * 60 * 24 * 365,
         path: "/",
         sameSite: "lax",
         httpOnly: false,
+        domain: COOKIE_DOMAIN,
       });
     }
     return res;
