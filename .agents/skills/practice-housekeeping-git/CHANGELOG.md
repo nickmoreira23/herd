@@ -2,6 +2,21 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.32 — 2026-05-27
+
+Hotfix Sub-etapa 22.1.1: DEV TLD changed from .localhost to lvh.me.
+Root cause: Chrome PSL treats localhost as public suffix, silently rejecting
+Domain=.localhost cookies (stores as exact-match only; subdomains never receive cookie).
+Fix: .env COOKIE_DOMAIN=.lvh.me + APEX_HOST=lvh.me + NEXTAUTH_URL=http://lvh.me:3000.
+lvh.me is a wildcard DNS service (*.lvh.me → 127.0.0.1) with real TLD accepted by browsers.
+org-resolver.ts: added lvh.me to APEX_HOSTS Set, extractSubdomain handles .lvh.me TLD.
+Tests: proxy-redirect.test.ts updated to lvh.me URLs + 2 new tests.
+org-resolver.test.ts: 4 new tests (extractSubdomain + isApexDomain for lvh.me).
+AGENTS.md: DEV URLs updated, lvh.me rationale documented.
+.env.example: updated with lvh.me values + PSL explanation comment.
+PROD unaffected (already uses .comecaai.com.br real TLD).
+Diagnostic report: docs/discovery/SUB_22_1_COOKIE_DEBUG.md.
+
 ## 1.2.31 — 2026-05-26
 
 Anchor Sub-etapa 22.1: cross-subdomain cookies + invalid subdomain redirect.
