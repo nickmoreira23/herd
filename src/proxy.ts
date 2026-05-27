@@ -120,6 +120,10 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    // CRAVADO Sub-etapa 23 expansion: /api/:path* added so proxy injects
+    // x-org-id into API route handler requests (sidebar fetch, page data fetches).
+    // Without this, browser fetch("/api/departments") bypasses proxy — no x-org-id.
+    "/api/:path*",
     "/admin/:path*",
     "/login",
     // Public surfaces (with or without locale prefix).
