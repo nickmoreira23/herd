@@ -2205,3 +2205,41 @@ V2 minimal foundation: Node runtime + tenant resolution + header injection.
 - `middleware.ts` runs Edge runtime — Prisma/pg fail silently there. `proxy.ts` runs Node runtime (Prisma OK). Migration mandatory for any proxy that touches DB.
 - `secret:` must be explicit when `trustHost: true` — Auth.js v5 raises MissingSecret otherwise. Fallback: `process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET`.
 - `npm install` real in worktree, NOT symlink — Turbopack 16 rejects cross-filesystem symlinks.
+
+## Multi-tenant DEV state (Sub-etapa 23)
+
+DEV ambient pós Sub-etapa 23 (host-based tenant resolution):
+
+- 2 orgs cravadas:
+  - ComeçaAI (`comecaai` slug, `app` subdomain) — plataforma, 7 departments.
+  - Bucked Up (`buckedup` slug, `buckedup` subdomain) — primeira org cliente.
+- Owner ambas: nick@comecaai.com.br (isSuperAdmin=true).
+
+Acesso DEV:
+- `localhost:3000` — apex (login geral).
+- `app.localhost:3000` — ComeçaAI plataforma.
+- `buckedup.localhost:3000` — Bucked Up cliente.
+
+Pattern tenant resolution (Sub-etapa 22 V2 + 23 expansion):
+1. proxy.ts injeta x-org-id header baseado em host (Sub-etapa 22 V2).
+2. requireOrgRole lê x-org-id como primary source, JWT activeOrgId fallback.
+3. Valida membership do user na org efetiva.
+4. session.user.activeOrgId final reflete host atual.
+5. Route handlers consumers usam session.user.activeOrgId (sem mudança).
+6. Sidebar usa /api/org/current pra hidratar nome da org por host.
+
+Script `scripts/create-org.ts`:
+- Args: `--slug --name --subdomain --owner-email`.
+- Cria Organization + OrganizationMember OWNER atomically.
+- Usado pra criar Bucked Up DEV. Futuras orgs cliente pattern idem.
+
+Tenant isolation validado end-to-end:
+- Routes tenant-scoped (14 routes): respeitam host via x-org-id (Sub-etapa 23 expansion).
+- Sidebar mostra nome org correta per-host via /api/org/current.
+- RLS database-level (Sub-etapa 19).
+- RBAC per-org (Sub-etapa 21).
+
+Próximas sub-etapas:
+- 22.1: cookie domain + apex redirect.
+- 22.2: org selector UI + login branding + switch-org endpoint.
+- 24: invitation flow (substitui script direct).

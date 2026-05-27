@@ -74,17 +74,26 @@ export function Sidebar() {
   const userRole = (session?.user as { role?: string } | undefined)?.role || "admin";
   const userImage = session?.user?.image;
 
-  // Fetch company branding
-  const [companyName, setCompanyName] = useState("HERD");
+  // Fetch company branding — Sub-etapa 23: /api/org/current is primary (host-aware).
+  // /api/settings companyIconUrl is preserved as branding fallback.
+  const [companyName, setCompanyName] = useState("ComeçaAI");
   const [companyIconUrl, setCompanyIconUrl] = useState<string | null>(null);
 
   useEffect(() => {
+    // Primary: resolve org name from current host via proxy x-org-id header
+    fetch("/api/org/current")
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.data?.name) setCompanyName(json.data.name);
+      })
+      .catch(() => {});
+
+    // Secondary: platform-wide icon/brand from settings
     fetch("/api/settings")
       .then((res) => res.json())
       .then((json) => {
         if (json.data) {
           const settings = json.data as Record<string, string>;
-          if (settings.companyName) setCompanyName(settings.companyName);
           if (settings.companyIconUrl) setCompanyIconUrl(settings.companyIconUrl);
         }
       })
