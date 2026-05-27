@@ -2,6 +2,19 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.30 — 2026-05-26
+
+Anchor Sub-etapa 23: Bucked Up DEV + host-based tenant resolution.
+Bucked Up criada DEV via scripts/create-org.ts (slug=buckedup).
+Discovery descobriu bug arquitetural Sub-etapa 22 V2: routes ignoravam x-org-id
+injetado pelo proxy.ts, lendo JWT activeOrgId estático.
+Sub-etapa 23 expandida implementa consumer pattern:
+- requireOrgRole lê x-org-id como primary, JWT fallback.
+- Valida membership user na org efetiva.
+- 14 tenant-scoped routes herdam comportamento (zero mudança consumer).
+- /api/org/current endpoint para sidebar tenant-aware.
+Smoke 6 steps validados: tenant isolation real per-host.
+
 ## 1.2.29 — 2026-05-26
 
 Anchor Sub-etapa 22 V2: Domain routing minimal foundation.
