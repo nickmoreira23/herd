@@ -2,6 +2,18 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## 1.2.31 — 2026-05-26
+
+Anchor Sub-etapa 22.1: cross-subdomain cookies + invalid subdomain redirect.
+auth.ts cookies.sessionToken.options.domain via COOKIE_DOMAIN env var.
+proxy.ts locale cookie uses same COOKIE_DOMAIN for cross-subdomain persistence.
+proxy.ts new guard: !isApex && !orgId && extractSubdomain → 302 apex ?error=org_not_found.
+APEX_HOST env var configures redirect destination (localhost DEV, comecaai.com.br PROD).
+DB cleanup pré-smoke: Bucked Up=0 depts, ComeçaAI=7.
+Smoke 4 cenários: cross-subdomain login, tenant isolation preserved,
+invalid subdomain redirect, cookie domain .localhost visible in DevTools.
+Sub-etapa 22.2 will add UI banner for ?error=org_not_found.
+
 ## 1.2.30 — 2026-05-26
 
 Anchor Sub-etapa 23: Bucked Up DEV + host-based tenant resolution.

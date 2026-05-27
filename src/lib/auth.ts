@@ -12,6 +12,28 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   // CRAVADO Sub-etapa 22 V2 — required for multi-host / custom-domain support.
   // Without trustHost, Auth.js rejects requests from hosts other than NEXTAUTH_URL.
   trustHost: true,
+  // CRAVADO Sub-etapa 22.1 — cross-subdomain cookie sharing via COOKIE_DOMAIN env var.
+  // Without domain: set, login at app.X is not recognised at buckedup.X (per-host
+  // isolation by browser default). With COOKIE_DOMAIN=.localhost (DEV) or
+  // COOKIE_DOMAIN=.comecaai.com.br (PROD), one login is shared across all subdomains.
+  // Cookie name is specified explicitly because Auth.js derives it from NEXTAUTH_URL
+  // host — in multi-host setups the default may diverge between requests.
+  // Safari note: .localhost may not work in Safari (DEV only). PROD uses a real TLD.
+  cookies: {
+    sessionToken: {
+      name:
+        process.env.NODE_ENV === "production"
+          ? "__Secure-authjs.session-token"
+          : "authjs.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax" as const,
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        domain: process.env.COOKIE_DOMAIN ?? undefined,
+      },
+    },
+  },
   providers: [
     Credentials({
       name: "Login",

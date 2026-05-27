@@ -2240,6 +2240,24 @@ Tenant isolation validado end-to-end:
 - RBAC per-org (Sub-etapa 21).
 
 Próximas sub-etapas:
-- 22.1: cookie domain + apex redirect.
 - 22.2: org selector UI + login branding + switch-org endpoint.
 - 24: invitation flow (substitui script direct).
+
+## Cross-subdomain cookies (Sub-etapa 22.1)
+
+DEV: `COOKIE_DOMAIN=.localhost` + `APEX_HOST=localhost`.
+PROD: `COOKIE_DOMAIN=.comecaai.com.br` + `APEX_HOST=comecaai.com.br`.
+
+Session cookie via Auth.js v5 `cookies.sessionToken.options.domain` in `src/lib/auth.ts`.
+Locale cookie in `proxy.ts` uses same `COOKIE_DOMAIN`. Login at any subdomain shares
+session across apex + all subdomains.
+
+Subdomain invalid (não resolve org ativa) → redirect apex com `?error=org_not_found`.
+UI banner para esse error fica em Sub-etapa 22.2.
+
+Safari note: `.localhost` cookies may not work in Safari (DEV only). PROD uses
+`.comecaai.com.br` (real TLD, Safari OK).
+
+Redirect guard em `proxy.ts`: if `!isApex && !orgId && extractSubdomain(hostname)` →
+`302` to `APEX_HOST/?error=org_not_found`. CustomDomain misses (no subdomain extracted)
+pass through safely.
