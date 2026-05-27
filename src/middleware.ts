@@ -11,6 +11,14 @@ import {
 // Node.js context (Railway/standalone) or returns null (Workers/edge).
 // Tech debt: replace with Cloudflare KV lookup when Workers is production target.
 import { isApexDomain } from "@/lib/tenant/hostname";
+//
+// NOTE: This file is named middleware.ts (not proxy.ts) intentionally.
+// Next.js 16 classifies proxy.ts as Node.js runtime unconditionally via
+// isProxyFile() in build/utils.js, which makes OpenNext Cloudflare reject
+// the build ("Node.js middleware is not currently supported").
+// Using middleware.ts (the deprecated but still supported convention) keeps
+// the Edge runtime classification → OpenNext Workers build succeeds.
+// Tech debt: upgrade once opennextjs-cloudflare supports proxy.ts convention.
 
 // Surfaces públicas que devem ter prefixo de locale na URL.
 // Admin/api/auth ficam flat (cookie resolve).
@@ -46,17 +54,20 @@ const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN ?? undefined;
  *
  * Workers-compat refactor (fix/sub-22-1-2-login-server-action):
  * - Removed resolveOrgByHost (Prisma/Node.js only) from this file so the
- *   proxy remains edge-compatible for OpenNext Cloudflare builds.
+ *   middleware remains edge-compatible for OpenNext Cloudflare builds.
  * - x-org-id is now resolved lazily in getOrgIdFromRequest() from x-host
  *   in Node.js route handler context (Railway). Workers deployments fall
  *   back to session.user.activeOrgId via requireOrgRole JWT fallback.
  * - Invalid-subdomain redirect removed (required DB lookup).
  *   Tech debt: restore via Cloudflare KV edge lookup (org-resolver.ts).
+ * - File renamed proxy.ts → middleware.ts: Next.js 16 unconditionally marks
+ *   any file named proxy.ts as Node.js runtime (isProxyFile() in build/utils.js),
+ *   which causes OpenNext Cloudflare to error. middleware.ts uses Edge runtime.
  *
  * Does NOT include:
  * - Apex auto-redirect / org selector → Sub-etapa 22.2.
  */
-export async function proxy(request: NextRequest) {
+export default async function middleware(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
   const hostname = host.split(":")[0].toLowerCase();
   const { pathname } = request.nextUrl;
