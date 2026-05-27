@@ -90,7 +90,10 @@ export async function proxy(request: NextRequest) {
     request.cookies.get("__Secure-authjs.session-token")?.value;
   const isLoggedIn = !!sessionToken;
 
-  if (pathname.startsWith("/admin") && !isLoggedIn) {
+  if (
+    (pathname.startsWith("/admin") || pathname.startsWith("/orgs")) &&
+    !isLoggedIn
+  ) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
   if (pathname === "/login" && isLoggedIn) {
@@ -158,6 +161,8 @@ export const config = {
     "/api/:path*",
     "/admin/:path*",
     "/login",
+    "/orgs",
+    "/orgs/:path*",
     // Public surfaces (with or without locale prefix).
     "/p/:path*",
     "/f/:path*", // CRAVADO Sub-etapa 22 V2 — fix dead matcher

@@ -2,6 +2,18 @@
 
 Documentação histórica das mudanças desta skill. Detalhes técnicos vivem em `SKILL.md`; este changelog é narrativa.
 
+## v1.2.34 — 2026-05-27
+
+- Anchor Sub-etapa 22.2: org selector + login branding + switch-org.
+  D1: switch-org via subdomain redirect (POST /api/auth/switch-org → redirectUrl,
+  client does window.location.href). D2: org selector at apex (/orgs) + sidebar
+  dropdown (2+ memberships). D3: login page RSC reads x-host, queries DB for org
+  name. D4: resolveActiveOrgIdForProfile preserved as JWT fallback.
+  New: /api/auth/memberships (GET), /api/auth/switch-org (POST), /orgs page,
+  login-form.tsx (client component), proxy.ts /orgs auth gate + matcher.
+  Tests: 14 unit tests (memberships route ×4, switch-org route ×5, login page ×5).
+  Gates: tsc clean, lint 0 errors, 439/439 tests pass.
+
 ## v1.2.33 — 2026-05-27
 
 - Anchor Sub-etapa 22.1.3: cleanup artefatos Cloudflare órfãos.
