@@ -2240,7 +2240,7 @@ Tenant isolation validado end-to-end:
 - RBAC per-org (Sub-etapa 21).
 
 Próximas sub-etapas:
-- 22.2: org selector UI + login branding + switch-org endpoint.
+- ✅ 22.2: org selector UI + login branding + switch-org endpoint (cravado).
 - 24: invitation flow (substitui script direct).
 
 ## Cross-subdomain cookies (Sub-etapa 22.1 + 22.1.1)
@@ -2268,8 +2268,53 @@ Offline workaround: `/etc/hosts` custom TLD (rastreado como tech debt).
 `org-resolver.ts` reconhece `lvh.me` como apex e `*.lvh.me` como subdomains.
 
 Subdomain invalid (não resolve org ativa) → redirect apex com `?error=org_not_found`.
-UI banner para esse error fica em Sub-etapa 22.2.
+UI banner (Sub-etapa 22.2): `login-form.tsx` mostra banner vermelho quando
+`searchParams.error === "org_not_found"`.
 
 Redirect guard em `proxy.ts`: if `!isApex && !orgId && extractSubdomain(hostname)` →
 `302` to `APEX_HOST/?error=org_not_found`. CustomDomain misses (no subdomain extracted)
 pass through safely.
+
+## Org selector + login branding + switch-org (Sub-etapa 22.2)
+
+**Decisões arquiteturais (D1-D4) cravadas:**
+
+- **D1: Switch-org via redirect.** `POST /api/auth/switch-org` valida membership,
+  retorna `{ data: { redirectUrl } }`. Client faz `window.location.href`. Sem JWT
+  mutation — cross-subdomain cookie (Sub-etapa 22.1) já carrega auth.
+- **D2: Org selector.** `/orgs` page (apex-only, auth-gated) + sidebar dropdown.
+  Dropdown visível apenas quando `memberships.length >= 2`.
+- **D3: Login branding via RSC.** `src/app/(auth)/login/page.tsx` é async RSC:
+  lê `x-host` (injetado pelo proxy), resolve org via `resolveOrgByHost`, consulta
+  DB por `name`. `LoginForm` recebe `orgName` como prop. Fallback: "ComeçaAI".
+- **D4: `resolveActiveOrgIdForProfile` preservado.** JWT fallback intacto.
+
+**Novos endpoints:**
+- `GET /api/auth/memberships` — lista orgs ACTIVE do usuário logado.
+  Retorna `[{ orgId, slug, name, subdomain, roles }]`. 4 unit tests.
+- `POST /api/auth/switch-org` — valida membership + status ACTIVE, retorna
+  `{ data: { redirectUrl } }`. 5 unit tests.
+
+**Novos componentes:**
+- `src/app/(auth)/login/login-form.tsx` — client component. Recebe `orgName` +
+  `errorParam`. `useEffect` watch `state.redirect` → `window.location.href`.
+  `disabled` no button durante redirect (UX: evita duplo-click).
+- `src/app/orgs/page.tsx` — RSC. Auth via `auth()`. Queries memberships, passa
+  para `OrgList`.
+- `src/app/orgs/org-list.tsx` — client component. Cards clicáveis. `useEffect`
+  watch `redirectUrl` state → `window.location.href`.
+
+**Proxy.ts changes (Sub-etapa 22.2):**
+- Auth gate estendido: `/orgs` (startsWith) → redirect `/login` se !isLoggedIn.
+- Matcher adicionado: `/orgs` + `/orgs/:path*`.
+
+**loginAction updated (Sub-etapa 22.2):**
+- `redirect: false` → sem NEXT_REDIRECT throw.
+- Post-login routing: apex + 1 org → redirect subdomain; apex + 2+ orgs → `/orgs`;
+  subdomain → `/admin`.
+- Retorna `{ redirect: url }` em vez de throw.
+
+**Sidebar org switcher (Sub-etapa 22.2):**
+- Fetch `/api/auth/memberships` na mount.
+- Se `memberships.length >= 2`: org name wrapped em `<Popover>` com trigger + dropdown.
+- Cada item no dropdown: `handleOrgSwitch(orgId)` → `POST /api/auth/switch-org`.

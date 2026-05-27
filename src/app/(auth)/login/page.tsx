@@ -1,73 +1,40 @@
-"use client";
-
 /**
- * Sub-etapa 22.1.1 — migrated from client-side next-auth/react signIn() to
- * server action (loginAction). Reason: signIn() from next-auth/react uses
- * CSRF cookie fetch + getProviders() round-trips and module-level init that
- * proved brittle after the NEXTAUTH_URL domain change (localhost → lvh.me).
- * With React 19 useActionState + server action, the form submits via Next.js
- * Action protocol (POST + Next-Action header) — no client-side CSRF dependency.
+ * Sub-etapa 22.2 — Login page refactored to async RSC.
+ *
+ * Reads `x-host` (injected by proxy.ts) server-side and queries the DB for
+ * the org name to show branded login (D3). Falls back to "ComeçaAI" on apex
+ * or unresolved hosts. Delegates all client interaction to LoginForm.
  */
 
-import { useActionState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { loginAction } from "./actions";
+import { headers } from "next/headers";
+import { resolveOrgByHost } from "@/lib/tenant/org-resolver";
+import { prisma } from "@/lib/prisma";
+import { LoginForm } from "./login-form";
 
-export default function LoginPage() {
-  const [state, formAction, isPending] = useActionState(loginAction, {});
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const headersList = await headers();
+  const host =
+    headersList.get("x-host") ??
+    headersList.get("host")?.split(":")[0] ??
+    "";
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-950 px-4">
-      <Card className="w-full max-w-sm bg-zinc-900 border-zinc-800">
-        <CardHeader className="text-center">
-          <div className="text-3xl font-bold text-brand mb-2">ComeçaAI</div>
-          <CardTitle className="text-zinc-300 text-lg font-normal">
-            Admin Login
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form action={formAction} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-zinc-400">
-                Email
-              </Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="voce@empresa.com"
-                required
-                className="bg-zinc-800 border-zinc-700 text-zinc-100"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-zinc-400">
-                Password
-              </Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className="bg-zinc-800 border-zinc-700 text-zinc-100"
-              />
-            </div>
-            {state?.error && (
-              <p className="text-sm text-red-400">{state.error}</p>
-            )}
-            <Button
-              type="submit"
-              disabled={isPending}
-              className="w-full bg-brand text-brand-foreground hover:bg-brand-500 font-semibold"
-            >
-              {isPending ? "Signing in..." : "Sign In"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
-  );
+  let orgName = "ComeçaAI";
+  if (host) {
+    const orgId = await resolveOrgByHost(host);
+    if (orgId) {
+      const org = await prisma.organization.findUnique({
+        where: { id: orgId },
+        select: { name: true },
+      });
+      if (org) orgName = org.name;
+    }
+  }
+
+  const params = await searchParams;
+
+  return <LoginForm orgName={orgName} errorParam={params.error} />;
 }

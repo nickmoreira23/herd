@@ -79,12 +79,47 @@ export function Sidebar() {
   const [companyName, setCompanyName] = useState("ComeçaAI");
   const [companyIconUrl, setCompanyIconUrl] = useState<string | null>(null);
 
+  // Org switcher — Sub-etapa 22.2: fetch memberships; show switcher when 2+ orgs.
+  const [memberships, setMemberships] = useState<
+    { orgId: string; name: string; subdomain: string }[]
+  >([]);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [switching, setSwitching] = useState<string | null>(null);
+
+  async function handleOrgSwitch(orgId: string) {
+    setSwitching(orgId);
+    try {
+      const res = await fetch("/api/auth/switch-org", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orgId }),
+      });
+      const body = await res.json();
+      if (res.ok && body.data?.redirectUrl) {
+        window.location.href = body.data.redirectUrl;
+      }
+    } catch {
+      // silent fail — user can retry
+    } finally {
+      setSwitching(null);
+      setSwitcherOpen(false);
+    }
+  }
+
   useEffect(() => {
     // Primary: resolve org name from current host via proxy x-org-id header
     fetch("/api/org/current")
       .then((res) => res.json())
       .then((json) => {
         if (json.data?.name) setCompanyName(json.data.name);
+      })
+      .catch(() => {});
+
+    // Org memberships — drive the switcher dropdown visibility and options.
+    fetch("/api/auth/memberships")
+      .then((res) => res.json())
+      .then((json) => {
+        if (Array.isArray(json.data)) setMemberships(json.data);
       })
       .catch(() => {});
 
@@ -356,9 +391,36 @@ export function Sidebar() {
         {expanded && (
           <div className="flex items-center gap-2 flex-1 min-w-0 pl-4 pr-4">
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate leading-tight">
-                {companyName}
-              </p>
+              {memberships.length >= 2 ? (
+                <Popover open={switcherOpen} onOpenChange={setSwitcherOpen}>
+                  <PopoverTrigger className="flex items-center gap-1 text-sm font-semibold leading-tight truncate hover:text-foreground/80 transition-colors">
+                    <span className="truncate">{companyName}</span>
+                    <ChevronsUpDown className="h-3 w-3 shrink-0 text-muted-foreground" />
+                  </PopoverTrigger>
+                  <PopoverContent className="w-52 p-1" align="start">
+                    {memberships.map((m) => (
+                      <button
+                        key={m.orgId}
+                        onClick={() => handleOrgSwitch(m.orgId)}
+                        disabled={switching !== null}
+                        className="w-full text-left px-3 py-2 rounded-md text-sm hover:bg-accent hover:text-accent-foreground transition-colors flex items-center justify-between"
+                      >
+                        <div className="min-w-0">
+                          <p className="font-medium truncate">{m.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{m.subdomain}</p>
+                        </div>
+                        {switching === m.orgId && (
+                          <span className="text-xs text-muted-foreground ml-2">…</span>
+                        )}
+                      </button>
+                    ))}
+                  </PopoverContent>
+                </Popover>
+              ) : (
+                <p className="text-sm font-semibold truncate leading-tight">
+                  {companyName}
+                </p>
+              )}
               <div className="mt-0.5">
                 <ProfileViewSelector />
               </div>
