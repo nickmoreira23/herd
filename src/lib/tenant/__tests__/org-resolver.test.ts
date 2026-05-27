@@ -53,6 +53,19 @@ describe("extractSubdomain", () => {
   it("CustomDomain: herd.buckedup.com → null (handled via customDomain lookup)", () => {
     expect(extractSubdomain("herd.buckedup.com")).toBe(null);
   });
+
+  // Sub-etapa 22.1.1 — lvh.me DEV TLD
+  it("DEV (lvh.me): app.lvh.me → 'app'", () => {
+    expect(extractSubdomain("app.lvh.me")).toBe("app");
+  });
+
+  it("DEV (lvh.me): buckedup.lvh.me → 'buckedup'", () => {
+    expect(extractSubdomain("buckedup.lvh.me")).toBe("buckedup");
+  });
+
+  it("DEV (lvh.me): lvh.me → null (apex)", () => {
+    expect(extractSubdomain("lvh.me")).toBe(null);
+  });
 });
 
 // ── isApexDomain ───────────────────────────────────────────────────────────
@@ -84,6 +97,15 @@ describe("isApexDomain", () => {
   it("herd.buckedup.com is NOT apex (customDomain)", () => {
     expect(isApexDomain("herd.buckedup.com")).toBe(false);
   });
+
+  // Sub-etapa 22.1.1 — lvh.me DEV TLD
+  it("lvh.me is apex (Sub-etapa 22.1.1)", () => {
+    expect(isApexDomain("lvh.me")).toBe(true);
+  });
+
+  it("app.lvh.me is NOT apex (Sub-etapa 22.1.1)", () => {
+    expect(isApexDomain("app.lvh.me")).toBe(false);
+  });
 });
 
 // ── resolveOrgByHost ───────────────────────────────────────────────────────
@@ -105,6 +127,11 @@ describe("resolveOrgByHost", () => {
 
   it("localhost returns null without DB call", async () => {
     expect(await resolveOrgByHost("localhost")).toBeNull();
+    expect(findUniqueMock).not.toHaveBeenCalled();
+  });
+
+  it("lvh.me returns null without DB call (apex, Sub-etapa 22.1.1)", async () => {
+    expect(await resolveOrgByHost("lvh.me")).toBeNull();
     expect(findUniqueMock).not.toHaveBeenCalled();
   });
 

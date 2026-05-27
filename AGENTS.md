@@ -2215,10 +2215,10 @@ DEV ambient pós Sub-etapa 23 (host-based tenant resolution):
   - Bucked Up (`buckedup` slug, `buckedup` subdomain) — primeira org cliente.
 - Owner ambas: nick@comecaai.com.br (isSuperAdmin=true).
 
-Acesso DEV:
-- `localhost:3000` — apex (login geral).
-- `app.localhost:3000` — ComeçaAI plataforma.
-- `buckedup.localhost:3000` — Bucked Up cliente.
+Acesso DEV (Sub-etapa 22.1.1 — lvh.me como TLD):
+- `lvh.me:3000` — apex (login geral).
+- `app.lvh.me:3000` — ComeçaAI plataforma.
+- `buckedup.lvh.me:3000` — Bucked Up cliente.
 
 Pattern tenant resolution (Sub-etapa 22 V2 + 23 expansion):
 1. proxy.ts injeta x-org-id header baseado em host (Sub-etapa 22 V2).
@@ -2243,20 +2243,32 @@ Próximas sub-etapas:
 - 22.2: org selector UI + login branding + switch-org endpoint.
 - 24: invitation flow (substitui script direct).
 
-## Cross-subdomain cookies (Sub-etapa 22.1)
+## Cross-subdomain cookies (Sub-etapa 22.1 + 22.1.1)
 
-DEV: `COOKIE_DOMAIN=.localhost` + `APEX_HOST=localhost`.
+DEV: `COOKIE_DOMAIN=.lvh.me` + `APEX_HOST=lvh.me` + `NEXTAUTH_URL=http://lvh.me:3000`.
 PROD: `COOKIE_DOMAIN=.comecaai.com.br` + `APEX_HOST=comecaai.com.br`.
 
 Session cookie via Auth.js v5 `cookies.sessionToken.options.domain` in `src/lib/auth.ts`.
 Locale cookie in `proxy.ts` uses same `COOKIE_DOMAIN`. Login at any subdomain shares
 session across apex + all subdomains.
 
+**Por que `lvh.me` em vez de `.localhost` (Sub-etapa 22.1.1):**
+Chrome trata `localhost` como public suffix (PSL spec), bloqueando silenciosamente
+`Domain=.localhost` cookies. `lvh.me` é um serviço DNS público (wildcard `*.lvh.me →
+127.0.0.1`) com TLD real (`.me`) aceito por todos os browsers.
+
+URLs DEV:
+- `http://lvh.me:3000` — apex (login geral)
+- `http://app.lvh.me:3000` — ComeçaAI plataforma
+- `http://buckedup.lvh.me:3000` — Bucked Up cliente
+
+Internet connection required em DEV (resolução DNS pública do `lvh.me`).
+Offline workaround: `/etc/hosts` custom TLD (rastreado como tech debt).
+
+`org-resolver.ts` reconhece `lvh.me` como apex e `*.lvh.me` como subdomains.
+
 Subdomain invalid (não resolve org ativa) → redirect apex com `?error=org_not_found`.
 UI banner para esse error fica em Sub-etapa 22.2.
-
-Safari note: `.localhost` cookies may not work in Safari (DEV only). PROD uses
-`.comecaai.com.br` (real TLD, Safari OK).
 
 Redirect guard em `proxy.ts`: if `!isApex && !orgId && extractSubdomain(hostname)` →
 `302` to `APEX_HOST/?error=org_not_found`. CustomDomain misses (no subdomain extracted)
