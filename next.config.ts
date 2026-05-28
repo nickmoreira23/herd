@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
   },
   cacheComponents: true,
   serverExternalPackages: ["pdf-to-img", "pdfjs-dist", "sharp", "fluent-ffmpeg"],
+  allowedDevOrigins: ["lvh.me", "app.lvh.me", "buckedup.lvh.me"],
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [{ protocol: "https", hostname: "**" }],
