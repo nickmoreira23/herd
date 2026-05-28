@@ -1,19 +1,5 @@
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-utils";
-import bcrypt from "bcryptjs";
-import crypto from "crypto";
-
-/** Generate a readable temporary password: 3 words + 2 digits */
-function generateTempPassword(): string {
-  const words = [
-    "alpha", "bravo", "cedar", "delta", "ember", "frost", "grain", "honey",
-    "ivory", "jetty", "knoll", "lunar", "maple", "north", "ocean", "prism",
-    "quartz", "ridge", "solar", "terra", "ultra", "vivid", "woven", "xenon",
-  ];
-  const pick = () => words[crypto.randomInt(words.length)];
-  const digits = crypto.randomInt(10, 99);
-  return `${pick()}-${pick()}-${digits}`;
-}
 
 export async function GET() {
   try {
@@ -27,41 +13,5 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    // roleIds + profileTypeId + networkType dropped — RBAC removed Sub-etapa 3.5;
-    // ProfileType removed Sub-etapa 3.6
-    const { firstName, lastName, email, phone, password } = body;
-
-    if (!firstName || !email) {
-      return apiError("First name and email are required", 400);
-    }
-
-    const existing = await prisma.networkProfile.findUnique({ where: { email } });
-    if (existing) {
-      return apiError("A user with this email already exists", 409);
-    }
-
-    // Use provided password or generate a temporary one
-    const plainPassword = password?.trim() || generateTempPassword();
-    const passwordHash = await bcrypt.hash(plainPassword, 10);
-
-    const user = await prisma.networkProfile.create({
-      data: {
-        firstName,
-        lastName: lastName || "",
-        email,
-        phone: phone || null,
-        passwordHash,
-        status: "PENDING",
-      },
-    });
-
-    // Return the plaintext password so the admin can share it with the user
-    return apiSuccess({ ...user, temporaryPassword: plainPassword }, 201);
-  } catch (e) {
-    console.error("POST /api/users error:", e);
-    return apiError("Failed to create user", 500);
-  }
-}
+// POST removed Sub-etapa 24 — direct user creation replaced by invitation flow.
+// Use POST /api/org/invitations instead.

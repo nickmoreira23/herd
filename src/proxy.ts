@@ -164,6 +164,7 @@ export const config = {
     "/orgs",
     "/orgs/:path*",
     // Public surfaces (with or without locale prefix).
+    "/accept/:path*",
     "/p/:path*",
     "/f/:path*", // CRAVADO Sub-etapa 22 V2 — fix dead matcher
     "/explore/:path*",

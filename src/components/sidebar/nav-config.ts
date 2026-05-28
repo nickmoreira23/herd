@@ -22,6 +22,7 @@ import {
   DollarSign,
   Folder,
   GraduationCap,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import { getAllToolCategories } from "@/lib/tools/registry";
@@ -156,6 +157,7 @@ export function buildNavForView(view: ProfileView): ProfileNav {
       top: [
         { type: "link", href: "/admin", label: "Dashboard", icon: LayoutDashboard },
         { type: "link", href: "/admin/chat", label: "Chat", icon: MessageSquare },
+        { type: "link", href: "/admin/organization/members", label: "Members", icon: Users },
         { type: "link", href: "/admin/knowledge", label: "Knowledge", icon: Brain },
         { type: "link", href: "/admin/marketplace", label: "Marketplace", icon: ShoppingBag },
       ],

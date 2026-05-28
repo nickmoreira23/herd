@@ -1676,6 +1676,7 @@ export const messages = {
   "organization.users.action.reset_password": "Redefinir Senha",
   "organization.users.action.cancel_password_reset": "Cancelar redefinição de senha",
   "organization.users.action.done": "Pronto",
+  "organization.users.action.send_invite": "Enviar Convite",
 
   // user-table.tsx — modal (create/edit)
   "organization.users.modal.add_title": "Adicionar Membro",
@@ -1705,6 +1706,13 @@ export const messages = {
   "organization.users.modal.profile_type_label": "Tipo de Perfil",
   "organization.users.modal.profile_type_placeholder": "Selecione um tipo de perfil…",
   "organization.users.modal.roles_label": "Cargos",
+  "organization.users.modal.invite_title": "Convidar Membro",
+  "organization.users.modal.invite_description":
+    "Envie um convite por e-mail para adicionar um novo membro à organização.",
+  "organization.users.modal.role_label": "Função",
+  "organization.users.role.member": "Membro",
+  "organization.users.role.admin": "Administrador",
+  "organization.users.role.owner": "Proprietário",
 
   // user-table.tsx — invite (temporary password dialog)
   "organization.users.invite.title": "Usuário Criado",
@@ -1722,11 +1730,14 @@ export const messages = {
   "organization.users.feedback.member_suspended": "Membro suspenso",
   "organization.users.feedback.password_reset": "Senha redefinida",
   "organization.users.feedback.password_copied": "Senha copiada para a área de transferência",
+  "organization.users.feedback.invitation_sent": "Convite enviado para {email}",
 
   // user-table.tsx — errors
   "error.organization.users.required_fields":
     "Nome, e-mail e tipo de perfil são obrigatórios",
   "error.organization.users.save_failed": "Falha ao salvar",
+  "error.organization.users.invitation_already_exists":
+    "Já existe um convite pendente para este e-mail",
 
   // ============================================================
   // Organization — Departments (Etapa 1.5.6b-tris Phase ε)
