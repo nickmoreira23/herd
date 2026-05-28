@@ -2,14 +2,6 @@ name: Handbook Generated Artifacts
 
 on:
   pull_request:
-    paths:
-      - 'docs/handbook/**'
-      - '.agents/skills/**'
-      - 'mcp/generated/**'
-      - 'schemas/**'
-      - 'scripts/build-*.ts'
-      - 'package.json'
-      - 'package-lock.json'
 
 jobs:
   freshness:
