@@ -49,11 +49,13 @@ interface MembersClientProps {
   members: MemberRow[];
   pendingInvitations: InvitationRow[];
   organizationId: string;
+  canManage: boolean;
 }
 
 export function MembersClient({
   members: initialMembers,
   pendingInvitations: initialInvitations,
+  canManage,
 }: MembersClientProps) {
   const t = useT();
   const [invitations, setInvitations] = useState(initialInvitations);
@@ -126,10 +128,12 @@ export function MembersClient({
             {t("organization.members.description")}
           </p>
         </div>
-        <Button onClick={() => setDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          {t("organization.members.invite_button")}
-        </Button>
+        {canManage && (
+          <Button onClick={() => setDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            {t("organization.members.invite_button")}
+          </Button>
+        )}
       </div>
 
       {/* Active members table */}
@@ -195,14 +199,16 @@ export function MembersClient({
                 <th className="px-4 py-3 text-left font-medium">{t("organization.members.col_email")}</th>
                 <th className="px-4 py-3 text-left font-medium">{t("organization.members.col_role")}</th>
                 <th className="px-4 py-3 text-left font-medium">{t("organization.members.col_expires")}</th>
-                <th className="px-4 py-3 text-right font-medium">{t("organization.members.col_actions")}</th>
+                {canManage && (
+                  <th className="px-4 py-3 text-right font-medium">{t("organization.members.col_actions")}</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {invitations.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={canManage ? 4 : 3}
                     className="px-4 py-6 text-center text-gray-400"
                   >
                     {t("organization.members.empty_pending")}
@@ -223,18 +229,20 @@ export function MembersClient({
                     <td className="px-4 py-3 text-gray-500">
                       {formatDate(inv.expiresAt)}
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        disabled={revokeLoadingId === inv.id}
-                        onClick={() => handleRevoke(inv.id, inv.token)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Revogar</span>
-                      </Button>
-                    </td>
+                    {canManage && (
+                      <td className="px-4 py-3 text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={revokeLoadingId === inv.id}
+                          onClick={() => handleRevoke(inv.id, inv.token)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Revogar</span>
+                        </Button>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
