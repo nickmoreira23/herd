@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
+import { acceptAndSignInAction, type AcceptState } from "./actions";
 
 interface AcceptFormProps {
   token: string;
@@ -18,43 +19,6 @@ interface AcceptFormProps {
   sessionActive: boolean;
 }
 
-interface AcceptState {
-  error?: string;
-  redirect?: string;
-}
-
-async function acceptAction(
-  token: string,
-  _prevState: AcceptState,
-  formData: FormData
-): Promise<AcceptState> {
-  const password = formData.get("password") as string | null;
-  const confirmPassword = formData.get("confirmPassword") as string | null;
-
-  if (password !== undefined && password !== null && confirmPassword !== undefined) {
-    if (password !== confirmPassword) {
-      return { error: "As senhas não coincidem" };
-    }
-  }
-
-  const body: Record<string, string> = {};
-  if (password) body.password = password;
-
-  const res = await fetch(`/api/org/invitations/${token}/accept`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    return { error: data.error ?? "Falha ao aceitar convite" };
-  }
-
-  return { redirect: data.data.redirectUrl };
-}
-
 export function AcceptForm({
   token,
   organization,
@@ -62,7 +26,7 @@ export function AcceptForm({
   profileExists,
   sessionActive,
 }: AcceptFormProps) {
-  const boundAcceptAction = acceptAction.bind(null, token);
+  const boundAcceptAction = acceptAndSignInAction.bind(null, token, invitationEmail);
   const [state, formAction, isPending] = useActionState<AcceptState, FormData>(
     boundAcceptAction,
     {}
