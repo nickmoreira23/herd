@@ -2,7 +2,7 @@
 name: chat-code-handoff
 scope: project-local
 overrides: anthropic-skills:chat-code-handoff
-version: 0.1.0
+version: 0.2.3
 ---
 
 # chat-code-handoff (ComeçaAI project-local addendum)
@@ -286,6 +286,167 @@ Hotfix Sub-etapa 12.0.1 removeu as duas linhas.
 **Bonus context:** Next.js 16 com `cacheComponents: true` (Cache Components)
 torna route handlers auto-dinâmicos por inferência quando lêem env/DB.
 `force-dynamic` é redundante + incompatível.
+
+---
+
+## Armadilhas operacionais cravadas
+
+Lições acumuladas durante Fase 4 (Sub-etapas 22 V2 → 22.2), codificadas após
+smoke failures, lint blocks, e surpresas de ambiente que custaram round-trips.
+
+### Worktree hygiene
+
+**W1 — `npm install` real em worktree, não symlink de node_modules**
+
+Turbopack 16 rejeita symlinks cross-filesystem entre worktrees. Worktrees que
+introduzem dependências novas (ou que dependem do lockfile atualizado) precisam
+de `npm install` real dentro do worktree. L5 (symlink para pre-commit hook) ainda
+se aplica para gates, mas **não** para o runtime do servidor de desenvolvimento.
+
+**Caso real (22 V2):** worktree com symlink de `node_modules` fez Turbopack
+rejeitar imports silenciosamente. Fix foi `npm install` real no worktree.
+
+**W2 — `allowedDevOrigins` obrigatório para DEV hostnames não-localhost**
+
+Next.js 16 bloqueia cross-origin HMR e Server Action requests quando o hostname
+não é `localhost`. Qualquer worktree ou ambiente DEV usando domínios customizados
+(ex: `lvh.me`, `*.lvh.me`) precisa de:
+
+```typescript
+// next.config.ts — DEV only
+...(process.env.NODE_ENV === "development" && {
+  allowedDevOrigins: ["lvh.me", "app.lvh.me", "buckedup.lvh.me"],
+}),
+```
+
+Sem isso, Server Actions falham silenciosamente com "Failed to find Server Action"
+e o client fica preso em estado de loading ("Signing in...").
+
+**Caso real (22.2 smoke):** Cenário 1 ficou em loop "Signing in..." por falta
+de `allowedDevOrigins`. Fix + clear `.next/` resolveu.
+
+**W3 — Após add `allowedDevOrigins`, limpar `.next/` antes de re-testar**
+
+`allowedDevOrigins` afeta a compilação do bundle de dev. Sem clear do cache,
+o servidor pode continuar servindo o bundle antigo sem a configuração nova,
+mascarando o fix.
+
+```bash
+rm -rf .next && npm run dev
+```
+
+### Next.js 16 quirks
+
+**N1 — `redirect: false` em Auth.js v5 para login com roteamento pós-auth customizado**
+
+`signIn("credentials", { ..., redirect: true })` (default) lança `NEXT_REDIRECT`
+internamente, impedindo qualquer lógica pós-login. Para custom routing (apex →
+subdomain, multi-org → /orgs), usar `redirect: false` e retornar `{ redirect: url }`
+da action. Client side: `useEffect` watching `state.redirect` → `window.location.href`.
+
+```typescript
+await signIn("credentials", { email, password, redirect: false });
+// pós-login: query memberships → decidir URL
+return { redirect: targetUrl };
+```
+
+**N2 — Navegação cross-origin via `window.location.href` + `useEffect`, não router**
+
+`router.push()` e `router.replace()` não funcionam cross-origin (ex: `app.lvh.me` →
+`buckedup.lvh.me`). Pattern canônico: `redirectUrl` state + `useEffect`:
+
+```typescript
+const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
+useEffect(() => {
+  if (redirectUrl) { window.location.href = redirectUrl; }
+}, [redirectUrl]);
+
+// no handler:
+setRedirectUrl(body.data.redirectUrl);
+```
+
+A atribuição direta `window.location.href = url` dentro de função async
+dispara `react-hooks/immutability` lint error. O pattern state+effect evita isso.
+
+**Caso real (22.2 org-list.tsx):** lint bloqueou CI com `react-hooks/immutability`.
+Fix foi extrair para `redirectUrl` state + `useEffect`.
+
+### Smoke vs testes automatizados
+
+**S1 — Smoke manual revela chain de redirects que testes unitários não pegam**
+
+Testes unitários mockam módulos e não exercitam o pipeline real de proxy →
+Next.js → browser. Chains de redirect (ex: proxy → `/` → `redirect("/admin")` →
+proxy → `/login` sem query string) são invisíveis para testes e só aparecem em
+smoke manual end-to-end.
+
+**Caso real (22.2 Cenário 3):** `?error=org_not_found` desaparecia porque a chain
+era `proxy → "/"` → `redirect("/admin")` → proxy → `/login` (sem querystring).
+Testes de unidade do proxy passavam porque não executavam a chain completa.
+Fix: proxy redireciona para `/login` diretamente, não para `/`.
+
+**S2 — Smoke sequence: DEV first, depois Railway; não inverter**
+
+Bugs de ambiente DEV (ex: missing `allowedDevOrigins`, `.next/` cache stale)
+devem ser resolvidos antes do smoke Railway. Invertido, pode-se concluir
+erroneamente que o bug é de produção quando é de DEV.
+
+### Browser/cookie traps
+
+**B1 — `Domain=.localhost` silently blocked by Chrome (PSL)**
+
+Chrome trata `localhost` como public suffix (Public Suffix List). Cookies com
+`Domain=.localhost` são silenciosamente descartados — sem erro, sem warning no
+DevTools. Usar `lvh.me` como TLD DEV: `*.lvh.me → 127.0.0.1` via DNS público,
+TLD real (`.me`) aceito por todos os browsers.
+
+```
+# .env DEV
+COOKIE_DOMAIN=.lvh.me
+APEX_HOST=lvh.me
+NEXTAUTH_URL=http://lvh.me:3000
+```
+
+Internet connection obrigatória em DEV para resolução DNS. Offline workaround:
+`/etc/hosts` custom TLD (rastreado como tech debt).
+
+### Disciplina de processo
+
+**P1 — Spec inclui `allowedDevOrigins` quando worktree usa DEV hostname não-localhost**
+
+Qualquer sub-etapa que introduz novo hostname DEV (customDomain, subdomain, etc.)
+deve incluir na spec o item de `allowedDevOrigins`. Sem isso, o primeiro smoke
+vai falhar com sintoma opaco ("Server Action not found").
+
+**P2 — Proxy patches (redirect target, matcher) exigem smoke manual, não só tsc**
+
+Mudanças em `proxy.ts` afetam o pipeline completo de request. `tsc + lint + test`
+não cobrem chains de redirect. Spec deve incluir smoke manual como gate obrigatório
+para qualquer alteração em `proxy.ts`.
+
+**P3 — `PopoverTrigger asChild` não suportado nesta versão da UI library**
+
+`<PopoverTrigger asChild>` em `src/components/ui/popover.tsx` desta codebase
+não expõe a prop `asChild`. Usar `<PopoverTrigger className="...">` diretamente,
+sem `asChild`, e mover estilos para o trigger wrapper.
+
+```typescript
+// errado:
+<PopoverTrigger asChild>
+  <button>...</button>
+</PopoverTrigger>
+
+// correto:
+<PopoverTrigger className="flex items-center gap-2 ...">
+  conteúdo inline
+</PopoverTrigger>
+```
+
+**P4 — Auth.js v5 mock typing: `mockResolvedValue(null as never)`**
+
+`auth()` em Auth.js v5 tem tipo overloaded. `mockResolvedValue(null)` em Jest
+falha com `Argument of type 'null' is not assignable to parameter of type
+'NextMiddleware'`. Fix: `mockResolvedValue(null as never)`.
 
 ---
 

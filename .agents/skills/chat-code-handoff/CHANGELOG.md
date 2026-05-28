@@ -1,5 +1,25 @@
 # CHANGELOG — chat-code-handoff (project-local)
 
+## v0.2.3 — 2026-05-27
+
+Nova seção "Armadilhas operacionais cravadas" com 12 lições de Fase 4
+(Sub-etapas 22 V2 → 22.2) organizadas em 5 subgrupos:
+
+- W1 — `npm install` real em worktree, não symlink de node_modules.
+- W2 — `allowedDevOrigins` obrigatório para DEV hostnames não-localhost.
+- W3 — Limpar `.next/` após add `allowedDevOrigins`.
+- N1 — `redirect: false` em Auth.js v5 para roteamento pós-login customizado.
+- N2 — Cross-origin navigation via `window.location.href` + `useEffect`.
+- S1 — Smoke manual revela chains de redirect invisíveis a testes unitários.
+- S2 — Smoke sequence: DEV first, Railway depois.
+- B1 — `Domain=.localhost` silently blocked by Chrome (PSL); usar `lvh.me`.
+- P1 — Spec inclui `allowedDevOrigins` quando worktree usa hostname não-localhost.
+- P2 — Proxy patches exigem smoke manual como gate, não só tsc.
+- P3 — `PopoverTrigger asChild` não suportado nesta versão da UI library.
+- P4 — Auth.js v5 mock typing: `mockResolvedValue(null as never)`.
+
+Refs: Sub-etapas 22 V2, 22.1, 22.1.1, 22.2.
+
 ## v0.2.2 — 2026-05-21
 
 - L7: `npm run build` local obrigatório para sub-etapas tocando route
