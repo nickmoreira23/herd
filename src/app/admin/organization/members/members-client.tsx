@@ -37,6 +37,7 @@ interface MemberRow {
 
 interface InvitationRow {
   id: string;
+  token: string;
   email: string;
   role: string;
   createdAt: Date | string;
@@ -86,10 +87,10 @@ export function MembersClient({
     }
   }
 
-  async function handleRevoke(invitationId: string) {
+  async function handleRevoke(invitationId: string, token: string) {
     setRevokeLoadingId(invitationId);
     try {
-      const res = await fetch(`/api/org/invitations/${invitationId}/revoke`, {
+      const res = await fetch(`/api/org/invitations/${token}/revoke`, {
         method: "POST",
       });
       if (res.ok) {
@@ -225,7 +226,7 @@ export function MembersClient({
                         variant="ghost"
                         size="sm"
                         disabled={revokeLoadingId === inv.id}
-                        onClick={() => handleRevoke(inv.id)}
+                        onClick={() => handleRevoke(inv.id, inv.token)}
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
                         <Trash2 className="h-4 w-4" />

@@ -268,7 +268,7 @@ describe("revokeInvitation", () => {
     mockFindFirst.mockResolvedValueOnce(makeInvitation());
     mockUpdate.mockResolvedValueOnce({});
 
-    await revokeInvitation({ invitationId: "inv-1", organizationId: "org-1" });
+    await revokeInvitation({ token: "token-abc", organizationId: "org-1" });
 
     expect(mockUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -284,14 +284,14 @@ describe("revokeInvitation", () => {
   it("throws InvitationNotFoundError when not found", async () => {
     mockFindFirst.mockResolvedValueOnce(null);
     await expect(
-      revokeInvitation({ invitationId: "inv-x", organizationId: "org-1" })
+      revokeInvitation({ token: "token-not-found", organizationId: "org-1" })
     ).rejects.toThrow(InvitationNotFoundError);
   });
 
   it("throws InvitationNotRevocableError when already ACCEPTED", async () => {
     mockFindFirst.mockResolvedValueOnce(makeInvitation({ status: "ACCEPTED" }));
     await expect(
-      revokeInvitation({ invitationId: "inv-1", organizationId: "org-1" })
+      revokeInvitation({ token: "token-abc", organizationId: "org-1" })
     ).rejects.toThrow(InvitationNotRevocableError);
   });
 });
