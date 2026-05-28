@@ -4382,6 +4382,7 @@ export const messages: Record<MessageKey, string> = {
   "organization.members.invite_dialog_description":
     "Send an email invitation to add someone to the organization.",
   "organization.members.invite_error_fallback": "Failed to send invitation",
+  "organization.members.network_error": "Network error. Please try again.",
   "organization.members.invite_field_email": "Email",
   "organization.members.invite_field_email_placeholder": "name@company.com",
   "organization.members.invite_field_role": "Role",

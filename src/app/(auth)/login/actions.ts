@@ -41,7 +41,17 @@ export async function loginAction(
     throw error;
   }
 
-  // Login succeeded — determine where to redirect.
+  // Login succeeded. If a safe relative callbackUrl was provided (e.g. the
+  // invitation accept flow sends ?callbackUrl=/accept/<token>), honor it so
+  // the user returns to where they came from. Only same-origin relative paths
+  // are allowed — reject protocol-relative ("//host") and absolute URLs to
+  // avoid open-redirect.
+  const callbackUrl = (formData.get("callbackUrl") as string | null) ?? "";
+  if (callbackUrl.startsWith("/") && !callbackUrl.startsWith("//")) {
+    return { redirect: callbackUrl };
+  }
+
+  // Otherwise, determine where to redirect from host + memberships.
   const headersList = await headers();
   const host =
     headersList.get("x-host") ??

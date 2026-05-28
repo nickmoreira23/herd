@@ -14,7 +14,7 @@ import { LoginForm } from "./login-form";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; callbackUrl?: string }>;
 }) {
   const headersList = await headers();
   const host =
@@ -36,5 +36,11 @@ export default async function LoginPage({
 
   const params = await searchParams;
 
-  return <LoginForm orgName={orgName} errorParam={params.error} />;
+  return (
+    <LoginForm
+      orgName={orgName}
+      errorParam={params.error}
+      callbackUrl={params.callbackUrl}
+    />
+  );
 }

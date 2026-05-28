@@ -71,8 +71,16 @@ export function Sidebar() {
 
   const userName = session?.user?.name || "Admin";
   const userEmail = session?.user?.email || "";
-  const userRole = (session?.user as { role?: string } | undefined)?.role || "admin";
   const userImage = session?.user?.image;
+
+  // Host-aware org role (Sub-24 polish): /api/org/current returns the viewer's
+  // ORG-scoped role for the current host's org. Falls back to the host-blind
+  // JWT role, then "admin" (super_admin without membership lands here).
+  const [orgRole, setOrgRole] = useState<string | null>(null);
+  const userRole =
+    orgRole ??
+    (session?.user as { role?: string } | undefined)?.role ??
+    "admin";
 
   // Fetch company branding — Sub-etapa 23: /api/org/current is primary (host-aware).
   // /api/settings companyIconUrl is preserved as branding fallback.
@@ -112,6 +120,7 @@ export function Sidebar() {
       .then((res) => res.json())
       .then((json) => {
         if (json.data?.name) setCompanyName(json.data.name);
+        if (json.data?.role) setOrgRole(json.data.role);
       })
       .catch(() => {});
 

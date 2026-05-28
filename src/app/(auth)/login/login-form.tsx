@@ -24,9 +24,10 @@ import { loginAction } from "./actions";
 interface LoginFormProps {
   orgName: string;
   errorParam?: string;
+  callbackUrl?: string;
 }
 
-export function LoginForm({ orgName, errorParam }: LoginFormProps) {
+export function LoginForm({ orgName, errorParam, callbackUrl }: LoginFormProps) {
   const [state, formAction, isPending] = useActionState(loginAction, {});
 
   useEffect(() => {
@@ -52,6 +53,9 @@ export function LoginForm({ orgName, errorParam }: LoginFormProps) {
         </CardHeader>
         <CardContent>
           <form action={formAction} className="space-y-4">
+            {callbackUrl && (
+              <input type="hidden" name="callbackUrl" value={callbackUrl} />
+            )}
             <div className="space-y-2">
               <Label htmlFor="email" className="text-zinc-400">
                 Email
