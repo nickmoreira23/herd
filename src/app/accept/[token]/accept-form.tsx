@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { acceptAndSignInAction, type AcceptState } from "./actions";
+import { useT } from "@/lib/i18n/locale-context";
 
 interface AcceptFormProps {
   token: string;
@@ -26,6 +27,7 @@ export function AcceptForm({
   profileExists,
   sessionActive,
 }: AcceptFormProps) {
+  const t = useT();
   const boundAcceptAction = acceptAndSignInAction.bind(null, token, invitationEmail);
   const [state, formAction, isPending] = useActionState<AcceptState, FormData>(
     boundAcceptAction,
@@ -43,10 +45,10 @@ export function AcceptForm({
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="bg-white rounded-lg shadow p-8 max-w-md w-full text-foreground">
         <h1 className="text-xl font-semibold text-gray-900 mb-1">
-          Você foi convidado
+          {t("invitations.accept.heading")}
         </h1>
         <p className="text-gray-500 mb-6">
-          para <strong>{organization.name}</strong>
+          {t("invitations.accept.subheading")} <strong>{organization.name}</strong>
         </p>
 
         {state.error && (
@@ -59,14 +61,16 @@ export function AcceptForm({
         {profileExists && sessionActive && (
           <form action={formAction}>
             <p className="text-sm text-gray-600 mb-4">
-              Logado como <strong>{invitationEmail}</strong>
+              {t("invitations.accept.logged_as")} <strong>{invitationEmail}</strong>
             </p>
             <Button
               type="submit"
               className="w-full"
               disabled={isPending || !!state.redirect}
             >
-              {isPending || state.redirect ? "Aceitando..." : "Aceitar convite"}
+              {isPending || state.redirect
+                ? t("invitations.accept.accepting")
+                : t("invitations.accept.accept_button")}
             </Button>
           </form>
         )}
@@ -75,13 +79,14 @@ export function AcceptForm({
         {profileExists && !sessionActive && (
           <div className="text-center">
             <p className="text-sm text-gray-600 mb-4">
-              Faça login com <strong>{invitationEmail}</strong> para aceitar este convite.
+              {t("invitations.accept.login_prompt")} <strong>{invitationEmail}</strong>{" "}
+              {t("invitations.accept.login_prompt_suffix")}
             </p>
             <Link
               href={`/login?callbackUrl=${encodeURIComponent(`/accept/${token}`)}`}
               className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 w-full"
             >
-              Fazer login
+              {t("invitations.accept.login_link")}
             </Link>
           </div>
         )}
@@ -90,7 +95,7 @@ export function AcceptForm({
         {!profileExists && (
           <form action={formAction} className="space-y-4">
             <div>
-              <Label htmlFor="email-display">E-mail</Label>
+              <Label htmlFor="email-display">{t("invitations.accept.field_email")}</Label>
               <Input
                 id="email-display"
                 type="email"
@@ -100,7 +105,7 @@ export function AcceptForm({
               />
             </div>
             <div>
-              <Label htmlFor="password">Senha</Label>
+              <Label htmlFor="password">{t("invitations.accept.field_password")}</Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -108,26 +113,28 @@ export function AcceptForm({
                   type={showPassword ? "text" : "password"}
                   minLength={8}
                   required
-                  placeholder="Mínimo 8 caracteres"
+                  placeholder={t("invitations.accept.password_placeholder")}
                 />
                 <button
                   type="button"
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-gray-600"
                   onClick={() => setShowPassword((v) => !v)}
                 >
-                  {showPassword ? "Ocultar" : "Mostrar"}
+                  {showPassword
+                    ? t("invitations.accept.hide_password")
+                    : t("invitations.accept.show_password")}
                 </button>
               </div>
             </div>
             <div>
-              <Label htmlFor="confirmPassword">Confirmar senha</Label>
+              <Label htmlFor="confirmPassword">{t("invitations.accept.field_confirm_password")}</Label>
               <Input
                 id="confirmPassword"
                 name="confirmPassword"
                 type="password"
                 minLength={8}
                 required
-                placeholder="Repita a senha"
+                placeholder={t("invitations.accept.confirm_password_placeholder")}
               />
             </div>
             <Button
@@ -135,7 +142,9 @@ export function AcceptForm({
               className="w-full"
               disabled={isPending || !!state.redirect}
             >
-              {isPending || state.redirect ? "Criando conta..." : "Criar conta e aceitar"}
+              {isPending || state.redirect
+                ? t("invitations.accept.creating")
+                : t("invitations.accept.create_and_accept")}
             </Button>
           </form>
         )}
