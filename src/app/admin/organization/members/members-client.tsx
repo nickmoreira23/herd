@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Mail, Trash2 } from "lucide-react";
 import { MemberRole } from "@prisma/client";
+import { useT } from "@/lib/i18n/locale-context";
 
 interface MemberRow {
   id: string;
@@ -54,6 +55,7 @@ export function MembersClient({
   members: initialMembers,
   pendingInvitations: initialInvitations,
 }: MembersClientProps) {
+  const t = useT();
   const [invitations, setInvitations] = useState(initialInvitations);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -73,7 +75,7 @@ export function MembersClient({
       });
       const data = await res.json();
       if (!res.ok) {
-        setInviteError(data.error ?? "Falha ao enviar convite");
+        setInviteError(data.error ?? t("organization.members.invite_error_fallback"));
         return;
       }
       setInvitations((prev) => [data.data, ...prev]);
@@ -119,30 +121,30 @@ export function MembersClient({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Membros</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">{t("organization.members.title")}</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Gerencie os membros da organização e convites pendentes.
+            {t("organization.members.description")}
           </p>
         </div>
         <Button onClick={() => setDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          Convidar membro
+          {t("organization.members.invite_button")}
         </Button>
       </div>
 
       {/* Active members table */}
       <div>
         <h2 className="text-base font-medium text-gray-900 mb-3">
-          Membros ativos ({initialMembers.length})
+          {t("organization.members.active_section", { count: initialMembers.length })}
         </h2>
         <div className="rounded-lg border border-gray-200 overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-500 uppercase text-xs">
               <tr>
-                <th className="px-4 py-3 text-left font-medium">Nome</th>
-                <th className="px-4 py-3 text-left font-medium">E-mail</th>
-                <th className="px-4 py-3 text-left font-medium">Função</th>
-                <th className="px-4 py-3 text-left font-medium">Entrou em</th>
+                <th className="px-4 py-3 text-left font-medium">{t("organization.members.col_name")}</th>
+                <th className="px-4 py-3 text-left font-medium">{t("organization.members.col_email")}</th>
+                <th className="px-4 py-3 text-left font-medium">{t("organization.members.col_role")}</th>
+                <th className="px-4 py-3 text-left font-medium">{t("organization.members.col_joined")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -152,7 +154,7 @@ export function MembersClient({
                     colSpan={4}
                     className="px-4 py-6 text-center text-gray-400"
                   >
-                    Nenhum membro ativo.
+                    {t("organization.members.empty_active")}
                   </td>
                 </tr>
               ) : (
@@ -184,16 +186,16 @@ export function MembersClient({
       {/* Pending invitations table */}
       <div>
         <h2 className="text-base font-medium text-gray-900 mb-3">
-          Convites pendentes ({invitations.length})
+          {t("organization.members.pending_section", { count: invitations.length })}
         </h2>
         <div className="rounded-lg border border-gray-200 overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-500 uppercase text-xs">
               <tr>
-                <th className="px-4 py-3 text-left font-medium">E-mail</th>
-                <th className="px-4 py-3 text-left font-medium">Função</th>
-                <th className="px-4 py-3 text-left font-medium">Expira em</th>
-                <th className="px-4 py-3 text-right font-medium">Ações</th>
+                <th className="px-4 py-3 text-left font-medium">{t("organization.members.col_email")}</th>
+                <th className="px-4 py-3 text-left font-medium">{t("organization.members.col_role")}</th>
+                <th className="px-4 py-3 text-left font-medium">{t("organization.members.col_expires")}</th>
+                <th className="px-4 py-3 text-right font-medium">{t("organization.members.col_actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -203,7 +205,7 @@ export function MembersClient({
                     colSpan={4}
                     className="px-4 py-6 text-center text-gray-400"
                   >
-                    Nenhum convite pendente.
+                    {t("organization.members.empty_pending")}
                   </td>
                 </tr>
               ) : (
@@ -245,9 +247,9 @@ export function MembersClient({
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Convidar novo membro</DialogTitle>
+            <DialogTitle>{t("organization.members.invite_dialog_title")}</DialogTitle>
             <DialogDescription>
-              Envie um convite por e-mail para adicionar alguém à organização.
+              {t("organization.members.invite_dialog_description")}
             </DialogDescription>
           </DialogHeader>
 
@@ -258,17 +260,17 @@ export function MembersClient({
               </div>
             )}
             <div className="space-y-1">
-              <Label htmlFor="invite-email">E-mail</Label>
+              <Label htmlFor="invite-email">{t("organization.members.invite_field_email")}</Label>
               <Input
                 id="invite-email"
                 type="email"
-                placeholder="nome@empresa.com"
+                placeholder={t("organization.members.invite_field_email_placeholder")}
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
               />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="invite-role">Função</Label>
+              <Label htmlFor="invite-role">{t("organization.members.invite_field_role")}</Label>
               <Select
                 value={inviteRole}
                 onValueChange={(v) => setInviteRole(v as MemberRole)}
@@ -277,9 +279,9 @@ export function MembersClient({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={MemberRole.MEMBER}>Membro</SelectItem>
-                  <SelectItem value={MemberRole.ADMIN}>Admin</SelectItem>
-                  <SelectItem value={MemberRole.OWNER}>Owner</SelectItem>
+                  <SelectItem value={MemberRole.MEMBER}>{t("organization.members.role_member")}</SelectItem>
+                  <SelectItem value={MemberRole.ADMIN}>{t("organization.members.role_admin")}</SelectItem>
+                  <SelectItem value={MemberRole.OWNER}>{t("organization.members.role_owner")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -293,13 +295,13 @@ export function MembersClient({
                 setInviteError(null);
               }}
             >
-              Cancelar
+              {t("organization.members.cancel")}
             </Button>
             <Button
               onClick={handleInvite}
               disabled={!inviteEmail || invitePending}
             >
-              {invitePending ? "Enviando..." : "Enviar convite"}
+              {invitePending ? t("organization.members.sending") : t("organization.members.send_invite")}
             </Button>
           </DialogFooter>
         </DialogContent>

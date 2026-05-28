@@ -4427,6 +4427,69 @@ export const messages = {
   "meeting_prep.feedback.plan_section_regenerated": "Seção regerada.",
   "meeting_prep.feedback.plan_md_copied":
     "Markdown copiado para a área de transferência.",
+
+  // ─── Organization members page ───────────────────────────────────────────────
+  "organization.members.title": "Membros",
+  "organization.members.description":
+    "Gerencie os membros da organização e convites pendentes.",
+  "organization.members.invite_button": "Convidar membro",
+  "organization.members.active_section": "Membros ativos ({count})",
+  "organization.members.col_name": "Nome",
+  "organization.members.col_email": "E-mail",
+  "organization.members.col_role": "Função",
+  "organization.members.col_joined": "Entrou em",
+  "organization.members.empty_active": "Nenhum membro ativo.",
+  "organization.members.pending_section": "Convites pendentes ({count})",
+  "organization.members.col_expires": "Expira em",
+  "organization.members.col_actions": "Ações",
+  "organization.members.empty_pending": "Nenhum convite pendente.",
+  "organization.members.invite_dialog_title": "Convidar novo membro",
+  "organization.members.invite_dialog_description":
+    "Envie um convite por e-mail para adicionar alguém à organização.",
+  "organization.members.invite_error_fallback": "Falha ao enviar convite",
+  "organization.members.invite_field_email": "E-mail",
+  "organization.members.invite_field_email_placeholder": "nome@empresa.com",
+  "organization.members.invite_field_role": "Função",
+  "organization.members.role_member": "Membro",
+  "organization.members.role_admin": "Admin",
+  "organization.members.role_owner": "Owner",
+  "organization.members.cancel": "Cancelar",
+  "organization.members.sending": "Enviando...",
+  "organization.members.send_invite": "Enviar convite",
+
+  // ─── Invitation accept form ───────────────────────────────────────────────────
+  "invitations.accept.heading": "Você foi convidado",
+  "invitations.accept.subheading": "para",
+  "invitations.accept.error_password_mismatch": "As senhas não coincidem",
+  "invitations.accept.error_fallback": "Falha ao aceitar convite",
+  "invitations.accept.logged_as": "Logado como",
+  "invitations.accept.accepting": "Aceitando...",
+  "invitations.accept.accept_button": "Aceitar convite",
+  "invitations.accept.login_prompt": "Faça login com",
+  "invitations.accept.login_prompt_suffix": "para aceitar este convite.",
+  "invitations.accept.login_link": "Fazer login",
+  "invitations.accept.field_email": "E-mail",
+  "invitations.accept.field_password": "Senha",
+  "invitations.accept.password_placeholder": "Mínimo 8 caracteres",
+  "invitations.accept.hide_password": "Ocultar",
+  "invitations.accept.show_password": "Mostrar",
+  "invitations.accept.field_confirm_password": "Confirmar senha",
+  "invitations.accept.confirm_password_placeholder": "Repita a senha",
+  "invitations.accept.creating": "Criando conta...",
+  "invitations.accept.create_and_accept": "Criar conta e aceitar",
+
+  // ─── Invitation status views ──────────────────────────────────────────────────
+  "invitations.view.not_found_title": "Convite não encontrado",
+  "invitations.view.not_found_body":
+    "Este link de convite não é válido ou já foi removido.",
+  "invitations.view.go_home": "Ir para a home",
+  "invitations.view.expired_title": "Convite expirado",
+  "invitations.view.expired_body":
+    "Este convite expirou. Solicite um novo convite ao administrador da organização.",
+  "invitations.view.unavailable_title": "Convite indisponível",
+  "invitations.view.already_accepted": "Este convite já foi aceito.",
+  "invitations.view.declined": "Este convite foi recusado.",
+  "invitations.view.already_expired": "Este convite expirou.",
 } as const;
 
 export type MessageKey = keyof typeof messages;
