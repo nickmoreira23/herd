@@ -4,7 +4,7 @@ import Link from "next/link";
 function Card({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="bg-white rounded-lg shadow p-8 max-w-md w-full text-center">
+      <div className="bg-white rounded-lg shadow p-8 max-w-md w-full text-center text-foreground">
         {children}
       </div>
     </div>

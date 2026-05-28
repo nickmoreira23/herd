@@ -41,7 +41,7 @@ export function AcceptForm({
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="bg-white rounded-lg shadow p-8 max-w-md w-full">
+      <div className="bg-white rounded-lg shadow p-8 max-w-md w-full text-foreground">
         <h1 className="text-xl font-semibold text-gray-900 mb-1">
           Você foi convidado
         </h1>
