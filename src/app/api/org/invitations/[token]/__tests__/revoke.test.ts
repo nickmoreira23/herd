@@ -46,32 +46,32 @@ function makeSession() {
   };
 }
 
-function makeParams(id: string) {
-  return { params: Promise.resolve({ id }) };
+function makeParams(token: string) {
+  return { params: Promise.resolve({ token }) };
 }
 
 function makeRequest() {
-  return new Request("http://localhost/api/org/invitations/inv-1/revoke", {
+  return new Request("http://localhost/api/org/invitations/tok-abc/revoke", {
     method: "POST",
     headers: { "x-org-id": "org-1" },
   });
 }
 
-describe("POST /api/org/invitations/[id]/revoke", () => {
+describe("POST /api/org/invitations/[token]/revoke", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("returns 401 when no session", async () => {
     mockAuth.mockResolvedValue(null as never);
-    const res = await POST(makeRequest(), makeParams("inv-1"));
+    const res = await POST(makeRequest(), makeParams("tok-abc"));
     expect(res.status).toBe(401);
   });
 
   it("returns 403 when role is MEMBER", async () => {
     mockAuth.mockResolvedValue(makeSession() as never);
     profileFindUnique.mockResolvedValue(makeProfile("MEMBER") as never);
-    const res = await POST(makeRequest(), makeParams("inv-1"));
+    const res = await POST(makeRequest(), makeParams("tok-abc"));
     expect(res.status).toBe(403);
   });
 
@@ -79,7 +79,7 @@ describe("POST /api/org/invitations/[id]/revoke", () => {
     mockAuth.mockResolvedValue(makeSession() as never);
     profileFindUnique.mockResolvedValue(makeProfile() as never);
     invitationFindFirst.mockResolvedValue(null);
-    const res = await POST(makeRequest(), makeParams("inv-x"));
+    const res = await POST(makeRequest(), makeParams("tok-not-found"));
     expect(res.status).toBe(404);
   });
 
@@ -91,7 +91,7 @@ describe("POST /api/org/invitations/[id]/revoke", () => {
       organizationId: "org-1",
       status: "ACCEPTED",
     } as never);
-    const res = await POST(makeRequest(), makeParams("inv-1"));
+    const res = await POST(makeRequest(), makeParams("tok-abc"));
     expect(res.status).toBe(409);
   });
 
@@ -105,7 +105,7 @@ describe("POST /api/org/invitations/[id]/revoke", () => {
     } as never);
     invitationUpdate.mockResolvedValue({} as never);
 
-    const res = await POST(makeRequest(), makeParams("inv-1"));
+    const res = await POST(makeRequest(), makeParams("tok-abc"));
     expect(res.status).toBe(204);
   });
 });

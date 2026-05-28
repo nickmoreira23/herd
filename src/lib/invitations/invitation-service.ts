@@ -30,7 +30,7 @@ export interface AcceptInvitationInput {
 }
 
 export interface RevokeInvitationInput {
-  invitationId: string;
+  token: string;
   organizationId: string;
 }
 
@@ -228,17 +228,17 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<{
 // ─── 3.4 revokeInvitation ────────────────────────────────────────────────────
 
 export async function revokeInvitation(input: RevokeInvitationInput): Promise<void> {
-  const { invitationId, organizationId } = input;
+  const { token, organizationId } = input;
 
   const invitation = await prisma.organizationInvitation.findFirst({
-    where: { id: invitationId, organizationId },
+    where: { token, organizationId },
   });
   if (!invitation) throw new InvitationNotFoundError();
   if (invitation.status !== "PENDING") throw new InvitationNotRevocableError();
 
   // Revoke via expiresAt = now() (Decision #6 — no REVOKED enum value)
   await prisma.organizationInvitation.update({
-    where: { id: invitationId },
+    where: { id: invitation.id },
     data: { expiresAt: new Date() },
   });
 }

@@ -8,16 +8,16 @@ import {
 
 export async function POST(
   _request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ token: string }> }
 ) {
   const session = await requireOrgRole(["OWNER", "ADMIN"]);
   if (session instanceof Response) return session;
 
-  const { id } = await params;
+  const { token } = await params;
 
   try {
     await revokeInvitation({
-      invitationId: id,
+      token,
       organizationId: session.user.activeOrgId!,
     });
     return new Response(null, { status: 204 });
