@@ -1648,6 +1648,7 @@ export const messages: Record<MessageKey, string> = {
   "organization.users.action.reset_password": "Reset Password",
   "organization.users.action.cancel_password_reset": "Cancel password reset",
   "organization.users.action.done": "Done",
+  "organization.users.action.send_invite": "Send Invite",
 
   // user-table.tsx — modal (create/edit)
   "organization.users.modal.add_title": "Add Member",
@@ -1677,6 +1678,13 @@ export const messages: Record<MessageKey, string> = {
   "organization.users.modal.profile_type_label": "Profile Type",
   "organization.users.modal.profile_type_placeholder": "Select a profile type…",
   "organization.users.modal.roles_label": "Roles",
+  "organization.users.modal.invite_title": "Invite Member",
+  "organization.users.modal.invite_description":
+    "Send an email invitation to add a new member to the organization.",
+  "organization.users.modal.role_label": "Role",
+  "organization.users.role.member": "Member",
+  "organization.users.role.admin": "Admin",
+  "organization.users.role.owner": "Owner",
 
   // user-table.tsx — invite (temporary password dialog)
   "organization.users.invite.title": "User Created",
@@ -1694,11 +1702,14 @@ export const messages: Record<MessageKey, string> = {
   "organization.users.feedback.member_suspended": "Member suspended",
   "organization.users.feedback.password_reset": "Password has been reset",
   "organization.users.feedback.password_copied": "Password copied to clipboard",
+  "organization.users.feedback.invitation_sent": "Invitation sent to {email}",
 
   // user-table.tsx — errors
   "error.organization.users.required_fields":
     "First name, email, and profile type are required",
   "error.organization.users.save_failed": "Failed to save",
+  "error.organization.users.invitation_already_exists":
+    "A pending invitation already exists for this email",
 
   // ============================================================
   // Organization — Departments (Etapa 1.5.6b-tris Phase ε)
