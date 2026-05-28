@@ -18,6 +18,11 @@ export default async function MembersPage() {
   const orgId = sessionOrResponse.user.activeOrgId;
   if (!orgId) redirect("/login");
 
+  const viewer = sessionOrResponse.user as {
+    id?: string;
+    isSuperAdmin?: boolean;
+  };
+
   const [members, pendingInvitations] = await Promise.all([
     prisma.organizationMember.findMany({
       where: { organizationId: orgId, status: "ACTIVE" },
@@ -47,11 +52,25 @@ export default async function MembersPage() {
     }),
   ]);
 
+  // Permission gate (defense-in-depth; backend already enforces via
+  // requireOrgRole(["OWNER","ADMIN"]) on the invite + revoke routes).
+  // Role is read from the EFFECTIVE (host-resolved) org — the members list is
+  // already scoped to orgId, so the viewer's row carries their ORG-scoped role.
+  // super_admin can always manage (matches requireOrgRole's bypass).
+  const viewerOrgRole = members
+    .find((m) => m.networkProfile.id === viewer.id)
+    ?.roles.find((r) => r.scopeType === "ORG")?.role;
+  const canManage =
+    viewer.isSuperAdmin === true ||
+    viewerOrgRole === "OWNER" ||
+    viewerOrgRole === "ADMIN";
+
   return (
     <MembersClient
       members={members}
       pendingInvitations={pendingInvitations}
       organizationId={orgId}
+      canManage={canManage}
     />
   );
 }
