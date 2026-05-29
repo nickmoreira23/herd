@@ -2,7 +2,7 @@
 name: chat-code-handoff
 scope: project-local
 overrides: anthropic-skills:chat-code-handoff
-version: 0.2.4
+version: 0.2.5
 ---
 
 # chat-code-handoff (ComeçaAI project-local addendum)
@@ -486,6 +486,34 @@ sem `asChild`, e mover estilos para o trigger wrapper.
 `auth()` em Auth.js v5 tem tipo overloaded. `mockResolvedValue(null)` em Jest
 falha com `Argument of type 'null' is not assignable to parameter of type
 'NextMiddleware'`. Fix: `mockResolvedValue(null as never)`.
+
+> **P5 reservado** para a lição de pause-and-report (pressure verbal não
+> substitui diagnostica → relata → autoriza → executa) referenciada em
+> `docs/architect-state/STATE.md` §7 (Sub-etapa 24). Ainda não cravada como
+> entry própria aqui; será adicionada num edit futuro. P6 abaixo evita
+> duplicar o numbering.
+
+**P6 — Teste limpo antes de diagnosticar bug de runtime em DEV**
+
+Sintomas como o badge `(stale)` no Next overlay, `Runtime TypeError: Load
+failed`, e `Network error. Please try again.` são frequentemente FALSOS
+POSITIVOS de cache do browser ou dev server morto/stale entre restarts e idle
+— não bugs de código. Diagnosticar runtime sobre ambiente contaminado gera
+teorias falsas (custou ~4 rounds na caça ao A1 da Sub-24: subdomain ausente,
+signIn hang, proxy 302, cacheComponents stale — todas falsas; a causa real era
+a race RSC da lição N3).
+
+**Regra:** antes de tratar qualquer sintoma de runtime como bug, garantir
+ambiente comprovadamente limpo, nesta ordem:
+
+1. Matar o dev: `ps aux | grep "next dev" | grep -v grep | awk '{print $2}' | xargs -r kill`
+2. `rm -rf .next/ && npm run dev` — esperar `✓ Ready` (não tocar o browser antes disso).
+3. Confirmar dev vivo: `curl -s -o /dev/null -w "HTTP %{http_code}\n" http://localhost:3000/<rota>` deve dar `200`.
+4. Fechar o browser INTEIRO (Cmd+Q — não só a aba/janela; a janela reusada carrega build velho).
+5. Só então reabrir em nova janela e reproduzir.
+
+Se o sintoma persistir com ambiente assim, AÍ é candidato a bug real. O badge
+`(stale)` é o delator nº1 de build velho no browser.
 
 ---
 
