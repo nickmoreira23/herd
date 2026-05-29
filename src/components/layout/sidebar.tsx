@@ -81,6 +81,14 @@ export function Sidebar() {
     orgRole ??
     (session?.user as { role?: string } | undefined)?.role ??
     "admin";
+  // Display-only capitalization: enum roles arrive ALL-CAPS (OWNER/ADMIN/MEMBER)
+  // or snake_case (super_admin). Render "Owner"/"Admin"/"Member"/"Super Admin"
+  // without mutating the underlying enum value.
+  const roleLabel = userRole
+    .toLowerCase()
+    .split(/[_\s]+/)
+    .map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1) : w))
+    .join(" ");
 
   // Fetch company branding — Sub-etapa 23: /api/org/current is primary (host-aware).
   // /api/settings companyIconUrl is preserved as branding fallback.
@@ -524,7 +532,7 @@ export function Sidebar() {
               <>
                 <div className="flex-1 text-left min-w-0 pl-4">
                   <p className="font-medium truncate text-sm leading-tight">{userName}</p>
-                  <p className="text-[11px] text-muted-foreground truncate capitalize">{userRole}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{roleLabel}</p>
                 </div>
                 <ChevronsUpDown className="h-4 w-4 text-muted-foreground shrink-0 mr-3" />
               </>
@@ -555,7 +563,7 @@ export function Sidebar() {
               <div className="min-w-0">
                 <p className="font-medium truncate">{userName}</p>
                 <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">{userRole}</p>
+                <p className="text-[10px] text-muted-foreground tracking-wider mt-0.5">{roleLabel}</p>
               </div>
             </div>
             {/* Menu items */}

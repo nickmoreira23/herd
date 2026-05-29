@@ -79,7 +79,13 @@ export function MembersClient({
       });
       const data = await res.json();
       if (!res.ok) {
-        setInviteError(data.error ?? t("organization.members.invite_error_fallback"));
+        // Translate known error codes via i18n; never surface the raw enum
+        // (e.g. "ALREADY_EXISTS") or backend PT string to the user.
+        const message =
+          data.code === "ALREADY_EXISTS"
+            ? t("organization.members.invite_already_exists")
+            : (data.error ?? t("organization.members.invite_error_fallback"));
+        setInviteError(message);
         return;
       }
       setInvitations((prev) => [data.data, ...prev]);
