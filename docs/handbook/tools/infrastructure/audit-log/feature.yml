@@ -1,0 +1,39 @@
+id: audit-log
+uid: herd.tool.infrastructure.audit-log
+level: tool
+technical_category: foundation
+title:
+  pt-BR: Log de Auditoria
+  en-US: Audit Log
+description:
+  pt-BR: Trilha imutável e tenant-scoped de quem fez o quê e quando. Gravada
+    best-effort fora do caminho crítico da ação, nunca derruba a operação de
+    negócio.
+  en-US: Immutable, tenant-scoped trail of who did what and when. Written
+    best-effort outside the action's critical path — never breaks the business
+    operation.
+status: active
+owners:
+  - "@nick"
+since: 2026-05-29
+updated: 2026-05-29
+parent: herd.category.tools.infrastructure
+children: []
+consumes: []
+consumed_by: []
+related:
+  - herd.tool.infrastructure.domain-events
+source_paths:
+  - src/lib/audit
+admin_paths: []
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

@@ -2,9 +2,9 @@
 
 > **Propósito:** Este arquivo é o estado canônico cross-session do trabalho de chat-architect em curso. Atualizado ao final de cada sub-etapa Fase 4. Qualquer nova sessão Claude.ai (chat-architect) deve ler este arquivo PRIMEIRO antes de propor qualquer trabalho.
 >
-> **Versão:** v1.1 (atualizado 2026-05-29, pós-merge Sub-etapa 24 — PRs #77→#85, merge `9149412`)
+> **Versão:** v1.2 (atualizado 2026-05-29, pós-merge Sub-etapa 25 — PR #88, merge `fdc7a75`)
 >
-> **Próxima atualização esperada:** pós-merge Sub-etapa 25 (Audit log).
+> **Próxima atualização esperada:** pós-merge Sub-etapa 26 (Sub-org hierarchy).
 
 ---
 
@@ -38,37 +38,55 @@
 | 12 | 22.1.3 — Cloudflare cleanup (Opção A) | ✅ | — | archive/sub-etapa-22-1-3-* |
 | 13 | 22.2 — Org selector + login branding + switch-org | ✅ | f5d2b6e | archive/sub-etapa-22-2-org-selector-f5d2b6e |
 | 14 | **24 — Invitation flow + EmailProvider mock** | ✅ | `9149412` (PRs #77→#85) | — |
-| 15 | 25 — Audit log | ⏭️ pending | — | — |
+| 15 | **25 — Audit log** | ✅ | `fdc7a75` (PR #88) | — |
 | 16 | 26 — Sub-org hierarchy | ⏭️ pending | — | — |
 | 17 | 27 — UI consolidation | ⏭️ pending | — | — |
 | 18 | 28 — Smoke harness DEV | ⏭️ pending | — | — |
 | 19 | 28.5 — Domain cutover + Resend + Bucked Up PROD | ⏭️ pending | — | — |
 
-**Progresso:** 14/17 cravadas (82%).
+**Progresso:** 15/17 cravadas (88%).
 
 ---
 
 ## 3. Pendência ativa
 
-### Sub-etapa 24 (Invitation flow) — ✅ MERGED (2026-05-29)
+### Sub-etapa 25 (Audit log) — ✅ MERGED (2026-05-29)
 
-Entregue ao longo de 8 PRs (#77 base → #79 slug → #80 allowedDevOrigins →
-#81 accept polish → #82 members host-resolve → #83 members RBAC gate →
-#84 cosmetic residuals → #85 A1 redirect race + legible inputs). Todas em `main`.
-Merge final `9149412`.
+Entregue em PR #88 (single squash, merge `fdc7a75`), branch `feat/sub-25-audit-log`.
+Estrutura: 1 commit base (schema + migration + helper) + 2 commits de instrumentação.
 
-**A1 fix (PR #85) cravado:** server action de accept retornava `{redirect}` mas
-o re-render automático do RSC desmontava `AcceptForm` antes do `useEffect`
-redirecionar → usuário preso em `/accept`. Fix: branch `ACCEPTED` em `page.tsx`
-renderiza `<AcceptedRedirect>` (client, re-emite nav no mount); URL cross-subdomain
-via helper único `buildOrgAdminUrl` (`src/lib/tenant/org-url.ts`). Ver skill N3.
+**Cravado:**
+- `model AuditLog` tenant-scoped estrito (molde `BillingEvent`): `tenant_id NOT NULL`
+  (FK Organization CASCADE), `actor_profile_id` nullable (FK NetworkProfile SET NULL),
+  `resource_id String` genérico, `metadata Json`, 5 índices. Registrado em
+  `TENANT_SCOPED_MODELS`.
+- **RLS estrita (lição #82):** policy única `audit_logs_tenant_isolation`, SEM
+  `herd_app_full_access` permissivo. `WITH CHECK` explícito (superset seguro da
+  referência BillingEvent, que confia no `USING` dobrando como write-check) por ser
+  tabela write-heavy. Verificada ao vivo no DB DEV antes de marcar applied.
+- Migration aplicada cirurgicamente via `DIRECT_URL` (drift DEV pré-existente
+  confirmado benigno, NÃO mascarado/resetado) + `migrate resolve --applied`.
+- Helper `writeAuditLog` (`src/lib/audit/write-audit-log.ts`): abre o próprio
+  `withTenant` (re-entrante), best-effort try/catch — falha de auditoria nunca
+  derruba a ação de negócio.
+- **6 pontos instrumentados**, todos passando o MESMO tenant do `withTenant`
+  envolvente (invariante de correção): invitations (`created`/`accepted` ×2 paths/
+  `revoked` na rota fora da transação), departments (`created`/`updated`/`deleted`/
+  `member_changed`), locations (`created`/`updated`/`deleted`). Ator = profile que
+  EXECUTOU a ação (no accept, a pessoa convidada).
 
-**Gate manual recomendado pós-merge:** smoke DEV do fluxo "Create account and accept"
-confirmando que o usuário aterrissa em `<sub>.lvh.me:3000/admin` (não fica em `/accept`).
-Backend já confirmado 100% via DB durante diagnóstico A1; o que faltava validar é
-o redirect client-side — o fix do #85 endereça exatamente isso.
+**Finding cravado:** `org-chart/internal` (e `external`) são GET-only — read-only.
+O chart é derivado de departments; suas mutações estruturais (reparent, head,
+membership) já são auditadas via rotas de department. Nenhum ponto de mutação novo
+foi inventado (regra da spec).
 
-### Próxima sub-etapa: 25 (Audit log) — ⏭️ pending
+**Gate manual recomendado pós-merge:** smoke DEV — exercer uma mutação
+(invite/dept/location) e confirmar via SQL que uma linha aterrissa em `audit_logs`
+sob o tenant correto. Backend confirmado via gates (typecheck + build + lint + 481
+testes em cada commit) e RLS verificada ao vivo; falta só a confirmação end-to-end
+de que uma ação real grava a linha.
+
+### Próxima sub-etapa: 26 (Sub-org hierarchy) — ⏭️ pending
 
 Aguardando discovery antecipada antes da spec (regra cravada da skill).
 
@@ -106,6 +124,25 @@ Aguardando discovery antecipada antes da spec (regra cravada da skill).
   cross-subdomain de fonte única em `src/lib/tenant/org-url.ts` (action + page).
   `redirect()` server-side NÃO usado (não cruza subdomínio sob Turbopack — N2/N3).
 
+### Audit log (Sub-etapa 25)
+
+- **`AuditLog` molde `BillingEvent` estrito.** Tenant-scoped, RLS policy única
+  (sem `herd_app_full_access`). `WITH CHECK` explícito.
+- **`actorProfileId` nullable + `onDelete: SetNull`.** Ator deletado anonimiza, não
+  apaga a trilha.
+- **`resourceId String` genérico.** Sem FK tipada — qualquer recurso referenciável.
+- **Helper abre o próprio `withTenant`** (re-entrante) e é **best-effort** (try/catch
+  log-and-swallow). Auditoria NUNCA derruba a ação de negócio.
+- **Ator = profile que EXECUTOU a ação.** No accept de convite, a pessoa convidada.
+- **Auditoria gravada DEPOIS do commit da ação** (no accept, FORA do `$transaction`;
+  no revoke, na rota fora da transação do service).
+- **Invariante de tenant:** todo ponto passa a mesma expressão de tenant do
+  `withTenant` envolvente (`session.user.activeOrgId` / `organizationId`).
+- **V1 = cobertura sobre completude.** 6 pontos (invitations/departments/locations).
+  Role + settings FORA. Read ops não logadas. UI de browse não existe (tech debt).
+- **action strings `{recurso}.{verbo}` lowercase.** metadata mínimo-útil, NUNCA
+  sensível (sem senha/hash/token completo).
+
 ### Schema crítico
 
 - `Organization`: 17 cols, sem `ownerId` (drop 20.1), `subdomain UNIQUE`, `customDomain UNIQUE nullable`.
@@ -114,6 +151,8 @@ Aguardando discovery antecipada antes da spec (regra cravada da skill).
 - `MembershipStatus`: ACTIVE, SUSPENDED, INVITED (NÃO USADO), REMOVED.
 - `InvitationStatus`: PENDING, ACCEPTED, DECLINED, EXPIRED (sem REVOKED).
 - `NetworkProfile.isSuperAdmin Boolean`. Nick = true.
+- `AuditLog`: tenant-scoped estrito. `tenant_id`, `actor_profile_id` (nullable),
+  `action`, `resource_type`, `resource_id`, `metadata Json`, `created_at`. 5 índices.
 
 ### Process discipline
 
@@ -137,6 +176,9 @@ Aguardando discovery antecipada antes da spec (regra cravada da skill).
 - Default-org persistence — Sub-etapa 27.
 - Sidebar dropdown polish — Sub-etapa 27.
 - Profile popover sidebar não permite click — Sub-etapa 27.
+- Audit log: UI admin para browse/filtrar a trilha — Sub-etapa 27 ou quando produto pedir.
+- Audit log: cobertura de role + settings mutations — quando esses pontos existirem.
+- Audit log: smoke end-to-end DEV (ação real → linha em `audit_logs`) — gate manual pendente.
 
 ### Tier 2 (resolve em Sub-etapa 28.5 ou cutover)
 
@@ -244,6 +286,9 @@ Pendências do Nick (não-código):
 - **RLS context:** `src/lib/tenancy/context.ts`.
 - **Email infra (Sub-etapa 24):** `src/lib/email/`.
 - **Invitation service (Sub-etapa 24):** `src/lib/invitations/`.
+- **Audit helper (Sub-etapa 25):** `src/lib/audit/write-audit-log.ts`.
+- **Audit migration (Sub-etapa 25):** `prisma/migrations/20260529000000_sub_25_audit_log/`.
+- **Audit handbook (Sub-etapa 25):** `docs/handbook/tools/infrastructure/audit-log/`.
 - **Members UI (Sub-etapa 24):** `src/app/admin/organization/members/`.
 - **Accept page (Sub-etapa 24):** `src/app/accept/[token]/`.
 - **Skill chat-code-handoff:** `.agents/skills/chat-code-handoff/SKILL.md`.

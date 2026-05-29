@@ -1,7 +1,7 @@
 # ComeçaAI
 
 > ComeçaAI is an AI-native B2B platform for marketing networks.
-> Currently 63 documented entries across 5 layers (Networks, Solutions, Tools, Blocks, Integrations) plus a meta namespace.
+> Currently 64 documented entries across 5 layers (Networks, Solutions, Tools, Blocks, Integrations) plus a meta namespace.
 
 ## Documentation
 
