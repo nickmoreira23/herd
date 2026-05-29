@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { prisma } from "@/lib/prisma";
+import { withTenant } from "@/lib/tenancy/context";
 
 /**
  * Sub-etapa 4, Tarefa F — RLS breach prevention test.
@@ -216,5 +218,154 @@ describe("RLS breach prevention (integration)", () => {
       SELECT id::text AS id FROM "IntegrationWebhookEvent" WHERE id = ${seeded.iweA.id}::uuid
     `;
     expect(rows).toHaveLength(0);
+  });
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// Sub-26.2 — Vertical read canaries (THE GATE).
+//
+// Tree:  GP ─┬─ P ── child
+//            └─ uncle
+//        sibling (separate root, no ancestry)
+//
+// Each org owns one IntegrationSyncLog row (Class A strict policy). Canaries
+// set `app.tenant_ids` (the array GUC) and read raw, asserting the policy's
+// vertical visibility. Until the T3 policy migration flips USING to
+// `= ANY(current_app_tenant_ids())`, the policy still reads the singular
+// `app.tenant_id` (left unset here) → vertical-read cases (#2, #4) return 0
+// and are EXPECTED RED. The safety net (#1 horizontal, #3 anti-ascendant,
+// #5 transitive-deny, #6 no-GUC, #7 write-check) must be GREEN throughout.
+// ──────────────────────────────────────────────────────────────────────────
+
+const VP = `test-vert-${Date.now()}`;
+type Tree = {
+  gp: string; p: string; child: string; uncle: string; sibling: string;
+  integrationId: string;
+  islGp: string; islP: string; islChild: string; islUncle: string; islSibling: string;
+};
+let tree: Tree;
+
+async function seedTree(): Promise<Tree> {
+  const mkOrg = async (slug: string, parentOrgId: string | null) =>
+    (await adminClient.organization.create({
+      data: { slug: `${VP}-${slug}`, subdomain: `${VP}-${slug}`, name: `${VP} ${slug}`, parentOrgId },
+      select: { id: true },
+    })).id;
+
+  const gp = await mkOrg("gp", null);
+  const p = await mkOrg("p", gp);
+  const child = await mkOrg("child", p);
+  const uncle = await mkOrg("uncle", gp);
+  const sibling = await mkOrg("sibling", null);
+
+  const integration = await adminClient.integration.create({
+    data: { name: `${VP}-int`, slug: `${VP}-int`, category: "OTHER" },
+    select: { id: true },
+  });
+
+  const mkIsl = async (tenantId: string) =>
+    (await adminClient.integrationSyncLog.create({
+      data: { tenantId, integrationId: integration.id, action: "vert-target", status: "success" },
+      select: { id: true },
+    })).id;
+
+  return {
+    gp, p, child, uncle, sibling,
+    integrationId: integration.id,
+    islGp: await mkIsl(gp), islP: await mkIsl(p), islChild: await mkIsl(child),
+    islUncle: await mkIsl(uncle), islSibling: await mkIsl(sibling),
+  };
+}
+
+/** Read `islId` under the given `app.tenant_ids` array; returns row count. */
+async function readUnderTenantIds(tenantIds: string[], islId: string): Promise<number> {
+  const rows = await runtimeClient.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT set_config('app.tenant_ids', ${tenantIds.join(",")}, true)`;
+    return tx.$queryRaw<Array<{ id: string }>>`
+      SELECT id::text AS id FROM "IntegrationSyncLog" WHERE id = ${islId}::uuid
+    `;
+  });
+  return rows.length;
+}
+
+describe("RLS vertical read canaries (Sub-26.2 gate)", () => {
+  beforeAll(async () => {
+    tree = await seedTree();
+  });
+
+  afterAll(async () => {
+    await adminClient.integrationSyncLog.deleteMany({ where: { integrationId: tree.integrationId } });
+    await adminClient.integration.delete({ where: { id: tree.integrationId } });
+    await adminClient.organization.deleteMany({ where: { slug: { startsWith: VP } } });
+  });
+
+  it("#1 horizontal: sibling does NOT see GP's data (deny)", async () => {
+    expect(await readUnderTenantIds([tree.sibling], tree.islGp)).toBe(0);
+  });
+
+  it("#2 vertical read: parent sees child's data (allow) — RED until T3", async () => {
+    expect(await readUnderTenantIds([tree.p, tree.child], tree.islChild)).toBe(1);
+  });
+
+  it("#3 anti-ascendant: child does NOT see parent's data (deny)", async () => {
+    expect(await readUnderTenantIds([tree.child], tree.islP)).toBe(0);
+  });
+
+  it("#4 transitive allow: grandparent sees grandchild's data (allow) — RED until T3", async () => {
+    expect(await readUnderTenantIds([tree.gp, tree.p, tree.child, tree.uncle], tree.islChild)).toBe(1);
+  });
+
+  it("#5 transitive deny: uncle does NOT see nephew's data (deny)", async () => {
+    expect(await readUnderTenantIds([tree.uncle], tree.islChild)).toBe(0);
+  });
+
+  it("#6 no-GUC deny (defense-in-depth)", async () => {
+    const rows = await runtimeClient.$queryRaw<Array<{ id: string }>>`
+      SELECT id::text AS id FROM "IntegrationSyncLog" WHERE id = ${tree.islChild}::uuid
+    `;
+    expect(rows).toHaveLength(0);
+  });
+
+  it("#7 write unchanged: INSERT targeting another tenant is rejected by WITH CHECK", async () => {
+    // app.tenant_id = parent (exact write anchor); even with the descendant
+    // child visible for READ, writing a row owned by child must be denied.
+    await expect(
+      runtimeClient.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT set_config('app.tenant_id', ${tree.p}, true)`;
+        await tx.$executeRaw`SELECT set_config('app.tenant_ids', ${[tree.p, tree.child].join(",")}, true)`;
+        await tx.$executeRaw`
+          INSERT INTO "IntegrationSyncLog" ("tenantId", "integrationId", "action", "status")
+          VALUES (${tree.child}::uuid, ${tree.integrationId}::uuid, 'vert-write-breach', 'success')
+        `;
+      })
+    ).rejects.toThrow();
+  });
+
+  // ── via-Extension (ORM path, project prisma singleton + withTenant) ──
+  // These exercise the real Prisma Extension (findUnique → { in: tenantIds }),
+  // catching Extension bugs the raw canaries can't. RLS still clamps reads to
+  // the exact tenant until T3, so the vertical case is RED until then; the
+  // scope-intact cases are GREEN now (proving the {in} filter never loosened
+  // to drop the tenant predicate).
+
+  it("via-Extension: own-tenant findUnique returns the row (scope works)", async () => {
+    const row = await withTenant(tree.gp, () =>
+      prisma.integrationSyncLog.findUnique({ where: { id: tree.islGp } })
+    );
+    expect(row?.id).toBe(tree.islGp);
+  });
+
+  it("via-Extension: scope intact — unrelated tenant's row is null (never loosened)", async () => {
+    const row = await withTenant(tree.sibling, () =>
+      prisma.integrationSyncLog.findUnique({ where: { id: tree.islGp } })
+    );
+    expect(row).toBeNull();
+  });
+
+  it("via-Extension: vertical findUnique parent→child returns child's row — RED until T3", async () => {
+    const row = await withTenant(tree.p, () =>
+      prisma.integrationSyncLog.findUnique({ where: { id: tree.islChild } })
+    );
+    expect(row?.id).toBe(tree.islChild);
   });
 });

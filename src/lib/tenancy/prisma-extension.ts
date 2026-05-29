@@ -113,41 +113,58 @@ export function createTenantScopingExtension(scopedModels: readonly string[]) {
               return query(args);
             }
 
-            // Defense-in-depth layer 1: ORM-level filter.
-            const filteredArgs = applyTenantFilter(operation, args, tenantId);
-
-            // Defense-in-depth layer 2: emit `SET LOCAL app.tenant_id` so
-            // Postgres RLS policies (`current_app_tenant_id()` GUC reader)
-            // can enforce isolation. Wrapped in `$transaction` to scope the
-            // GUC to this op only — `SET LOCAL` outside a transaction would
-            // leak across requests sharing the same pooled connection.
+            // Defense-in-depth layer 2: emit `SET LOCAL app.tenant_id` (exact,
+            // write anchor) so Postgres RLS policies enforce isolation. Wrapped
+            // in `$transaction` to scope the GUC to this op only — `SET LOCAL`
+            // outside a transaction would leak across pooled connections.
             //
-            // Tech debt: 2 round-trips per tenant-scoped op (SET + query).
-            // Optimize when p99 latency on these ops exceeds ~50ms in prod
-            // (Sub-etapa 4, decisão #7).
+            // Sub-26.2 vertical read: READ ops additionally set `app.tenant_ids`
+            // (self + transitive descendants) and widen the ORM filter to
+            // `{ tenantId: { in: [...] } }`. Writes (create/update/delete/upsert/
+            // updateMany/deleteMany) stay EXACT via applyTenantFilter — vertical
+            // write is Sub-26.3, via context re-entry. The descendant closure is
+            // computed with an inline WITH RECURSIVE on `organizations` (same SQL
+            // as src/lib/org-hierarchy/getDescendants) — inlined rather than
+            // imported to avoid the prisma → extension → org-hierarchy import
+            // cycle. No cache (V1): sub-ms per the Sub-26.2 benchmark.
             //
-            // Caminho B (confirmed correct): the `query(args)` function passed
-            // to $allOperations is bound to a client/connection OUTSIDE the
-            // implicit $transaction we open here, so calling it directly does
-            // NOT run inside the tx (GUC verification test proved this — value
-            // returned null). We must dispatch the operation on `tx` directly.
-            // Caminho A (relying on AsyncLocalStorage propagation) was tried
-            // first per spec and rejected after the GUC test in
-            // `guc-set.integration.test.ts` failed.
+            // NOTE: until the T3 policy migration flips USING to
+            // `= ANY(current_app_tenant_ids())`, the policies still read the
+            // singular `app.tenant_id`, so RLS clamps reads back to the exact
+            // tenant — production isolation is UNCHANGED by this Extension alone.
+            //
+            // Caminho B (confirmed correct): dispatch the op on `tx` directly;
+            // the original `query(args)` runs outside this implicit tx.
+            const isRead = READ_OPS.has(operation);
             return await client.$transaction(
               async (tx) => {
                 await tx.$executeRaw`SELECT set_config('app.tenant_id', ${tenantId}, true)`;
-                // Dispatch the original operation on the transactional client.
-                // Prisma's delegate methods (findMany, create, etc.) live as
-                // properties on a per-model object: `tx[modelDelegate][op]`.
-                // Model name in $allOperations is PascalCase (e.g. "IntegrationSyncLog"),
-                // but the delegate key is camelCase (e.g. "integrationSyncLog").
+
+                let finalArgs: unknown;
+                if (isRead) {
+                  const descendants = await tx.$queryRaw<{ id: string }[]>`
+                    WITH RECURSIVE d AS (
+                      SELECT id FROM organizations WHERE parent_org_id = ${tenantId}::uuid
+                      UNION ALL
+                      SELECT o.id FROM organizations o JOIN d ON o.parent_org_id = d.id
+                    )
+                    SELECT id::text AS id FROM d
+                  `;
+                  const tenantIds = [tenantId, ...descendants.map((r) => r.id)];
+                  await tx.$executeRaw`SELECT set_config('app.tenant_ids', ${tenantIds.join(",")}, true)`;
+                  const a = (args ?? {}) as { where?: Record<string, unknown> };
+                  finalArgs = { ...a, where: { ...a.where, tenantId: { in: tenantIds } } };
+                } else {
+                  finalArgs = applyTenantFilter(operation, args, tenantId);
+                }
+
+                // Prisma delegate key is camelCase (model is PascalCase).
                 const delegateKey = model.charAt(0).toLowerCase() + model.slice(1);
                 const txAny = tx as unknown as Record<
                   string,
                   Record<string, (a: unknown) => Promise<unknown>>
                 >;
-                return await txAny[delegateKey][operation](filteredArgs);
+                return await txAny[delegateKey][operation](finalArgs);
               },
               { timeout: 10000 },
             );
