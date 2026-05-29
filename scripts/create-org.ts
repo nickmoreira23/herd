@@ -13,7 +13,7 @@ for (const r of required) {
   if (!args[r]) {
     console.error(`Missing required arg: --${r}`);
     console.error(
-      'Usage: npx tsx scripts/create-org.ts --slug=X --name="Y" --subdomain=Z --owner-email=user@example.com',
+      'Usage: npx tsx scripts/create-org.ts --slug=X --name="Y" --subdomain=Z --owner-email=user@example.com [--parent=<slug|id>]',
     );
     process.exit(1);
   }
@@ -48,6 +48,24 @@ async function main() {
     throw new Error(`Subdomain already exists: ${args.subdomain}`);
   }
 
+  // 2b. Resolve optional --parent (slug or id) → parentOrgId.
+  // A org nova não tem descendentes, então não há ciclo possível na criação;
+  // basta validar que o pai existe.
+  let parentOrgId: string | null = null;
+  if (args.parent) {
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        args.parent,
+      );
+    const parent = await prisma.organization.findUnique({
+      where: isUuid ? { id: args.parent } : { slug: args.parent },
+    });
+    if (!parent) {
+      throw new Error(`Parent organization not found: ${args.parent}`);
+    }
+    parentOrgId = parent.id;
+  }
+
   // 3. Cria org + membership atomically
   const org = await prisma.organization.create({
     data: {
@@ -55,6 +73,7 @@ async function main() {
       name: args.name,
       subdomain: args.subdomain,
       status: "ACTIVE",
+      parentOrgId,
       members: {
         create: {
           networkProfileId: owner.id,
