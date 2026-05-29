@@ -178,7 +178,11 @@ Aguardando discovery antecipada antes da spec (regra cravada da skill).
 - Profile popover sidebar não permite click — Sub-etapa 27.
 - Audit log: UI admin para browse/filtrar a trilha — Sub-etapa 27 ou quando produto pedir.
 - Audit log: cobertura de role + settings mutations — quando esses pontos existirem.
-- Audit log: smoke end-to-end DEV (ação real → linha em `audit_logs`) — gate manual pendente.
+- ✅ Audit log: smoke end-to-end DEV — VALIDADO (2026-05-29). Write path provado
+  (3 rows reais sob tenant ComeçaAI correto: `invitation.created`/`department.created`/
+  `location.created`, vistas no Studio) + isolamento cross-tenant provado (BuckedUp
+  `count=0` via script read-only usando o `prisma` singleton + `herd_app` NOBYPASSRLS,
+  caminho real da app). Lição #82 confirmada ao vivo.
 
 ### Tier 2 (resolve em Sub-etapa 28.5 ou cutover)
 
