@@ -7,6 +7,8 @@ import { createAgentStream, sseResponse } from "@/lib/agents/runtime";
 import { findOrCreateConversation } from "@/lib/agents/conversation";
 import { blockRegistry, actionToBlock } from "@/lib/blocks/registry";
 import { searchData, SEARCH_DATA_TOOL } from "@/lib/chat/data-retrieval";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 import {
   EXECUTE_ACTION_TOOL,
   executeAction,
@@ -22,6 +24,27 @@ import {
   handleProjectionsToolCall,
   buildProjectionsAgentContext,
 } from "@/lib/agents/handlers/projections-agent";
+
+/**
+ * Tenant-scoped search: DataProviders (e.g. LocationProvider) read
+ * tenant-scoped models, so establish withTenant(activeOrgId) — resolved from
+ * the proxy-injected host header — so the Prisma Extension filters by tenant.
+ *
+ * No active org (apex host has no x-org-id, internal calls, tests) → return
+ * NO results rather than running searchData unscoped. While
+ * herd_app_full_access is still present (pre-26.2), an unscoped read of
+ * tenant-scoped providers would expose all orgs. Mirrors the admin-page guard:
+ * no org → no data, never an unscoped read, never withTenant("").
+ */
+async function scopedSearch(input: {
+  item_ids?: string[];
+  keyword?: string;
+  types?: string[];
+}): Promise<Awaited<ReturnType<typeof searchData>>> {
+  const orgId = await getOrgIdFromRequest();
+  if (!orgId) return [];
+  return withTenant(orgId, () => searchData(input));
+}
 
 // ─── Route Handler ─────────────────────────────────────────────
 
@@ -290,7 +313,7 @@ ${actionCatalog}`;
         typedInput.types = block.types;
       }
 
-      const results = await searchData(typedInput);
+      const results = await scopedSearch(typedInput);
       return results.length > 0
         ? results
             .map(
@@ -405,7 +428,7 @@ ${actionCatalog}`;
     }
 
     if (toolName === "search_data") {
-      const results = await searchData(
+      const results = await scopedSearch(
         toolInput as {
           item_ids?: string[];
           keyword?: string;
