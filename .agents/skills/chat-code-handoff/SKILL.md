@@ -2,7 +2,7 @@
 name: chat-code-handoff
 scope: project-local
 overrides: anthropic-skills:chat-code-handoff
-version: 0.2.3
+version: 0.2.4
 ---
 
 # chat-code-handoff (ComeçaAI project-local addendum)
@@ -370,6 +370,45 @@ dispara `react-hooks/immutability` lint error. O pattern state+effect evita isso
 
 **Caso real (22.2 org-list.tsx):** lint bloqueou CI com `react-hooks/immutability`.
 Fix foi extrair para `redirectUrl` state + `useEffect`.
+
+**N3 — Server action que retorna `{redirect}` corre risco de RSC-revalidation race**
+
+Uma server action invocada via `<form action={formAction}>` dispara revalidação/
+re-render automático do RSC da rota atual após completar. Se esse re-render
+desmontar o componente do form ANTES do `useEffect(window.location.href =
+state.redirect)` disparar, o usuário fica preso na página — o redirect client-side
+nunca executa.
+
+O sintoma é traiçoeiro: backend completa 100% (mutation OK, signIn OK, POST 200),
+`isPending` mostra o texto de loading, mas o browser não navega. A página re-renderiza
+para o branch terminal (ex: status `ACCEPTED`) que desmonta o form.
+
+**Como aplicar:** para o status terminal pós-action, renderizar um componente
+client dedicado cujo único trabalho é re-emitir a navegação no mount:
+
+```tsx
+// page.tsx (RSC) — branch terminal ANTES dos branches genéricos
+if (data.invitation.status === "ACCEPTED") {
+  return <AcceptedRedirect redirectUrl={buildOrgAdminUrl(sub)} orgName={name} />;
+}
+
+// accepted-redirect.tsx (client)
+useEffect(() => { window.location.href = redirectUrl; }, [redirectUrl]);
+```
+
+Assim a navegação é re-emitida independente de qual caminho vença a corrida
+(form `useEffect` ou re-render do RSC). O happy-path redirect do form fica intacto.
+
+**Por que não `redirect()` server-side:** Next `redirect()` não cruza subdomínios
+de forma confiável sob Turbopack (mesma razão da N2). A URL cross-subdomain
+(`<sub>.<apex>/admin`) é construída por helper único (`buildOrgAdminUrl`) consumido
+por action + page, eliminando drift de subdomínio entre os dois caminhos.
+
+**Caso real (Sub-etapa 24, A1):** "Create account and accept" deixava o botão preso
+em "Creating account..." e o usuário em `/accept` mostrando "already accepted".
+Backend confirmado 100% via DB; causa era o re-render do RSC desmontando `AcceptForm`
+antes do seu `useEffect` redirecionar. Fix: `<AcceptedRedirect>` + `buildOrgAdminUrl`
+(PR #85, merge `9149412`).
 
 ### Smoke vs testes automatizados
 

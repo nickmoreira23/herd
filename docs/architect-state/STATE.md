@@ -2,9 +2,9 @@
 
 > **Propósito:** Este arquivo é o estado canônico cross-session do trabalho de chat-architect em curso. Atualizado ao final de cada sub-etapa Fase 4. Qualquer nova sessão Claude.ai (chat-architect) deve ler este arquivo PRIMEIRO antes de propor qualquer trabalho.
 >
-> **Versão:** v1.0 (criado 2026-05-28, pós-Sub-etapa 24 commit `fa33d45`)
+> **Versão:** v1.1 (atualizado 2026-05-29, pós-merge Sub-etapa 24 — PRs #77→#85, merge `9149412`)
 >
-> **Próxima atualização esperada:** pós-merge Sub-etapa 24.
+> **Próxima atualização esperada:** pós-merge Sub-etapa 25 (Audit log).
 
 ---
 
@@ -37,34 +37,40 @@
 | 11 | 22.1.2 — Login server action | ✅ | — | archive/sub-etapa-22-1-2-* |
 | 12 | 22.1.3 — Cloudflare cleanup (Opção A) | ✅ | — | archive/sub-etapa-22-1-3-* |
 | 13 | 22.2 — Org selector + login branding + switch-org | ✅ | f5d2b6e | archive/sub-etapa-22-2-org-selector-f5d2b6e |
-| 14 | **24 — Invitation flow + EmailProvider mock** | 🟡 PR #77 ready, smoke pendente | — (`fa33d45` em branch) | — |
+| 14 | **24 — Invitation flow + EmailProvider mock** | ✅ | `9149412` (PRs #77→#85) | — |
 | 15 | 25 — Audit log | ⏭️ pending | — | — |
 | 16 | 26 — Sub-org hierarchy | ⏭️ pending | — | — |
 | 17 | 27 — UI consolidation | ⏭️ pending | — | — |
 | 18 | 28 — Smoke harness DEV | ⏭️ pending | — | — |
 | 19 | 28.5 — Domain cutover + Resend + Bucked Up PROD | ⏭️ pending | — | — |
 
-**Progresso:** 13/17 cravadas (76%).
+**Progresso:** 14/17 cravadas (82%).
 
 ---
 
 ## 3. Pendência ativa
 
-### Sub-etapa 24 (Invitation flow) — aguardando smoke DEV
+### Sub-etapa 24 (Invitation flow) — ✅ MERGED (2026-05-29)
 
-- **PR:** https://github.com/nickmoreira23/herd/pull/77 (Draft)
-- **Branch:** `feat/sub-24-invitation-flow`
-- **Worktree:** `.claude/worktrees/sub-24-invitation-flow/`
-- **Top commit:** `fa33d45` — fix(sub-24): adapt user-table.tsx to invitation flow
+Entregue ao longo de 8 PRs (#77 base → #79 slug → #80 allowedDevOrigins →
+#81 accept polish → #82 members host-resolve → #83 members RBAC gate →
+#84 cosmetic residuals → #85 A1 redirect race + legible inputs). Todas em `main`.
+Merge final `9149412`.
 
-**Gates (verdes):**
-- tsc 0 errors
-- lint 0 errors (350 warnings pre-existentes)
-- test 480/480 pass (41 novos)
-- build ✓ (warnings DB pool + NEXT_PRERENDER_INTERRUPTED são pre-existentes, não blockers)
-- CI 4/4 required (Cloudflare Workers fail é pre-existente, não required)
+**A1 fix (PR #85) cravado:** server action de accept retornava `{redirect}` mas
+o re-render automático do RSC desmontava `AcceptForm` antes do `useEffect`
+redirecionar → usuário preso em `/accept`. Fix: branch `ACCEPTED` em `page.tsx`
+renderiza `<AcceptedRedirect>` (client, re-emite nav no mount); URL cross-subdomain
+via helper único `buildOrgAdminUrl` (`src/lib/tenant/org-url.ts`). Ver skill N3.
 
-**Gate manual pendente:** Smoke DEV 5 cenários. Detalhe completo no `HANDOFF.md` da sessão arquitetural.
+**Gate manual recomendado pós-merge:** smoke DEV do fluxo "Create account and accept"
+confirmando que o usuário aterrissa em `<sub>.lvh.me:3000/admin` (não fica em `/accept`).
+Backend já confirmado 100% via DB durante diagnóstico A1; o que faltava validar é
+o redirect client-side — o fix do #85 endereça exatamente isso.
+
+### Próxima sub-etapa: 25 (Audit log) — ⏭️ pending
+
+Aguardando discovery antecipada antes da spec (regra cravada da skill).
 
 ---
 
@@ -93,6 +99,12 @@
 - **Expiração 7 dias.** Revoke via `expiresAt = now()`.
 - **`InvitationStatus.REVOKED` não existe** (e não vai existir nesta sub-etapa).
 - **POST `/api/users` removido.** `user-table.tsx` adaptado (dead code, refs limpos).
+- **Redirect pós-accept via `AcceptedRedirect` (client) + `buildOrgAdminUrl`.** Server
+  action retorna `{redirect}` (happy path), mas o branch terminal `ACCEPTED` em
+  `page.tsx` renderiza `<AcceptedRedirect>` que re-emite `window.location.href` no
+  mount — neutraliza a race do RSC-revalidation que desmontava o form. URL
+  cross-subdomain de fonte única em `src/lib/tenant/org-url.ts` (action + page).
+  `redirect()` server-side NÃO usado (não cruza subdomínio sob Turbopack — N2/N3).
 
 ### Schema crítico
 
@@ -194,19 +206,19 @@ npm run dev
 
 ---
 
-## 7. Lições cravadas (skill `chat-code-handoff` v0.2.3)
+## 7. Lições cravadas (skill `chat-code-handoff` v0.2.4)
 
-Codificadas em `.claude/skills/chat-code-handoff/SKILL.md`. Resumo:
+Codificadas em `.agents/skills/chat-code-handoff/SKILL.md`. Resumo:
 
 - **Worktrees (W1-W3):** `npm install` real (sem symlink), `.env` symlink absoluto, `allowedDevOrigins` pra hostnames não-localhost.
-- **Next.js 16 (N1-N2):** `signIn redirect: false` pattern, cross-origin nav via `window.location.href` em useEffect.
+- **Next.js 16 (N1-N3):** `signIn redirect: false` pattern; cross-origin nav via `window.location.href` em useEffect; **N3 (Sub-24): server action que retorna `{redirect}` corre risco de RSC-revalidation race desmontar o form — renderizar componente client dedicado pro status terminal.**
 - **Smoke (S1-S2):** smoke pega bugs que testes não pegam; DEV antes de Railway.
 - **Browser (B1):** Chrome PSL + lvh.me workaround.
 - **Process (P1-P4):** allowedDevOrigins preventivo, proxy smoke gate, PopoverTrigger asChild, Auth.js mock typing.
 
-### Lição P5 pendente (Sub-etapa 24)
+### Lição P5 (Sub-etapa 24)
 
-Pressure verbal de Nick durante execução não substitui pause-and-report pra mudanças arquiteturais. Aconteceu em Sub-etapa 24 com workflow files. Padrão correto: diagnostica → relata → autoriza → executa.
+Pressure verbal de Nick durante execução não substitui pause-and-report pra mudanças arquiteturais. Aconteceu em Sub-etapa 24 com workflow files. Padrão correto: diagnostica → relata → autoriza → executa. Reforçado durante o diagnóstico A1: três SPECs read-only antes de qualquer mutação, pause-and-report obrigatório (Tarefa 0 confirmando `redirect()` cross-subdomain) antes de aplicar a fix.
 
 ---
 
@@ -230,11 +242,13 @@ Pendências do Nick (não-código):
 - **Auth config:** `src/lib/auth/config.ts`.
 - **Tenant resolver:** `src/lib/tenant/org-resolver.ts`.
 - **RLS context:** `src/lib/tenancy/context.ts`.
-- **Email infra (Sub-etapa 24):** `src/lib/email/` (após merge).
-- **Invitation service (Sub-etapa 24):** `src/lib/invitations/` (após merge).
-- **Members UI (Sub-etapa 24):** `src/app/admin/organization/members/` (após merge).
-- **Accept page (Sub-etapa 24):** `src/app/accept/[token]/` (após merge).
-- **Skill chat-code-handoff:** `.claude/skills/chat-code-handoff/SKILL.md`.
+- **Email infra (Sub-etapa 24):** `src/lib/email/`.
+- **Invitation service (Sub-etapa 24):** `src/lib/invitations/`.
+- **Members UI (Sub-etapa 24):** `src/app/admin/organization/members/`.
+- **Accept page (Sub-etapa 24):** `src/app/accept/[token]/`.
+- **Skill chat-code-handoff:** `.agents/skills/chat-code-handoff/SKILL.md`.
+- **Org admin URL helper (Sub-etapa 24):** `src/lib/tenant/org-url.ts`.
+- **Accept redirect component (Sub-etapa 24):** `src/app/accept/[token]/accepted-redirect.tsx`.
 - **Architect state (este arquivo):** `docs/architect-state/STATE.md`.
 
 ---
