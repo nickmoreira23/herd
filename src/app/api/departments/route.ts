@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-utils";
 import { requireOrgRole } from "@/lib/permissions";
 import { withTenant } from "@/lib/tenancy/context";
+import { writeAuditLog } from "@/lib/audit/write-audit-log";
 
 export async function GET() {
   const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN", "MEMBER"]);
@@ -59,6 +60,15 @@ export async function POST(request: Request) {
           parent: { select: { id: true, name: true } },
           head: { select: { id: true, firstName: true, lastName: true } },
         },
+      });
+
+      await writeAuditLog({
+        tenantId: session.user.activeOrgId ?? "",
+        actorProfileId: session.user.id,
+        action: "department.created",
+        resourceType: "department",
+        resourceId: department.id,
+        metadata: { name: department.name, slug: department.slug },
       });
 
       return apiSuccess(department, 201);
