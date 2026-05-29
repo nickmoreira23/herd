@@ -101,7 +101,7 @@ export function AcceptForm({
                 type="email"
                 value={invitationEmail}
                 readOnly
-                className="bg-gray-50"
+                className="bg-gray-50 text-gray-900 border-gray-300"
               />
             </div>
             <div>
@@ -114,6 +114,7 @@ export function AcceptForm({
                   minLength={8}
                   required
                   placeholder={t("invitations.accept.password_placeholder")}
+                  className="text-gray-900 border-gray-300"
                 />
                 <button
                   type="button"
@@ -135,6 +136,7 @@ export function AcceptForm({
                 minLength={8}
                 required
                 placeholder={t("invitations.accept.confirm_password_placeholder")}
+                className="text-gray-900 border-gray-300"
               />
             </div>
             <Button
