@@ -39,7 +39,7 @@
 | 13 | 22.2 — Org selector + login branding + switch-org | ✅ | f5d2b6e | archive/sub-etapa-22-2-org-selector-f5d2b6e |
 | 14 | **24 — Invitation flow + EmailProvider mock** | ✅ | `9149412` (PRs #77→#85) | — |
 | 15 | **25 — Audit log** | ✅ | `fdc7a75` (PR #88) | — |
-| 16 | 26 — Sub-org hierarchy (Escopo C) — discovery ✅ + ADR-001 aceito; impl. faseada 26.1→26.4 pendente | ⏭️ pending | — | — |
+| 16 | 26 — Sub-org hierarchy (Escopo C) — ADR-001 aceito; **26.1 ✅ merged** (`ebc6344`, tag `post-sub-26-1`); 26.2→26.4 pendentes | 🔄 em progresso | — | — |
 | 17 | 27 — UI consolidation | ⏭️ pending | — | — |
 | 18 | 28 — Smoke harness DEV | ⏭️ pending | — | — |
 | 19 | 28.5 — Domain cutover + Resend + Bucked Up PROD | ⏭️ pending | — | — |
@@ -86,17 +86,38 @@ sob o tenant correto. Backend confirmado via gates (typecheck + build + lint + 4
 testes em cada commit) e RLS verificada ao vivo; falta só a confirmação end-to-end
 de que uma ação real grava a linha.
 
-### Próxima sub-etapa: 26 (Sub-org hierarchy, Escopo C) — discovery ✅ + ADR aceito, impl. pendente
+### Sub-etapa 26 (Sub-org hierarchy, Escopo C) — 🔄 em progresso (26.1 ✅, próxima 26.2)
 
 Discovery dupla concluída (read-only). Decisões cravadas em
 **`docs/architect-state/adr/ADR-001-organization-hierarchy.md`** (Accepted).
 Escopo C: org-pai vê **e opera** dados dos descendentes transitivamente,
 preservando isolamento horizontal (irmãs nunca se veem; filho não vê pai).
-Implementação **faseada pendente**: 26.1 (árvore estrutural, risco baixo) →
-26.2 (leitura vertical, coração #82) → 26.3 (escrita vertical + audit) →
-26.4 (UX modo consolidado). Não-bloqueante para go-live. Cada fatia com
-discovery→spec→smoke próprio. **Sub-26 ainda NÃO implementada** (progresso
-permanece 15/17).
+Implementação faseada — estado por fatia:
+
+- **26.1 — árvore estrutural ✅ MERGED** (PR #93, merge `ebc6344`, tag
+  `post-sub-26-1`). Migration `parent_org_id` → `onDelete: Cascade` + CHECK
+  self-ref (aplicada DEV, `confdeltype='c'` verificado); helpers
+  `getDescendants`/`getAncestors`/`assertNoCycle` (`WITH RECURSIVE`, PG 17.6,
+  `src/lib/org-hierarchy/`); `create-org --parent`; rotas `GET /api/org/hierarchy`
+  + `PATCH /api/org/hierarchy/reparent` (anti-ciclo antes de gravar); fluxo de
+  dissolução 2-passos (ADR-001 D6, porta única: dissolve→ARCHIVED reversível /
+  DELETE com 3 guardas OWNER+ARCHIVED+confirmName / restore). Backend only (sem
+  UI). **Zero toque em RLS/Extension** (organizations não é tenant-scoped).
+  29 unit tests. **Validada nos dois eixos via smoke real DEV (descartável):**
+  (a) árvore + anti-ciclo (getDescendants/getAncestors + os 4 casos de ciclo);
+  (b) dissolução destrutiva — dissolve preserva `parentOrgId`, restore intacto,
+  3 guardas barram (409/400), hard-delete dispara CASCADE recursivo apagando o
+  subtree, e dados reais (ComeçaAI/Bucked Up/profile Nick) sobrevivem.
+- **26.2 — leitura vertical (coração #82) ⏭️ PRÓXIMA.** Micro-benchmark 3.1 vs
+  3.3 → mecanismo; fechamento transitivo + policies de leitura; reforçar
+  `rls-breach` test (irmã=deny, pai→filho=allow, filho→pai=deny). Risco ALTO.
+- **26.3 — escrita vertical + audit ⏭️ pendente.** Re-entrada `withTenant(childId)`
+  por ancestralidade; `WITH CHECK` exato preservado; `AuditLog.via_parent_org`.
+- **26.4 — UX modo consolidado ⏭️ pendente.**
+
+Não-bloqueante para go-live. Cada fatia com discovery→spec→smoke próprio.
+**Sub-26 só conta como cravada quando 26.4 fechar** — progresso geral
+permanece **15/17** (26.1 é sub-fatia, não a sub-etapa inteira).
 
 ---
 
