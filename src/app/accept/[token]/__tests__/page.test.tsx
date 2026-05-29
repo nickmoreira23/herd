@@ -13,6 +13,9 @@ vi.mock("@/lib/invitations/invitation-service", () => ({
 vi.mock("../accept-form", () => ({
   AcceptForm: (props: Record<string, unknown>) => props,
 }));
+vi.mock("../accepted-redirect", () => ({
+  AcceptedRedirect: (props: Record<string, unknown>) => props,
+}));
 vi.mock("../views", () => ({
   InvitationNotFoundView: () => null,
   InvitationAlreadyProcessedView: (props: { status: string }) => props,
@@ -29,6 +32,7 @@ import {
   InvitationExpiredView,
 } from "../views";
 import { AcceptForm } from "../accept-form";
+import { AcceptedRedirect } from "../accepted-redirect";
 
 const mockAuth = vi.mocked(auth);
 const mockGetInvitationByToken = vi.mocked(getInvitationByToken);
@@ -63,14 +67,26 @@ describe("AcceptInvitationPage", () => {
     expect(element.type).toBe(InvitationNotFoundView);
   });
 
-  it("renders InvitationAlreadyProcessedView for ACCEPTED invitation", async () => {
+  it("renders AcceptedRedirect for ACCEPTED invitation (drives cross-subdomain nav client-side)", async () => {
     mockGetInvitationByToken.mockResolvedValue(
       makeInvitationData({ status: "ACCEPTED" }) as never
     );
 
     const element = await Page(makeParams("tok"));
+    expect(element.type).toBe(AcceptedRedirect);
+    expect(element.props.orgName).toBe("Acme");
+    expect(element.props.redirectUrl).toContain("acme");
+    expect(element.props.redirectUrl).toMatch(/\/admin$/);
+  });
+
+  it("renders InvitationAlreadyProcessedView for EXPIRED-status invitation", async () => {
+    mockGetInvitationByToken.mockResolvedValue(
+      makeInvitationData({ status: "EXPIRED" }) as never
+    );
+
+    const element = await Page(makeParams("tok"));
     expect(element.type).toBe(InvitationAlreadyProcessedView);
-    expect(element.props.status).toBe("ACCEPTED");
+    expect(element.props.status).toBe("EXPIRED");
   });
 
   it("renders InvitationExpiredView for expired invitation", async () => {

@@ -10,7 +10,7 @@ export class InvitationError extends Error {
 
 export class InvitationAlreadyExistsError extends InvitationError {
   constructor() {
-    super("Convite PENDING já existe para este email", "ALREADY_EXISTS");
+    super("Já existe um convite pendente para este email", "ALREADY_EXISTS");
   }
 }
 

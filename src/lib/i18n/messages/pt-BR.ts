@@ -4447,6 +4447,8 @@ export const messages = {
   "organization.members.invite_dialog_description":
     "Envie um convite por e-mail para adicionar alguém à organização.",
   "organization.members.invite_error_fallback": "Falha ao enviar convite",
+  "organization.members.invite_already_exists":
+    "Já existe um convite pendente para este e-mail",
   "organization.members.network_error": "Erro de rede. Tente novamente.",
   "organization.members.invite_field_email": "E-mail",
   "organization.members.invite_field_email_placeholder": "nome@empresa.com",
@@ -4478,6 +4480,7 @@ export const messages = {
   "invitations.accept.confirm_password_placeholder": "Repita a senha",
   "invitations.accept.creating": "Criando conta...",
   "invitations.accept.create_and_accept": "Criar conta e aceitar",
+  "invitations.accept.redirecting": "Redirecionando para",
 
   // ─── Invitation status views ──────────────────────────────────────────────────
   "invitations.view.not_found_title": "Convite não encontrado",
