@@ -3,6 +3,7 @@ import type { MemberRole, OrganizationInvitation } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getEmailProvider } from "@/lib/email";
 import { buildInvitationEmail } from "@/lib/email/templates/invitation";
+import { writeAuditLog } from "@/lib/audit/write-audit-log";
 import {
   InvitationAlreadyExistsError,
   InvitationNotFoundError,
@@ -76,6 +77,18 @@ export async function createInvitation(
       expiresAt,
       status: "PENDING",
     },
+  });
+
+  // Audit: invitation created. Recorded right after the row commits, before
+  // the (fallible) email send, so the trail reflects the invite's existence
+  // regardless of email delivery. Best-effort — never blocks the invite.
+  await writeAuditLog({
+    tenantId: organizationId,
+    actorProfileId: createdById,
+    action: "invitation.created",
+    resourceType: "invitation",
+    resourceId: invitation.id,
+    metadata: { email, role },
   });
 
   // Fetch org name + inviter name for email template
@@ -201,6 +214,16 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<{
       where: { id: invitation.id },
       data: { status: "ACCEPTED", acceptedAt: now },
     });
+    // Audit: invitation accepted (idempotent path — already an ACTIVE member).
+    // Actor is the accepting profile itself. Runs after the update commits.
+    await writeAuditLog({
+      tenantId: invitation.organizationId,
+      actorProfileId: profile.id,
+      action: "invitation.accepted",
+      resourceType: "invitation",
+      resourceId: invitation.id,
+      metadata: { email: invitation.email, role: invitation.role, idempotent: true },
+    });
     return { profile, membership: existingMembership };
   }
 
@@ -224,6 +247,18 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<{
       data: { status: "ACCEPTED", acceptedAt: now },
     }),
   ]);
+
+  // Audit: invitation accepted (main path — membership + role just created).
+  // Runs AFTER the $transaction commits so an audit failure can never roll
+  // back the membership. Actor is the accepting profile itself.
+  await writeAuditLog({
+    tenantId: invitation.organizationId,
+    actorProfileId: profile.id,
+    action: "invitation.accepted",
+    resourceType: "invitation",
+    resourceId: invitation.id,
+    metadata: { email: invitation.email, role: invitation.role },
+  });
 
   return { profile, membership };
 }
