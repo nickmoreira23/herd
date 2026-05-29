@@ -1682,7 +1682,7 @@ model Organization {
   brandKit      Json?     @map("brand_kit")
   businessHours Json?     @map("business_hours")
 
-  parentOrg Organization?   @relation("OrganizationHierarchy", fields: [parentOrgId], references: [id], onDelete: SetNull)
+  parentOrg Organization?   @relation("OrganizationHierarchy", fields: [parentOrgId], references: [id], onDelete: Cascade)
   childOrgs Organization[]  @relation("OrganizationHierarchy")
   assets    OrganizationAsset[]
 
