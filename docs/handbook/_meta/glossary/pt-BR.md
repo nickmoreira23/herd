@@ -10,7 +10,7 @@ uid: herd.meta.glossary
 
 Glossário global agregado a partir das seções `## Glossary` de todas as entries do Handbook. Gerado automaticamente por `npm run gen:glossary`.
 
-**Última atualização:** 2026-05-19
+**Última atualização:** 2026-05-29
 
 <!-- BEGIN_GENERATED_GLOSSARY -->
 
@@ -19,6 +19,18 @@ Glossário global agregado a partir das seções `## Glossary` de todas as entri
 **From [R2 — Areas Foundation](/admin/handbook/refactor/r2-areas-foundation):**
 
 Networks → Areas → Tools → Blocks → Integrations.
+
+### Action
+
+**From [Log de Auditoria](/admin/handbook/tools/infrastructure/audit-log):**
+
+Uma string `{recurso}.{verbo}` em lowercase identificando o que aconteceu, ex. `location.deleted`.
+
+### Actor
+
+**From [Log de Auditoria](/admin/handbook/tools/infrastructure/audit-log):**
+
+O profile que *executou* a ação. No accept de um convite, a pessoa convidada — não quem convidou. Nullable; um ator deletado seta a coluna para NULL.
 
 ### Agent
 
@@ -126,6 +138,12 @@ convenção R2 — areas viraram a 5ª camada canônica do Handbook (sob `docs/h
 
 relação de cobrança ativa no provider espelhada localmente.
 
+### Audit Log
+
+**From [Log de Auditoria](/admin/handbook/tools/infrastructure/audit-log):**
+
+Um registro tenant-scoped e imutável de que um ator específico executou uma ação específica em um recurso específico em um momento específico.
+
 ### Audit trail
 
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
@@ -149,6 +167,12 @@ current saldo dinâmico que atualiza on event, sem fechamento periódico.
 **From [Servidor MCP](/admin/handbook/meta/mcp):**
 
 Esquema de auth onde o cliente envia `Authorization: Bearer <token>` no header. Day-1 do HTTP transport usa token estático configurado via env var.
+
+### Best-effort write
+
+**From [Log de Auditoria](/admin/handbook/tools/infrastructure/audit-log):**
+
+Um insert de auditoria cuja falha é logada e engolida, de modo que nunca pode quebrar ou dar rollback na ação de negócio que descreve.
 
 ### Billing customer
 
@@ -790,6 +814,12 @@ instância concreta dentro de um block — o registro que o usuário vê em tela
 
 tabela central que indexa todos os manifests; o orchestrator consulta o registry.
 
+### Resource
+
+**From [Log de Auditoria](/admin/handbook/tools/infrastructure/audit-log):**
+
+A entidade afetada, identificada por `resource_type` + uma string genérica `resource_id`.
+
 ### Reversal
 
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
@@ -937,6 +967,12 @@ superfície pública do marketplace.
 **From [Servidor MCP](/admin/handbook/meta/mcp):**
 
 Transport MCP via HTTP que suporta tanto SSE quanto request/response direto. Implementado pelo SDK em `WebStandardStreamableHTTPServerTransport`.
+
+### Strict tenant isolation
+
+**From [Log de Auditoria](/admin/handbook/tools/infrastructure/audit-log):**
+
+Uma policy de RLS com apenas `tenant_isolation` (sem `herd_app_full_access` permissivo), rejeitando leituras e escritas cross-tenant na camada do banco.
 
 ### Subscription
 

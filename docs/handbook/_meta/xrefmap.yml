@@ -414,6 +414,13 @@ references:
     title:
       pt-BR: Profile
       en-US: Profile
+  herd.tool.infrastructure.audit-log:
+    level: tool
+    id: audit-log
+    path: docs/handbook/tools/infrastructure/audit-log
+    title:
+      pt-BR: Log de Auditoria
+      en-US: Audit Log
   herd.tool.infrastructure.domain-events:
     level: tool
     id: domain-events
