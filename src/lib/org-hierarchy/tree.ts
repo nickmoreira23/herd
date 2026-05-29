@@ -12,6 +12,14 @@ import { OrgCycleError, type OrgTreeNode } from "./types";
 /**
  * Todos os descendentes transitivos de `orgId` (exclui a própria org),
  * ordenados por profundidade e depois por nome.
+ *
+ * TECH DEBT (Sub-26.2): este WITH RECURSIVE de fechamento descendente está
+ * DUPLICADO em `src/lib/tenancy/prisma-extension.ts` (caminho de leitura, que
+ * computa `app.tenant_ids` inline para evitar o ciclo de import
+ * prisma→extension→org-hierarchy). Se a lógica de fechamento mudar (ex.: filtrar
+ * por status, profundidade máxima), mudar nos DOIS lugares. Consolidar quando o
+ * ciclo de import puder ser quebrado (ex.: mover o SQL cru para um módulo sem
+ * dependência de `prisma`).
  */
 export async function getDescendants(orgId: string): Promise<OrgTreeNode[]> {
   return prisma.$queryRaw<OrgTreeNode[]>`
