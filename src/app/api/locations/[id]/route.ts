@@ -4,6 +4,7 @@ import { updateLocationSchema } from "@/lib/validators/locations";
 import type { Prisma } from "@prisma/client";
 import { requireOrgRole } from "@/lib/permissions";
 import { withTenant } from "@/lib/tenancy/context";
+import { writeAuditLog } from "@/lib/audit/write-audit-log";
 
 export async function GET(
   _request: Request,
@@ -53,6 +54,14 @@ export async function PATCH(
 
       const data: Prisma.LocationUpdateInput = { ...body };
       const location = await prisma.location.update({ where: { id }, data });
+      await writeAuditLog({
+        tenantId: session.user.activeOrgId ?? "",
+        actorProfileId: session.user.id,
+        action: "location.updated",
+        resourceType: "location",
+        resourceId: id,
+        metadata: { fields: Object.keys(body) },
+      });
       return apiSuccess(location);
     } catch (e) {
       console.error("PATCH /api/locations/[id] error:", e);
@@ -73,6 +82,13 @@ export async function DELETE(
   return withTenant(session.user.activeOrgId ?? "", async () => {
     try {
       await prisma.location.delete({ where: { id } });
+      await writeAuditLog({
+        tenantId: session.user.activeOrgId ?? "",
+        actorProfileId: session.user.id,
+        action: "location.deleted",
+        resourceType: "location",
+        resourceId: id,
+      });
       return apiSuccess({ deleted: true });
     } catch (e) {
       console.error("DELETE /api/locations/[id] error:", e);

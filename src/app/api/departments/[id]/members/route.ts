@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-utils";
 import { requireOrgRole } from "@/lib/permissions";
 import { withTenant } from "@/lib/tenancy/context";
+import { writeAuditLog } from "@/lib/audit/write-audit-log";
 
 export async function POST(
   request: Request,
@@ -32,6 +33,15 @@ export async function POST(
         },
       });
 
+      await writeAuditLog({
+        tenantId: session.user.activeOrgId ?? "",
+        actorProfileId: session.user.id,
+        action: "department.member_changed",
+        resourceType: "department",
+        resourceId: id,
+        metadata: { change: "added", profileId, title: title || null },
+      });
+
       return apiSuccess(member, 201);
     } catch {
       return apiError("Failed to add member", 500);
@@ -59,6 +69,15 @@ export async function DELETE(
         where: {
           departmentId_profileId: { departmentId: id, profileId },
         },
+      });
+
+      await writeAuditLog({
+        tenantId: session.user.activeOrgId ?? "",
+        actorProfileId: session.user.id,
+        action: "department.member_changed",
+        resourceType: "department",
+        resourceId: id,
+        metadata: { change: "removed", profileId },
       });
 
       return apiSuccess({ removed: true });

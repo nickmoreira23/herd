@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-utils";
 import { requireOrgRole } from "@/lib/permissions";
 import { withTenant } from "@/lib/tenancy/context";
+import { writeAuditLog } from "@/lib/audit/write-audit-log";
 
 export async function GET(
   _request: Request,
@@ -86,6 +87,15 @@ export async function PATCH(
         },
       });
 
+      await writeAuditLog({
+        tenantId: session.user.activeOrgId ?? "",
+        actorProfileId: session.user.id,
+        action: "department.updated",
+        resourceType: "department",
+        resourceId: id,
+        metadata: { fields: Object.keys(updates) },
+      });
+
       return apiSuccess(department);
     } catch {
       return apiError("Failed to update department", 500);
@@ -105,6 +115,13 @@ export async function DELETE(
   return withTenant(session.user.activeOrgId ?? "", async () => {
     try {
       await prisma.department.delete({ where: { id } });
+      await writeAuditLog({
+        tenantId: session.user.activeOrgId ?? "",
+        actorProfileId: session.user.id,
+        action: "department.deleted",
+        resourceType: "department",
+        resourceId: id,
+      });
       return apiSuccess({ deleted: true });
     } catch {
       return apiError("Failed to delete department", 500);

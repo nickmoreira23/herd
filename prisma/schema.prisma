@@ -1645,6 +1645,7 @@ model NetworkProfile {
   uploadedAssets           OrganizationAsset[]                @relation("AssetUploader")
   organizationMemberships  OrganizationMember[]
   invitationsCreated       OrganizationInvitation[]           @relation("InvitationCreatedBy")
+  auditLogsAsActor         AuditLog[]                         @relation("AuditLogActor")
 
   @@map("network_profiles")
 }
@@ -1707,6 +1708,9 @@ model Organization {
   dunningAttempts   DunningAttempt[]   @relation("DunningAttemptTenant")
   portalSessions    PortalSession[]    @relation("PortalSessionTenant")
   billingEvents     BillingEvent[]     @relation("BillingEventTenant")
+
+  // Sub-etapa 25 — Audit Log
+  auditLogs         AuditLog[]         @relation("AuditLogTenant")
 
   @@map("organizations")
 }
@@ -3398,6 +3402,34 @@ model BillingEvent {
   @@index([eventType], map: "billing_events_event_type_idx")
   @@index([createdAt], map: "billing_events_created_at_idx")
   @@map("billing_events")
+}
+
+// ========================
+// Audit Log (Sub-etapa 25)
+// Strict tenant-scoped, mirrors BillingEvent molde (tenant_id NOT NULL + RLS
+// tenant_isolation, no herd_app_full_access). Append-only audit trail of
+// sensitive actions (invitations, departments, locations, org-chart).
+// ========================
+
+model AuditLog {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  actorProfileId String?  @map("actor_profile_id") @db.Uuid
+  action         String
+  resourceType   String   @map("resource_type")
+  resourceId     String   @map("resource_id")
+  metadata       Json     @default("{}")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  tenant Organization    @relation("AuditLogTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+  actor  NetworkProfile? @relation("AuditLogActor", fields: [actorProfileId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId], map: "audit_logs_tenant_idx")
+  @@index([resourceType, resourceId], map: "audit_logs_resource_idx")
+  @@index([action], map: "audit_logs_action_idx")
+  @@index([createdAt], map: "audit_logs_created_at_idx")
+  @@index([actorProfileId], map: "audit_logs_actor_idx")
+  @@map("audit_logs")
 }
 
 // ========================

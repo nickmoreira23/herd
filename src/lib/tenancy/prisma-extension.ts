@@ -28,6 +28,8 @@ export const TENANT_SCOPED_MODELS = [
   // Sub-etapa 19 — Org Structure (2 tables)
   "Department",
   "Location",
+  // Sub-etapa 25 — Audit Log
+  "AuditLog",
 ] as const satisfies readonly string[];
 
 const READ_OPS = new Set([

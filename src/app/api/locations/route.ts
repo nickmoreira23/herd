@@ -4,6 +4,7 @@ import { createLocationSchema } from "@/lib/validators/locations";
 import type { Prisma } from "@prisma/client";
 import { requireOrgRole } from "@/lib/permissions";
 import { withTenant } from "@/lib/tenancy/context";
+import { writeAuditLog } from "@/lib/audit/write-audit-log";
 
 export async function GET(request: Request) {
   const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN", "MEMBER"]);
@@ -86,6 +87,15 @@ export async function POST(request: Request) {
           isHeadquarters: body.isHeadquarters ?? false,
           notes: body.notes ?? null,
         },
+      });
+
+      await writeAuditLog({
+        tenantId: session.user.activeOrgId ?? "",
+        actorProfileId: session.user.id,
+        action: "location.created",
+        resourceType: "location",
+        resourceId: location.id,
+        metadata: { name: location.name, type: location.type },
       });
 
       return apiSuccess(location, 201);
