@@ -61,6 +61,7 @@ import {
   Maximize2,
   Minimize2,
   PanelLeftOpen,
+  Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/locale-context";
@@ -182,6 +183,7 @@ export function FinancialPageClient({
   const [modelName, setModelName] = useState(initialName);
   const [modelColor, setModelColor] = useState(initialColor);
   const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [editing, setEditing] = useState(!modelId);
 
   // Time period for projection
@@ -329,6 +331,26 @@ export function FinancialPageClient({
       setSaving(false);
     }
   }, [modelName, modelColor, inputs, results, modelId, router, t]);
+
+  // Export the live scenario (including unsaved edits) to a multi-tab XLSX:
+  // Projection, Cohort Aggregate, and one tab per acquisition cohort.
+  // `exceljs` is dynamically imported so it stays out of the initial bundle.
+  const handleExport = useCallback(async () => {
+    if (!results) {
+      notifyError("financials.toolbar.error.no_results_to_save", t);
+      return;
+    }
+    setExporting(true);
+    try {
+      const { exportProjectionsToXlsx } = await import("./export");
+      await exportProjectionsToXlsx(results, inputs, t, { scenarioName: modelName });
+      notifySuccess("financials.export.success", t);
+    } catch {
+      notifyError("financials.export.error", t);
+    } finally {
+      setExporting(false);
+    }
+  }, [results, inputs, modelName, t]);
 
   const handleRemix = useCallback(async () => {
     if (!remixPrompt.trim()) {
@@ -496,6 +518,18 @@ export function FinancialPageClient({
 
         {/* Right: action buttons */}
         <div className="flex items-center gap-3">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleExport}
+            disabled={exporting || !results}
+            title={t("financials.export.button")}
+          >
+            <Download className="h-3.5 w-3.5 mr-1.5" />
+            {exporting
+              ? t("financials.export.exporting")
+              : t("financials.export.button")}
+          </Button>
           {editing ? (
             <Button size="sm" onClick={handleSave} disabled={saving}>
               <Save className="h-3.5 w-3.5 mr-1.5" />

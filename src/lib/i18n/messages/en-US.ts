@@ -1082,6 +1082,13 @@ export const messages: Record<MessageKey, string> = {
   "financials.cohort.column.metric": "Metric",
   "financials.cohort.column.month_long": "Month {month}",
   "financials.cohort.column.total": "Total",
+  "financials.export.button": "Export to Excel",
+  "financials.export.exporting": "Exporting…",
+  "financials.export.sheet.projection": "Projection",
+  "financials.export.sheet.cohort_aggregate": "Cohort (Aggregate)",
+  "financials.export.sheet.cohort_lifecycle": "Cohort Month {month}",
+  "financials.export.success": "Projection exported",
+  "financials.export.error": "Failed to export the projection",
 
   // Accounting basis — sub-etapa 2: explicit differentiation between
   // accrual and cash flow across the three financial tabs.

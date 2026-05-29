@@ -1107,6 +1107,13 @@ export const messages = {
   "financials.cohort.column.metric": "Métrica",
   "financials.cohort.column.month_long": "Mês {month}",
   "financials.cohort.column.total": "Total",
+  "financials.export.button": "Exportar para Excel",
+  "financials.export.exporting": "Exportando…",
+  "financials.export.sheet.projection": "Projeção",
+  "financials.export.sheet.cohort_aggregate": "Cohort (Agregado)",
+  "financials.export.sheet.cohort_lifecycle": "Cohort Mês {month}",
+  "financials.export.success": "Projeção exportada",
+  "financials.export.error": "Falha ao exportar a projeção",
 
   // Accounting basis — regime contábil (sub-etapa 2: differentiation
   // between accrual and cash flow across the three financial tabs).
