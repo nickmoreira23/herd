@@ -14,6 +14,7 @@
 
 import { signIn } from "@/lib/auth";
 import { AuthError } from "next-auth";
+import { buildOrgAdminUrl } from "@/lib/tenant/org-url";
 import {
   acceptInvitation,
   getInvitationByToken,
@@ -73,15 +74,10 @@ export async function acceptAndSignInAction(
     throw err;
   }
 
-  // Build redirect URL to the org's subdomain /admin.
+  // Build redirect URL to the org's subdomain /admin (shared helper — single
+  // source of truth, so the subdomain can't drift from page.tsx's redirect).
   const data = await getInvitationByToken(token);
-  const apexHost = process.env.APEX_HOST ?? "lvh.me";
-  const protocol =
-    apexHost.includes("localhost") || apexHost === "lvh.me" ? "http" : "https";
-  const subdomain = data?.organization.subdomain ?? "";
-  const port = process.env.NEXTAUTH_URL?.match(/:(\d+)$/)?.[1];
-  const portSuffix = port ? `:${port}` : "";
-  const redirectUrl = `${protocol}://${subdomain}.${apexHost}${portSuffix}/admin`;
+  const redirectUrl = buildOrgAdminUrl(data?.organization.subdomain ?? "");
 
   // New user path: sign them in so /admin doesn't bounce back to login.
   if (password) {

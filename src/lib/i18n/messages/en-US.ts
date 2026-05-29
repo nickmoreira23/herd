@@ -4415,6 +4415,7 @@ export const messages: Record<MessageKey, string> = {
   "invitations.accept.confirm_password_placeholder": "Repeat password",
   "invitations.accept.creating": "Creating account...",
   "invitations.accept.create_and_accept": "Create account and accept",
+  "invitations.accept.redirecting": "Redirecting to",
 
   // ─── Invitation status views ──────────────────────────────────────────────────
   "invitations.view.not_found_title": "Invitation not found",
