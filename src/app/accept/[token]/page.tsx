@@ -1,7 +1,9 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getInvitationByToken } from "@/lib/invitations/invitation-service";
+import { buildOrgAdminUrl } from "@/lib/tenant/org-url";
 import { AcceptForm } from "./accept-form";
+import { AcceptedRedirect } from "./accepted-redirect";
 import {
   InvitationNotFoundView,
   InvitationAlreadyProcessedView,
@@ -19,6 +21,18 @@ export default async function AcceptInvitationPage({
 
   if (!data) {
     return <InvitationNotFoundView />;
+  }
+
+  if (data.invitation.status === "ACCEPTED") {
+    // Freshly accepted (or revisit): drive the cross-subdomain navigation
+    // client-side so the post-action RSC revalidation can't strand the user
+    // on /accept by unmounting AcceptForm before its redirect fires.
+    return (
+      <AcceptedRedirect
+        redirectUrl={buildOrgAdminUrl(data.organization.subdomain)}
+        orgName={data.organization.name}
+      />
+    );
   }
 
   if (data.invitation.status !== "PENDING") {

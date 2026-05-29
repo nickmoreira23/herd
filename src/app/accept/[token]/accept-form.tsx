@@ -101,12 +101,12 @@ export function AcceptForm({
                 type="email"
                 value={invitationEmail}
                 readOnly
-                className="bg-gray-50 text-gray-900 border-gray-300"
+                className="bg-gray-50 text-gray-900 border-gray-300 mt-3"
               />
             </div>
             <div>
               <Label htmlFor="password" className="text-gray-700">{t("invitations.accept.field_password")}</Label>
-              <div className="relative">
+              <div className="relative mt-3">
                 <Input
                   id="password"
                   name="password"
@@ -136,7 +136,7 @@ export function AcceptForm({
                 minLength={8}
                 required
                 placeholder={t("invitations.accept.confirm_password_placeholder")}
-                className="text-gray-900 border-gray-300"
+                className="text-gray-900 border-gray-300 mt-3"
               />
             </div>
             <Button

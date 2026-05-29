@@ -4480,6 +4480,7 @@ export const messages = {
   "invitations.accept.confirm_password_placeholder": "Repita a senha",
   "invitations.accept.creating": "Criando conta...",
   "invitations.accept.create_and_accept": "Criar conta e aceitar",
+  "invitations.accept.redirecting": "Redirecionando para",
 
   // ─── Invitation status views ──────────────────────────────────────────────────
   "invitations.view.not_found_title": "Convite não encontrado",
