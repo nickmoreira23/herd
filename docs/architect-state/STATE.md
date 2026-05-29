@@ -39,7 +39,7 @@
 | 13 | 22.2 — Org selector + login branding + switch-org | ✅ | f5d2b6e | archive/sub-etapa-22-2-org-selector-f5d2b6e |
 | 14 | **24 — Invitation flow + EmailProvider mock** | ✅ | `9149412` (PRs #77→#85) | — |
 | 15 | **25 — Audit log** | ✅ | `fdc7a75` (PR #88) | — |
-| 16 | 26 — Sub-org hierarchy | ⏭️ pending | — | — |
+| 16 | 26 — Sub-org hierarchy (Escopo C) — discovery ✅ + ADR-001 aceito; impl. faseada 26.1→26.4 pendente | ⏭️ pending | — | — |
 | 17 | 27 — UI consolidation | ⏭️ pending | — | — |
 | 18 | 28 — Smoke harness DEV | ⏭️ pending | — | — |
 | 19 | 28.5 — Domain cutover + Resend + Bucked Up PROD | ⏭️ pending | — | — |
@@ -86,9 +86,17 @@ sob o tenant correto. Backend confirmado via gates (typecheck + build + lint + 4
 testes em cada commit) e RLS verificada ao vivo; falta só a confirmação end-to-end
 de que uma ação real grava a linha.
 
-### Próxima sub-etapa: 26 (Sub-org hierarchy) — ⏭️ pending
+### Próxima sub-etapa: 26 (Sub-org hierarchy, Escopo C) — discovery ✅ + ADR aceito, impl. pendente
 
-Aguardando discovery antecipada antes da spec (regra cravada da skill).
+Discovery dupla concluída (read-only). Decisões cravadas em
+**`docs/architect-state/adr/ADR-001-organization-hierarchy.md`** (Accepted).
+Escopo C: org-pai vê **e opera** dados dos descendentes transitivamente,
+preservando isolamento horizontal (irmãs nunca se veem; filho não vê pai).
+Implementação **faseada pendente**: 26.1 (árvore estrutural, risco baixo) →
+26.2 (leitura vertical, coração #82) → 26.3 (escrita vertical + audit) →
+26.4 (UX modo consolidado). Não-bloqueante para go-live. Cada fatia com
+discovery→spec→smoke próprio. **Sub-26 ainda NÃO implementada** (progresso
+permanece 15/17).
 
 ---
 
