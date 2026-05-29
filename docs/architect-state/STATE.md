@@ -39,7 +39,7 @@
 | 13 | 22.2 — Org selector + login branding + switch-org | ✅ | f5d2b6e | archive/sub-etapa-22-2-org-selector-f5d2b6e |
 | 14 | **24 — Invitation flow + EmailProvider mock** | ✅ | `9149412` (PRs #77→#85) | — |
 | 15 | **25 — Audit log** | ✅ | `fdc7a75` (PR #88) | — |
-| 16 | 26 — Sub-org hierarchy (Escopo C) — ADR-001 aceito; **26.1 ✅ merged** (`ebc6344`, tag `post-sub-26-1`); 26.2→26.4 pendentes | 🔄 em progresso | — | — |
+| 16 | 26 — Sub-org hierarchy (Escopo C) — ADR-001 aceito; **26.1 ✅** (`ebc6344`, `post-sub-26-1`); **26.2 ✅** (`3c036cc`, `post-sub-26-2`); 26.3→26.4 pendentes | 🔄 em progresso | — | — |
 | 17 | 27 — UI consolidation | ⏭️ pending | — | — |
 | 18 | 28 — Smoke harness DEV | ⏭️ pending | — | — |
 | 19 | 28.5 — Domain cutover + Resend + Bucked Up PROD | ⏭️ pending | — | — |
@@ -86,7 +86,7 @@ sob o tenant correto. Backend confirmado via gates (typecheck + build + lint + 4
 testes em cada commit) e RLS verificada ao vivo; falta só a confirmação end-to-end
 de que uma ação real grava a linha.
 
-### Sub-etapa 26 (Sub-org hierarchy, Escopo C) — 🔄 em progresso (26.1 ✅, próxima 26.2)
+### Sub-etapa 26 (Sub-org hierarchy, Escopo C) — 🔄 em progresso (26.1 ✅ + 26.2 ✅, próxima 26.3)
 
 Discovery dupla concluída (read-only). Decisões cravadas em
 **`docs/architect-state/adr/ADR-001-organization-hierarchy.md`** (Accepted).
@@ -108,10 +108,19 @@ Implementação faseada — estado por fatia:
   (b) dissolução destrutiva — dissolve preserva `parentOrgId`, restore intacto,
   3 guardas barram (409/400), hard-delete dispara CASCADE recursivo apagando o
   subtree, e dados reais (ComeçaAI/Bucked Up/profile Nick) sobrevivem.
-- **26.2 — leitura vertical (coração #82) ⏭️ PRÓXIMA.** Micro-benchmark 3.1 vs
-  3.3 → mecanismo; fechamento transitivo + policies de leitura; reforçar
-  `rls-breach` test (irmã=deny, pai→filho=allow, filho→pai=deny). Risco ALTO.
-- **26.3 — escrita vertical + audit ⏭️ pendente.** Re-entrada `withTenant(childId)`
+- **26.2 — leitura vertical (coração #82) ✅ MERGED** (PR #96, merge `3c036cc`,
+  tag `post-sub-26-2`). Mecanismo 3.1 (decidido por benchmark): GUC array
+  `current_app_tenant_ids()` + filtro `= ANY` no caminho de leitura da Extension;
+  `current_app_tenant_id()` exato preservado (write anchor). **Molde de 2 policies**
+  por tabela (`_tenant_isolation` FOR ALL exato USING+WITH CHECK / `_vertical_read`
+  FOR SELECT `= ANY`) nas 18 tabelas tenant-scoped — DELETE/UPDATE ficam exatos
+  (vertical write é 26.3). 15 Classe A ganharam `WITH CHECK` exato explícito;
+  **dept/loc perderam `herd_app_full_access`** (gap #82 fechado DB-level, habilitado
+  pelo fix #95). **Validada nas 3 frentes:** 19/19 canários integration (#2/#4/
+  via-Extension vertical GREEN; #1/#3/#5/#6/#7 + breach ISL/IWE + #95 dept-loc-leak
+  seguem GREEN) + via-Extension (ORM) + smoke real end-to-end (matriz vê filial,
+  rival não vê filial, filial não vê matriz). ADR-001 D2/D3/D4.
+- **26.3 — escrita vertical + audit ⏭️ PRÓXIMA.** Re-entrada `withTenant(childId)`
   por ancestralidade; `WITH CHECK` exato preservado; `AuditLog.via_parent_org`.
 - **26.4 — UX modo consolidado ⏭️ pendente.**
 
@@ -212,6 +221,12 @@ permanece **15/17** (26.1 é sub-fatia, não a sub-etapa inteira).
   `location.created`, vistas no Studio) + isolamento cross-tenant provado (BuckedUp
   `count=0` via script read-only usando o `prisma` singleton + `herd_app` NOBYPASSRLS,
   caminho real da app). Lição #82 confirmada ao vivo.
+- WITH RECURSIVE de fechamento descendente **duplicado** (Sub-26.2):
+  `src/lib/org-hierarchy/tree.ts` (`getDescendants`) + inline em
+  `src/lib/tenancy/prisma-extension.ts` (caminho de leitura). Inline na Extension
+  evita o ciclo de import prisma→extension→org-hierarchy. Se a lógica de
+  fechamento mudar, mudar nos DOIS. Consolidar quando o ciclo de import puder ser
+  quebrado (ex.: SQL cru num módulo sem dependência de `prisma`).
 
 ### Tier 2 (resolve em Sub-etapa 28.5 ou cutover)
 
