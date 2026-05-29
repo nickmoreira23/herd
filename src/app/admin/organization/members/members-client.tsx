@@ -21,7 +21,8 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Mail, Trash2 } from "lucide-react";
 import { MemberRole } from "@prisma/client";
-import { useT } from "@/lib/i18n/locale-context";
+import { useT, useLocale } from "@/lib/i18n/locale-context";
+import { formatDate as formatDateI18n } from "@/lib/i18n/format-date";
 
 interface MemberRow {
   id: string;
@@ -58,6 +59,7 @@ export function MembersClient({
   canManage,
 }: MembersClientProps) {
   const t = useT();
+  const locale = useLocale();
   const [invitations, setInvitations] = useState(initialInvitations);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -85,7 +87,7 @@ export function MembersClient({
       setInviteEmail("");
       setInviteRole(MemberRole.MEMBER);
     } catch {
-      setInviteError("Erro de rede. Tente novamente.");
+      setInviteError(t("organization.members.network_error"));
     } finally {
       setInvitePending(false);
     }
@@ -111,11 +113,7 @@ export function MembersClient({
 
   function formatDate(d: Date | string | null) {
     if (!d) return "—";
-    return new Date(d).toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+    return formatDateI18n(new Date(d), locale, "short");
   }
 
   return (

@@ -4447,6 +4447,7 @@ export const messages = {
   "organization.members.invite_dialog_description":
     "Envie um convite por e-mail para adicionar alguém à organização.",
   "organization.members.invite_error_fallback": "Falha ao enviar convite",
+  "organization.members.network_error": "Erro de rede. Tente novamente.",
   "organization.members.invite_field_email": "E-mail",
   "organization.members.invite_field_email_placeholder": "nome@empresa.com",
   "organization.members.invite_field_role": "Função",

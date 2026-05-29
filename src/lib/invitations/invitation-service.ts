@@ -142,7 +142,7 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<{
   // Load invitation
   const invitation = await prisma.organizationInvitation.findUnique({
     where: { token },
-    include: { organization: { select: { id: true } } },
+    include: { organization: { select: { id: true, localeDefault: true } } },
   });
   if (!invitation) throw new InvitationNotFoundError();
 
@@ -178,6 +178,9 @@ export async function acceptInvitation(input: AcceptInvitationInput): Promise<{
         lastName: "",
         passwordHash,
         status: "ACTIVE",
+        // Inherit the inviting organization's default locale instead of the
+        // schema default, so the new member's UI matches the org they joined.
+        locale: invitation.organization.localeDefault ?? undefined,
       },
       select: { id: true, email: true },
     });

@@ -38,5 +38,24 @@ export async function GET() {
 
   if (!org) return apiError("Organization not found", 404);
 
-  return apiSuccess(org);
+  // Resolve the viewer's ORG-scoped role in this org (host-aware), so the
+  // sidebar can render the correct label (Owner / Admin / Member) per-host
+  // instead of the host-blind JWT `role`. super_admin without membership
+  // falls back to null → UI shows "Admin".
+  const viewerId = (session.user as { id?: string }).id;
+  let role: string | null = null;
+  if (viewerId) {
+    const membership = await prisma.organizationMember.findUnique({
+      where: {
+        organizationId_networkProfileId: {
+          organizationId: org.id,
+          networkProfileId: viewerId,
+        },
+      },
+      include: { roles: { select: { role: true, scopeType: true } } },
+    });
+    role = membership?.roles.find((r) => r.scopeType === "ORG")?.role ?? null;
+  }
+
+  return apiSuccess({ ...org, role });
 }

@@ -95,7 +95,7 @@ export function AcceptForm({
         {!profileExists && (
           <form action={formAction} className="space-y-4">
             <div>
-              <Label htmlFor="email-display">{t("invitations.accept.field_email")}</Label>
+              <Label htmlFor="email-display" className="text-gray-700">{t("invitations.accept.field_email")}</Label>
               <Input
                 id="email-display"
                 type="email"
@@ -105,7 +105,7 @@ export function AcceptForm({
               />
             </div>
             <div>
-              <Label htmlFor="password">{t("invitations.accept.field_password")}</Label>
+              <Label htmlFor="password" className="text-gray-700">{t("invitations.accept.field_password")}</Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -127,7 +127,7 @@ export function AcceptForm({
               </div>
             </div>
             <div>
-              <Label htmlFor="confirmPassword">{t("invitations.accept.field_confirm_password")}</Label>
+              <Label htmlFor="confirmPassword" className="text-gray-700">{t("invitations.accept.field_confirm_password")}</Label>
               <Input
                 id="confirmPassword"
                 name="confirmPassword"
