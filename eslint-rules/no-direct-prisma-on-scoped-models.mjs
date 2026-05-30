@@ -27,7 +27,13 @@ const SCOPED_MODELS = new Set([
   "location",
 ]);
 
-const TENANT_WRAPPERS = new Set(["withTenant", "withSessionTenant"]);
+// withVerticalTenant (Sub-26.3) establishes tenant context via withTenant after
+// an ancestry check — a prisma call inside its callback is correctly scoped.
+const TENANT_WRAPPERS = new Set([
+  "withTenant",
+  "withSessionTenant",
+  "withVerticalTenant",
+]);
 
 export default {
   meta: {
