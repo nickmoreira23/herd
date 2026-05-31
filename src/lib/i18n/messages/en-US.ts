@@ -1359,6 +1359,20 @@ export const messages: Record<MessageKey, string> = {
   "organization.subpanel.members": "Members",
   "organization.subpanel.org_chart": "Org Chart",
   "organization.subpanel.network_map": "Network Map",
+  "organization.subpanel.dashboard": "Dashboard",
+  "organization.dashboard.title": "Consolidated Dashboard",
+  "organization.dashboard.description":
+    "Aggregated view of this organization and all its sub-organizations.",
+  "organization.dashboard.empty": "No active organization.",
+  "organization.dashboard.leaf_hint": "This organization has no sub-organizations.",
+  "organization.dashboard.total_orgs": "Organizations",
+  "organization.dashboard.total_departments": "Departments",
+  "organization.dashboard.total_locations": "Locations",
+  "organization.dashboard.total_members": "Members",
+  "organization.dashboard.col_org": "Organization",
+  "organization.dashboard.col_departments": "Departments",
+  "organization.dashboard.col_locations": "Locations",
+  "organization.dashboard.col_members": "Members",
 
   // Profile (legacy aggregated form)
   "organization.profile.title": "Organization Profile",

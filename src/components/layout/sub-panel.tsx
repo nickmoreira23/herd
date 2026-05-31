@@ -166,6 +166,7 @@ export const subPanelRegistry: Record<string, SubPanelConfig> = {
         label: "Structure",
         labelKey: "organization.subpanel.structure_category",
         links: [
+          { href: "/admin/organization/dashboard", label: "Dashboard", labelKey: "organization.subpanel.dashboard", icon: BarChart3 },
           { href: "/admin/organization/hierarchy", label: "Hierarchy", labelKey: "organization.subpanel.hierarchy", icon: GitBranch },
           { href: "/admin/organization/departments", label: "Departments", labelKey: "organization.subpanel.departments", icon: Building2 },
           { href: "/admin/organization/members", label: "Members", labelKey: "organization.subpanel.members", icon: Users },

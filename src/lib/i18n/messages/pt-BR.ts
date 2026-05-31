@@ -1384,6 +1384,20 @@ export const messages = {
   "organization.subpanel.members": "Membros",
   "organization.subpanel.org_chart": "Organograma",
   "organization.subpanel.network_map": "Mapa de Rede",
+  "organization.subpanel.dashboard": "Painel",
+  "organization.dashboard.title": "Painel Consolidado",
+  "organization.dashboard.description":
+    "Visão agregada desta organização e de todas as sub-organizações.",
+  "organization.dashboard.empty": "Nenhuma organização ativa.",
+  "organization.dashboard.leaf_hint": "Esta organização não tem sub-organizações.",
+  "organization.dashboard.total_orgs": "Organizações",
+  "organization.dashboard.total_departments": "Departamentos",
+  "organization.dashboard.total_locations": "Localizações",
+  "organization.dashboard.total_members": "Membros",
+  "organization.dashboard.col_org": "Organização",
+  "organization.dashboard.col_departments": "Departamentos",
+  "organization.dashboard.col_locations": "Localizações",
+  "organization.dashboard.col_members": "Membros",
 
   // Profile (legacy aggregated form)
   "organization.profile.title": "Perfil da Organização",
