@@ -1734,6 +1734,28 @@ export const messages: Record<MessageKey, string> = {
     'Delete "{name}"? Sub-departments will become top-level.',
   "organization.departments.tree.edit_title": "Edit",
   "organization.departments.tree.delete_title": "Delete",
+  "organization.hierarchy.title": "Organization Hierarchy",
+  "organization.hierarchy.description":
+    "Browse the sub-organization tree and operate a sub-org through this one.",
+  "organization.hierarchy.empty": "This organization has no sub-organizations.",
+  "organization.hierarchy.operate_button": "Operate this sub-org",
+  "organization.hierarchy.banner_text":
+    "You are operating {child} — a sub-organization — through {parent}.",
+  "organization.hierarchy.banner_exit": "Exit context",
+  "organization.hierarchy.depts_panel_title": "Departments of {child}",
+  "organization.hierarchy.add_dept_button": "Add department",
+  "organization.hierarchy.form_create_title": "Create department in {child}",
+  "organization.hierarchy.form_create_description":
+    "This department will be created in the sub-organization {child}, not in your organization.",
+  "organization.hierarchy.create_confirm": "Create department “{name}” in {child}?",
+  "organization.hierarchy.delete_confirm": "Delete department “{name}” in {child}?",
+  "organization.hierarchy.depts_empty": "No departments in {child}.",
+  "organization.feedback.vertical_dept_created": "Department created in {child}.",
+  "organization.feedback.vertical_dept_deleted": "Department deleted from {child}.",
+  "error.organization.org_vertical_forbidden":
+    "You are not authorized to operate this organization (it is not a sub-org of yours).",
+  "error.organization.vertical_write_failed":
+    "Failed to write to the sub-organization. Please try again.",
 
   "organization.departments.detail.back": "Back to Departments",
   "organization.departments.detail.head_label": "Department Head",
