@@ -4,7 +4,7 @@
 >
 > **Versão:** v1.2 (atualizado 2026-05-29, pós-merge Sub-etapa 25 — PR #88, merge `fdc7a75`)
 >
-> **Próxima atualização esperada:** pós-merge Sub-etapa 26 (Sub-org hierarchy).
+> **Próxima atualização esperada:** pós-merge Sub-etapa 27 (UI consolidation).
 
 ---
 
@@ -39,12 +39,12 @@
 | 13 | 22.2 — Org selector + login branding + switch-org | ✅ | f5d2b6e | archive/sub-etapa-22-2-org-selector-f5d2b6e |
 | 14 | **24 — Invitation flow + EmailProvider mock** | ✅ | `9149412` (PRs #77→#85) | — |
 | 15 | **25 — Audit log** | ✅ | `fdc7a75` (PR #88) | — |
-| 16 | 26 — Sub-org hierarchy (Escopo C) — ADR-001 aceito; **26.1 ✅** (`ebc6344`); **26.2 ✅** (`3c036cc`); **26.3 ✅** (`1c2472b`); **26.4a ✅** (`eed8eb0`, `post-sub-26-4a`); 26.4b pendente | 🔄 em progresso | — | — |
+| 16 | 26 — Sub-org hierarchy (Escopo C) — **COMPLETA** (26.1 `ebc6344` · 26.2 `3c036cc` · 26.3 `1c2472b` · 26.4a `eed8eb0` · 26.4b `29666b2`) | ✅ | `29666b2` (#103) | `post-sub-26-{1,2,3,4a,4b}` |
 | 17 | 27 — UI consolidation | ⏭️ pending | — | — |
 | 18 | 28 — Smoke harness DEV | ⏭️ pending | — | — |
 | 19 | 28.5 — Domain cutover + Resend + Bucked Up PROD | ⏭️ pending | — | — |
 
-**Progresso:** 15/17 cravadas (88%).
+**Progresso:** 16/17 cravadas (94%).
 
 ---
 
@@ -86,7 +86,7 @@ sob o tenant correto. Backend confirmado via gates (typecheck + build + lint + 4
 testes em cada commit) e RLS verificada ao vivo; falta só a confirmação end-to-end
 de que uma ação real grava a linha.
 
-### Sub-etapa 26 (Sub-org hierarchy, Escopo C) — 🔄 em progresso (26.1/26.2/26.3/26.4a ✅, próxima 26.4b)
+### Sub-etapa 26 (Sub-org hierarchy, Escopo C) — ✅ COMPLETA (Escopo C ponta a ponta)
 
 Discovery dupla concluída (read-only). Decisões cravadas em
 **`docs/architect-state/adr/ADR-001-organization-hierarchy.md`** (Accepted).
@@ -151,13 +151,29 @@ Implementação faseada — estado por fatia:
   (hidrata + interativa; o "(stale)" era miragem — P6). ADR-001 D7.
   **Tech-debt descoberta/registrada** (Tier 1): Org Chart/Network Map crasham
   (Fase 3, refs stale) [ALTA]; warning pg em departments (#95) [MÉDIA].
-- **26.4b — dashboard consolidado ⏭️ PRÓXIMA (fecha a Sub-26).** Agregação por
-  org via `groupBy({by:['tenantId']})` sob leitura vertical (sai de graça da
-  26.2) + endpoint fino de stats + UI de cards. Discovery já mapeou.
+- **26.4b — dashboard consolidado ✅ MERGED** (PR #103, merge `29666b2`, tag
+  `post-sub-26-4b`). Server-page-direct (sem endpoint): agregação inline via
+  `groupBy` sob leitura vertical (26.2) + `getDescendants` (26.1). **Linhas da
+  lista completa, números com default-0** (org vazia não some); dept/loc
+  SEQUENCIAL dentro de `withTenant` (não `Promise.all` → evita o warning pg do
+  #95). Cards de totais + tabela por-org indentada por `depth`. Métricas V1:
+  departments/locations/members (billing/audit deferidos). Link "Dashboard"
+  primeiro na STRUCTURE. Read-only, zero RLS/escrita/migration. ADR-001 D7.
 
-Não-bloqueante para go-live. Cada fatia com discovery→spec→smoke próprio.
-**Sub-26 só conta como cravada quando 26.4 fechar** — progresso geral
-permanece **15/17** (26.1 é sub-fatia, não a sub-etapa inteira).
+**✅ Sub-26 (Escopo C) COMPLETA ponta a ponta** — 26.1 (árvore) + 26.2 (leitura
+vertical, coração #82) + 26.3 (escrita vertical + audit) + 26.4a (UI: navegação
++ contexto + porta Organization + STRUCTURE) + 26.4b (dashboard consolidado).
+A matriz **vê e opera** descendentes transitivamente, isolamento horizontal
+preservado, UI completa. Progresso **16/17 (94%)**.
+
+**Tech-debt aberta (não-bloqueante, Tier 1):** [ALTA] Org Chart/Network Map
+crasham (Fase 3, refs stale `profileRoles`/`parentId` — agora bem visíveis via
+STRUCTURE); [MÉDIA] warning pg de concorrência em departments (#95). Candidatas
+naturais a uma faxina antes/junto da Sub-27.
+
+### Próxima sub-etapa: 27 (UI consolidation) — ⏭️ pending
+
+Aguardando discovery antecipada antes da spec (regra cravada da skill).
 
 ---
 
