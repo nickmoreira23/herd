@@ -28,6 +28,17 @@ async function main() {
   const sourceHash =
     "sha256:" + createHash("sha256").update(sourceContent.join("\n")).digest("hex");
 
+  // Deterministic `generated_at`: the most recent `updated:` (YYYY-MM-DD) across
+  // all feature.yml files, mirroring the glossary builder. NEVER Date.now() —
+  // a run-date stamp drifts daily and breaks the `freshness` CI gate (same
+  // input ⇒ byte-identical output is the whole point).
+  const updatedDates: string[] = [];
+  for (const f of featureFiles) {
+    const m = readFileSync(f, "utf-8").match(/^updated:\s*"?(\d{4}-\d{2}-\d{2})"?/m);
+    if (m) updatedDates.push(m[1]);
+  }
+  const generatedAt = updatedDates.sort().reverse()[0] ?? "";
+
   const manifest = {
     name: "comecaai-docs-mcp",
     version: "0.1.0",
@@ -57,7 +68,7 @@ async function main() {
     resources: [],
     feature_count: featureFiles.length,
     skill_count: skillFiles.length,
-    generated_at: new Date().toISOString().slice(0, 10),
+    generated_at: generatedAt,
     source_files_hash: sourceHash,
   };
 
