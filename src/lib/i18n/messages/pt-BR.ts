@@ -1378,6 +1378,12 @@ export const messages = {
   "organization.subpanel.locations": "Localizações",
   "organization.subpanel.business_hours": "Horários de Atendimento",
   "organization.subpanel.regional_settings": "Configurações Regionais",
+  "organization.subpanel.structure_category": "Estrutura",
+  "organization.subpanel.hierarchy": "Hierarquia",
+  "organization.subpanel.departments": "Departamentos",
+  "organization.subpanel.members": "Membros",
+  "organization.subpanel.org_chart": "Organograma",
+  "organization.subpanel.network_map": "Mapa de Rede",
 
   // Profile (legacy aggregated form)
   "organization.profile.title": "Perfil da Organização",
@@ -1762,6 +1768,29 @@ export const messages = {
     'Excluir "{name}"? Os subdepartamentos se tornarão de nível superior.',
   "organization.departments.tree.edit_title": "Editar",
   "organization.departments.tree.delete_title": "Excluir",
+  "organization.hierarchy.title": "Hierarquia de Organizações",
+  "organization.hierarchy.description":
+    "Navegue a árvore de sub-organizações e opere uma sub-org através desta.",
+  "organization.hierarchy.empty":
+    "Esta organização não tem sub-organizações.",
+  "organization.hierarchy.operate_button": "Operar esta sub-org",
+  "organization.hierarchy.banner_text":
+    "Você está operando {child} — uma sub-organização — através de {parent}.",
+  "organization.hierarchy.banner_exit": "Sair do contexto",
+  "organization.hierarchy.depts_panel_title": "Departamentos de {child}",
+  "organization.hierarchy.add_dept_button": "Adicionar departamento",
+  "organization.hierarchy.form_create_title": "Criar departamento em {child}",
+  "organization.hierarchy.form_create_description":
+    "Este departamento será criado na sub-organização {child}, não na sua organização.",
+  "organization.hierarchy.create_confirm": "Criar o departamento “{name}” em {child}?",
+  "organization.hierarchy.delete_confirm": "Excluir o departamento “{name}” em {child}?",
+  "organization.hierarchy.depts_empty": "Nenhum departamento em {child}.",
+  "organization.feedback.vertical_dept_created": "Departamento criado em {child}.",
+  "organization.feedback.vertical_dept_deleted": "Departamento excluído de {child}.",
+  "error.organization.org_vertical_forbidden":
+    "Você não tem autorização para operar esta organização (não é uma sub-org da sua).",
+  "error.organization.vertical_write_failed":
+    "Falha ao gravar na sub-organização. Tente novamente.",
 
   "organization.departments.detail.back": "Voltar para Departamentos",
   "organization.departments.detail.head_label": "Responsável pelo Departamento",

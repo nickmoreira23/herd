@@ -162,6 +162,18 @@ export const subPanelRegistry: Record<string, SubPanelConfig> = {
         ],
       },
       {
+        id: "structure",
+        label: "Structure",
+        labelKey: "organization.subpanel.structure_category",
+        links: [
+          { href: "/admin/organization/hierarchy", label: "Hierarchy", labelKey: "organization.subpanel.hierarchy", icon: GitBranch },
+          { href: "/admin/organization/departments", label: "Departments", labelKey: "organization.subpanel.departments", icon: Building2 },
+          { href: "/admin/organization/members", label: "Members", labelKey: "organization.subpanel.members", icon: Users },
+          { href: "/admin/organization/org-chart", label: "Org Chart", labelKey: "organization.subpanel.org_chart", icon: Share2 },
+          { href: "/admin/organization/network-map", label: "Network Map", labelKey: "organization.subpanel.network_map", icon: LayoutGrid },
+        ],
+      },
+      {
         id: "brand-kit",
         label: "Brand Kit",
         links: [

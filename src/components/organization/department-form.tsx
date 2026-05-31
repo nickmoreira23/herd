@@ -51,6 +51,14 @@ interface DepartmentFormProps {
     headId: string | null;
     color: string | null;
   } | null;
+  /**
+   * Sub-26.4a — quando presente, o create vira VERTICAL: grava no tenant do
+   * filho via a rota da 26.3 (`/api/org/[childId]/departments`) e o título do
+   * dialog nomeia o filho (clareza de contexto = a confirmação consciente).
+   * Opcional → o uso normal (create na própria org) não muda. Edit vertical
+   * fora do V1.
+   */
+  verticalContext?: { childId: string; childName: string };
 }
 
 const COLORS = [
@@ -71,6 +79,7 @@ export function DepartmentForm({
   departments,
   profiles,
   editingDepartment,
+  verticalContext,
 }: DepartmentFormProps) {
   const t = useT();
   const [name, setName] = useState(editingDepartment?.name ?? "");
@@ -87,9 +96,14 @@ export function DepartmentForm({
     }
     setSaving(true);
     try {
+      // Vertical create (Sub-26.3 route) when verticalContext is set; otherwise
+      // the normal self-org create/edit. Edit stays self-org (vertical edit is
+      // out of V1).
       const url = editingDepartment
         ? `/api/departments/${editingDepartment.id}`
-        : "/api/departments";
+        : verticalContext
+          ? `/api/org/${verticalContext.childId}/departments`
+          : "/api/departments";
       const method = editingDepartment ? "PATCH" : "POST";
 
       const res = await fetch(url, {
@@ -106,7 +120,12 @@ export function DepartmentForm({
 
       const json = await res.json();
       if (json.error) {
-        notifyError("error.organization.save_failed", t);
+        notifyError(
+          verticalContext && res.status === 403
+            ? "error.organization.org_vertical_forbidden"
+            : "error.organization.save_failed",
+          t,
+        );
         return;
       }
 
@@ -130,12 +149,20 @@ export function DepartmentForm({
           <DialogTitle>
             {editingDepartment
               ? t("organization.departments.form.edit_title")
-              : t("organization.departments.form.create_title")}
+              : verticalContext
+                ? t("organization.hierarchy.form_create_title", {
+                    child: verticalContext.childName,
+                  })
+                : t("organization.departments.form.create_title")}
           </DialogTitle>
           <DialogDescription>
             {editingDepartment
               ? t("organization.departments.form.edit_description")
-              : t("organization.departments.form.create_description")}
+              : verticalContext
+                ? t("organization.hierarchy.form_create_description", {
+                    child: verticalContext.childName,
+                  })
+                : t("organization.departments.form.create_description")}
           </DialogDescription>
         </DialogHeader>
 
