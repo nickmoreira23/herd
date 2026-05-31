@@ -243,6 +243,29 @@ permanece **15/17** (26.1 é sub-fatia, não a sub-etapa inteira).
   evita o ciclo de import prisma→extension→org-hierarchy. Se a lógica de
   fechamento mudar, mudar nos DOIS. Consolidar quando o ciclo de import puder ser
   quebrado (ex.: SQL cru num módulo sem dependência de `prisma`).
+- **[ALTA] Org Chart + Network Map crasham (Fase 3, refs stale).** Descoberto na
+  Sub-26.4a (agora visíveis via a seção STRUCTURE do sub-painel Organization).
+  `OrgChartCanvas` (`:168` `p.profileRoles.map`, `:175` `p.parentId`) e
+  `NetworkMapCanvas` (`p.parentId`) leem campos **dropados na Sub-etapa 3.6**
+  (`NetworkProfile.profileRoles`/`parentId`); `/api/org-chart/internal` e
+  `/external` não retornam mais esses campos → `TypeError` (crash fatal) no
+  org-chart, edges vazias no network-map. **Pré-existente desde a Fase 3**, não
+  introduzido pela 26.4. Fix: atualizar os canvases ao schema atual (derivar a
+  árvore de `Department.parentId`/`departmentMemberships`, não de
+  `NetworkProfile.parentId`) ou remover/repensar essas telas.
+- **[MÉDIA] Warning pg de concorrência em departments (#95).** `DepartmentsPage`
+  (list) e `departments/[id]` fazem `withTenant(orgId, () => Promise.all([
+  department.findMany (tenant-scoped), networkProfile.findMany ]))`. A Extension
+  envolve a query scoped num `$transaction` que roda **concorrente** com a query
+  não-scoped → `DeprecationWarning: client.query() while already executing`
+  (pg@9). **Não-fatal** (a página renderiza). Introduzido pelo #95 (o wrap em
+  `withTenant`). Fix simples: sequenciar os awaits, ou tirar `networkProfile`
+  (não-scoped) de dentro do `withTenant`. PR separado.
+- **[BAIXA] Duplicação de Locations** (`/admin/organization/profile/locations` via
+  `LocationsForm`+`/api/locations` escopado vs `/admin/blocks/locations` com o fix
+  #95 — **ambas seguras**) — reconciliar pra uma só superfície.
+- **[BAIXA] Top-level do sidebar é todo literal** (`NavLink` sem `labelKey`; nav
+  principal não passa por `useT`) — migração futura pra i18n da navegação top-level.
 
 ### Tier 2 (resolve em Sub-etapa 28.5 ou cutover)
 

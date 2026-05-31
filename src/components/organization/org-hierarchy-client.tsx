@@ -27,7 +27,10 @@ export function OrgHierarchyClient({
   const pathname = usePathname();
   const params = useSearchParams();
 
-  const ctx = params.get("ctx");
+  // Guard: useSearchParams() can be null in some render states — never call
+  // .get() unguarded in the render body (that throw crashes hydration). The
+  // <Suspense> boundary in page.tsx is the primary fix; this is belt-and-braces.
+  const ctx = params?.get("ctx") ?? null;
   // Só trata como contexto ativo se o childId for um descendente conhecido.
   const ctxNode = ctx ? descendants.find((d) => d.id === ctx) ?? null : null;
 

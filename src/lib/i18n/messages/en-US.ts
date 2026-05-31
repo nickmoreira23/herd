@@ -1353,6 +1353,12 @@ export const messages: Record<MessageKey, string> = {
   "organization.subpanel.locations": "Locations",
   "organization.subpanel.business_hours": "Business Hours",
   "organization.subpanel.regional_settings": "Regional Settings",
+  "organization.subpanel.structure_category": "Structure",
+  "organization.subpanel.hierarchy": "Hierarchy",
+  "organization.subpanel.departments": "Departments",
+  "organization.subpanel.members": "Members",
+  "organization.subpanel.org_chart": "Org Chart",
+  "organization.subpanel.network_map": "Network Map",
 
   // Profile (legacy aggregated form)
   "organization.profile.title": "Organization Profile",

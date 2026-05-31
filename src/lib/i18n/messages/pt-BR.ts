@@ -1378,6 +1378,12 @@ export const messages = {
   "organization.subpanel.locations": "Localizações",
   "organization.subpanel.business_hours": "Horários de Atendimento",
   "organization.subpanel.regional_settings": "Configurações Regionais",
+  "organization.subpanel.structure_category": "Estrutura",
+  "organization.subpanel.hierarchy": "Hierarquia",
+  "organization.subpanel.departments": "Departamentos",
+  "organization.subpanel.members": "Membros",
+  "organization.subpanel.org_chart": "Organograma",
+  "organization.subpanel.network_map": "Mapa de Rede",
 
   // Profile (legacy aggregated form)
   "organization.profile.title": "Perfil da Organização",
