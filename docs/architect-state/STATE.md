@@ -39,7 +39,7 @@
 | 13 | 22.2 — Org selector + login branding + switch-org | ✅ | f5d2b6e | archive/sub-etapa-22-2-org-selector-f5d2b6e |
 | 14 | **24 — Invitation flow + EmailProvider mock** | ✅ | `9149412` (PRs #77→#85) | — |
 | 15 | **25 — Audit log** | ✅ | `fdc7a75` (PR #88) | — |
-| 16 | 26 — Sub-org hierarchy (Escopo C) — ADR-001 aceito; **26.1 ✅** (`ebc6344`); **26.2 ✅** (`3c036cc`); **26.3 ✅** (`1c2472b`, `post-sub-26-3`); 26.4 pendente | 🔄 em progresso | — | — |
+| 16 | 26 — Sub-org hierarchy (Escopo C) — ADR-001 aceito; **26.1 ✅** (`ebc6344`); **26.2 ✅** (`3c036cc`); **26.3 ✅** (`1c2472b`); **26.4a ✅** (`eed8eb0`, `post-sub-26-4a`); 26.4b pendente | 🔄 em progresso | — | — |
 | 17 | 27 — UI consolidation | ⏭️ pending | — | — |
 | 18 | 28 — Smoke harness DEV | ⏭️ pending | — | — |
 | 19 | 28.5 — Domain cutover + Resend + Bucked Up PROD | ⏭️ pending | — | — |
@@ -86,7 +86,7 @@ sob o tenant correto. Backend confirmado via gates (typecheck + build + lint + 4
 testes em cada commit) e RLS verificada ao vivo; falta só a confirmação end-to-end
 de que uma ação real grava a linha.
 
-### Sub-etapa 26 (Sub-org hierarchy, Escopo C) — 🔄 em progresso (26.1 ✅ + 26.2 ✅ + 26.3 ✅, próxima 26.4)
+### Sub-etapa 26 (Sub-org hierarchy, Escopo C) — 🔄 em progresso (26.1/26.2/26.3/26.4a ✅, próxima 26.4b)
 
 Discovery dupla concluída (read-only). Decisões cravadas em
 **`docs/architect-state/adr/ADR-001-organization-hierarchy.md`** (Accepted).
@@ -136,9 +136,24 @@ Implementação faseada — estado por fatia:
   (gate) + integration 4/4 (incl. canário #7: a RLS não barra a escrita vertical
   — o guard é app-layer) + smoke real (pai opera filho create+delete; irmã/
   ascendente/self barrados; audit cross-tier). ADR-001 D4/D5.
-- **26.4 — UX modo consolidado ⏭️ PRÓXIMA (fecha a Sub-26).** Toggle de visão
-  hierárquica no host do pai; navegação na árvore; entrada explícita no contexto
-  de filho consumindo as rotas verticais da 26.3.
+- **26.4a — UI: árvore + contexto de filho ✅ MERGED** (PR #101, merge `eed8eb0`,
+  tag `post-sub-26-4a`). Frontend puro, consome 26.1/26.2/26.3, zero toque em
+  RLS. `org-tree` navegável (`GET /api/org/hierarchy`); banner de contexto loud
+  persistente (token, in-host via `?ctx=<childId>`); escrita vertical reusando
+  `DepartmentForm` (prop aditiva `verticalContext` → `POST /api/org/[childId]/
+  departments`, título nomeia o filho); delete via `confirm()`; 403 tratado.
+  **Fix de hidratação cravado:** `useSearchParams` no render body sob
+  `cacheComponents` matava o client → `<Suspense>` boundary no `page.tsx` +
+  guard `params?.get`. **+ Porta "Organization" no sidebar** (`nav-config.ts`,
+  faltava entrada top-level — sub-painel era inacessível) **+ seção STRUCTURE**
+  no `subPanelRegistry.organization` (Hierarchy/Departments/Members/Org Chart/
+  Network Map — linka 5 órfãos). i18n pt-BR+en-US. Validada em dev fresco
+  (hidrata + interativa; o "(stale)" era miragem — P6). ADR-001 D7.
+  **Tech-debt descoberta/registrada** (Tier 1): Org Chart/Network Map crasham
+  (Fase 3, refs stale) [ALTA]; warning pg em departments (#95) [MÉDIA].
+- **26.4b — dashboard consolidado ⏭️ PRÓXIMA (fecha a Sub-26).** Agregação por
+  org via `groupBy({by:['tenantId']})` sob leitura vertical (sai de graça da
+  26.2) + endpoint fino de stats + UI de cards. Discovery já mapeou.
 
 Não-bloqueante para go-live. Cada fatia com discovery→spec→smoke próprio.
 **Sub-26 só conta como cravada quando 26.4 fechar** — progresso geral
