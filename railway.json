@@ -1,6 +1,6 @@
 {
   "$schema": "https://railway.com/railway.schema.json",
   "deploy": {
-    "predeploy": "npx prisma generate"
+    "predeploy": "npx prisma generate && npx prisma migrate deploy"
   }
 }
