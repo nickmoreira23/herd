@@ -594,12 +594,47 @@ model Location {
   isHeadquarters Boolean  @default(false)
   isActive       Boolean  @default(true)
   notes          String?
+  source         RecordSource @default(MANUAL)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  tenant Organization @relation("LocationTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant            Organization           @relation("LocationTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+  organizationLinks OrganizationLocation[]
 
   @@index([tenantId])
+}
+
+// ADR-002 Fatia 1a — proveniência de registros de bloco.
+enum RecordSource {
+  MANUAL
+  ORGANIZATION
+  INTEGRATION
+  SYSTEM
+
+  @@map("record_source")
+}
+
+// ADR-002 Fatia 1a — consumo curado: junção Organization⊆bloco-locations (molde *TierAssignment).
+// tenantId é escalar (= organizationId em V1); scoping via Extension/TENANT_SCOPED_MODELS + RLS.
+// A FK tenant_id→organizations existe só no SQL da migration (não modelada como relation).
+// D6: deletar Location (mestre) OU Organization (consumidor) → vínculo cai (Cascade).
+// Desvincular (deletar este vínculo) NÃO deleta o Location — o catálogo-mestre sobrevive.
+model OrganizationLocation {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  locationId     String   @map("location_id") @db.Uuid
+  isEnabled      Boolean  @default(true) @map("is_enabled")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation("OrgLocationConsumer", fields: [organizationId], references: [id], onDelete: Cascade)
+  location     Location     @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, locationId])
+  @@index([tenantId])
+  @@index([locationId])
+  @@map("organization_location")
 }
 
 // ========================
@@ -1688,6 +1723,7 @@ model Organization {
 
   departments Department[] @relation("DepartmentTenant")
   locations   Location[]   @relation("LocationTenant")
+  curatedLocations OrganizationLocation[] @relation("OrgLocationConsumer")
   members     OrganizationMember[]
   invitations OrganizationInvitation[]
 
