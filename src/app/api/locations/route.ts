@@ -34,15 +34,16 @@ export async function GET(request: Request) {
         ];
       }
 
-      const [locations, total] = await Promise.all([
-        prisma.location.findMany({
-          where,
-          orderBy: [{ isHeadquarters: "desc" }, { name: "asc" }],
-          take: limit,
-          skip: offset,
-        }),
-        prisma.location.count({ where }),
-      ]);
+      // Sequential (not Promise.all): both queries are tenant-scoped, so the
+      // Extension wraps each in its own $transaction — running them concurrently
+      // collides on the pg connection (DeprecationWarning, pg@9).
+      const locations = await prisma.location.findMany({
+        where,
+        orderBy: [{ isHeadquarters: "desc" }, { name: "asc" }],
+        take: limit,
+        skip: offset,
+      });
+      const total = await prisma.location.count({ where });
 
       return apiSuccess({ locations, total });
     } catch (e) {
