@@ -284,14 +284,27 @@ Aguardando discovery antecipada antes da spec (regra cravada da skill).
   introduzido pela 26.4. Fix: atualizar os canvases ao schema atual (derivar a
   árvore de `Department.parentId`/`departmentMemberships`, não de
   `NetworkProfile.parentId`) ou remover/repensar essas telas.
-- **[MÉDIA] Warning pg de concorrência em departments (#95).** `DepartmentsPage`
-  (list) e `departments/[id]` fazem `withTenant(orgId, () => Promise.all([
-  department.findMany (tenant-scoped), networkProfile.findMany ]))`. A Extension
-  envolve a query scoped num `$transaction` que roda **concorrente** com a query
-  não-scoped → `DeprecationWarning: client.query() while already executing`
-  (pg@9). **Não-fatal** (a página renderiza). Introduzido pelo #95 (o wrap em
-  `withTenant`). Fix simples: sequenciar os awaits, ou tirar `networkProfile`
-  (não-scoped) de dentro do `withTenant`. PR separado.
+- **[MÉDIA] Warning pg de concorrência sob `withTenant` (#95 → discovery pós-#106).**
+  `DeprecationWarning: client.query() while already executing` (pg@9). **Cosmético**:
+  dados corretos (o pg enfileira a 2ª query internamente), emitido **≤1×/processo**
+  (`util.deprecate` só dispara na 1ª ocorrência), e `pg` pinado em `^8.20.0` (não pula
+  pra 9 sozinho).
+  **Root real (reproduzido):** a Extension de tenancy envolve toda leitura scoped num
+  `$transaction` (necessário pro `SET LOCAL app.tenant_id` do RLS), prendendo a op a
+  **uma conexão dedicada**; quando essa leitura tem `include` de relações, o
+  query-compiler do Prisma 7 dispara as sub-queries de relação **concorrentes** nessa
+  única conexão → colisão. Reproduzível com `department.findMany({ include })` **sozinho**,
+  **sem** `Promise.all`. `departments/page.tsx` e `departments/[id]` (includes aninhados)
+  ainda disparam **pós-#106** — sequenciar os awaits não cobre o caso `include`.
+  **#106 cobriu** só o sub-caso `Promise.all([scoped, …])` (5 sites); este item é o resto.
+  **NÃO é o `proxy.ts`/`org-resolver`** (hipótese spun-off **falsificada**): esse caminho
+  usa `query_raw` direto no Pool, **sem** `$transaction` — concorrência isolada por conexão.
+  O `(middleware)` no stack trace é só o nome do chunk webpack do `adapter-pg` compartilhado,
+  não o contexto de execução.
+  **Sem fix cirúrgico app-side** (a concorrência é interna a uma única op do Prisma). Opções:
+  aceitar+documentar (proporcional ao impacto), ou issue upstream no Prisma/`adapter-pg`
+  (o adapter deveria serializar queries dentro da conexão de uma transação). PR separado
+  se for mexer.
 - **[BAIXA] Duplicação de Locations** (`/admin/organization/profile/locations` via
   `LocationsForm`+`/api/locations` escopado vs `/admin/blocks/locations` com o fix
   #95 — **ambas seguras**) — reconciliar pra uma só superfície.
