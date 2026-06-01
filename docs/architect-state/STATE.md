@@ -2,7 +2,7 @@
 
 > **Propósito:** Este arquivo é o estado canônico cross-session do trabalho de chat-architect em curso. Atualizado ao final de cada sub-etapa Fase 4. Qualquer nova sessão Claude.ai (chat-architect) deve ler este arquivo PRIMEIRO antes de propor qualquer trabalho.
 >
-> **Versão:** v1.5 (atualizado 2026-06-01, pós-incidente de PROD + ADR-002 — PRs #105–#113 + ADR-002)
+> **Versão:** v1.6 (atualizado 2026-06-01, pós-Fatia 1a + correção do #112 — auto-migrate quebrado, migrations manuais)
 >
 > **Próxima atualização esperada:** pós-merge da Fatia 1 (Locations piloto) do ADR-002.
 
@@ -32,13 +32,28 @@ ausente) → expunha PII interna/de-teste, não de cliente.
 2. **Backup** — `pg_dump -Fc` de PROD (1.9 MB, custom).
 3. **8 migrations** aplicadas via `railway run -- npx prisma migrate deploy` (0 pendentes;
    dashboard logado renderiza; gate intacto).
-4. **#112** — `predeploy` passa a `prisma generate && prisma migrate deploy` → drift não
-   reacumula (fail-safe: migration ruim aborta o deploy, deployment anterior segue servindo).
+4. **#112** — `predeploy` passa a `prisma generate && prisma migrate deploy`. **⚠️ TENTATIVA
+   QUE NÃO FUNCIONA — ver correção abaixo.**
+
+**🛑 CORREÇÃO (2026-06-01, pós-Fatia 1a): o #112 NÃO previne drift — é incompatível com o runtime.**
+O predeploy roda no **runner/standalone image**, que o Dockerfile multi-stage monta copiando
+**só** `.next/standalone` + `.next/static` + `public`. Esse image **não tem** o CLI `prisma`,
+nem `prisma/schema.prisma`/`prisma.config.ts`, nem `prisma/migrations/`. Então
+`npx prisma … migrate deploy` **falha** (sem schema/migrations/CLI) e **o deploy promove mesmo
+assim** — o "fail-safe" do #112 também **não vale** (Railway predeploy é best-effort, não aborta).
+Comprovado na estreia: o merge da Fatia 1a (#115) promoveu **sem aplicar** a migration → PROD
+ficou com drift parcial; tive de aplicar manual via `railway run`. **O #112 está documentado
+errado como "resolvido" — está QUEBRADO.**
+
+**⚠️ AVISO OPERACIONAL (até o reprojeto): TODA migration nova exige aplicação MANUAL em PROD
+após o merge** — `railway run -- npx prisma migrate deploy`, seguido de `railway run -- npx
+prisma migrate status` pra confirmar `up to date`. Pular esse passo = PROD com drift (foi a
+causa do incidente de manhã — 8 migrations acumuladas — e da reincidência da 1a hoje).
 
 **Lição cravada:** o proxy roda uma query de DB **antes do auth gate** — qualquer falha de DB
 (drift, blip) derruba a superfície inteira. O `try/catch` (#111) degrada pra `org=null` em vez
-de 500. E **`migrate deploy` no predeploy** é obrigatório — `generate` sozinho mascara drift
-até quebrar.
+de 500. E a prevenção de drift via predeploy **ainda não existe de fato** (ver tech-debt
+[ALTA-OPERACIONAL] na seção 5).
 
 ---
 
@@ -306,6 +321,15 @@ Aguardando discovery antecipada antes da spec (regra cravada da skill).
 
 ### Tier 1 (resolve durante Fase 4)
 
+- **[ALTA-OPERACIONAL] Reprojetar o auto-migrate — o runner não pode rodar `migrate deploy`.**
+  O #112 (predeploy `prisma generate && prisma migrate deploy`) **não funciona**: o
+  runner/standalone image não tem CLI `prisma`, nem `schema.prisma`, nem `prisma/migrations/`
+  (Dockerfile copia só `.next/standalone`+`static`+`public`). Falha silenciosa + promove
+  (best-effort). **Enquanto aberto: aplicar TODA migration manual em PROD via
+  `railway run -- npx prisma migrate deploy` após o merge + checar `migrate status`.**
+  Candidatos pra spec: (a) copiar `prisma/` + instalar o CLI `prisma` no stage runner;
+  (b) passo de migração a partir do `builder` image (já tem tudo); (c) `releaseCommand`
+  bloqueante (se o Railway oferecer um que realmente aborta). Muda a abordagem do #112 inteiro.
 - **[ALTA-SEGURANÇA] Camada 2 de auth `/api`.** O gate do #111 é **presence-based**
   (`isLoggedIn = !!cookie`) — **NÃO valida o JWT** → um cookie forjado passa. Falta:
   (a) validar o JWT no proxy, **e** (b) **scoping por-tenant nos handlers** (cross-tenant

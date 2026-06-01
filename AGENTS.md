@@ -191,16 +191,28 @@ This project uses `prisma migrate`, not `db push`.
 - Production/CI: `npm run db:deploy` (applies pending migrations without prompting).
 - Never run `prisma db push` — it bypasses the migration history.
 
-**Railway predeploy MUST run `migrate deploy` (cravado pós-incidente 2026-06-01).**
-`railway.json` → `deploy.predeploy` is `npx prisma generate && npx prisma migrate deploy`.
-`generate` alone (the old value) regenerates the client every deploy but **never applies
-migrations to the DB** — drift accumulates silently until the client expects a column the
-DB lacks and a query throws `P2022` (`column ... does not exist`). In PROD this surfaced as a
-**universal 500**, because `proxy.ts` runs `organization.findUnique` on every request *before*
-the auth gate. The predeploy runs via `DIRECT_URL` (owner) before the app promotes; a failed
-migration aborts the deploy (fail-safe — the previous deployment keeps serving). Do not revert
-to `generate`-only. To apply migrations to PROD manually (controlled), use
-`railway run -- npx prisma migrate deploy` (injects the service env; uses `DIRECT_URL`).
+**🛑 PROD migrations are MANUAL until the auto-migrate is redesigned (cravado 2026-06-01).**
+After **every** merge that adds a migration, apply it to PROD by hand:
+```
+railway run -- npx prisma migrate deploy     # applies pending migrations (DIRECT_URL / owner)
+railway run -- npx prisma migrate status      # MUST print "Database schema is up to date!"
+```
+Skipping this leaves PROD drifted — the client (built from the new schema) expects columns the
+DB lacks → `P2022` (`column ... does not exist`). The proxy runs `organization.findUnique` on
+every request *before* the auth gate, so a drifted column there = **universal 500** (the morning
+incident: 8 migrations accumulated). A partial drift (e.g. a new `Location.source`) 500s only
+that feature.
+
+**Why the predeploy does NOT cover this (the #112 attempt is broken):** `railway.json` sets
+`predeploy: "npx prisma generate && npx prisma migrate deploy"`, but the predeploy runs in the
+**runner/standalone image**, which the multi-stage Dockerfile builds by copying only
+`.next/standalone` + `.next/static` + `public`. That image has **no `prisma` CLI, no
+`schema.prisma`/`prisma.config.ts`, no `prisma/migrations/`** → `migrate deploy` cannot run, and
+Railway's predeploy is **best-effort (failure does NOT abort the promotion)**, so the deploy ships
+anyway with the migration unapplied. Confirmed on the Fatia 1a deploy (#115). Tracked as
+**[ALTA-OPERACIONAL]** tech debt (redesign: copy `prisma/`+CLI into the runner, OR migrate from
+the builder image, OR a blocking release step). Until then, **manual `migrate deploy` is the
+contract** — do not assume the predeploy applied anything.
 
 # Account seeding
 
