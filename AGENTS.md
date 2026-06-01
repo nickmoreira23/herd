@@ -191,6 +191,17 @@ This project uses `prisma migrate`, not `db push`.
 - Production/CI: `npm run db:deploy` (applies pending migrations without prompting).
 - Never run `prisma db push` — it bypasses the migration history.
 
+**Railway predeploy MUST run `migrate deploy` (cravado pós-incidente 2026-06-01).**
+`railway.json` → `deploy.predeploy` is `npx prisma generate && npx prisma migrate deploy`.
+`generate` alone (the old value) regenerates the client every deploy but **never applies
+migrations to the DB** — drift accumulates silently until the client expects a column the
+DB lacks and a query throws `P2022` (`column ... does not exist`). In PROD this surfaced as a
+**universal 500**, because `proxy.ts` runs `organization.findUnique` on every request *before*
+the auth gate. The predeploy runs via `DIRECT_URL` (owner) before the app promotes; a failed
+migration aborts the deploy (fail-safe — the previous deployment keeps serving). Do not revert
+to `generate`-only. To apply migrations to PROD manually (controlled), use
+`railway run -- npx prisma migrate deploy` (injects the service env; uses `DIRECT_URL`).
+
 # Account seeding
 
 The platform's chart of accounts (the structural ledger accounts referenced by
@@ -2221,6 +2232,24 @@ Foundation Fase 4 cravada — Organization agora tem campos:
 **Backfill migration (Sub-etapa 18):**
 - `admin@herd.com` profile → `nick@comecaai.com.br` (firstName=Nick, lastName=Moreira).
 - Org slug `admin` → `comecaai`, name → `ComeçaAI`, subdomain → `app`.
+
+## API auth gate in `proxy.ts` (cravado pós-incidente 2026-06-01)
+
+`proxy.ts` enforces a **session gate on `/api/*`** (default-deny): anonymous requests get
+**401** unless the path is in the explicit `PUBLIC_API_MATCHERS` allowlist (NextAuth, webhooks,
+cron, OAuth/token callbacks, `shared/[token]`, invitations-by-token, `analytics/web-vitals`,
+`health`). Before this, the proxy only gated `/admin` + `/orgs` — the entire `/api` surface was
+reachable unauthenticated and the handlers carry no auth of their own.
+
+- The gate is **session-presence-based** (`isLoggedIn = !!authjs.session-token`, mirroring the
+  `/admin` gate) — it does **NOT validate the JWT** and does **NOT scope by tenant**. It closes
+  **anonymous** access only. **Tech debt (camada 2):** validate the JWT in the proxy **and** add
+  per-handler tenant scoping (cross-tenant between logged-in users is still open).
+- `resolveOrgByHost` is wrapped in **try/catch** → a DB error degrades to `org=null` instead of
+  500-ing the whole surface. The invalid-subdomain redirect is guarded with `!resolveFailed`.
+- Adding a new genuinely-public `/api` route? Add its exact pattern to `PUBLIC_API_MATCHERS` —
+  otherwise it requires a session. Webhooks self-verify signatures; cron self-checks
+  `CRON_SECRET`; both stay in the allowlist (their callers have no session).
 
 ## Domain routing V2 (Sub-etapa 22)
 
