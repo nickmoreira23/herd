@@ -1359,6 +1359,7 @@ export const messages: Record<MessageKey, string> = {
   "organization.subpanel.members": "Members",
   "organization.subpanel.org_chart": "Org Chart",
   "organization.subpanel.network_map": "Network Map",
+  "organization.coming_soon": "This feature is under development.",
   "organization.subpanel.dashboard": "Dashboard",
   "organization.dashboard.title": "Consolidated Dashboard",
   "organization.dashboard.description":
