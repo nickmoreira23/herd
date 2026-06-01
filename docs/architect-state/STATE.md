@@ -2,9 +2,9 @@
 
 > **Propósito:** Este arquivo é o estado canônico cross-session do trabalho de chat-architect em curso. Atualizado ao final de cada sub-etapa Fase 4. Qualquer nova sessão Claude.ai (chat-architect) deve ler este arquivo PRIMEIRO antes de propor qualquer trabalho.
 >
-> **Versão:** v1.4 (atualizado 2026-06-01, pós-incidente de PROD + faxina — PRs #105–#112)
+> **Versão:** v1.5 (atualizado 2026-06-01, pós-incidente de PROD + ADR-002 — PRs #105–#113 + ADR-002)
 >
-> **Próxima atualização esperada:** pós-discovery da etapa "Proveniência + consumo curado" (antes da Sub-etapa 27).
+> **Próxima atualização esperada:** pós-merge da Fatia 1 (Locations piloto) do ADR-002.
 
 ---
 
@@ -205,16 +205,22 @@ crash NEUTRALIZADO (#105); warning pg intra-handler RESOLVIDO (#106); item
 "middleware" FECHADO como misdiagnosed; nav top-level i18n (#107) e i18n do bloco
 locations (#109) RESOLVIDOS. Detalhes no close-out da seção 5 (tech debt).
 
-### Próxima etapa: "Proveniência + consumo curado" — ⏭️ pending (ANTES da Sub-27)
+### Próxima etapa: "Proveniência + consumo curado" — ⏭️ ADR aceito, implementação faseada 1→4 pendente (ANTES da Sub-27)
 
-Revelada pela reclassificação da "duplicação de Locations" (ver close-out da faxina
-acima). Padrão: o **bloco** é catálogo-mestre/SSOT; superfícies como **Organization** e
-**KB** são **subconjuntos curados** do bloco, com **proveniência rastreável** (de onde
-veio cada item, quem curou). Aplica-se a Locations e Knowledge primeiro.
+**Discovery concluída + ADR cravado:** **`docs/architect-state/adr/ADR-002-block-ssot-curated-consumption.md`** (Accepted).
 
-Fluxo: **discovery** (read-only, mapear bloco↔superfície em Locations + KB) → **ADR**
-(modelo de proveniência/curadoria) → **fatias**. A rota `/profile/locations` + o
-`LocationsForm` ficam como estão até essa etapa cravar o consumo curado.
+Padrão: o **bloco** é catálogo-mestre/SSOT (modelo Prisma É a fonte; **não há tabela `Block`**);
+superfícies (**Organization**, **KB**, futuras) consomem **subconjunto curado** via **tabela de
+junção** (molde `*TierAssignment` — precedente real; anti-precedente `AgentKnowledgeItem` = cópia),
+com **proveniência** via enum `RecordSource` **por modelo** (não tabela central). Ver ADR-002 D1–D6.
+
+**Fatias (sequência 1→4, cada uma discovery→spec→smoke):**
+- **Fatia 1** — Locations piloto (junção `OrganizationLocation` + `RecordSource` + backfill + UI vincular/criar). Risco baixo.
+- **Fatia 2** — Proveniência transversal (`RecordSource` nos demais blocos + consolidar campos ad-hoc + syncs).
+- **Fatia 3** — **KB tenancy** (gate de segurança pré-go-live do KB). **⚠️ perdeu o componente `auth`** — já coberto pela **Camada 1 (#111)**; **resta só tenancy** (`tenantId` + `TENANT_SCOPED_MODELS` + RLS + backfill). Pré-requisito da Fatia 4.
+- **Fatia 4** — Knowledge consumo curado (espelha Locations, após tenancy).
+
+A rota `/profile/locations` + o `LocationsForm` ficam **intocados** até a Fatia 1 cravar o consumo curado (Organization **consome** o bloco).
 
 ### Sub-etapa 27 (UI consolidation) — ⏭️ pending (depois da etapa de proveniência)
 
