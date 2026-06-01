@@ -2,9 +2,9 @@
 
 > **Propósito:** Este arquivo é o estado canônico cross-session do trabalho de chat-architect em curso. Atualizado ao final de cada sub-etapa Fase 4. Qualquer nova sessão Claude.ai (chat-architect) deve ler este arquivo PRIMEIRO antes de propor qualquer trabalho.
 >
-> **Versão:** v1.2 (atualizado 2026-05-29, pós-merge Sub-etapa 25 — PR #88, merge `fdc7a75`)
+> **Versão:** v1.3 (atualizado 2026-06-01, pós-faxina de tech-debt — PRs #105/#106/#107/#109)
 >
-> **Próxima atualização esperada:** pós-merge Sub-etapa 27 (UI consolidation).
+> **Próxima atualização esperada:** pós-discovery da etapa "Proveniência + consumo curado" (antes da Sub-etapa 27).
 
 ---
 
@@ -166,12 +166,23 @@ vertical, coração #82) + 26.3 (escrita vertical + audit) + 26.4a (UI: navegaç
 A matriz **vê e opera** descendentes transitivamente, isolamento horizontal
 preservado, UI completa. Progresso **16/17 (94%)**.
 
-**Tech-debt aberta (não-bloqueante, Tier 1):** [ALTA] Org Chart/Network Map
-crasham (Fase 3, refs stale `profileRoles`/`parentId` — agora bem visíveis via
-STRUCTURE); [MÉDIA] warning pg de concorrência em departments (#95). Candidatas
-naturais a uma faxina antes/junto da Sub-27.
+**Faxina de tech-debt Tier 1 — concluída (2026-06-01).** Org Chart/Network Map
+crash NEUTRALIZADO (#105); warning pg intra-handler RESOLVIDO (#106); item
+"middleware" FECHADO como misdiagnosed; nav top-level i18n (#107) e i18n do bloco
+locations (#109) RESOLVIDOS. Detalhes no close-out da seção 5 (tech debt).
 
-### Próxima sub-etapa: 27 (UI consolidation) — ⏭️ pending
+### Próxima etapa: "Proveniência + consumo curado" — ⏭️ pending (ANTES da Sub-27)
+
+Revelada pela reclassificação da "duplicação de Locations" (ver close-out da faxina
+acima). Padrão: o **bloco** é catálogo-mestre/SSOT; superfícies como **Organization** e
+**KB** são **subconjuntos curados** do bloco, com **proveniência rastreável** (de onde
+veio cada item, quem curou). Aplica-se a Locations e Knowledge primeiro.
+
+Fluxo: **discovery** (read-only, mapear bloco↔superfície em Locations + KB) → **ADR**
+(modelo de proveniência/curadoria) → **fatias**. A rota `/profile/locations` + o
+`LocationsForm` ficam como estão até essa etapa cravar o consumo curado.
+
+### Sub-etapa 27 (UI consolidation) — ⏭️ pending (depois da etapa de proveniência)
 
 Aguardando discovery antecipada antes da spec (regra cravada da skill).
 
@@ -274,42 +285,47 @@ Aguardando discovery antecipada antes da spec (regra cravada da skill).
   evita o ciclo de import prisma→extension→org-hierarchy. Se a lógica de
   fechamento mudar, mudar nos DOIS. Consolidar quando o ciclo de import puder ser
   quebrado (ex.: SQL cru num módulo sem dependência de `prisma`).
-- **[ALTA] Org Chart + Network Map crasham (Fase 3, refs stale).** Descoberto na
-  Sub-26.4a (agora visíveis via a seção STRUCTURE do sub-painel Organization).
-  `OrgChartCanvas` (`:168` `p.profileRoles.map`, `:175` `p.parentId`) e
-  `NetworkMapCanvas` (`p.parentId`) leem campos **dropados na Sub-etapa 3.6**
-  (`NetworkProfile.profileRoles`/`parentId`); `/api/org-chart/internal` e
-  `/external` não retornam mais esses campos → `TypeError` (crash fatal) no
-  org-chart, edges vazias no network-map. **Pré-existente desde a Fase 3**, não
-  introduzido pela 26.4. Fix: atualizar os canvases ao schema atual (derivar a
-  árvore de `Department.parentId`/`departmentMemberships`, não de
-  `NetworkProfile.parentId`) ou remover/repensar essas telas.
-- **[MÉDIA] Warning pg de concorrência sob `withTenant` (#95 → discovery pós-#106).**
-  `DeprecationWarning: client.query() while already executing` (pg@9). **Cosmético**:
-  dados corretos (o pg enfileira a 2ª query internamente), emitido **≤1×/processo**
-  (`util.deprecate` só dispara na 1ª ocorrência), e `pg` pinado em `^8.20.0` (não pula
-  pra 9 sozinho).
-  **Root real (reproduzido):** a Extension de tenancy envolve toda leitura scoped num
-  `$transaction` (necessário pro `SET LOCAL app.tenant_id` do RLS), prendendo a op a
-  **uma conexão dedicada**; quando essa leitura tem `include` de relações, o
-  query-compiler do Prisma 7 dispara as sub-queries de relação **concorrentes** nessa
-  única conexão → colisão. Reproduzível com `department.findMany({ include })` **sozinho**,
-  **sem** `Promise.all`. `departments/page.tsx` e `departments/[id]` (includes aninhados)
-  ainda disparam **pós-#106** — sequenciar os awaits não cobre o caso `include`.
-  **#106 cobriu** só o sub-caso `Promise.all([scoped, …])` (5 sites); este item é o resto.
-  **NÃO é o `proxy.ts`/`org-resolver`** (hipótese spun-off **falsificada**): esse caminho
-  usa `query_raw` direto no Pool, **sem** `$transaction` — concorrência isolada por conexão.
-  O `(middleware)` no stack trace é só o nome do chunk webpack do `adapter-pg` compartilhado,
-  não o contexto de execução.
-  **Sem fix cirúrgico app-side** (a concorrência é interna a uma única op do Prisma). Opções:
-  aceitar+documentar (proporcional ao impacto), ou issue upstream no Prisma/`adapter-pg`
-  (o adapter deveria serializar queries dentro da conexão de uma transação). PR separado
-  se for mexer.
-- **[BAIXA] Duplicação de Locations** (`/admin/organization/profile/locations` via
-  `LocationsForm`+`/api/locations` escopado vs `/admin/blocks/locations` com o fix
-  #95 — **ambas seguras**) — reconciliar pra uma só superfície.
-- **[BAIXA] Top-level do sidebar é todo literal** (`NavLink` sem `labelKey`; nav
-  principal não passa por `useT`) — migração futura pra i18n da navegação top-level.
+### Faxina de tech-debt — close-out (2026-06-01)
+
+- **[ALTA] Org Chart + Network Map crasham (Fase 3, refs stale) → ✅ NEUTRALIZADO
+  (#105, `a2b1e87`).** Ambas as telas viraram placeholder "em breve" (`ComingSoon`),
+  então o crash **não é mais exposto**. O código da Fase 3 (`OrgChartCanvas` /
+  `NetworkMapCanvas`, refs stale a `NetworkProfile.profileRoles`/`parentId` dropados
+  na 3.6) foi **preservado no repo** (não deletado) para conserto futuro — derivar a
+  árvore de `Department.parentId`/`departmentMemberships`. Reabrir quando o produto
+  decidir reviver essas telas.
+- **[MÉDIA] Warning pg de concorrência intra-handler → ✅ RESOLVIDO (#106).**
+  Os 5 sites de `Promise.all([scoped, …])` sob `withTenant` foram sequenciados
+  (`const a = await A; const b = await B;`) — classe intra-handler eliminada por
+  construção.
+- **[MÉDIA] Warning pg "cross-request no middleware" → ❌ FECHADO (misdiagnosed).**
+  A hipótese de que `proxy.ts`/`resolveOrgByHost` era a fonte foi **falsificada**:
+  esse caminho faz `Organization.findUnique` **não-scoped** → Extension no-op →
+  conexões separadas do pool → 8× concorrente no boot = **0 warnings**. O `(middleware)`
+  no stack trace era **rótulo de chunk webpack, não contexto de execução**. O item
+  spun-off do #106 está mal-diagnosticado e **não há fix de middleware a fazer**.
+  A fonte real é **single-operation**: leitura scoped com `include` sob `withTenant`
+  (a Extension envolve em `$transaction`; o interpretador do Prisma 7 carrega as
+  relações do `include` como queries irmãs concorrentes na mesma conexão). **Benigno**
+  (dados corretos, `pg` pinado em `^8.20.0`, once-per-process). Sem fix app-side; opção
+  durável só **upstream** (`@prisma/adapter-pg`). Documentado em `AGENTS.md` (seção
+  "pg DeprecationWarning — benign"). Baixa prioridade, não agora.
+- **[BAIXA] Top-level do sidebar i18n → ✅ RESOLVIDO (#107).** `labelKey?: MessageKey`
+  aditivo + fallback pro `label` literal; 30 labels migrados (26 NavLink + 4 headers).
+  6 nomes próprios (Dashboard, Chat, Handbook, Marketplace, Ledger, Roadmap) ficam em
+  inglês **deliberadamente**.
+- **[BAIXA] i18n dos componentes do bloco locations → ✅ RESOLVIDO (#109).** 4 componentes
+  + `types.ts` roteados por `useT()`/`MessageKey`; 19 chaves novas (pt-BR + en-US). Sem
+  mudança de comportamento/dados.
+- **"Duplicação de Locations" → ⚠️ RECLASSIFICADA (não era dedup).** A investigação
+  revelou que o bloco é o **catálogo-mestre/SSOT** e superfícies como Organization (e KB)
+  são **subconjuntos curados** com proveniência rastreável — um **padrão de produto a
+  implementar**, não uma duplicação a remover. A rota `/admin/organization/profile/locations`
+  + o `LocationsForm` seguem **intocados em main** (a deleção/redirect foi descartada).
+  Vira a etapa nova "Proveniência + consumo curado" (abaixo), a fazer **antes** da Sub-27.
+- **[BAIXA] Chaves i18n órfãs** (defined-but-unused, resíduo da 26.4a e da fatia de
+  locations) — faxina de i18n futura, não-bloqueante. `check:i18n` só pega used-but-undefined,
+  então não trava CI.
 
 ### Tier 2 (resolve em Sub-etapa 28.5 ou cutover)
 
