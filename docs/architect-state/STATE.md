@@ -2,9 +2,43 @@
 
 > **Propósito:** Este arquivo é o estado canônico cross-session do trabalho de chat-architect em curso. Atualizado ao final de cada sub-etapa Fase 4. Qualquer nova sessão Claude.ai (chat-architect) deve ler este arquivo PRIMEIRO antes de propor qualquer trabalho.
 >
-> **Versão:** v1.3 (atualizado 2026-06-01, pós-faxina de tech-debt — PRs #105/#106/#107/#109)
+> **Versão:** v1.4 (atualizado 2026-06-01, pós-incidente de PROD + faxina — PRs #105–#112)
 >
 > **Próxima atualização esperada:** pós-discovery da etapa "Proveniência + consumo curado" (antes da Sub-etapa 27).
+
+---
+
+## 🛑 Incidente de PROD (2026-06-01) — RESOLVIDO, com pendências de segurança
+
+**Sintoma:** PROD (`herd-production.up.railway.app`) com **500 universal** (`/admin`, `/api/*`).
+
+**Causa-raiz: schema drift.** `railway.json` predeploy era só `npx prisma generate` (gera o
+client, **nunca** `migrate deploy`) → 8 migrations (Sub-18 → 26.2) acumularam **sem aplicar**
+no banco de PROD. Quando o client passou a esperar `organizations.status`, a
+`organization.findUnique` que o `proxy.ts` roda **em toda request** estourou **P2022**
+(`column organizations.status does not exist`). Como o proxy rodava a query **antes do auth
+gate e sem try/catch**, o erro virava **500 universal**.
+
+**Achado de segurança que o incidente expôs:** o `proxy.ts` só gateava `/admin` + `/orgs` —
+**toda a superfície `/api/*` (~330 handlers) estava sem gate de auth** e os handlers não têm
+auth própria → leitura/mutação **anônima** de PII, contatos, transcrições, e proxy de
+integrações (gorgias/gmail/recharge) sem login. **Classe pior que o #95** (superfície inteira,
+não 1 rota). O 500 do drift **mascarava** isso. PROD **não tinha cliente real** (Bucked Up
+ausente) → expunha PII interna/de-teste, não de cliente.
+
+**Resolução — Opção B (ordem segura, sem janela de exposição):**
+1. **#111** — gate `/api/*` (default-deny + allowlist) + `try/catch` no `resolveOrgByHost`.
+   Subiu **antes** de destravar o DB → fechou o anônimo independente do schema. `/api/* → 401`.
+2. **Backup** — `pg_dump -Fc` de PROD (1.9 MB, custom).
+3. **8 migrations** aplicadas via `railway run -- npx prisma migrate deploy` (0 pendentes;
+   dashboard logado renderiza; gate intacto).
+4. **#112** — `predeploy` passa a `prisma generate && prisma migrate deploy` → drift não
+   reacumula (fail-safe: migration ruim aborta o deploy, deployment anterior segue servindo).
+
+**Lição cravada:** o proxy roda uma query de DB **antes do auth gate** — qualquer falha de DB
+(drift, blip) derruba a superfície inteira. O `try/catch` (#111) degrada pra `org=null` em vez
+de 500. E **`migrate deploy` no predeploy** é obrigatório — `generate` sozinho mascara drift
+até quebrar.
 
 ---
 
@@ -266,6 +300,24 @@ Aguardando discovery antecipada antes da spec (regra cravada da skill).
 
 ### Tier 1 (resolve durante Fase 4)
 
+- **[ALTA-SEGURANÇA] Camada 2 de auth `/api`.** O gate do #111 é **presence-based**
+  (`isLoggedIn = !!cookie`) — **NÃO valida o JWT** → um cookie forjado passa. Falta:
+  (a) validar o JWT no proxy, **e** (b) **scoping por-tenant nos handlers** (cross-tenant
+  entre usuários logados continua aberto — os ~330 handlers `/api` não filtram por tenant).
+  Trabalho por-rota/modelo. O #111 (camada 1) fechou só o **anônimo**.
+- **[MÉDIA-SEGURANÇA] KB tenancy.** `KnowledgeDocument`/`KnowledgeFolder`/etc. **sem
+  `tenantId`, sem auth, `/api` público**; não estão em `TENANT_SCOPED_MODELS`; folders são
+  globais. **Vazio hoje (latente)** — vira gate de segurança **antes do go-live do KB**.
+  Pré-requisito da fatia de Knowledge da etapa de consumo curado (KB é flat **E** global).
+- **[FEATURE] Proveniência + consumo curado** (ver "Próxima etapa" na seção 3). Bloco = SSOT
+  (modelo Prisma É a fonte; **não há tabela `Block`**); superfície (Organization/KB) consome
+  subconjunto curado via **junção** (molde `*TierAssignment`) + proveniência via `RecordSource`
+  enum **por modelo**. Locations já é bloco (sem migração de dados); KB precisa de tenancy
+  primeiro. Precedente: `PerkTierAssignment`/`AgentTierAccess`. Anti-precedente:
+  `AgentKnowledgeItem` (cópia, não vínculo). → **ADR-002 + fatias, ANTES da Sub-27**.
+- **[BAIXA] Duplicação de UI de Locations** (`profile/locations` form vs `blocks/locations`
+  bloco canônico). **NÃO deletar** (descartado) — resolve junto da etapa de consumo curado
+  (Organization **consome** o bloco). Rota + form intocados em main.
 - `MembershipStatus.INVITED` enum value não-usado (Design A) — Sub-etapa 27 decide drop ou usar.
 - `user-table.tsx` dead code — Sub-etapa 27 deleta ou mantém legacy.
 - Click-outside dropdown handler sidebar — Sub-etapa 27.
@@ -326,6 +378,9 @@ Aguardando discovery antecipada antes da spec (regra cravada da skill).
 - **[BAIXA] Chaves i18n órfãs** (defined-but-unused, resíduo da 26.4a e da fatia de
   locations) — faxina de i18n futura, não-bloqueante. `check:i18n` só pega used-but-undefined,
   então não trava CI.
+- **Docs close-out (#110)** — registrou a faxina + cravou o diagnóstico correto do warning pg
+  (middleware misdiagnosed; fonte real = `include` scoped sob `withTenant`) em `AGENTS.md`.
+- **Incidente de PROD (#111/#112)** — ver o callout "🛑 Incidente de PROD" no topo do arquivo.
 
 ### Tier 2 (resolve em Sub-etapa 28.5 ou cutover)
 
