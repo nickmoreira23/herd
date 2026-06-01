@@ -14,12 +14,14 @@ import { LocationCard } from "./location-card";
 import { LocationDialog } from "./location-dialog";
 import { LOCATION_TYPE_OPTIONS, type LocationRow } from "./types";
 import { MapPin, Plus } from "lucide-react";
+import { useT } from "@/lib/i18n/locale-context";
 
 interface LocationsClientProps {
   initialLocations: LocationRow[];
 }
 
 export function LocationsClient({ initialLocations }: LocationsClientProps) {
+  const t = useT();
   const [locations, setLocations] = useState(initialLocations);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
@@ -74,7 +76,7 @@ export function LocationsClient({ initialLocations }: LocationsClientProps) {
   }
 
   async function handleDelete(loc: LocationRow) {
-    if (!confirm(`Excluir "${loc.name}"?`)) return;
+    if (!confirm(t("organization.locations.delete_confirm", { name: loc.name }))) return;
     const res = await fetch(`/api/locations/${loc.id}`, { method: "DELETE" });
     if (res.ok) {
       setLocations((prev) => prev.filter((l) => l.id !== loc.id));
@@ -85,20 +87,20 @@ export function LocationsClient({ initialLocations }: LocationsClientProps) {
     <div className="space-y-6 p-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Localizações</h1>
+          <h1 className="text-2xl font-bold">{t("organization.locations.title")}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Endereços físicos da empresa: sede, escritórios, lojas e armazéns.
+            {t("organization.locations.description")}
           </p>
         </div>
         <Button onClick={openCreate}>
           <Plus className="h-4 w-4" />
-          Nova localização
+          {t("organization.locations.add")}
         </Button>
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
         <Input
-          placeholder="Buscar por nome, cidade, estado…"
+          placeholder={t("organization.locations.search_placeholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-xs"
@@ -108,10 +110,10 @@ export function LocationsClient({ initialLocations }: LocationsClientProps) {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos os tipos</SelectItem>
+            <SelectItem value="all">{t("organization.locations.filter_all_types")}</SelectItem>
             {LOCATION_TYPE_OPTIONS.map((o) => (
               <SelectItem key={o.value} value={o.value}>
-                {o.label}
+                {t(o.labelKey)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -121,9 +123,9 @@ export function LocationsClient({ initialLocations }: LocationsClientProps) {
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center text-center gap-2 py-16 border border-dashed rounded-lg">
           <MapPin className="h-8 w-8 text-muted-foreground" />
-          <h3 className="text-sm font-medium">Nenhuma localização encontrada</h3>
+          <h3 className="text-sm font-medium">{t("organization.locations.not_found")}</h3>
           <p className="text-xs text-muted-foreground">
-            Adicione a primeira em "Nova localização".
+            {t("organization.locations.not_found_hint")}
           </p>
         </div>
       ) : (

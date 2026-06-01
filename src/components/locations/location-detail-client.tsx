@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { LOCATION_TYPE_OPTIONS, formatAddress, type LocationRow } from "./types";
+import { useT } from "@/lib/i18n/locale-context";
 
 interface LocationDetailClientProps {
   location: LocationRow;
@@ -37,6 +38,7 @@ const STRING_FIELDS = [
 type StringField = (typeof STRING_FIELDS)[number];
 
 export function LocationDetailClient({ location }: LocationDetailClientProps) {
+  const t = useT();
   const router = useRouter();
   const [form, setForm] = useState<Record<StringField, string>>(
     () =>
@@ -93,7 +95,7 @@ export function LocationDetailClient({ location }: LocationDetailClientProps) {
   }
 
   async function handleDelete() {
-    if (!confirm(`Excluir "${form.name}"?`)) return;
+    if (!confirm(t("organization.locations.delete_confirm", { name: form.name }))) return;
     const res = await fetch(`/api/locations/${location.id}`, {
       method: "DELETE",
     });
@@ -121,12 +123,14 @@ export function LocationDetailClient({ location }: LocationDetailClientProps) {
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
-          Voltar
+          {t("common.actions.back")}
         </Link>
         <div className="flex items-center gap-3">
           {savedAt && (
             <span className="text-xs text-muted-foreground">
-              Salvo {savedAt.toLocaleTimeString()}
+              {t("organization.locations.saved_at", {
+                time: savedAt.toLocaleTimeString(),
+              })}
             </span>
           )}
           <Button variant="ghost" size="sm" onClick={handleDelete}>
@@ -139,12 +143,12 @@ export function LocationDetailClient({ location }: LocationDetailClientProps) {
         value={form.name}
         onChange={(e) => setField("name", e.target.value)}
         onBlur={() => commitField("name")}
-        placeholder="Nome da localização"
+        placeholder={t("organization.locations.field.name")}
         className="text-xl font-semibold !border-0 !shadow-none !ring-0 px-0 focus-visible:ring-0"
       />
 
-      <Section title="Identificação">
-        <Field label="Tipo">
+      <Section title={t("organization.locations.section.identification")}>
+        <Field label={t("organization.locations.field.type")}>
           <Select value={type} onValueChange={changeType}>
             <SelectTrigger>
               <SelectValue />
@@ -152,70 +156,72 @@ export function LocationDetailClient({ location }: LocationDetailClientProps) {
             <SelectContent>
               {LOCATION_TYPE_OPTIONS.map((o) => (
                 <SelectItem key={o.value} value={o.value}>
-                  {o.label}
+                  {t(o.labelKey)}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Sede principal">
+        <Field label={t("organization.locations.field.is_headquarters_label")}>
           <div className="flex items-center gap-2 h-9">
             <Switch
               checked={isHeadquarters}
               onCheckedChange={changeHeadquarters}
             />
             <span className="text-xs text-muted-foreground">
-              Apenas uma localização pode ser sede.
+              {t("organization.locations.hq_hint")}
             </span>
           </div>
         </Field>
-        <Field label="Ativa">
+        <Field label={t("organization.locations.field.is_active")}>
           <div className="flex items-center gap-2 h-9">
             <Switch checked={isActive} onCheckedChange={changeActive} />
             <span className="text-xs text-muted-foreground">
-              {isActive ? "Em uso" : "Arquivada"}
+              {isActive
+                ? t("organization.locations.active_in_use")
+                : t("organization.locations.archived")}
             </span>
           </div>
         </Field>
       </Section>
 
-      <Section title="Endereço">
-        <Field label="Rua" full>
+      <Section title={t("organization.locations.section.address")}>
+        <Field label={t("organization.locations.field.street")} full>
           <Input
             value={form.street}
             onChange={(e) => setField("street", e.target.value)}
             onBlur={() => commitField("street")}
           />
         </Field>
-        <Field label="Complemento" full>
+        <Field label={t("organization.locations.field.street2")} full>
           <Input
             value={form.street2}
             onChange={(e) => setField("street2", e.target.value)}
             onBlur={() => commitField("street2")}
           />
         </Field>
-        <Field label="Cidade">
+        <Field label={t("organization.locations.field.city")}>
           <Input
             value={form.city}
             onChange={(e) => setField("city", e.target.value)}
             onBlur={() => commitField("city")}
           />
         </Field>
-        <Field label="Estado">
+        <Field label={t("organization.locations.field.state")}>
           <Input
             value={form.state}
             onChange={(e) => setField("state", e.target.value)}
             onBlur={() => commitField("state")}
           />
         </Field>
-        <Field label="CEP">
+        <Field label={t("organization.locations.field.zip")}>
           <Input
             value={form.zip}
             onChange={(e) => setField("zip", e.target.value)}
             onBlur={() => commitField("zip")}
           />
         </Field>
-        <Field label="País">
+        <Field label={t("organization.locations.field.country")}>
           <Input
             value={form.country}
             onChange={(e) => setField("country", e.target.value)}
@@ -229,15 +235,15 @@ export function LocationDetailClient({ location }: LocationDetailClientProps) {
         )}
       </Section>
 
-      <Section title="Contato">
-        <Field label="Telefone">
+      <Section title={t("organization.locations.section.contact")}>
+        <Field label={t("organization.locations.field.phone")}>
           <Input
             value={form.phone}
             onChange={(e) => setField("phone", e.target.value)}
             onBlur={() => commitField("phone")}
           />
         </Field>
-        <Field label="E-mail">
+        <Field label={t("organization.locations.field.email")}>
           <Input
             type="email"
             value={form.email}
@@ -247,14 +253,14 @@ export function LocationDetailClient({ location }: LocationDetailClientProps) {
         </Field>
       </Section>
 
-      <Section title="Notas">
+      <Section title={t("organization.locations.section.notes")}>
         <div className="col-span-2">
           <Textarea
             value={form.notes}
             onChange={(e) => setField("notes", e.target.value)}
             onBlur={() => commitField("notes")}
             rows={4}
-            placeholder="Anotações sobre esta localização…"
+            placeholder={t("organization.locations.field.notes_placeholder")}
           />
         </div>
       </Section>
