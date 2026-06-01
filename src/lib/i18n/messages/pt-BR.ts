@@ -1384,6 +1384,7 @@ export const messages = {
   "organization.subpanel.members": "Membros",
   "organization.subpanel.org_chart": "Organograma",
   "organization.subpanel.network_map": "Mapa de Rede",
+  "organization.coming_soon": "Esta funcionalidade está em desenvolvimento.",
   "organization.subpanel.dashboard": "Painel",
   "organization.dashboard.title": "Painel Consolidado",
   "organization.dashboard.description":
