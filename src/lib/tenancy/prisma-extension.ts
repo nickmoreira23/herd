@@ -30,6 +30,8 @@ export const TENANT_SCOPED_MODELS = [
   "Location",
   // Sub-etapa 25 — Audit Log
   "AuditLog",
+  // ADR-002 Fatia 1a — curated-consumption junction (tenantId scalar = organizationId)
+  "OrganizationLocation",
 ] as const satisfies readonly string[];
 
 const READ_OPS = new Set([
