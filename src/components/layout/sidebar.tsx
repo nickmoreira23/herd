@@ -218,7 +218,7 @@ export function Sidebar() {
 
   const renderLink = (item: NavLink, indent = false) => {
     const active = isActive(item.href);
-    const linkLabel = item.label;
+    const linkLabel = item.labelKey ? t(item.labelKey) : item.label;
 
     const handleClick = () => {
       const panelId = hrefToSubPanel[item.href];
@@ -480,7 +480,7 @@ export function Sidebar() {
                       <span className="h-10 w-10 shrink-0 flex items-center justify-center">
                         <MiddleIcon className="h-[18px] w-[18px]" />
                       </span>
-                      {expanded && <span className="truncate">{middle.label}</span>}
+                      {expanded && <span className="truncate">{middle.labelKey ? t(middle.labelKey) : middle.label}</span>}
                     </span>
                   </div>
                 </div>
