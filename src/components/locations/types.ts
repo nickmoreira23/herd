@@ -1,3 +1,5 @@
+import type { MessageKey } from "@/lib/i18n/t";
+
 export interface LocationRow {
   id: string;
   name: string;
@@ -18,12 +20,15 @@ export interface LocationRow {
 }
 
 export const LOCATION_TYPE_OPTIONS = [
-  { value: "headquarters", label: "Sede" },
-  { value: "office", label: "Escritório" },
-  { value: "store", label: "Loja" },
-  { value: "warehouse", label: "Armazém" },
-  { value: "other", label: "Outro" },
-] as const;
+  { value: "headquarters", labelKey: "organization.locations.type.headquarters" },
+  { value: "office", labelKey: "organization.locations.type.office" },
+  { value: "store", labelKey: "organization.locations.type.store" },
+  { value: "warehouse", labelKey: "organization.locations.type.warehouse" },
+  { value: "other", labelKey: "organization.locations.type.other" },
+] as const satisfies readonly { value: string; labelKey: MessageKey }[];
+
+export const LOCATION_TYPE_KEY_BY_VALUE: Record<string, MessageKey> =
+  Object.fromEntries(LOCATION_TYPE_OPTIONS.map((o) => [o.value, o.labelKey]));
 
 export function formatAddress(loc: LocationRow): string {
   const parts = [loc.street, loc.street2, loc.city, loc.state, loc.zip].filter(

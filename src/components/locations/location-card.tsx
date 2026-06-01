@@ -5,7 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Building2, MapPin, Store, Warehouse, Pencil, Trash2 } from "lucide-react";
-import { formatAddress, type LocationRow } from "./types";
+import { formatAddress, LOCATION_TYPE_KEY_BY_VALUE, type LocationRow } from "./types";
+import { useT } from "@/lib/i18n/locale-context";
 
 function getTypeIcon(type: string) {
   switch (type) {
@@ -27,8 +28,10 @@ interface LocationCardProps {
 }
 
 export function LocationCard({ location, onEdit, onDelete }: LocationCardProps) {
+  const t = useT();
   const Icon = getTypeIcon(location.type);
   const address = formatAddress(location);
+  const typeKey = LOCATION_TYPE_KEY_BY_VALUE[location.type];
 
   return (
     <Card className={location.isActive ? "" : "opacity-60"}>
@@ -45,14 +48,14 @@ export function LocationCard({ location, onEdit, onDelete }: LocationCardProps) 
               >
                 {location.name}
               </Link>
-              <p className="text-xs text-muted-foreground capitalize">
-                {location.type}
+              <p className="text-xs text-muted-foreground">
+                {typeKey ? t(typeKey) : location.type}
               </p>
             </div>
           </div>
           {location.isHeadquarters && (
             <Badge variant="secondary" className="shrink-0">
-              Sede
+              {t("organization.locations.type.headquarters")}
             </Badge>
           )}
         </div>
@@ -72,7 +75,7 @@ export function LocationCard({ location, onEdit, onDelete }: LocationCardProps) 
         <div className="flex items-center gap-1 pt-1">
           <Button variant="ghost" size="sm" onClick={onEdit}>
             <Pencil className="h-3.5 w-3.5" />
-            Editar
+            {t("common.actions.edit")}
           </Button>
           <Button
             variant="ghost"

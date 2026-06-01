@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { LOCATION_TYPE_OPTIONS, type LocationRow } from "./types";
+import { useT } from "@/lib/i18n/locale-context";
 
 interface LocationDialogProps {
   open: boolean;
@@ -51,6 +52,7 @@ export function LocationDialog({
   initial,
   onSaved,
 }: LocationDialogProps) {
+  const t = useT();
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
 
@@ -112,13 +114,15 @@ export function LocationDialog({
       <DialogContent className="!max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            {initial ? "Editar localização" : "Nova localização"}
+            {initial
+              ? t("organization.locations.dialog.edit_title")
+              : t("organization.locations.dialog.add_title")}
           </DialogTitle>
         </DialogHeader>
         <div className="grid gap-3">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5 col-span-2">
-              <Label htmlFor="loc-name">Nome</Label>
+              <Label htmlFor="loc-name">{t("organization.locations.field.name")}</Label>
               <Input
                 id="loc-name"
                 value={form.name}
@@ -127,7 +131,7 @@ export function LocationDialog({
               />
             </div>
             <div className="space-y-1.5 col-span-2">
-              <Label htmlFor="loc-type">Tipo</Label>
+              <Label htmlFor="loc-type">{t("organization.locations.field.type")}</Label>
               <Select
                 value={form.type}
                 onValueChange={(v) => setField("type", v)}
@@ -138,14 +142,14 @@ export function LocationDialog({
                 <SelectContent>
                   {LOCATION_TYPE_OPTIONS.map((o) => (
                     <SelectItem key={o.value} value={o.value}>
-                      {o.label}
+                      {t(o.labelKey)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5 col-span-2">
-              <Label htmlFor="loc-street">Endereço</Label>
+              <Label htmlFor="loc-street">{t("organization.locations.field.street")}</Label>
               <Input
                 id="loc-street"
                 value={form.street}
@@ -153,7 +157,7 @@ export function LocationDialog({
               />
             </div>
             <div className="space-y-1.5 col-span-2">
-              <Label htmlFor="loc-street2">Complemento</Label>
+              <Label htmlFor="loc-street2">{t("organization.locations.field.street2")}</Label>
               <Input
                 id="loc-street2"
                 value={form.street2}
@@ -161,7 +165,7 @@ export function LocationDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="loc-city">Cidade</Label>
+              <Label htmlFor="loc-city">{t("organization.locations.field.city")}</Label>
               <Input
                 id="loc-city"
                 value={form.city}
@@ -169,7 +173,7 @@ export function LocationDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="loc-state">Estado</Label>
+              <Label htmlFor="loc-state">{t("organization.locations.field.state")}</Label>
               <Input
                 id="loc-state"
                 value={form.state}
@@ -177,7 +181,7 @@ export function LocationDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="loc-zip">CEP</Label>
+              <Label htmlFor="loc-zip">{t("organization.locations.field.zip")}</Label>
               <Input
                 id="loc-zip"
                 value={form.zip}
@@ -185,7 +189,7 @@ export function LocationDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="loc-country">País</Label>
+              <Label htmlFor="loc-country">{t("organization.locations.field.country")}</Label>
               <Input
                 id="loc-country"
                 value={form.country}
@@ -193,7 +197,7 @@ export function LocationDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="loc-phone">Telefone</Label>
+              <Label htmlFor="loc-phone">{t("organization.locations.field.phone")}</Label>
               <Input
                 id="loc-phone"
                 value={form.phone}
@@ -201,7 +205,7 @@ export function LocationDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="loc-email">E-mail</Label>
+              <Label htmlFor="loc-email">{t("organization.locations.field.email")}</Label>
               <Input
                 id="loc-email"
                 type="email"
@@ -210,7 +214,7 @@ export function LocationDialog({
               />
             </div>
             <div className="space-y-1.5 col-span-2">
-              <Label htmlFor="loc-notes">Observações</Label>
+              <Label htmlFor="loc-notes">{t("organization.locations.field.notes")}</Label>
               <Textarea
                 id="loc-notes"
                 value={form.notes}
@@ -227,7 +231,7 @@ export function LocationDialog({
                 onCheckedChange={(v) => setField("isHeadquarters", v)}
               />
               <Label htmlFor="loc-hq" className="text-sm">
-                Sede
+                {t("organization.locations.type.headquarters")}
               </Label>
             </div>
             <div className="flex items-center gap-2">
@@ -237,7 +241,7 @@ export function LocationDialog({
                 onCheckedChange={(v) => setField("isActive", v)}
               />
               <Label htmlFor="loc-active" className="text-sm">
-                Ativa
+                {t("organization.locations.field.is_active")}
               </Label>
             </div>
           </div>
@@ -248,13 +252,13 @@ export function LocationDialog({
             onClick={() => onOpenChange(false)}
             disabled={saving}
           >
-            Cancelar
+            {t("common.actions.cancel")}
           </Button>
           <Button
             onClick={handleSave}
             disabled={!form.name.trim() || saving}
           >
-            {initial ? "Salvar" : "Criar"}
+            {initial ? t("common.actions.save") : t("common.actions.create")}
           </Button>
         </DialogFooter>
       </DialogContent>
