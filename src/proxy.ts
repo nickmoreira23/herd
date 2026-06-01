@@ -20,6 +20,32 @@ function isPublicLocaleRoute(pathname: string): boolean {
   );
 }
 
+// /api routes reachable WITHOUT a session, by necessity. Default-deny: every
+// other /api route requires a logged-in session (see the gate in proxy()).
+// Each entry is justified — webhooks self-verify signatures, cron self-checks
+// CRON_SECRET, OAuth/token routes carry their own credential in the URL.
+const PUBLIC_API_MATCHERS: RegExp[] = [
+  /^\/api\/auth\//, // NextAuth (login flow, session, csrf)
+  /^\/api\/health$/, // uptime/monitor
+  /^\/api\/analytics\/web-vitals$/, // telemetry beacon
+  /^\/api\/cron\//, // self-protected by CRON_SECRET
+  /^\/api\/webhooks\//, // braintree/intercom/recharge/gorgias — signature-verified
+  /^\/api\/integrations\/recall\/webhook$/, // svix-verified
+  /^\/api\/apps\/terra\/webhook$/, // signature-verified
+  /^\/api\/knowledge\/apps\/terra\/webhook$/, // signature-verified
+  /^\/api\/messages\/webhook\/[^/]+$/, // per-channel webhook
+  /^\/api\/integrations\/oauth\/(authorize|callback)$/, // OAuth redirects
+  /^\/api\/apps\/callback\/[^/]+$/, // OAuth app callback
+  /^\/api\/knowledge\/apps\/callback\/[^/]+$/, // OAuth app callback
+  /^\/api\/shared\/[^/]+$/, // token-based public share
+  /^\/api\/org\/invitations\/[^/]+$/, // view invitation by token (invitee not yet a member)
+  /^\/api\/org\/invitations\/[^/]+\/accept$/, // accept invitation by token
+];
+
+function isPublicApiRoute(pathname: string): boolean {
+  return PUBLIC_API_MATCHERS.some((re) => re.test(pathname));
+}
+
 function extractLocaleFromPath(
   pathname: string,
 ): { locale: string; rest: string } | null {
@@ -57,14 +83,27 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // ─── 1. Tenant resolution ────────────────────────────────────────────
-  const orgId = await resolveOrgByHost(host);
+  // try/catch: a DB error here (e.g. schema drift, transient blip) must NOT
+  // crash the proxy and 500 the entire surface. Degrade to org=null; the /api
+  // auth gate below is session-only (DB-independent) and stays effective.
+  let orgId: string | null = null;
+  let resolveFailed = false;
+  try {
+    orgId = await resolveOrgByHost(host);
+  } catch (err) {
+    console.error("[proxy] resolveOrgByHost failed; degrading to org=null:", err);
+    resolveFailed = true;
+  }
   const isApex = isApexDomain(hostname);
 
   // ─── 1a. Invalid subdomain redirect (Sub-etapa 22.1) ─────────────────
   // If the hostname has a subdomain (not apex) but resolves to no active org,
   // redirect to the apex with an error query param so the apex can surface a
   // user-facing message. The UI banner for ?error=org_not_found is Sub-etapa 22.2.
-  if (!isApex && !orgId) {
+  // !resolveFailed: on a DB error we must NOT bounce a (possibly valid)
+  // subdomain to the apex error page — only redirect when resolution genuinely
+  // succeeded and found no active org.
+  if (!isApex && !orgId && !resolveFailed) {
     const subdomain = extractSubdomain(hostname);
     if (subdomain) {
       const apexUrl = request.nextUrl.clone();
@@ -98,6 +137,20 @@ export async function proxy(request: NextRequest) {
   }
   if (pathname === "/login" && isLoggedIn) {
     return NextResponse.redirect(new URL("/admin", request.url));
+  }
+
+  // ─── 2b. API auth gate (default-deny) ────────────────────────────────
+  // Session-only (no DB) so it stays effective even when tenant resolution
+  // degrades. Blocks anonymous access to every /api route except the
+  // explicit public allowlist (webhooks, cron, OAuth, token, telemetry, health).
+  // NOTE: this closes anonymous exposure only; cross-tenant scoping between
+  // logged-in users is a separate per-handler layer (not this change).
+  if (
+    pathname.startsWith("/api/") &&
+    !isLoggedIn &&
+    !isPublicApiRoute(pathname)
+  ) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   // ─── 3. Public route locale handling (preserved) ─────────────────────
