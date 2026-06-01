@@ -175,6 +175,14 @@ export const subPanelRegistry: Record<string, SubPanelConfig> = {
         ],
       },
       {
+        id: "access",
+        label: "Access",
+        labelKey: "organization.subpanel.access_category",
+        links: [
+          { href: "/admin/organization/permissions", label: "Permissions", labelKey: "organization.subpanel.permissions", icon: Shield },
+        ],
+      },
+      {
         id: "brand-kit",
         label: "Brand Kit",
         links: [
