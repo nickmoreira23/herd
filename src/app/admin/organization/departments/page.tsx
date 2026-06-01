@@ -18,24 +18,26 @@ export default async function DepartmentsPage() {
     return <DepartmentTree initialDepartments={[]} profiles={[]} />;
   }
 
-  const [departments, profiles] = await withTenant(orgId, () =>
-    Promise.all([
-      prisma.department.findMany({
-        include: {
-          parent: { select: { id: true, name: true, slug: true } },
-          head: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
-          children: { select: { id: true, name: true } },
-          _count: { select: { members: true } },
-        },
-        orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-      }),
-      prisma.networkProfile.findMany({
-        where: { status: "ACTIVE" },
-        select: { id: true, firstName: true, lastName: true, email: true },
-        orderBy: { firstName: "asc" },
-      }),
-    ])
-  );
+  // Sequential (not Promise.all): department.findMany is tenant-scoped, so the
+  // Extension wraps it in a $transaction — running it concurrently with the
+  // profile query collides on the pg connection (DeprecationWarning, pg@9).
+  const [departments, profiles] = await withTenant(orgId, async () => {
+    const depts = await prisma.department.findMany({
+      include: {
+        parent: { select: { id: true, name: true, slug: true } },
+        head: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
+        children: { select: { id: true, name: true } },
+        _count: { select: { members: true } },
+      },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    });
+    const allProfiles = await prisma.networkProfile.findMany({
+      where: { status: "ACTIVE" },
+      select: { id: true, firstName: true, lastName: true, email: true },
+      orderBy: { firstName: "asc" },
+    });
+    return [depts, allProfiles] as const;
+  });
 
   return (
     <DepartmentTree

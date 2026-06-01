@@ -19,17 +19,18 @@ export async function GET(
       const limit = parseInt(searchParams.get("limit") || "50");
       const skip = (page - 1) * limit;
 
-      const [logs, total] = await Promise.all([
-        prisma.integrationSyncLog.findMany({
-          where: { integrationId: id },
-          orderBy: { createdAt: "desc" },
-          skip,
-          take: limit,
-        }),
-        prisma.integrationSyncLog.count({
-          where: { integrationId: id },
-        }),
-      ]);
+      // Sequential (not Promise.all): both queries are tenant-scoped, so the
+      // Extension wraps each in its own $transaction — running them concurrently
+      // collides on the pg connection (DeprecationWarning, pg@9).
+      const logs = await prisma.integrationSyncLog.findMany({
+        where: { integrationId: id },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      });
+      const total = await prisma.integrationSyncLog.count({
+        where: { integrationId: id },
+      });
 
       return apiSuccess({ logs, total, page, limit });
     } catch (e) {

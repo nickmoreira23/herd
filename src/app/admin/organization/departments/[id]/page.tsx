@@ -20,9 +20,11 @@ export default async function DepartmentDetailPage({
   // Tenant leak guard: no active org → 404 (never withTenant("")).
   if (!orgId) notFound();
 
-  const [department, allProfiles] = await withTenant(orgId, () =>
-    Promise.all([
-    prisma.department.findUnique({
+  // Sequential (not Promise.all): department.findUnique is tenant-scoped, so the
+  // Extension wraps it in a $transaction — running it concurrently with the
+  // profile query collides on the pg connection (DeprecationWarning, pg@9).
+  const [department, allProfiles] = await withTenant(orgId, async () => {
+    const dept = await prisma.department.findUnique({
       where: { id },
       include: {
         parent: { select: { id: true, name: true, slug: true } },
@@ -50,14 +52,14 @@ export default async function DepartmentDetailPage({
           orderBy: { joinedAt: "asc" },
         },
       },
-    }),
-    prisma.networkProfile.findMany({
+    });
+    const profiles = await prisma.networkProfile.findMany({
       where: { status: "ACTIVE" },
       select: { id: true, firstName: true, lastName: true, email: true },
       orderBy: { firstName: "asc" },
-    }),
-    ])
-  );
+    });
+    return [dept, profiles] as const;
+  });
 
   if (!department) notFound();
 
