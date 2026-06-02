@@ -18,6 +18,12 @@ Global glossary aggregated from the `## Glossary` sections of all Handbook entri
 
 Tri-state flag (`off`/`shadow`/`enforce`) gating the `can()` enforcement layer; default `off`.
 
+### `role_permissions` table
+
+**From [Roles & Permissions](/admin/handbook/areas/identity/roles-permissions):**
+
+The global, DB-driven matrix `can()` reads (via `loadRoleMatrix()`); seeded from `ROLE_PERMISSIONS`, editable by super_admin.
+
 ### ≥1-owner invariant
 
 **From [Roles & Permissions](/admin/handbook/areas/identity/roles-permissions):**
@@ -622,6 +628,12 @@ UX pattern for tools managing templates + instances via the "Manage types" heade
 
 TypeScript declaration describing the tool — identity, paths, capabilities, block family.
 
+### Matrix editor
+
+**From [Roles & Permissions](/admin/handbook/areas/identity/roles-permissions):**
+
+The super_admin-only Switch grid on `/admin/organization/permissions` that toggles grants via `PATCH /api/org/permissions/grant`.
+
 ### MCP
 
 **From [MCP Server](/admin/handbook/meta/mcp):**
@@ -1087,6 +1099,12 @@ manifestation level — where data and functionality appear to someone.
 **From [Pattern: Manage Types/Sets](/admin/handbook/meta/pattern-manage-types):**
 
 reusable definition of an entity — the mold from which instances are derived.
+
+### The flip
+
+**From [Roles & Permissions](/admin/handbook/areas/identity/roles-permissions):**
+
+Setting `CAN_ENFORCEMENT=enforce` so `can()` denials become real 403s; env-only and reversible (see the flip runbook).
 
 ### Tier access
 

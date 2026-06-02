@@ -52,24 +52,24 @@ afterEach(() => {
   delete process.env.CAN_ENFORCEMENT;
 });
 
-describe("enforce() — off mode", () => {
-  it("returns current unchanged, never runs can(), logs nothing", () => {
+describe("enforce() — off mode", async () => {
+  it("returns current unchanged, never runs can(), logs nothing", async () => {
     delete process.env.CAN_ENFORCEMENT; // default off
-    const result = enforce(member, permission, ctx(ALLOW));
+    const result = await enforce(member, permission, ctx(ALLOW));
     expect(result).toBe(ALLOW);
     expect(mockedCan).not.toHaveBeenCalled();
     expect(warnSpy).not.toHaveBeenCalled();
   });
 });
 
-describe("enforce() — shadow mode", () => {
+describe("enforce() — shadow mode", async () => {
   beforeEach(() => {
     process.env.CAN_ENFORCEMENT = "shadow";
   });
 
-  it("can() agrees with requireOrgRole: returns current, logs agree:true", () => {
-    mockedCan.mockReturnValue(true);
-    const result = enforce(member, permission, ctx(ALLOW));
+  it("can() agrees with requireOrgRole: returns current, logs agree:true", async () => {
+    mockedCan.mockResolvedValue(true);
+    const result = await enforce(member, permission, ctx(ALLOW));
     expect(result).toBe(ALLOW);
     expect(mockedCan).toHaveBeenCalledTimes(1);
     const entry = warnSpy.mock.calls[0]![1] as Record<string, unknown>;
@@ -78,9 +78,9 @@ describe("enforce() — shadow mode", () => {
     expect(entry.canResult).toBe(true);
   });
 
-  it("can() disagrees: still returns current (never blocks), logs agree:false", () => {
-    mockedCan.mockReturnValue(false);
-    const result = enforce(member, permission, ctx(ALLOW));
+  it("can() disagrees: still returns current (never blocks), logs agree:false", async () => {
+    mockedCan.mockResolvedValue(false);
+    const result = await enforce(member, permission, ctx(ALLOW));
     expect(result).toBe(ALLOW); // NOT a 403 — shadow never blocks
     const entry = warnSpy.mock.calls[0]![1] as Record<string, unknown>;
     expect(entry.agree).toBe(false);
@@ -88,42 +88,42 @@ describe("enforce() — shadow mode", () => {
     expect(entry.canResult).toBe(false);
   });
 
-  it("super_admin: log marks actorKind super_admin", () => {
-    mockedCan.mockReturnValue(true);
-    enforce(superAdmin, permission, ctx(ALLOW));
+  it("super_admin: log marks actorKind super_admin", async () => {
+    mockedCan.mockResolvedValue(true);
+    await enforce(superAdmin, permission, ctx(ALLOW));
     const entry = warnSpy.mock.calls[0]![1] as Record<string, unknown>;
     expect(entry.actorKind).toBe("super_admin");
     expect(entry.actorProfileId).toBe("profile-super");
   });
 });
 
-describe("enforce() — enforce mode", () => {
+describe("enforce() — enforce mode", async () => {
   beforeEach(() => {
     process.env.CAN_ENFORCEMENT = "enforce";
   });
 
-  it("can() grants: proceeds (returns current)", () => {
-    mockedCan.mockReturnValue(true);
-    const result = enforce(member, permission, ctx(ALLOW));
+  it("can() grants: proceeds (returns current)", async () => {
+    mockedCan.mockResolvedValue(true);
+    const result = await enforce(member, permission, ctx(ALLOW));
     expect(result).toBe(ALLOW);
   });
 
-  it("can() denies: blocks with 403", () => {
-    mockedCan.mockReturnValue(false);
-    const result = enforce(member, permission, ctx(ALLOW));
+  it("can() denies: blocks with 403", async () => {
+    mockedCan.mockResolvedValue(false);
+    const result = await enforce(member, permission, ctx(ALLOW));
     expect(result).toBeInstanceOf(Response);
     expect((result as Response).status).toBe(403);
   });
 
-  it("requireOrgRole already denied: returns that Response, never loosens", () => {
-    mockedCan.mockReturnValue(true); // can would allow, but must NOT override
-    const result = enforce(member, permission, ctx(DENY));
+  it("requireOrgRole already denied: returns that Response, never loosens", async () => {
+    mockedCan.mockResolvedValue(true); // can would allow, but must NOT override
+    const result = await enforce(member, permission, ctx(DENY));
     expect(result).toBe(DENY);
     expect(mockedCan).not.toHaveBeenCalled(); // short-circuits on upstream deny
   });
 });
 
-describe("enforceRoute() — lazy actor adapter", () => {
+describe("enforceRoute() — lazy actor adapter", async () => {
   const session = { user: { id: "u1", activeOrgId: "org-1" } } as never;
 
   it("off: returns current WITHOUT resolving the actor (zero-cost invariant)", async () => {
@@ -137,7 +137,7 @@ describe("enforceRoute() — lazy actor adapter", () => {
   it("shadow: resolves actor and delegates to enforce (logs, returns current)", async () => {
     process.env.CAN_ENFORCEMENT = "shadow";
     mockedGetActor.mockResolvedValue(member);
-    mockedCan.mockReturnValue(true);
+    mockedCan.mockResolvedValue(true);
     const result = await enforceRoute(session, permission, ctx(ALLOW));
     expect(result).toBe(ALLOW);
     expect(mockedGetActor).toHaveBeenCalledTimes(1);
@@ -147,7 +147,7 @@ describe("enforceRoute() — lazy actor adapter", () => {
   it("enforce: can() denies → 403", async () => {
     process.env.CAN_ENFORCEMENT = "enforce";
     mockedGetActor.mockResolvedValue(member);
-    mockedCan.mockReturnValue(false);
+    mockedCan.mockResolvedValue(false);
     const result = await enforceRoute(session, permission, ctx(ALLOW));
     expect(result).toBeInstanceOf(Response);
     expect((result as Response).status).toBe(403);

@@ -7,8 +7,8 @@ title:
   pt-BR: "Papéis e Permissões"
   en-US: "Roles & Permissions"
 description:
-  pt-BR: "Governança de acesso da organização — a matriz papel×permissão (modelo declarado) e a atribuição do papel ORG de cada membro (OWNER/ADMIN/MEMBER). O enforcement hoje é por nome de papel."
-  en-US: "Organization access governance — the role×permission matrix (declared model) and assignment of each member's ORG role (OWNER/ADMIN/MEMBER). Enforcement today is by role name."
+  pt-BR: "Governança de acesso da organização — a matriz papel×permissão (tabela DB-driven, editável por super_admin) e a atribuição do papel ORG de cada membro. Enforcement fino via can() atrás da flag CAN_ENFORCEMENT."
+  en-US: "Organization access governance — the role×permission matrix (DB-driven, super_admin-editable table) and assignment of each member's ORG role. Fine-grained can() enforcement behind the CAN_ENFORCEMENT flag."
 
 status: active
 owners: ["@nick"]
@@ -32,7 +32,11 @@ source_paths:
   - "src/app/admin/organization/members"
   - "src/lib/permissions/enforce.ts"
   - "src/lib/permissions/enforcement-map.ts"
+  - "src/lib/permissions/role-matrix-loader.ts"
+  - "src/app/api/org/permissions/grant"
+  - "scripts/seed-role-permissions.ts"
   - "docs/permissions/enforcement-map.md"
+  - "docs/permissions/flip-runbook.md"
 
 admin_paths:
   - "/admin/organization/permissions"

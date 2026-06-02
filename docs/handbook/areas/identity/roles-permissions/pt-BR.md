@@ -139,6 +139,18 @@ puder divergir dos gates (o editor — V3). Rode com
 declarado só, com badge "modelo — sem superfície" na matriz. `integrations` é
 gateado por `requireSuperAdmin` (nível plataforma), fora do escopo do `can()` org.
 
+**V3 — matriz DB-driven, editor e o flip.** A matriz não é mais hardcoded: o
+`can()` a lê da tabela global `role_permissions` via `loadRoleMatrix()` (async;
+per-request, sem cache — tech debt). A tabela é semeada a partir de
+`ROLE_PERMISSIONS` (ainda a fonte da seed + parity unit test), e o super_admin a
+edita célula a célula via `PATCH /api/org/permissions/grant` (superfície
+editável: 3 papéis ORG × 5 recursos roteados; células fantasma/dept são
+read-only, bloqueadas também no servidor). `CAN_ENFORCEMENT=enforce` torna as
+negações do `can()` reais — um grant removido vira 403. O flip é **só env,
+reversível, sem deploy** (`docs/permissions/flip-runbook.md`). Provado ponta a
+ponta (V3.4): remover `locations:read` do MEMBER + `enforce` → MEMBER recebe 403
+em `GET /api/locations`; restaurar → acesso volta; com `off` → inerte.
+
 ## Operations
 
 **Atribuir ou trocar papel:** vá em `/admin/organization/members` e use o seletor
@@ -146,8 +158,16 @@ de papel na linha do membro. Mudanças de OWNER exigem que você seja owner e pe
 confirmação. Um toast `409` significa que a mudança deixaria a org sem owner; um
 `403` significa que você não tem permissão para aquela mudança.
 
-**Ler o modelo de acesso:** vá em `/admin/organization/permissions`. A matriz é
-só referência; não há nada para editar aqui nesta versão.
+**Editar a matriz de permissões:** vá em `/admin/organization/permissions`.
+super_admins ligam/desligam um grant (3 papéis ORG × 5 recursos roteados) — o
+Switch da célula cria/remove a linha em `role_permissions`. Recursos fantasma e
+papéis dept ficam read-only. As edições persistem na hora mas só afetam a
+autorização com `CAN_ENFORCEMENT=enforce`. Toda edição grava um audit
+(`action = "role_permission.updated"`).
+
+**Ligar o enforcement:** siga `docs/permissions/flip-runbook.md` — observe em
+shadow, vire a env var `CAN_ENFORCEMENT` para `enforce`, verifique; reverter é só
+env, imediato. O default é `off`.
 
 **Auditar mudanças de papel:** toda mudança bem-sucedida grava uma linha no
 [Audit Log](../../infrastructure/audit-log/pt-BR.md) com
@@ -179,7 +199,12 @@ contagem de owner / isolamento cross-org se comportam em dados semeados.
 - **`CAN_ENFORCEMENT`**: Flag tri-estado (`off`/`shadow`/`enforce`) que gateia a camada de enforcement do `can()`; default `off`.
 - **Shadow mode**: O `can()` roda ao lado do `requireOrgRole` e loga concordância/divergência (`[can-shadow]`) sem nunca alterar o resultado.
 - **Recurso fantasma**: Recurso declarado em `ROLE_PERMISSIONS` sem rota `requireOrgRole` onde enforçar; só modelo ("modelo — sem superfície").
+- **Tabela `role_permissions`**: A matriz global DB-driven que o `can()` lê (via `loadRoleMatrix()`); semeada a partir de `ROLE_PERMISSIONS`, editável pelo super_admin.
+- **Editor da matriz**: O grid de Switches super_admin-only em `/admin/organization/permissions` que liga/desliga grants via `PATCH /api/org/permissions/grant`.
+- **O flip**: Setar `CAN_ENFORCEMENT=enforce` para que as negações do `can()` virem 403 reais; só env e reversível (ver o flip runbook).
 
 ## Changelog
 
 - **2026-06-01** — v1.0. Release inicial: matriz de permissões read-only, edição inline do papel ORG na página de Membros, `PATCH /api/org/members/[memberId]/role` com regra fina OWNER-only, invariante ≥1 owner, isolamento manual por org, e audit logging. O enforcement é coarse (por nome de papel); a matriz é um modelo declarado.
+- **2026-06-02** — v1.1 (closeout do V2). Adicionada a infra de enforcement do `can()`: contrato `ENFORCEMENT_MAP` (27 call-sites → recurso×ação), `enforce()`/`enforceRoute()` atrás da flag `CAN_ENFORCEMENT` (default off), e adoção shadow nos 25 call-sites roteados. Observação shadow completa: 100% `agree:true`. A UI da matriz agora marca os 6 recursos fantasma com "modelo — sem superfície". O enforcement segue **armado mas inativo** — o flip + editor são V3.
+- **2026-06-02** — v1.2 (V3). A matriz virou DB-driven e editável: tabela `role_permissions` (semeada a partir de `ROLE_PERMISSIONS`, parity unit test), o `can()` a lê via `loadRoleMatrix()` (async), e um editor super_admin-only (`PATCH /api/org/permissions/grant`, grid de Switches). O flip `CAN_ENFORCEMENT=enforce` faz as edições morderem (provado: remover um grant → 403; restaurar → acesso volta), e um flip runbook documenta a sequência segura + rollback só-env. O default segue `off`; o flip em PROD é um passo manual e deliberado.

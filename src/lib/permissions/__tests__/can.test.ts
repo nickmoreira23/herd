@@ -1,4 +1,13 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+import { ROLE_PERMISSIONS } from "../role-permissions";
+
+// can() now reads the matrix from the DB via loadRoleMatrix() (V3.2). Mock the
+// loader to return the hardcoded constant so these stay UNIT tests (no DB) and
+// verify the exact same decision logic against the exact same matrix.
+vi.mock("../role-matrix-loader", () => ({
+  loadRoleMatrix: vi.fn(async () => ROLE_PERMISSIONS),
+}));
+
 import { can } from "../can";
 import type { Actor } from "../types";
 
@@ -7,17 +16,17 @@ describe("can()", () => {
   const orgB = "org-b-uuid";
   const deptSales = "dept-sales-uuid";
 
-  it("super_admin always returns true", () => {
+  it("super_admin always returns true", async () => {
     const actor: Actor = {
       profileId: "p1",
       isSuperAdmin: true,
       memberships: [],
     };
-    expect(can(actor, { resource: "org", action: "delete" }, orgA)).toBe(true);
-    expect(can(actor, { resource: "integrations", action: "delete" }, orgB)).toBe(true);
+    expect(await can(actor, { resource: "org", action: "delete" }, orgA)).toBe(true);
+    expect(await can(actor, { resource: "integrations", action: "delete" }, orgB)).toBe(true);
   });
 
-  it("OWNER has full org control", () => {
+  it("OWNER has full org control", async () => {
     const actor: Actor = {
       profileId: "p1",
       isSuperAdmin: false,
@@ -29,13 +38,13 @@ describe("can()", () => {
         },
       ],
     };
-    expect(can(actor, { resource: "org", action: "delete" }, orgA)).toBe(true);
-    expect(can(actor, { resource: "members", action: "invite" }, orgA)).toBe(true);
-    expect(can(actor, { resource: "departments", action: "create" }, orgA)).toBe(true);
-    expect(can(actor, { resource: "org_billing", action: "update" }, orgA)).toBe(true);
+    expect(await can(actor, { resource: "org", action: "delete" }, orgA)).toBe(true);
+    expect(await can(actor, { resource: "members", action: "invite" }, orgA)).toBe(true);
+    expect(await can(actor, { resource: "departments", action: "create" }, orgA)).toBe(true);
+    expect(await can(actor, { resource: "org_billing", action: "update" }, orgA)).toBe(true);
   });
 
-  it("ADMIN cannot delete org or update billing", () => {
+  it("ADMIN cannot delete org or update billing", async () => {
     const actor: Actor = {
       profileId: "p1",
       isSuperAdmin: false,
@@ -47,13 +56,13 @@ describe("can()", () => {
         },
       ],
     };
-    expect(can(actor, { resource: "departments", action: "create" }, orgA)).toBe(true);
-    expect(can(actor, { resource: "departments", action: "delete" }, orgA)).toBe(true);
-    expect(can(actor, { resource: "org", action: "delete" }, orgA)).toBe(false);
-    expect(can(actor, { resource: "org_billing", action: "update" }, orgA)).toBe(false);
+    expect(await can(actor, { resource: "departments", action: "create" }, orgA)).toBe(true);
+    expect(await can(actor, { resource: "departments", action: "delete" }, orgA)).toBe(true);
+    expect(await can(actor, { resource: "org", action: "delete" }, orgA)).toBe(false);
+    expect(await can(actor, { resource: "org_billing", action: "update" }, orgA)).toBe(false);
   });
 
-  it("MEMBER is read-only on departments/locations", () => {
+  it("MEMBER is read-only on departments/locations", async () => {
     const actor: Actor = {
       profileId: "p1",
       isSuperAdmin: false,
@@ -65,15 +74,15 @@ describe("can()", () => {
         },
       ],
     };
-    expect(can(actor, { resource: "departments", action: "read" }, orgA)).toBe(true);
-    expect(can(actor, { resource: "locations", action: "read" }, orgA)).toBe(true);
-    expect(can(actor, { resource: "departments", action: "create" }, orgA)).toBe(false);
-    expect(can(actor, { resource: "locations", action: "delete" }, orgA)).toBe(false);
-    expect(can(actor, { resource: "blocks_data", action: "create" }, orgA)).toBe(true);
-    expect(can(actor, { resource: "blocks_data", action: "delete" }, orgA)).toBe(false);
+    expect(await can(actor, { resource: "departments", action: "read" }, orgA)).toBe(true);
+    expect(await can(actor, { resource: "locations", action: "read" }, orgA)).toBe(true);
+    expect(await can(actor, { resource: "departments", action: "create" }, orgA)).toBe(false);
+    expect(await can(actor, { resource: "locations", action: "delete" }, orgA)).toBe(false);
+    expect(await can(actor, { resource: "blocks_data", action: "create" }, orgA)).toBe(true);
+    expect(await can(actor, { resource: "blocks_data", action: "delete" }, orgA)).toBe(false);
   });
 
-  it("access to orgB denied when member only of orgA", () => {
+  it("access to orgB denied when member only of orgA", async () => {
     const actor: Actor = {
       profileId: "p1",
       isSuperAdmin: false,
@@ -85,20 +94,20 @@ describe("can()", () => {
         },
       ],
     };
-    expect(can(actor, { resource: "org", action: "read" }, orgB)).toBe(false);
-    expect(can(actor, { resource: "departments", action: "delete" }, orgB)).toBe(false);
+    expect(await can(actor, { resource: "org", action: "read" }, orgB)).toBe(false);
+    expect(await can(actor, { resource: "departments", action: "delete" }, orgB)).toBe(false);
   });
 
-  it("no membership at all returns false", () => {
+  it("no membership at all returns false", async () => {
     const actor: Actor = {
       profileId: "p1",
       isSuperAdmin: false,
       memberships: [],
     };
-    expect(can(actor, { resource: "org", action: "read" }, orgA)).toBe(false);
+    expect(await can(actor, { resource: "org", action: "read" }, orgA)).toBe(false);
   });
 
-  it("DEPARTMENT_HEAD: invite allowed in own department, denied in other", () => {
+  it("DEPARTMENT_HEAD: invite allowed in own department, denied in other", async () => {
     const actor: Actor = {
       profileId: "p1",
       isSuperAdmin: false,
@@ -113,24 +122,24 @@ describe("can()", () => {
       ],
     };
     expect(
-      can(
+      await can(
         actor,
         { resource: "members", action: "invite", scopeType: "department", scopeId: deptSales },
         orgA
       )
     ).toBe(true);
     expect(
-      can(
+      await can(
         actor,
         { resource: "members", action: "invite", scopeType: "department", scopeId: "other-dept" },
         orgA
       )
     ).toBe(false);
     // org-level invite (no scopeType) not granted
-    expect(can(actor, { resource: "members", action: "invite" }, orgA)).toBe(false);
+    expect(await can(actor, { resource: "members", action: "invite" }, orgA)).toBe(false);
   });
 
-  it("cumulative roles: union of permissions", () => {
+  it("cumulative roles: union of permissions", async () => {
     const actor: Actor = {
       profileId: "p1",
       isSuperAdmin: false,
@@ -146,20 +155,20 @@ describe("can()", () => {
       ],
     };
     // MEMBER gives read
-    expect(can(actor, { resource: "departments", action: "read" }, orgA)).toBe(true);
+    expect(await can(actor, { resource: "departments", action: "read" }, orgA)).toBe(true);
     // DEPARTMENT_HEAD gives scoped invite
     expect(
-      can(
+      await can(
         actor,
         { resource: "members", action: "invite", scopeType: "department", scopeId: deptSales },
         orgA
       )
     ).toBe(true);
     // Neither gives departments.create
-    expect(can(actor, { resource: "departments", action: "create" }, orgA)).toBe(false);
+    expect(await can(actor, { resource: "departments", action: "create" }, orgA)).toBe(false);
   });
 
-  it("DEPARTMENT_MANAGER: update allowed in own dept, not invite", () => {
+  it("DEPARTMENT_MANAGER: update allowed in own dept, not invite", async () => {
     const actor: Actor = {
       profileId: "p1",
       isSuperAdmin: false,
@@ -174,14 +183,14 @@ describe("can()", () => {
       ],
     };
     expect(
-      can(
+      await can(
         actor,
         { resource: "members", action: "update", scopeType: "department", scopeId: deptSales },
         orgA
       )
     ).toBe(true);
     expect(
-      can(
+      await can(
         actor,
         { resource: "members", action: "invite", scopeType: "department", scopeId: deptSales },
         orgA

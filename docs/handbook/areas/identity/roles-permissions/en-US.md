@@ -136,6 +136,18 @@ have no route: declared model only, badged "model — no surface" in the matrix.
 `integrations` is gated by `requireSuperAdmin` (platform-level), out of scope for
 org `can()`.
 
+**V3 — DB-driven matrix, editor, and the flip.** The matrix is no longer
+hardcoded: `can()` reads it from the global `role_permissions` table via
+`loadRoleMatrix()` (async; per-request, no cache — tracked tech debt). The table
+is seeded from `ROLE_PERMISSIONS` (still the seed source + parity unit test), and
+super_admin edits it cell-by-cell via `PATCH /api/org/permissions/grant`
+(editable surface: 3 ORG roles × 5 routed resources; ghost and department cells
+are read-only, blocked server-side as well). Setting `CAN_ENFORCEMENT=enforce`
+makes `can()` denials real — a removed grant becomes a 403. The flip is
+**env-only, reversible, no deploy** (`docs/permissions/flip-runbook.md`). Proven
+end-to-end (V3.4): remove MEMBER's `locations:read` + `enforce` → MEMBER gets 403
+on `GET /api/locations`; restore the grant → access returns; with `off` → inert.
+
 ## Operations
 
 **Assign or change a role:** go to `/admin/organization/members`, use the role
@@ -143,8 +155,16 @@ selector on the member's row. OWNER changes require you to be an owner and ask
 for confirmation. A `409` toast means the change would leave the org without an
 owner; a `403` means you lack permission for that change.
 
-**Read the access model:** go to `/admin/organization/permissions`. The matrix
-is reference-only; there is nothing to edit here in this version.
+**Edit the permission matrix:** go to `/admin/organization/permissions`.
+super_admins toggle a grant (3 ORG roles × 5 routed resources) — the cell Switch
+creates/removes the `role_permissions` row. Ghost resources and department roles
+stay read-only. Edits persist immediately but only affect authorization once
+`CAN_ENFORCEMENT=enforce`. Every edit writes an audit row
+(`action = "role_permission.updated"`).
+
+**Flip enforcement on:** follow `docs/permissions/flip-runbook.md` — observe in
+shadow, set the `CAN_ENFORCEMENT` env var to `enforce`, verify; reverting is
+env-only and immediate. Default is `off`.
 
 **Audit role changes:** every successful change writes an
 [Audit Log](../../infrastructure/audit-log/en-US.md) row with
@@ -176,8 +196,12 @@ cross-org isolation helpers behave on seeded data.
 - **`CAN_ENFORCEMENT`**: Tri-state flag (`off`/`shadow`/`enforce`) gating the `can()` enforcement layer; default `off`.
 - **Shadow mode**: `can()` runs alongside `requireOrgRole` and logs agreement/divergence (`[can-shadow]`) without ever changing the result.
 - **Ghost resource**: A resource declared in `ROLE_PERMISSIONS` with no `requireOrgRole` route to enforce against; model-only ("model — no surface").
+- **`role_permissions` table**: The global, DB-driven matrix `can()` reads (via `loadRoleMatrix()`); seeded from `ROLE_PERMISSIONS`, editable by super_admin.
+- **Matrix editor**: The super_admin-only Switch grid on `/admin/organization/permissions` that toggles grants via `PATCH /api/org/permissions/grant`.
+- **The flip**: Setting `CAN_ENFORCEMENT=enforce` so `can()` denials become real 403s; env-only and reversible (see the flip runbook).
 
 ## Changelog
 
 - **2026-06-01** — v1.0. Initial release: read-only permission matrix, inline ORG-role editing on the Members page, `PATCH /api/org/members/[memberId]/role` with OWNER-only fine rule, ≥1-owner invariant, manual org isolation, and audit logging. Enforcement is coarse (by role name); the matrix is a declared model.
 - **2026-06-02** — v1.1 (V2 closeout). Added the `can()` enforcement infrastructure: `ENFORCEMENT_MAP` contract (27 call-sites → resource×action), `enforce()`/`enforceRoute()` behind the `CAN_ENFORCEMENT` flag (default off), and shadow adoption across all 25 routed call-sites. Full shadow observation: 100% `agree:true`. Matrix UI now badges the 6 ghost resources "model — no surface". Enforcement remains **armed but inactive** — the flip + matrix editor are V3.
+- **2026-06-02** — v1.2 (V3). The matrix became DB-driven and editable: `role_permissions` table (seeded from `ROLE_PERMISSIONS`, parity unit test), `can()` reads it via `loadRoleMatrix()` (async), and a super_admin-only editor (`PATCH /api/org/permissions/grant`, Switch grid). The `CAN_ENFORCEMENT=enforce` flip makes edits bite (proven: removing a grant → 403; restoring → access returns), and a flip runbook documents the safe sequence + env-only rollback. Default stays `off`; the PROD flip is a manual, deliberate step.
