@@ -48,11 +48,11 @@ function logShadow(entry: ShadowLogEntry): void {
   console.warn("[can-shadow]", entry);
 }
 
-export function enforce<T>(
+export async function enforce<T>(
   actor: Actor,
   permission: Permission,
   ctx: EnforceContext<T>
-): T | Response {
+): Promise<T | Response> {
   const mode = getCanEnforcementMode();
 
   // off — total no-op: can() never runs.
@@ -61,7 +61,7 @@ export function enforce<T>(
   const requireOrgRoleAllowed = !(ctx.current instanceof Response);
 
   if (mode === "shadow") {
-    const canResult = can(actor, permission, ctx.organizationId);
+    const canResult = await can(actor, permission, ctx.organizationId);
     logShadow({
       routeId: ctx.routeId,
       resource: permission.resource,
@@ -78,7 +78,7 @@ export function enforce<T>(
 
   // enforce — only tightens on top of an already-passing requireOrgRole.
   if (!requireOrgRoleAllowed) return ctx.current; // already denied upstream
-  if (!can(actor, permission, ctx.organizationId)) {
+  if (!(await can(actor, permission, ctx.organizationId))) {
     return apiError("Forbidden: insufficient permission", 403);
   }
   return ctx.current;
@@ -88,8 +88,8 @@ export function enforce<T>(
  * Route-facing adapter. Resolves the `Actor` LAZILY so the `off` default stays
  * a true no-op: in `off` it returns `current` without ever calling `getActor`
  * (no DB hit, no `can()`). Only in `shadow`/`enforce` does it resolve the actor
- * and delegate to the sync `enforce()` core (which carries the mode logic +
- * tests). This is the call routes adopt — `enforce()` itself stays pure/sync.
+ * and delegate to the async `enforce()` core (which carries the mode logic +
+ * tests; can() is DB-backed since V3.2). This is the call routes adopt.
  *
  * `session` is the route's existing `requireOrgRole(...)` result (already known
  * to be a Session — routes return early on its Response). `current` is passed
@@ -103,5 +103,5 @@ export async function enforceRoute<T>(
   if (getCanEnforcementMode() === "off") return ctx.current; // zero cost
   const actor = await getActor(session);
   if (!actor) return ctx.current; // cannot evaluate — never block on missing actor
-  return enforce(actor, permission, ctx);
+  return await enforce(actor, permission, ctx);
 }
