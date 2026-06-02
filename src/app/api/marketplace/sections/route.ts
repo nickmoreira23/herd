@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError, parseAndValidate } from "@/lib/api-utils";
+import { requireSuperAdmin } from "@/lib/auth/require-super-admin";
 import { createSectionSchema } from "@/lib/validators/marketplace";
 
 export async function GET() {
@@ -18,6 +19,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const sessionOrResponse = await requireSuperAdmin();
+  if (sessionOrResponse instanceof Response) return sessionOrResponse;
+
   try {
     const result = await parseAndValidate(request, createSectionSchema);
     if ("error" in result) return result.error;

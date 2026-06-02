@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError, parseAndValidate } from "@/lib/api-utils";
+import { requireSuperAdmin } from "@/lib/auth/require-super-admin";
 import { updateSectionSchema } from "@/lib/validators/marketplace";
 
 export async function GET(
@@ -26,6 +27,9 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const sessionOrResponse = await requireSuperAdmin();
+  if (sessionOrResponse instanceof Response) return sessionOrResponse;
+
   try {
     const { id } = await params;
     const result = await parseAndValidate(request, updateSectionSchema);
@@ -94,6 +98,9 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const sessionOrResponse = await requireSuperAdmin();
+  if (sessionOrResponse instanceof Response) return sessionOrResponse;
+
   try {
     const { id } = await params;
     const section = await prisma.marketplaceSection.findUnique({
