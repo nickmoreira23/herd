@@ -616,7 +616,8 @@ enum RecordSource {
 
 // ADR-002 Fatia 1a — consumo curado: junção Organization⊆bloco-locations (molde *TierAssignment).
 // tenantId é escalar (= organizationId em V1); scoping via Extension/TENANT_SCOPED_MODELS + RLS.
-// A FK tenant_id→organizations existe só no SQL da migration (não modelada como relation).
+// A FK tenant_id→organizations agora é modelada como relation "OrgLocationTenant" (R&P Fase 2):
+// alinha com as demais tabelas tenant-scoped e elimina o drift schema↔DB que o migrate dev acusava.
 // D6: deletar Location (mestre) OU Organization (consumidor) → vínculo cai (Cascade).
 // Desvincular (deletar este vínculo) NÃO deleta o Location — o catálogo-mestre sobrevive.
 model OrganizationLocation {
@@ -629,6 +630,7 @@ model OrganizationLocation {
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   organization Organization @relation("OrgLocationConsumer", fields: [organizationId], references: [id], onDelete: Cascade)
+  tenant       Organization @relation("OrgLocationTenant", fields: [tenantId], references: [id], onDelete: Cascade)
   location     Location     @relation(fields: [locationId], references: [id], onDelete: Cascade)
 
   @@unique([organizationId, locationId])
@@ -1724,6 +1726,7 @@ model Organization {
   departments Department[] @relation("DepartmentTenant")
   locations   Location[]   @relation("LocationTenant")
   curatedLocations OrganizationLocation[] @relation("OrgLocationConsumer")
+  curatedLocationsAsTenant OrganizationLocation[] @relation("OrgLocationTenant")
   members     OrganizationMember[]
   invitations OrganizationInvitation[]
 
@@ -1748,6 +1751,7 @@ model Organization {
   // Sub-etapa 25 — Audit Log
   auditLogs         AuditLog[]         @relation("AuditLogTenant")
 
+  @@index([parentOrgId])
   @@map("organizations")
 }
 
@@ -3127,7 +3131,7 @@ model WebhookDedup {
   provider   String
   eventId    String   @map("event_id")
   receivedAt DateTime @default(now()) @map("received_at") @db.Timestamptz(6)
-  expiresAt  DateTime @default(dbgenerated("(now() + INTERVAL '30 days')")) @map("expires_at") @db.Timestamptz(6)
+  expiresAt  DateTime @default(dbgenerated("(now() + '30 days'::interval)")) @map("expires_at") @db.Timestamptz(6)
 
   @@unique([provider, eventId], map: "webhook_dedup_provider_event_id_key")
   @@index([expiresAt], map: "webhook_dedup_expires_at_idx")
