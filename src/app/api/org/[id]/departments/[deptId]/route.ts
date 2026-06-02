@@ -1,4 +1,4 @@
-import { requireOrgRole } from "@/lib/permissions";
+import { requireOrgRole, enforceRoute } from "@/lib/permissions";
 import { apiSuccess, apiError } from "@/lib/api-utils";
 import { prisma } from "@/lib/prisma";
 import { withVerticalTenant, OrgVerticalForbiddenError } from "@/lib/org-hierarchy";
@@ -19,6 +19,13 @@ export async function DELETE(
   const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN"]);
   if (sessionOrResponse instanceof Response) return sessionOrResponse;
   const session = sessionOrResponse;
+
+  const enforced = await enforceRoute(
+    session,
+    { resource: "departments", action: "delete" },
+    { current: session, organizationId: session.user.activeOrgId ?? "", routeId: "DELETE /api/org/[id]/departments/[deptId]" }
+  );
+  if (enforced instanceof Response) return enforced;
 
   const { id: childId, deptId } = await params;
   const activeOrgId = session.user.activeOrgId;

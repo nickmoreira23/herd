@@ -2,12 +2,16 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // Mock can() so we can control its verdict AND assert it never runs in `off`.
 vi.mock("../can", () => ({ can: vi.fn() }));
+// Mock getActor() to assert it is NOT resolved in `off` (zero-cost invariant).
+vi.mock("../get-actor", () => ({ getActor: vi.fn() }));
 
-import { enforce } from "../enforce";
+import { enforce, enforceRoute } from "../enforce";
 import { can } from "../can";
+import { getActor } from "../get-actor";
 import type { Actor, Permission } from "../types";
 
 const mockedCan = vi.mocked(can);
+const mockedGetActor = vi.mocked(getActor);
 
 const member: Actor = {
   profileId: "profile-member",
@@ -116,5 +120,43 @@ describe("enforce() — enforce mode", () => {
     const result = enforce(member, permission, ctx(DENY));
     expect(result).toBe(DENY);
     expect(mockedCan).not.toHaveBeenCalled(); // short-circuits on upstream deny
+  });
+});
+
+describe("enforceRoute() — lazy actor adapter", () => {
+  const session = { user: { id: "u1", activeOrgId: "org-1" } } as never;
+
+  it("off: returns current WITHOUT resolving the actor (zero-cost invariant)", async () => {
+    delete process.env.CAN_ENFORCEMENT;
+    const result = await enforceRoute(session, permission, ctx(ALLOW));
+    expect(result).toBe(ALLOW);
+    expect(mockedGetActor).not.toHaveBeenCalled();
+    expect(mockedCan).not.toHaveBeenCalled();
+  });
+
+  it("shadow: resolves actor and delegates to enforce (logs, returns current)", async () => {
+    process.env.CAN_ENFORCEMENT = "shadow";
+    mockedGetActor.mockResolvedValue(member);
+    mockedCan.mockReturnValue(true);
+    const result = await enforceRoute(session, permission, ctx(ALLOW));
+    expect(result).toBe(ALLOW);
+    expect(mockedGetActor).toHaveBeenCalledTimes(1);
+    expect(warnSpy).toHaveBeenCalled();
+  });
+
+  it("enforce: can() denies → 403", async () => {
+    process.env.CAN_ENFORCEMENT = "enforce";
+    mockedGetActor.mockResolvedValue(member);
+    mockedCan.mockReturnValue(false);
+    const result = await enforceRoute(session, permission, ctx(ALLOW));
+    expect(result).toBeInstanceOf(Response);
+    expect((result as Response).status).toBe(403);
+  });
+
+  it("missing actor: never blocks (returns current)", async () => {
+    process.env.CAN_ENFORCEMENT = "enforce";
+    mockedGetActor.mockResolvedValue(null);
+    const result = await enforceRoute(session, permission, ctx(ALLOW));
+    expect(result).toBe(ALLOW);
   });
 });

@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@/lib/permissions", () => ({
   requireOrgRole: vi.fn(),
+  // enforceRoute is a no-op passthrough here (CAN_ENFORCEMENT off in unit env).
+  enforceRoute: vi.fn((_s, _p, ctx) => ctx.current),
 }));
 
 vi.mock("@/lib/prisma", () => ({

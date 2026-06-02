@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-utils";
 import {
   requireOrgRole,
+  enforceRoute,
   getActor,
   assertMemberBelongsToOrg,
   countActiveOwners,
@@ -37,6 +38,13 @@ export async function PATCH(
 
   const orgId = session.user.activeOrgId;
   if (!orgId) return apiError("No active organization", 400);
+
+  const enforced = await enforceRoute(
+    session,
+    { resource: "members", action: "update" },
+    { current: session, organizationId: orgId, routeId: "PATCH /api/org/members/[memberId]/role" }
+  );
+  if (enforced instanceof Response) return enforced;
 
   const actorProfileId = (session.user as { id?: string }).id ?? null;
   const isSuperAdmin =

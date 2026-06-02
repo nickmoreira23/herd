@@ -1,6 +1,8 @@
+import type { Session } from "next-auth";
 import { apiError } from "@/lib/api-utils";
 import { getCanEnforcementMode } from "@/lib/feature-flags";
 import { can } from "./can";
+import { getActor } from "./get-actor";
 import type { Actor, Permission } from "./types";
 
 /**
@@ -80,4 +82,26 @@ export function enforce<T>(
     return apiError("Forbidden: insufficient permission", 403);
   }
   return ctx.current;
+}
+
+/**
+ * Route-facing adapter. Resolves the `Actor` LAZILY so the `off` default stays
+ * a true no-op: in `off` it returns `current` without ever calling `getActor`
+ * (no DB hit, no `can()`). Only in `shadow`/`enforce` does it resolve the actor
+ * and delegate to the sync `enforce()` core (which carries the mode logic +
+ * tests). This is the call routes adopt — `enforce()` itself stays pure/sync.
+ *
+ * `session` is the route's existing `requireOrgRole(...)` result (already known
+ * to be a Session — routes return early on its Response). `current` is passed
+ * through so `enforce` mode can short-circuit consistently.
+ */
+export async function enforceRoute<T>(
+  session: Session,
+  permission: Permission,
+  ctx: { current: T; organizationId: string; routeId: string }
+): Promise<T | Response> {
+  if (getCanEnforcementMode() === "off") return ctx.current; // zero cost
+  const actor = await getActor(session);
+  if (!actor) return ctx.current; // cannot evaluate — never block on missing actor
+  return enforce(actor, permission, ctx);
 }

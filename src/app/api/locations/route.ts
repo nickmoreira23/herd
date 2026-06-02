@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError, parseAndValidate } from "@/lib/api-utils";
 import { createLocationSchema } from "@/lib/validators/locations";
 import type { Prisma } from "@prisma/client";
-import { requireOrgRole } from "@/lib/permissions";
+import { requireOrgRole, enforceRoute } from "@/lib/permissions";
 import { withTenant } from "@/lib/tenancy/context";
 import { writeAuditLog } from "@/lib/audit/write-audit-log";
 
@@ -10,6 +10,13 @@ export async function GET(request: Request) {
   const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN", "MEMBER"]);
   if (sessionOrResponse instanceof Response) return sessionOrResponse;
   const session = sessionOrResponse;
+
+  const enforced = await enforceRoute(
+    session,
+    { resource: "locations", action: "read" },
+    { current: session, organizationId: session.user.activeOrgId ?? "", routeId: "GET /api/locations" }
+  );
+  if (enforced instanceof Response) return enforced;
 
   return withTenant(session.user.activeOrgId ?? "", async () => {
     try {
@@ -57,6 +64,13 @@ export async function POST(request: Request) {
   const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN"]);
   if (sessionOrResponse instanceof Response) return sessionOrResponse;
   const session = sessionOrResponse;
+
+  const enforced = await enforceRoute(
+    session,
+    { resource: "locations", action: "create" },
+    { current: session, organizationId: session.user.activeOrgId ?? "", routeId: "POST /api/locations" }
+  );
+  if (enforced instanceof Response) return enforced;
 
   const result = await parseAndValidate(request, createLocationSchema);
   if ("error" in result) return result.error;

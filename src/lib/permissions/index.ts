@@ -8,6 +8,7 @@ export {
   getOrgRole,
 } from "./membership-roles";
 export type { OrgMemberWithRoles } from "./membership-roles";
+export { enforce, enforceRoute } from "./enforce";
 export type {
   Actor,
   ActorMembership,

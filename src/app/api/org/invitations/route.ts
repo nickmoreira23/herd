@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { MemberRole } from "@prisma/client";
 import { requireOrgRole } from "@/lib/permissions/require-org-role";
+import { enforceRoute } from "@/lib/permissions";
 import { apiError } from "@/lib/api-utils";
 import {
   createInvitation,
@@ -16,6 +17,13 @@ const createInvitationSchema = z.object({
 export async function POST(request: Request) {
   const session = await requireOrgRole(["OWNER", "ADMIN"]);
   if (session instanceof Response) return session;
+
+  const enforced = await enforceRoute(
+    session,
+    { resource: "members", action: "invite" },
+    { current: session, organizationId: session.user.activeOrgId ?? "", routeId: "POST /api/org/invitations" }
+  );
+  if (enforced instanceof Response) return enforced;
 
   const body = await request.json().catch(() => null);
   if (!body) return apiError("Invalid JSON body", 400);
@@ -47,6 +55,13 @@ export async function POST(request: Request) {
 export async function GET(_request: Request) {
   const session = await requireOrgRole(["OWNER", "ADMIN"]);
   if (session instanceof Response) return session;
+
+  const enforced = await enforceRoute(
+    session,
+    { resource: "members", action: "read" },
+    { current: session, organizationId: session.user.activeOrgId ?? "", routeId: "GET /api/org/invitations" }
+  );
+  if (enforced instanceof Response) return enforced;
 
   const invitations = await listPendingInvitations(session.user.activeOrgId!);
   return Response.json({ data: invitations });

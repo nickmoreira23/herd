@@ -1,4 +1,4 @@
-import { requireOrgRole } from "@/lib/permissions";
+import { requireOrgRole, enforceRoute } from "@/lib/permissions";
 import { apiSuccess, apiError } from "@/lib/api-utils";
 import { prisma } from "@/lib/prisma";
 
@@ -30,6 +30,13 @@ export async function DELETE(
   // Guarda 1 — OWNER apenas.
   const sessionOrResponse = await requireOrgRole(["OWNER"]);
   if (sessionOrResponse instanceof Response) return sessionOrResponse;
+
+  const enforced = await enforceRoute(
+    sessionOrResponse,
+    { resource: "org", action: "delete" },
+    { current: sessionOrResponse, organizationId: sessionOrResponse.user.activeOrgId ?? "", routeId: "DELETE /api/org/[id]" }
+  );
+  if (enforced instanceof Response) return enforced;
 
   const { id } = await params;
 

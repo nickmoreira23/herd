@@ -1,12 +1,19 @@
 import { prisma } from "@/lib/prisma";
 import { apiSuccess } from "@/lib/api-utils";
-import { requireOrgRole } from "@/lib/permissions";
+import { requireOrgRole, enforceRoute } from "@/lib/permissions";
 import { withTenant } from "@/lib/tenancy/context";
 
 export async function GET() {
   const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN", "MEMBER"]);
   if (sessionOrResponse instanceof Response) return sessionOrResponse;
   const session = sessionOrResponse;
+
+  const enforced = await enforceRoute(
+    session,
+    { resource: "org_hierarchy", action: "read" },
+    { current: session, organizationId: session.user.activeOrgId ?? "", routeId: "GET /api/org-chart/internal" }
+  );
+  if (enforced instanceof Response) return enforced;
 
   return withTenant(session.user.activeOrgId ?? "", async () => {
     // NetworkProfile.networkType + parentId + profileType dropped in
