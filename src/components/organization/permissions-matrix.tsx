@@ -1,7 +1,11 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Check, Info } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { useT } from "@/lib/i18n/locale-context";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
 import type { MessageKey } from "@/lib/i18n/t";
 
 interface PermissionsMatrixProps {
@@ -12,6 +16,10 @@ interface PermissionsMatrixProps {
   departmentRoles: string[];
   /** Resources declared in the model with no route to enforce against yet. */
   ghostResources: string[];
+  /** Roles whose grants are editable (ORG roles); others stay read-only. */
+  editableRoles: string[];
+  /** True when the viewer (super_admin) may edit grants. */
+  canEdit: boolean;
   /** role → ["resource:action", ...] grant keys (serialized server-side). */
   grants: Record<string, string[]>;
 }
@@ -22,11 +30,59 @@ export function PermissionsMatrix({
   roles,
   departmentRoles,
   ghostResources,
+  editableRoles,
+  canEdit,
   grants,
 }: PermissionsMatrixProps) {
   const t = useT();
+  const router = useRouter();
   const inertRoles = new Set(departmentRoles);
   const ghostSet = new Set(ghostResources);
+  const editableRoleSet = new Set(editableRoles);
+  const [loadingCell, setLoadingCell] = useState<string | null>(null);
+
+  // A cell is editable iff the viewer can edit, the role is ORG-scoped, and the
+  // resource has a route (non-ghost). Ghost resources + department roles stay
+  // read-only — the editor never claims power over what does not enforce.
+  const isEditable = (role: string, resource: string) =>
+    canEdit && editableRoleSet.has(role) && !ghostSet.has(resource);
+
+  async function handleToggle(
+    role: string,
+    resource: string,
+    action: string,
+    currentlyGranted: boolean
+  ) {
+    const cellKey = `${role}:${resource}:${action}`;
+    setLoadingCell(cellKey);
+    try {
+      const res = await fetch("/api/org/permissions/grant", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          role,
+          resource,
+          action,
+          scopeType: "ORG",
+          granted: !currentlyGranted,
+        }),
+      });
+      if (res.ok) {
+        notifySuccess("organization.permissions.grant_updated", t);
+        router.refresh(); // re-fetch DB-backed matrix (no optimistic UI)
+      } else if (res.status === 403) {
+        notifyError("organization.permissions.grant_forbidden", t);
+      } else if (res.status === 422) {
+        notifyError("organization.permissions.grant_locked", t);
+      } else {
+        notifyError("organization.permissions.grant_update_error", t);
+      }
+    } catch {
+      notifyError("organization.permissions.grant_update_error", t);
+    } finally {
+      setLoadingCell(null);
+    }
+  }
 
   // Dynamic i18n keys — every value is enumerated in the dictionaries; the cast
   // mirrors the sub-panel registry pattern (labelKey kept loose, cast at lookup).
@@ -117,9 +173,19 @@ export function PermissionsMatrix({
                   {roles.map((role) => {
                     const granted = isGranted(role, resource, action);
                     const inert = inertRoles.has(role);
+                    const editable = isEditable(role, resource);
+                    const cellKey = `${role}:${resource}:${action}`;
                     return (
                       <td key={role} className="px-4 py-2 text-center">
-                        {granted ? (
+                        {editable ? (
+                          <Switch
+                            checked={granted}
+                            disabled={loadingCell === cellKey}
+                            onCheckedChange={() =>
+                              handleToggle(role, resource, action, granted)
+                            }
+                          />
+                        ) : granted ? (
                           <Check
                             className={`inline h-4 w-4 ${
                               inert ? "text-gray-300" : "text-green-600"

@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
-import { requireOrgRole, ROLE_PERMISSIONS } from "@/lib/permissions";
+import { requireOrgRole } from "@/lib/permissions";
 import type { ActionType, ResourceType } from "@/lib/permissions";
+import { loadRoleMatrix } from "@/lib/permissions/role-matrix-loader";
 import { GHOST_RESOURCES } from "@/lib/permissions/enforcement-map";
 import type { MemberRole } from "@prisma/client";
 import { PermissionsMatrix } from "@/components/organization/permissions-matrix";
@@ -48,19 +49,28 @@ const DEPARTMENT_ROLES: MemberRole[] = [
   "DEPARTMENT_MEMBER",
 ];
 
+// ORG-scoped roles — the editable columns in the matrix (super_admin only).
+const ORG_ROLES: MemberRole[] = ["OWNER", "ADMIN", "MEMBER"];
+
 export default async function PermissionsPage() {
   await connection();
 
   const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN", "MEMBER"]);
   if (sessionOrResponse instanceof Response) redirect("/login");
 
-  // Serialize the hardcoded matrix into a flat, client-safe shape:
-  // role → list of "resource:action" grant keys. ROLE_PERMISSIONS itself is
-  // never imported into the client component (server-only).
+  // Editing the global matrix is super_admin-only (the endpoint enforces it too).
+  // Non-super members keep the read-only matrix.
+  const canEdit =
+    (sessionOrResponse.user as { isSuperAdmin?: boolean }).isSuperAdmin === true;
+
+  // Serialize the DB-backed matrix (V3.2 loader) into a flat, client-safe shape:
+  // role → list of "resource:action" grant keys. The matrix now reflects the
+  // editable `role_permissions` table, so super_admin edits show after refresh.
+  const matrix = await loadRoleMatrix();
   const grants: Record<string, string[]> = {};
   for (const role of ROLES) {
     const keys = new Set<string>();
-    for (const p of ROLE_PERMISSIONS[role]) {
+    for (const p of matrix[role] ?? []) {
       keys.add(`${p.resource}:${p.action}`);
     }
     grants[role] = Array.from(keys);
@@ -73,6 +83,8 @@ export default async function PermissionsPage() {
       roles={[...ROLES]}
       departmentRoles={DEPARTMENT_ROLES}
       ghostResources={[...GHOST_RESOURCES]}
+      editableRoles={[...ORG_ROLES]}
+      canEdit={canEdit}
       grants={grants}
     />
   );

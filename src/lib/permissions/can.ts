@@ -1,8 +1,14 @@
 import type { Actor, Permission } from "./types";
-import { ROLE_PERMISSIONS } from "./role-permissions";
+import { loadRoleMatrix } from "./role-matrix-loader";
 
 /**
  * Checks whether an actor can execute the given permission in the context of orgId.
+ *
+ * V3.2: async — the role→permission matrix now comes from the DB
+ * (`loadRoleMatrix`, backed by the `role_permissions` table) instead of the
+ * hardcoded constant. The decision logic is unchanged; only the source moved.
+ * The matrix is loaded only after the super_admin / no-membership
+ * short-circuits, so those paths stay query-free.
  *
  * Logic:
  * 1. Super_admin → always true.
@@ -11,11 +17,11 @@ import { ROLE_PERMISSIONS } from "./role-permissions";
  * 4. Scope check: if permission.scopeType=department, the role must have
  *    scopeType=DEPARTMENT + scopeId === permission.scopeId.
  */
-export function can(
+export async function can(
   actor: Actor,
   permission: Permission,
   organizationId: string
-): boolean {
+): Promise<boolean> {
   // 1. Super_admin bypass
   if (actor.isSuperAdmin) return true;
 
@@ -25,9 +31,10 @@ export function can(
   );
   if (!membership) return false;
 
-  // 3. Check each role
+  // 3. Check each role against the DB-backed matrix
+  const matrix = await loadRoleMatrix();
   for (const actorRole of membership.roles) {
-    const rolePermissions = ROLE_PERMISSIONS[actorRole.role] ?? [];
+    const rolePermissions = matrix[actorRole.role] ?? [];
 
     for (const granted of rolePermissions) {
       // Resource + action must match

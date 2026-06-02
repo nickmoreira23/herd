@@ -1804,6 +1804,25 @@ model MembershipRole {
   @@map("membership_roles")
 }
 
+// Global role→permission matrix (Roles & Permissions V3.1). One row per grant.
+// During V3.1 this table is SEEDED from the hardcoded ROLE_PERMISSIONS and
+// proven equal to it by a parity test — nothing reads from it yet (can() still
+// reads the constant). GLOBAL: no tenantId, not in TENANT_SCOPED_MODELS.
+// resource/action are strings validated by the typed seed + parity test (the
+// source of truth stays the ResourceType/ActionType unions in code).
+model RolePermission {
+  id        String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  role      MemberRole
+  resource  String
+  action    String
+  scopeType RoleScopeType @default(ORG) @map("scope_type")
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  @@unique([role, resource, action, scopeType])
+  @@map("role_permissions")
+}
+
 model OrganizationInvitation {
   id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   organizationId String           @map("organization_id") @db.Uuid

@@ -1356,34 +1356,36 @@ o orphan recovery) revela que o endpoint mistura concerns.
 **Observação (não débito formal):** considerar split em sub-rotas se
 passar de 5 responsabilidades.
 
-## Roles & Permissions (V1 + V2 — Opção A)
+## Roles & Permissions (V1 + V2 + V3 — Opção A)
 
 Feature entregue (Handbook: `herd.tool.identity.roles-permissions`):
 - **V1:** matriz read-only + atribuição do papel ORG por membro (página Members).
 - **V2:** contrato `ENFORCEMENT_MAP` (27 call-sites → resource×action), infra
   `enforce()`/`enforceRoute()` atrás da flag `CAN_ENFORCEMENT` (default `off`),
   adoção shadow nos 25 call-sites roteados, e observação completa (100%
-  `agree:true`). O enforcement está **armado mas inativo** — a autorização real
-  continua sendo o `requireOrgRole` (coarse, por nome de papel). O `can()` só
-  passa a ter efeito quando a matriz divergir dos gates (V3).
+  `agree:true`).
+- **V3:** matriz DB-driven (tabela global `role_permissions`, semeada de
+  `ROLE_PERMISSIONS`, parity unit test), `can()` async via `loadRoleMatrix()`,
+  editor super_admin-only (`PATCH /api/org/permissions/grant`), e o **flip**
+  `CAN_ENFORCEMENT=enforce` provado ponta a ponta (remover grant → 403; restaurar
+  → acesso volta). Runbook em `docs/permissions/flip-runbook.md`.
+
+**Estado de repouso:** `CAN_ENFORCEMENT` segue `off` por default (DEV e PROD).
+O flip é só env, reversível, sem deploy — em PROD é passo manual e deliberado
+(seguir o runbook). Com matriz canônica, o flip é inerte (matriz == gates); só
+morde nas edições deliberadas do editor.
 
 Débitos conscientes, cada um com trigger:
 
-- **Flipar `CAN_ENFORCEMENT=enforce`.** Hoje default `off` (inerte). **Trigger:**
-  início do V3 (editor pronto) — antes disso o flip não muda nada (matriz espelha
-  os gates).
-- **Migrar `ROLE_PERMISSIONS` → tabela `RolePermission` DB-driven.** Hoje hardcoded
-  server-only. **Trigger:** V3.
-- **Editor da matriz** (switch por célula + endpoint `PATCH` de grants). **Trigger:**
-  V3 — é o que dá à matriz o poder de divergir dos gates e tornar o `can()` útil.
+- **Cache do `loadRoleMatrix()`.** Hoje lê `role_permissions` por request, sem
+  cache (`can()` faz 1 query extra por checagem). **Trigger:** `CAN_ENFORCEMENT=enforce`
+  em PROD + p99 das rotas org-scoped subir, OU contagem de checagens `can()` por
+  request crescer. Fix: cache com invalidação no `PATCH` de grants.
 - **Criar rotas para os 6 recursos-fantasma** (`org_billing`, `org_settings`,
   `audit_log`, `integrations`, `blocks_schema`, `blocks_data`) — declarados na
   matriz, sem rota `requireOrgRole`. **Trigger:** cada recurso quando virar
   funcionalidade real com superfície org-scoped (`integrations` hoje é
   `requireSuperAdmin`, nível plataforma).
-- **`can()` async.** Hoje sync (lê matriz hardcoded). **Trigger:** junto da migração
-  DB (V3) — exige tornar `enforce()`/`enforceRoute()` async-aware nos 28 call-sites
-  de teste.
 - **Per-org override da matriz.** **Trigger:** cliente pedir papéis com grants
   diferentes por organização (exige `RolePermission` com `organizationId` +
   `TENANT_SCOPED_MODELS`).
@@ -1396,6 +1398,12 @@ Débitos conscientes, cada um com trigger:
   `organization_id` FK (RLS permissive), isolamento **manual** no handler
   (`assertMemberBelongsToOrg`). **Trigger:** consolidar isolamento automático via
   tenancy Extension/RLS — migration (add `tenant_id` + backfill + `TENANT_SCOPED_MODELS`).
+- **Drift de checksum na migration sub_18 bloqueia `prisma migrate dev` em DEV.**
+  A migration `role_permissions` (V3.1) teve de ser aplicada cirurgicamente
+  (`db execute` + `migrate resolve --applied`) porque `migrate dev` exigia reset do
+  DEV por causa do drift pré-existente da sub_18. **Trigger:** próxima migration que
+  precise de `migrate dev` em DEV — resolver o drift da sub_18 antes (re-baseline ou
+  `migrate resolve`), ou seguir aplicando cirurgicamente.
 
 # Camada 1 — Retomada Sub-etapa 10 (API Key path)
 
