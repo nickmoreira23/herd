@@ -2,7 +2,7 @@
 
 > **Propósito:** Este arquivo é o estado canônico cross-session do trabalho de chat-architect em curso. Atualizado ao final de cada sub-etapa Fase 4. Qualquer nova sessão Claude.ai (chat-architect) deve ler este arquivo PRIMEIRO antes de propor qualquer trabalho.
 >
-> **Versão:** v1.10 (atualizado 2026-06-02, auto-migrate: build de prova INSTRUMENTADO — predeploy.sh versionado com marcos timestamped + tcp-check + exit $rc; gate local verde 2 arches; captura de stdout confirmada via `railway logs -d`; PENDENTE OK do Nick pro deploy de prova; migrations seguem manuais até a fase pre-deploy confirmar em PROD)
+> **Versão:** v1.11 (atualizado 2026-06-02, auto-migrate: RESOLVIDO — deploy de prova instrumentado `c0448bbd` SUCEDEU em PROD (pre-deploy rodou, conectou, `No pending`, `done=0`, promovido); causa do #122/#125 era build travado/infra transiente do Railway, NÃO o comando; instrumentação removida, `preDeployCommand` enxuto inline; gate limpo verde 2 arches incl. abort; aviso operacional AFROUXADO — caminho feliz provado, resta exercitar migration-nova + abort reais)
 >
 > **Próxima atualização esperada:** pós-merge da Fatia 1 (Locations piloto) do ADR-002.
 
@@ -45,10 +45,15 @@ Comprovado na estreia: o merge da Fatia 1a (#115) promoveu **sem aplicar** a mig
 ficou com drift parcial; tive de aplicar manual via `railway run`. **O #112 está documentado
 errado como "resolvido" — está QUEBRADO.**
 
-**⚠️ AVISO OPERACIONAL (até o reprojeto): TODA migration nova exige aplicação MANUAL em PROD
-após o merge** — `railway run -- npx prisma migrate deploy`, seguido de `railway run -- npx
-prisma migrate status` pra confirmar `up to date`. Pular esse passo = PROD com drift (foi a
-causa do incidente de manhã — 8 migrations acumuladas — e da reincidência da 1a hoje).
+**⚠️ AVISO OPERACIONAL — auto-migrate via `preDeployCommand` FUNCIONA: caminho feliz (no-op)
+provado em PROD no deploy `c0448bbd` (2026-06-02).** O pre-deploy rodou, conectou ao DB
+(`Datasource ... pooler.supabase.com:5432`), `migrate deploy` → `No pending migrations`, `done=0`,
+deploy promovido. **PENDENTE de exercitar em PROD:** (i) aplicação automática de uma migration
+**NOVA** e (ii) **abort** numa migration que falha. Até exercitar ambos, conferir `railway run --
+npx prisma migrate status` (`up to date`) após a próxima migration real — e, se quiser cinto e
+suspensório, aplicar manual antes do merge nessa primeira migration nova. Causa do #122/#125:
+**build travado / infra transiente do Railway** (NÃO o comando — 4 hipóteses de comando
+falsificadas no gate; o deploy instrumentado provou a fase pre-deploy end-to-end).
 
 **Lição cravada:** o proxy roda uma query de DB **antes do auth gate** — qualquer falha de DB
 (drift, blip) derruba a superfície inteira. O `try/catch` (#111) degrada pra `org=null` em vez
@@ -395,6 +400,20 @@ Aguardando discovery antecipada antes da spec (regra cravada da skill).
   deploy logs históricos (independe do filtro do dashboard). Gate local verde nos 2 arches (build +
   boot-test + predeploy.sh in-image: COM env → marcos + `done=0`/exit 0; SEM env → marcos + guard +
   `done=1`/exit 1). **Pendente: OK explícito do Nick pro merge + deploy de prova; ler os marcos via CLI.**
+
+  **RESOLVIDO — deploy de prova SUCEDEU + instrumentação limpa (v1.11).** O #126 (instrumentado)
+  mergeou e deployou: deployment `c0448bbd` (2026-06-02 17:41 -03) buildou em ~4min (sem travar),
+  o `preDeployCommand` rodou, `Loaded Prisma config` → `30 migrations found` → `Datasource ... :5432`
+  (conectou — **egress NÃO bloqueado**, hipótese de rede falsificada) → `No pending migrations` →
+  `[PREDEPLOY] done=0` → deploy promovido a SUCCESS/ACTIVE, health 200. **Diagnóstico final do
+  #122/#125: a falha foi BUILD travado / infra transiente do Railway** (o `6a0d718c`/#125 pendurou
+  ~1h15 no build e foi cancelado; o `d47c70ca` FAILED) — **nunca o comando** (4 hipóteses de comando
+  falsificadas: runner-sem-toolchain, invocação binstub-vs-index, env-ausente, DIRECT_URL-whitespace).
+  Após a prova, a instrumentação foi removida e o `preDeployCommand` voltou ao enxuto inline
+  `cd /app/migrate-tools && ./node_modules/.bin/prisma migrate deploy` (o `migrate deploy` retorna
+  exit code → abort-on-failure de graça). `predeploy.sh` + COPY/chmod removidos. Gate limpo verde
+  nos 2 arches (inclui cenário de abort: env ruim → exit ≠ 0). **Item rebaixado de [ALTA-OPERACIONAL]
+  — caminho feliz provado; resta exercitar migration-nova + abort reais em PROD (ver aviso operacional).**
 - **[ALTA-SEGURANÇA] Camada 2 de auth `/api`.** O gate do #111 é **presence-based**
   (`isLoggedIn = !!cookie`) — **NÃO valida o JWT** → um cookie forjado passa. Falta:
   (a) validar o JWT no proxy, **e** (b) **scoping por-tenant nos handlers** (cross-tenant
