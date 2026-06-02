@@ -1,6 +1,6 @@
 {
   "$schema": "https://railway.com/railway.schema.json",
   "deploy": {
-    "preDeployCommand": "cd /app/migrate-tools && ./node_modules/.bin/prisma migrate deploy"
+    "preDeployCommand": "sh /app/migrate-tools/predeploy.sh"
   }
 }
