@@ -388,6 +388,12 @@ navegação do efeito (event derivado) para a causa (registro de origem).
 
 retry de uma cobrança falha, rastreado por tentativa com um outcome.
 
+### Editor da matriz
+
+**From [Papéis e Permissões](/admin/handbook/areas/identity/roles-permissions):**
+
+O grid de Switches super_admin-only em `/admin/organization/permissions` que liga/desliga grants via `PATCH /api/org/permissions/grant`.
+
 ### Embed
 
 **From [Pattern: Surface](/admin/handbook/meta/pattern-surface-level):**
@@ -677,6 +683,12 @@ princípio de que tool name deve refletir como o time fala da tool no dia-a-dia.
 **From [Notificação](/admin/handbook/areas/notification):**
 
 macro-divisão para tools de comunicação unidirecional sistema → usuário, orientada a eventos.
+
+### O flip
+
+**From [Papéis e Permissões](/admin/handbook/areas/identity/roles-permissions):**
+
+Setar `CAN_ENFORCEMENT=enforce` para que as negações do `can()` virem 403 reais; só env e reversível (ver o flip runbook).
 
 ### Orchestrator
 
@@ -1091,6 +1103,12 @@ nível de manifestação — onde dados e funcionalidade aparecem para alguém.
 **From [Pattern: Surface](/admin/handbook/meta/pattern-surface-level):**
 
 surface interna que aparece como aba dentro de outra tool.
+
+### Tabela `role_permissions`
+
+**From [Papéis e Permissões](/admin/handbook/areas/identity/roles-permissions):**
+
+A matriz global DB-driven que o `can()` lê (via `loadRoleMatrix()`); semeada a partir de `ROLE_PERMISSIONS`, editável pelo super_admin.
 
 ### template
 
