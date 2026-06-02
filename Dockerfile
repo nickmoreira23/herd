@@ -40,6 +40,8 @@ RUN PV=$(node -p "require('/tmp/prisma-pkg.json').version") \
  && rm -f /tmp/prisma-pkg.json
 COPY prisma ./prisma
 COPY prisma.config.ts ./prisma.config.ts
+COPY migrate-tools/predeploy.sh ./predeploy.sh
+RUN chmod +x ./predeploy.sh
 
 # Stage 3: Production image
 FROM node:20-slim AS runner
