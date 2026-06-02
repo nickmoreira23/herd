@@ -24,6 +24,23 @@ ENV NODE_ENV=production
 RUN npx prisma generate
 RUN npm run build
 
+# Stage 2b: Isolated migration toolchain — the prisma CLI closure ONLY (no app deps).
+# A dedicated `npm install` computes the FULL, correct dependency closure of the
+# CLI (the Prisma 7 CLI eagerly loads @prisma/dev + @prisma/studio-core, which pull
+# a deep tree — pglite, hono, effect, c12, …). This keeps /app/migrate-tools small
+# without hand-picking transitives, and isolated from the app's node_modules.
+# Pinned to the project's exact prisma version (read from the installed deps).
+FROM node:20-slim AS migrate-tools
+WORKDIR /migrate-tools
+RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
+COPY --from=deps /app/node_modules/prisma/package.json /tmp/prisma-pkg.json
+RUN PV=$(node -p "require('/tmp/prisma-pkg.json').version") \
+ && npm init -y >/dev/null \
+ && npm install --no-audit --no-fund "prisma@$PV" "@prisma/config@$PV" dotenv \
+ && rm -f /tmp/prisma-pkg.json
+COPY prisma ./prisma
+COPY prisma.config.ts ./prisma.config.ts
+
 # Stage 3: Production image
 FROM node:20-slim AS runner
 WORKDIR /app
@@ -65,6 +82,14 @@ COPY --from=builder /app/public ./public
 # Copy standalone build output
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Isolated migration toolchain for the preDeployCommand (`migrate deploy`).
+# Comes from the dedicated `migrate-tools` stage (the prisma CLI closure + schema
+# + config) — its OWN node_modules, NEVER touching /app/node_modules or the
+# .next/standalone tree, so it cannot corrupt the app runtime (the #118 failure
+# mode). The CLI resolves its deps from /app/migrate-tools/node_modules via node
+# resolution when invoked with cwd there.
+COPY --from=migrate-tools --chown=nextjs:nodejs /migrate-tools /app/migrate-tools
 
 RUN mkdir -p /app/public/uploads
 

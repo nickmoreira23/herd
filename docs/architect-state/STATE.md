@@ -2,7 +2,7 @@
 
 > **Propósito:** Este arquivo é o estado canônico cross-session do trabalho de chat-architect em curso. Atualizado ao final de cada sub-etapa Fase 4. Qualquer nova sessão Claude.ai (chat-architect) deve ler este arquivo PRIMEIRO antes de propor qualquer trabalho.
 >
-> **Versão:** v1.7 (atualizado 2026-06-01, pós-tentativa #118 do auto-migrate REVERTIDA — causa-raiz `preDeployCommand` cravada, migrations seguem manuais)
+> **Versão:** v1.9 (atualizado 2026-06-02, auto-migrate: #122 deploy FALHOU em PROD + revertido #123; re-fix slim+binstub em worktree isolada, gate local verde 2 arches — causa real do #122 ainda incógnita (dashboard); migrations seguem manuais até deploy de prova passar)
 >
 > **Próxima atualização esperada:** pós-merge da Fatia 1 (Locations piloto) do ADR-002.
 
@@ -321,34 +321,65 @@ Aguardando discovery antecipada antes da spec (regra cravada da skill).
 
 ### Tier 1 (resolve durante Fase 4)
 
-- **[ALTA-OPERACIONAL] Reprojetar o auto-migrate — ainda ABERTO (2 tentativas falhas).**
-  **Causa-raiz correta (corrige relatos anteriores):** o #112 falhou porque o `railway.json`
-  usava o campo **inválido `predeploy`** (o canônico do Railway é **`preDeployCommand`**) → o
-  comando **nunca rodou** (confirmado pelos logs do #115 — sem fase pre-deploy alguma). O
+- **[ALTA-OPERACIONAL] Reprojetar o auto-migrate — design isolado implementado, gate local verde, PENDENTE deploy de prova.**
+  **Causa-raiz do #112 (corrige relatos anteriores):** o `railway.json` usava o campo
+  **inválido `predeploy`** (o canônico do Railway é **`preDeployCommand`**) → o comando
+  **nunca rodou** (confirmado pelos logs do #115 — sem fase pre-deploy alguma). O
   "runner sem toolchain" era barreira **secundária, nunca atingida** (o comando nem chegou a
   executar).
   **Enquanto aberto: aplicar TODA migration manual em PROD via
   `railway run -- npx prisma migrate deploy` após o merge + checar `migrate status`.** (Aviso
   reforçado — duas tentativas de automatizar falharam.)
 
-  **Tentativa 2026-06-01 (#118, REVERTIDA):** corrigiu o campo → `preDeployCommand:
-  "node node_modules/prisma/build/index.js migrate deploy"` + adicionou **6 COPYs do toolchain
-  no runner** (`prisma/`, `prisma.config.ts`, `node_modules/{prisma,@prisma/engines,@prisma/config,dotenv}`).
-  **Resultado: crash de boot em PROD** — os `COPY node_modules/@prisma/*` **por cima do
-  `.next/standalone`** corromperam o `node_modules` traçado → `node server.js` caiu em loop
-  (`Starting/Stopping Container`) → deploy `bd0a2306` FAILED. **Fail-safe segurou** (PROD seguiu
-  no deploy anterior; `/api/health` 200 o tempo todo). **Revertida via #119 (`c87b9be`)** →
-  estado conhecido-bom `d5c2339` restaurado, main deployável de novo. Backup
-  `herd-prod-backup-20260601-224839.dump` (1.9M) feito antes.
+  **Tentativa 1 — #118 (REVERTIDA):** corrigiu o campo → `preDeployCommand` + 6 COPYs do
+  toolchain **dentro de `/app/node_modules`**. **Crash de boot em PROD** (`Starting/Stopping
+  Container` loop → `bd0a2306` FAILED); fail-safe segurou (PROD 200 o tempo todo); revertida via
+  #119 (`c87b9be`). **Causa real INDETERMINADA estaticamente** — a hipótese inicial ("COPYs de
+  `@prisma/*` por cima do standalone corromperam o runtime") **NÃO se confirmou**: a discovery
+  mostrou que o standalone só traça `@prisma/{client,client-runtime-utils}` + `adapter-pg` +
+  `.prisma/client`, e **nenhum** dos pacotes copiados (`prisma` CLI, `@prisma/engines`,
+  `@prisma/config`, `dotenv`) estava nesse conjunto → não houve colisão de paths óbvia. A causa
+  exata exigiria os logs do crash (que o CLI não entregou) — mas **virou irrelevante** sob o
+  design isolado abaixo.
 
-  **🛑 Gate cravado pro reprojeto:** a Abordagem (a) (COPYs no runner) **NÃO vai pra main sem
-  `docker build` + boot-test local** provando **(i)** `migrate status` roda na imagem **E
-  (ii)** `node server.js` ainda dá boot com os COPYs. Requer **docker** (ausente em todas as
-  sessões até aqui — bloqueador real).
-  **Candidatos revisados** (em vez de COPYs largos que sobrepõem o standalone): (a') **COPY
-  cirúrgico** — só o que falta, sem sobrescrever o que o standalone já traçou; (b) **stage/mecanismo
-  separado** pro migrate (ex.: job a partir do `builder` image, que já tem tudo). O campo certo
-  é `preDeployCommand` (não `predeploy`) — isso fica cravado independente da abordagem.
+  **Tentativa 2 — design ISOLADO (`/app/migrate-tools/`):** o toolchain inteiro vai num diretório
+  separado com `node_modules` próprio; **nunca toca `/app/node_modules` nem o standalone** → não
+  pode corromper o boot. `preDeployCommand: "cd /app/migrate-tools && node
+  node_modules/prisma/build/index.js migrate deploy"` (CLI resolve siblings de
+  `/app/migrate-tools/node_modules` via node resolution). **Verificado localmente com docker
+  (gate executado) em arm64 E amd64:** (i) `docker build` conclui; (ii) **boot-test** — `node
+  server.js` sobe estável, sem crash loop (isolamento confirmado: `/app/node_modules/prisma`
+  ausente, CLI só em migrate-tools); (iii) `migrate status` in-image carrega o `prisma.config.ts`,
+  roda o schema-engine e conecta no DB (`29 migrations · up to date`). **Slim feito** via um
+  **stage `migrate-tools` dedicado** que faz `npm install` isolado da closure do CLI (prisma +
+  `@prisma/config` + dotenv, versão pinada) em vez de copiar o `node_modules` inteiro — o CLI do
+  Prisma 7 carrega eager `@prisma/dev`/`studio-core` (pglite/hono/effect/c12), então hand-pick por
+  COPY não convergia; o `npm install` computa a closure correta. **Resultado: `/app/migrate-tools`
+  1.7G → 228M; imagem 4.45GB → 2.53GB (amd64), gate verde nos 2 arches.**
+
+  **Tentativa em PROD (#122) — FALHOU; revertida (#123).** O #122 mergeou por engano a versão
+  **whole-copy** (o slim `ab11bbe` se perdeu num reset do tree principal compartilhado) e seu deploy
+  **FALHOU em PROD** na fase pre-deploy — o **`preDeployCommand` APAREU** (ao contrário do #115:
+  campo certo funciona), o fail-safe **abortou**, PROD seguiu intacto no deploy anterior. **Revertido
+  via #123 (`0cbbbd9`)** → main deployável. **Causa exata da falha NÃO determinada** (deploy logs do
+  `d47c70ca` só no dashboard; CLI não entrega). ⚠️ **Hipótese "invocação `node build/index.js` pula o
+  config-load" FALSIFICADA** no gate: as DUAS invocações (`node build/index.js` E o binstub
+  `.bin/prisma`) carregam o `prisma.config.ts` + conectam + rodam `migrate deploy` (`No pending`) em
+  container fresco, nos 2 arches. **A causa real do #122 segue desconhecida.**
+
+  **Re-fix (`fix/auto-migrate-refix`, worktree ISOLADA):** parte do slim `ab11bbe` (recuperado;
+  whole-copy descartado), troca a invocação pro binstub `cd /app/migrate-tools && ./node_modules/.bin/prisma
+  migrate deploy` (boa prática, roda o entry point completo — embora o gate mostre que a invocação
+  antiga também carregava o config). Gate reforçado verde nos 2 arches: build + boot-test estável +
+  **`migrate deploy`** (não só status) carregando config + conectando. Imagem ~2.53GB (slim), isolamento
+  intacto. **Lição de processo:** sessão isolada em worktree própria (a contenção do #122 veio de
+  operar no tree principal compartilhado).
+
+  **Status:** re-fix pronto, gate local verde nos 2 arches. **Pendente: (1) os Deploy Logs de
+  `d47c70ca` (dashboard) pra cravar por que o #122 falhou — o re-fix endereça uma NÃO-causa
+  (invocação), então o motivo real do #122 ainda é incógnito; (2) deploy de prova em PROD, só com OK
+  do Nick.** **O aviso "manual" acima permanece** até o deploy de prova confirmar a fase pre-deploy
+  rodando + aplicando em PROD.
 - **[ALTA-SEGURANÇA] Camada 2 de auth `/api`.** O gate do #111 é **presence-based**
   (`isLoggedIn = !!cookie`) — **NÃO valida o JWT** → um cookie forjado passa. Falta:
   (a) validar o JWT no proxy, **e** (b) **scoping por-tenant nos handlers** (cross-tenant
