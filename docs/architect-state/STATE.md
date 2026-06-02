@@ -2,7 +2,7 @@
 
 > **Propósito:** Este arquivo é o estado canônico cross-session do trabalho de chat-architect em curso. Atualizado ao final de cada sub-etapa Fase 4. Qualquer nova sessão Claude.ai (chat-architect) deve ler este arquivo PRIMEIRO antes de propor qualquer trabalho.
 >
-> **Versão:** v1.8.1 (atualizado 2026-06-02, auto-migrate design isolado `/app/migrate-tools/` + slim via stage `migrate-tools` (npm-install closure, imagem 4.45→2.53GB) — gate docker local verde arm64+amd64, pendente deploy de prova; migrations seguem manuais até lá)
+> **Versão:** v1.9 (atualizado 2026-06-02, auto-migrate: #122 deploy FALHOU em PROD + revertido #123; re-fix slim+binstub em worktree isolada, gate local verde 2 arches — causa real do #122 ainda incógnita (dashboard); migrations seguem manuais até deploy de prova passar)
 >
 > **Próxima atualização esperada:** pós-merge da Fatia 1 (Locations piloto) do ADR-002.
 
@@ -357,10 +357,29 @@ Aguardando discovery antecipada antes da spec (regra cravada da skill).
   COPY não convergia; o `npm install` computa a closure correta. **Resultado: `/app/migrate-tools`
   1.7G → 228M; imagem 4.45GB → 2.53GB (amd64), gate verde nos 2 arches.**
 
-  **Status:** implementação em `fix/auto-migrate-isolated` (Dockerfile + railway.json), gate local
-  verde nos 2 arches. **Pendente: deploy de prova em PROD** (no-op, 0 pendentes) pra exercitar a
-  fase pre-deploy real + o abort — só com OK do Nick. **O aviso "manual" acima permanece até esse
-  deploy de prova confirmar a fase pre-deploy rodando em PROD** (campo certo cravado: `preDeployCommand`).
+  **Tentativa em PROD (#122) — FALHOU; revertida (#123).** O #122 mergeou por engano a versão
+  **whole-copy** (o slim `ab11bbe` se perdeu num reset do tree principal compartilhado) e seu deploy
+  **FALHOU em PROD** na fase pre-deploy — o **`preDeployCommand` APAREU** (ao contrário do #115:
+  campo certo funciona), o fail-safe **abortou**, PROD seguiu intacto no deploy anterior. **Revertido
+  via #123 (`0cbbbd9`)** → main deployável. **Causa exata da falha NÃO determinada** (deploy logs do
+  `d47c70ca` só no dashboard; CLI não entrega). ⚠️ **Hipótese "invocação `node build/index.js` pula o
+  config-load" FALSIFICADA** no gate: as DUAS invocações (`node build/index.js` E o binstub
+  `.bin/prisma`) carregam o `prisma.config.ts` + conectam + rodam `migrate deploy` (`No pending`) em
+  container fresco, nos 2 arches. **A causa real do #122 segue desconhecida.**
+
+  **Re-fix (`fix/auto-migrate-refix`, worktree ISOLADA):** parte do slim `ab11bbe` (recuperado;
+  whole-copy descartado), troca a invocação pro binstub `cd /app/migrate-tools && ./node_modules/.bin/prisma
+  migrate deploy` (boa prática, roda o entry point completo — embora o gate mostre que a invocação
+  antiga também carregava o config). Gate reforçado verde nos 2 arches: build + boot-test estável +
+  **`migrate deploy`** (não só status) carregando config + conectando. Imagem ~2.53GB (slim), isolamento
+  intacto. **Lição de processo:** sessão isolada em worktree própria (a contenção do #122 veio de
+  operar no tree principal compartilhado).
+
+  **Status:** re-fix pronto, gate local verde nos 2 arches. **Pendente: (1) os Deploy Logs de
+  `d47c70ca` (dashboard) pra cravar por que o #122 falhou — o re-fix endereça uma NÃO-causa
+  (invocação), então o motivo real do #122 ainda é incógnito; (2) deploy de prova em PROD, só com OK
+  do Nick.** **O aviso "manual" acima permanece** até o deploy de prova confirmar a fase pre-deploy
+  rodando + aplicando em PROD.
 - **[ALTA-SEGURANÇA] Camada 2 de auth `/api`.** O gate do #111 é **presence-based**
   (`isLoggedIn = !!cookie`) — **NÃO valida o JWT** → um cookie forjado passa. Falta:
   (a) validar o JWT no proxy, **e** (b) **scoping por-tenant nos handlers** (cross-tenant
