@@ -2,7 +2,7 @@
 
 > **Propósito:** Este arquivo é o estado canônico cross-session do trabalho de chat-architect em curso. Atualizado ao final de cada sub-etapa Fase 4. Qualquer nova sessão Claude.ai (chat-architect) deve ler este arquivo PRIMEIRO antes de propor qualquer trabalho.
 >
-> **Versão:** v1.8 (atualizado 2026-06-02, auto-migrate design isolado `/app/migrate-tools/` — gate docker local verde arm64+amd64, pendente deploy de prova; migrations seguem manuais até lá)
+> **Versão:** v1.8.1 (atualizado 2026-06-02, auto-migrate design isolado `/app/migrate-tools/` + slim via stage `migrate-tools` (npm-install closure, imagem 4.45→2.53GB) — gate docker local verde arm64+amd64, pendente deploy de prova; migrations seguem manuais até lá)
 >
 > **Próxima atualização esperada:** pós-merge da Fatia 1 (Locations piloto) do ADR-002.
 
@@ -350,9 +350,12 @@ Aguardando discovery antecipada antes da spec (regra cravada da skill).
   (gate executado) em arm64 E amd64:** (i) `docker build` conclui; (ii) **boot-test** — `node
   server.js` sobe estável, sem crash loop (isolamento confirmado: `/app/node_modules/prisma`
   ausente, CLI só em migrate-tools); (iii) `migrate status` in-image carrega o `prisma.config.ts`,
-  roda o schema-engine e conecta no DB (`29 migrations · up to date`). **Custo:** copiar o
-  `node_modules` inteiro do builder = **`/app/migrate-tools` ~1.7G → imagem ~4.45GB (amd64)**.
-  Funciona; **slim via COPY cirúrgico fica como follow-up** se o tamanho incomodar.
+  roda o schema-engine e conecta no DB (`29 migrations · up to date`). **Slim feito** via um
+  **stage `migrate-tools` dedicado** que faz `npm install` isolado da closure do CLI (prisma +
+  `@prisma/config` + dotenv, versão pinada) em vez de copiar o `node_modules` inteiro — o CLI do
+  Prisma 7 carrega eager `@prisma/dev`/`studio-core` (pglite/hono/effect/c12), então hand-pick por
+  COPY não convergia; o `npm install` computa a closure correta. **Resultado: `/app/migrate-tools`
+  1.7G → 228M; imagem 4.45GB → 2.53GB (amd64), gate verde nos 2 arches.**
 
   **Status:** implementação em `fix/auto-migrate-isolated` (Dockerfile + railway.json), gate local
   verde nos 2 arches. **Pendente: deploy de prova em PROD** (no-op, 0 pendentes) pra exercitar a
