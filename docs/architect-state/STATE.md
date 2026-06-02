@@ -2,7 +2,7 @@
 
 > **Propósito:** Este arquivo é o estado canônico cross-session do trabalho de chat-architect em curso. Atualizado ao final de cada sub-etapa Fase 4. Qualquer nova sessão Claude.ai (chat-architect) deve ler este arquivo PRIMEIRO antes de propor qualquer trabalho.
 >
-> **Versão:** v1.6 (atualizado 2026-06-01, pós-Fatia 1a + correção do #112 — auto-migrate quebrado, migrations manuais)
+> **Versão:** v1.7 (atualizado 2026-06-01, pós-tentativa #118 do auto-migrate REVERTIDA — causa-raiz `preDeployCommand` cravada, migrations seguem manuais)
 >
 > **Próxima atualização esperada:** pós-merge da Fatia 1 (Locations piloto) do ADR-002.
 
@@ -321,15 +321,34 @@ Aguardando discovery antecipada antes da spec (regra cravada da skill).
 
 ### Tier 1 (resolve durante Fase 4)
 
-- **[ALTA-OPERACIONAL] Reprojetar o auto-migrate — o runner não pode rodar `migrate deploy`.**
-  O #112 (predeploy `prisma generate && prisma migrate deploy`) **não funciona**: o
-  runner/standalone image não tem CLI `prisma`, nem `schema.prisma`, nem `prisma/migrations/`
-  (Dockerfile copia só `.next/standalone`+`static`+`public`). Falha silenciosa + promove
-  (best-effort). **Enquanto aberto: aplicar TODA migration manual em PROD via
-  `railway run -- npx prisma migrate deploy` após o merge + checar `migrate status`.**
-  Candidatos pra spec: (a) copiar `prisma/` + instalar o CLI `prisma` no stage runner;
-  (b) passo de migração a partir do `builder` image (já tem tudo); (c) `releaseCommand`
-  bloqueante (se o Railway oferecer um que realmente aborta). Muda a abordagem do #112 inteiro.
+- **[ALTA-OPERACIONAL] Reprojetar o auto-migrate — ainda ABERTO (2 tentativas falhas).**
+  **Causa-raiz correta (corrige relatos anteriores):** o #112 falhou porque o `railway.json`
+  usava o campo **inválido `predeploy`** (o canônico do Railway é **`preDeployCommand`**) → o
+  comando **nunca rodou** (confirmado pelos logs do #115 — sem fase pre-deploy alguma). O
+  "runner sem toolchain" era barreira **secundária, nunca atingida** (o comando nem chegou a
+  executar).
+  **Enquanto aberto: aplicar TODA migration manual em PROD via
+  `railway run -- npx prisma migrate deploy` após o merge + checar `migrate status`.** (Aviso
+  reforçado — duas tentativas de automatizar falharam.)
+
+  **Tentativa 2026-06-01 (#118, REVERTIDA):** corrigiu o campo → `preDeployCommand:
+  "node node_modules/prisma/build/index.js migrate deploy"` + adicionou **6 COPYs do toolchain
+  no runner** (`prisma/`, `prisma.config.ts`, `node_modules/{prisma,@prisma/engines,@prisma/config,dotenv}`).
+  **Resultado: crash de boot em PROD** — os `COPY node_modules/@prisma/*` **por cima do
+  `.next/standalone`** corromperam o `node_modules` traçado → `node server.js` caiu em loop
+  (`Starting/Stopping Container`) → deploy `bd0a2306` FAILED. **Fail-safe segurou** (PROD seguiu
+  no deploy anterior; `/api/health` 200 o tempo todo). **Revertida via #119 (`c87b9be`)** →
+  estado conhecido-bom `d5c2339` restaurado, main deployável de novo. Backup
+  `herd-prod-backup-20260601-224839.dump` (1.9M) feito antes.
+
+  **🛑 Gate cravado pro reprojeto:** a Abordagem (a) (COPYs no runner) **NÃO vai pra main sem
+  `docker build` + boot-test local** provando **(i)** `migrate status` roda na imagem **E
+  (ii)** `node server.js` ainda dá boot com os COPYs. Requer **docker** (ausente em todas as
+  sessões até aqui — bloqueador real).
+  **Candidatos revisados** (em vez de COPYs largos que sobrepõem o standalone): (a') **COPY
+  cirúrgico** — só o que falta, sem sobrescrever o que o standalone já traçou; (b) **stage/mecanismo
+  separado** pro migrate (ex.: job a partir do `builder` image, que já tem tudo). O campo certo
+  é `preDeployCommand` (não `predeploy`) — isso fica cravado independente da abordagem.
 - **[ALTA-SEGURANÇA] Camada 2 de auth `/api`.** O gate do #111 é **presence-based**
   (`isLoggedIn = !!cookie`) — **NÃO valida o JWT** → um cookie forjado passa. Falta:
   (a) validar o JWT no proxy, **e** (b) **scoping por-tenant nos handlers** (cross-tenant
