@@ -28,4 +28,16 @@ export const createSectionSchema = z.object({
   scopes: z.array(sectionScopeSchema).default([]),
 });
 
-export const updateSectionSchema = createSectionSchema.partial();
+// PATCH semantics: an omitted field must mean "leave unchanged". `.partial()`
+// alone is NOT enough — in Zod 4 it keeps each field's `.default(...)`, so an
+// omitted `status`/`blockNames`/`components`/`scopes`/`creationPath` would
+// resolve to its create-time default (e.g. status→DRAFT, components→[]) and the
+// handler would silently reset/wipe it. Override every defaulted field to be
+// optional-without-default so omitting it yields `undefined`.
+export const updateSectionSchema = createSectionSchema.partial().extend({
+  status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).optional(),
+  creationPath: z.enum(["MANUAL", "COPILOT", "AUTONOMOUS"]).optional(),
+  blockNames: z.array(z.string()).optional(),
+  components: z.array(z.unknown()).optional(),
+  scopes: z.array(sectionScopeSchema).optional(),
+});
