@@ -1420,6 +1420,13 @@ export const messages = {
   "organization.permissions.ghost_badge": "Modelo — sem superfície",
   "organization.permissions.ghost_legend":
     "Recursos marcados “modelo — sem superfície” estão declarados no modelo de permissões mas ainda não têm rota onde enforçar; vão enforçar quando forem construídos.",
+  "organization.permissions.grant_updated": "Permissão atualizada.",
+  "organization.permissions.grant_update_error":
+    "Não foi possível atualizar a permissão. Tente novamente.",
+  "organization.permissions.grant_forbidden":
+    "Apenas um super admin pode editar permissões.",
+  "organization.permissions.grant_locked":
+    "Esta permissão não é editável.",
   "organization.permissions.role.OWNER": "Proprietário",
   "organization.permissions.role.ADMIN": "Administrador",
   "organization.permissions.role.MEMBER": "Membro",

@@ -1395,6 +1395,13 @@ export const messages: Record<MessageKey, string> = {
   "organization.permissions.ghost_badge": "Model — no surface",
   "organization.permissions.ghost_legend":
     "Resources marked “Model — no surface” are declared in the permission model but have no route to enforce against yet; they will enforce once built.",
+  "organization.permissions.grant_updated": "Permission updated.",
+  "organization.permissions.grant_update_error":
+    "Could not update the permission. Please try again.",
+  "organization.permissions.grant_forbidden":
+    "Only a super admin can edit permissions.",
+  "organization.permissions.grant_locked":
+    "This permission is not editable.",
   "organization.permissions.role.OWNER": "Owner",
   "organization.permissions.role.ADMIN": "Admin",
   "organization.permissions.role.MEMBER": "Member",

@@ -1,6 +1,11 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient, type Prisma, type RoleScopeType } from "@prisma/client";
+import {
+  PrismaClient,
+  type Prisma,
+  type RoleScopeType,
+  type MemberRole,
+} from "@prisma/client";
 import { ROLE_PERMISSIONS } from "@/lib/permissions/role-permissions";
 
 /**
@@ -13,21 +18,39 @@ import { ROLE_PERMISSIONS } from "@/lib/permissions/role-permissions";
  * `Permission.scopeType` is the lowercase model literal ("department" | undefined);
  * absent → the ORG-level grant. Mapped to the Prisma `RoleScopeType` enum here.
  */
+export interface RolePermissionRow {
+  role: MemberRole;
+  resource: string;
+  action: string;
+  scopeType: RoleScopeType;
+}
+
+/**
+ * Pure mapping of the hardcoded ROLE_PERMISSIONS → table rows. Exported so the
+ * parity test can assert the seed PRODUCES exactly the constant without touching
+ * the DB (post-V3.3 the live table may diverge via the editor — see the test).
+ */
+export function rolePermissionRows(): RolePermissionRow[] {
+  return (
+    Object.keys(ROLE_PERMISSIONS) as (keyof typeof ROLE_PERMISSIONS)[]
+  ).flatMap((role) =>
+    ROLE_PERMISSIONS[role].map((grant) => ({
+      role: role as MemberRole,
+      resource: grant.resource,
+      action: grant.action,
+      scopeType: (grant.scopeType === "department"
+        ? "DEPARTMENT"
+        : "ORG") as RoleScopeType,
+    }))
+  );
+}
+
 export async function seedRolePermissions(
   db: PrismaClient | Prisma.TransactionClient
 ): Promise<number> {
-  // Build all grant rows from the constant, then a single createMany with
-  // skipDuplicates — idempotent (the @@unique compound key dedups on re-run)
-  // and one round-trip (97 sequential upserts blew the test hook timeout).
-  const data = (
-    Object.keys(ROLE_PERMISSIONS) as (keyof typeof ROLE_PERMISSIONS)[]
-  ).flatMap((role) =>
-    ROLE_PERMISSIONS[role].map((grant) => {
-      const scopeType: RoleScopeType =
-        grant.scopeType === "department" ? "DEPARTMENT" : "ORG";
-      return { role, resource: grant.resource, action: grant.action, scopeType };
-    })
-  );
+  // Single createMany with skipDuplicates — idempotent (the @@unique compound
+  // key dedups on re-run) and one round-trip.
+  const data = rolePermissionRows();
   await db.rolePermission.createMany({ data, skipDuplicates: true });
   return data.length;
 }
