@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { requireOrgRole, ROLE_PERMISSIONS } from "@/lib/permissions";
 import type { ActionType, ResourceType } from "@/lib/permissions";
+import { GHOST_RESOURCES } from "@/lib/permissions/enforcement-map";
 import type { MemberRole } from "@prisma/client";
 import { PermissionsMatrix } from "@/components/organization/permissions-matrix";
 
@@ -71,6 +72,7 @@ export default async function PermissionsPage() {
       actions={[...ACTIONS]}
       roles={[...ROLES]}
       departmentRoles={DEPARTMENT_ROLES}
+      ghostResources={[...GHOST_RESOURCES]}
       grants={grants}
     />
   );

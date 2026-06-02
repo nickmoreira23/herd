@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("@/lib/permissions", () => ({ requireOrgRole: vi.fn() }));
+vi.mock("@/lib/permissions", () => ({ requireOrgRole: vi.fn(), enforceRoute: vi.fn((_s, _p, ctx) => ctx.current) }));
 vi.mock("@/lib/prisma", () => ({ prisma: { department: { findFirst: vi.fn(), create: vi.fn() } } }));
 vi.mock("@/lib/audit/write-audit-log", () => ({ writeAuditLog: vi.fn() }));
 vi.mock("@/lib/org-hierarchy", async (importActual) => {

@@ -1,4 +1,5 @@
 import { requireOrgRole } from "@/lib/permissions/require-org-role";
+import { enforceRoute } from "@/lib/permissions";
 import { apiError } from "@/lib/api-utils";
 import { revokeInvitation } from "@/lib/invitations/invitation-service";
 import { prisma } from "@/lib/prisma";
@@ -14,6 +15,13 @@ export async function POST(
 ) {
   const session = await requireOrgRole(["OWNER", "ADMIN"]);
   if (session instanceof Response) return session;
+
+  const enforced = await enforceRoute(
+    session,
+    { resource: "members", action: "invite" },
+    { current: session, organizationId: session.user.activeOrgId ?? "", routeId: "POST /api/org/invitations/[token]/revoke" }
+  );
+  if (enforced instanceof Response) return enforced;
 
   const { token } = await params;
 

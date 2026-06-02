@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-utils";
-import { requireOrgRole } from "@/lib/permissions";
+import { requireOrgRole, enforceRoute } from "@/lib/permissions";
 import { withTenant } from "@/lib/tenancy/context";
 import { writeAuditLog } from "@/lib/audit/write-audit-log";
 
@@ -13,6 +13,13 @@ export async function POST(
   const session = sessionOrResponse;
 
   const { id } = await params;
+  const enforced = await enforceRoute(
+    session,
+    { resource: "departments", action: "update", scopeType: "department", scopeId: id },
+    { current: session, organizationId: session.user.activeOrgId ?? "", routeId: "POST /api/departments/[id]/members" }
+  );
+  if (enforced instanceof Response) return enforced;
+
   return withTenant(session.user.activeOrgId ?? "", async () => {
     try {
       const body = await request.json();
@@ -58,6 +65,13 @@ export async function DELETE(
   const session = sessionOrResponse;
 
   const { id } = await params;
+  const enforced = await enforceRoute(
+    session,
+    { resource: "departments", action: "update", scopeType: "department", scopeId: id },
+    { current: session, organizationId: session.user.activeOrgId ?? "", routeId: "DELETE /api/departments/[id]/members" }
+  );
+  if (enforced instanceof Response) return enforced;
+
   return withTenant(session.user.activeOrgId ?? "", async () => {
     try {
       const body = await request.json();

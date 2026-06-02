@@ -1356,37 +1356,46 @@ o orphan recovery) revela que o endpoint mistura concerns.
 **Observação (não débito formal):** considerar split em sub-rotas se
 passar de 5 responsabilidades.
 
-## Roles & Permissions (Fase 4 — Opção A)
+## Roles & Permissions (V1 + V2 — Opção A)
 
-A feature de Roles & Permissions (Handbook: `herd.tool.identity.roles-permissions`)
-foi entregue como **V1 Opção A**: matriz read-only + atribuição do papel ORG por
-membro. O enforcement é **coarse** (por nome de papel via `requireOrgRole`); a
-matriz `ROLE_PERMISSIONS` é o modelo declarado, não um gate vivo. Débitos
-conscientes, cada um com trigger:
+Feature entregue (Handbook: `herd.tool.identity.roles-permissions`):
+- **V1:** matriz read-only + atribuição do papel ORG por membro (página Members).
+- **V2:** contrato `ENFORCEMENT_MAP` (27 call-sites → resource×action), infra
+  `enforce()`/`enforceRoute()` atrás da flag `CAN_ENFORCEMENT` (default `off`),
+  adoção shadow nos 25 call-sites roteados, e observação completa (100%
+  `agree:true`). O enforcement está **armado mas inativo** — a autorização real
+  continua sendo o `requireOrgRole` (coarse, por nome de papel). O `can()` só
+  passa a ter efeito quando a matriz divergir dos gates (V3).
 
-- **Ligar `can()` nas rotas / enforcement fino (Stream B).** `can()` +
-  `ROLE_PERMISSIONS` (resource×action) existem e têm testes, mas zero call-sites
-  de produção — toda autorização é por nome de papel. **Trigger:** necessidade de
-  permissão granular além do papel (ex: "ADMIN pode editar departamentos mas não
-  billing" exigir checagem por recurso, não só por papel).
-- **Tabela `RolePermission` DB-driven / matriz editável (Stream C).**
-  `ROLE_PERMISSIONS` é hardcoded em código (server-only). **Trigger:** cliente
-  pedir custom roles ou edição da matriz pela UI. Migração: criar tabela
-  `RolePermission`, trocar o lookup em `can.ts`, tornar a página Permissions
-  editável.
-- **Atribuição DEPARTMENT-scoped.** Os papéis `DEPARTMENT_HEAD/MANAGER/MEMBER`
-  existem no enum e na matriz mas nenhum call-site de `requireOrgRole` os usa, e a
-  UI/endpoint de atribuição só mexe no papel ORG. **Trigger:** papéis
-  departamentais precisarem gatekeepar de fato (`scopeId` apontando um dept).
-- **Race condition no role-change.** `PATCH /api/org/members/[memberId]/role` lê
-  `countActiveOwners` e depois faz o update em dois passos; sob alta concorrência
-  duas reduções simultâneas poderiam zerar owners. **Trigger:** evidência de org
-  com zero owners em prod. Fix: contagem + update numa transação com lock.
-- **`tenant_id` em `OrganizationMember`/`MembershipRole`.** Hoje escopados por
-  `organization_id` FK (RLS permissive), com isolamento **manual** no handler
-  (`assertMemberBelongsToOrg`). **Trigger:** consolidar isolamento automático via
-  tenancy Extension/RLS — exige migration (add `tenant_id` + backfill + entrada em
+Débitos conscientes, cada um com trigger:
+
+- **Flipar `CAN_ENFORCEMENT=enforce`.** Hoje default `off` (inerte). **Trigger:**
+  início do V3 (editor pronto) — antes disso o flip não muda nada (matriz espelha
+  os gates).
+- **Migrar `ROLE_PERMISSIONS` → tabela `RolePermission` DB-driven.** Hoje hardcoded
+  server-only. **Trigger:** V3.
+- **Editor da matriz** (switch por célula + endpoint `PATCH` de grants). **Trigger:**
+  V3 — é o que dá à matriz o poder de divergir dos gates e tornar o `can()` útil.
+- **Criar rotas para os 6 recursos-fantasma** (`org_billing`, `org_settings`,
+  `audit_log`, `integrations`, `blocks_schema`, `blocks_data`) — declarados na
+  matriz, sem rota `requireOrgRole`. **Trigger:** cada recurso quando virar
+  funcionalidade real com superfície org-scoped (`integrations` hoje é
+  `requireSuperAdmin`, nível plataforma).
+- **`can()` async.** Hoje sync (lê matriz hardcoded). **Trigger:** junto da migração
+  DB (V3) — exige tornar `enforce()`/`enforceRoute()` async-aware nos 28 call-sites
+  de teste.
+- **Per-org override da matriz.** **Trigger:** cliente pedir papéis com grants
+  diferentes por organização (exige `RolePermission` com `organizationId` +
   `TENANT_SCOPED_MODELS`).
+- **Custom roles (`Role` table, sair do enum `MemberRole`).** **Trigger:** cliente
+  precisar de papel além dos 6 fixos. Blast radius: ~29 usos do enum + 3 UIs + Zod.
+- **Race condition no role-change.** `PATCH /api/org/members/[memberId]/role` lê
+  `countActiveOwners` e atualiza em dois passos. **Trigger:** evidência de org com
+  zero owners em prod. Fix: contagem + update numa transação com lock.
+- **`tenant_id` em `OrganizationMember`/`MembershipRole`.** Hoje escopados por
+  `organization_id` FK (RLS permissive), isolamento **manual** no handler
+  (`assertMemberBelongsToOrg`). **Trigger:** consolidar isolamento automático via
+  tenancy Extension/RLS — migration (add `tenant_id` + backfill + `TENANT_SCOPED_MODELS`).
 
 # Camada 1 — Retomada Sub-etapa 10 (API Key path)
 

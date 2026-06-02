@@ -1386,12 +1386,15 @@ export const messages: Record<MessageKey, string> = {
   "organization.permissions.subtitle":
     "What each role grants in the permission model.",
   "organization.permissions.honest_banner":
-    "This matrix shows what each role grants in the permission model. Today, authorization is enforced by role name — a member who holds a role passes the gate. The fine-grained resource × action enforcement shown below is rolled out incrementally.",
+    "This matrix shows what each role grants in the permission model. Today, authorization is enforced by role name — a member who holds a role passes the gate. The resource × action model below has been observed to agree with that enforcement and is armed (shadow-tested), but not yet active; active enforcement arrives with the matrix editor. Resources marked “model — no surface” have no route yet.",
   "organization.permissions.resource_header": "Resource",
   "organization.permissions.action_header": "Action",
   "organization.permissions.inert_badge": "Defined — incremental enforcement",
   "organization.permissions.inert_legend":
     "Department-scoped roles are defined in the model but are not yet used as access gates. Enforcement is incremental.",
+  "organization.permissions.ghost_badge": "Model — no surface",
+  "organization.permissions.ghost_legend":
+    "Resources marked “Model — no surface” are declared in the permission model but have no route to enforce against yet; they will enforce once built.",
   "organization.permissions.role.OWNER": "Owner",
   "organization.permissions.role.ADMIN": "Admin",
   "organization.permissions.role.MEMBER": "Member",

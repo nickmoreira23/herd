@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-utils";
-import { requireOrgRole } from "@/lib/permissions";
+import { requireOrgRole, enforceRoute } from "@/lib/permissions";
 import { withTenant } from "@/lib/tenancy/context";
 import { writeAuditLog } from "@/lib/audit/write-audit-log";
 
@@ -11,6 +11,13 @@ export async function GET(
   const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN", "MEMBER"]);
   if (sessionOrResponse instanceof Response) return sessionOrResponse;
   const session = sessionOrResponse;
+
+  const enforced = await enforceRoute(
+    session,
+    { resource: "departments", action: "read" },
+    { current: session, organizationId: session.user.activeOrgId ?? "", routeId: "GET /api/departments/[id]" }
+  );
+  if (enforced instanceof Response) return enforced;
 
   const { id } = await params;
   return withTenant(session.user.activeOrgId ?? "", async () => {
@@ -56,6 +63,13 @@ export async function PATCH(
   const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN"]);
   if (sessionOrResponse instanceof Response) return sessionOrResponse;
   const session = sessionOrResponse;
+
+  const enforced = await enforceRoute(
+    session,
+    { resource: "departments", action: "update" },
+    { current: session, organizationId: session.user.activeOrgId ?? "", routeId: "PATCH /api/departments/[id]" }
+  );
+  if (enforced instanceof Response) return enforced;
 
   const { id } = await params;
   return withTenant(session.user.activeOrgId ?? "", async () => {
@@ -110,6 +124,13 @@ export async function DELETE(
   const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN"]);
   if (sessionOrResponse instanceof Response) return sessionOrResponse;
   const session = sessionOrResponse;
+
+  const enforced = await enforceRoute(
+    session,
+    { resource: "departments", action: "delete" },
+    { current: session, organizationId: session.user.activeOrgId ?? "", routeId: "DELETE /api/departments/[id]" }
+  );
+  if (enforced instanceof Response) return enforced;
 
   const { id } = await params;
   return withTenant(session.user.activeOrgId ?? "", async () => {

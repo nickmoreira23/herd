@@ -104,6 +104,41 @@ atualizado em dois passos; sob alta concorrência, duas reduções simultâneas
 poderiam, em tese, derrubar a org abaixo de um owner. Iniciada por admin e rara
 — rastreada como tech debt.
 
+**Infra de enforcement (V2 — armada, não ativa).** `enforce()` (sync, pura)
+envolve o `can()` atrás da flag tri-estado `CAN_ENFORCEMENT` (default `off` |
+`shadow` | `enforce`); `enforceRoute()` é o adaptador async de rota que resolve o
+ator de forma lazy, então `off` tem custo zero (sem `getActor`, sem `can()`). Os
+**25** call-sites org-scoped dos 5 recursos roteados chamam `enforceRoute()` logo
+após o `requireOrgRole`, com o par `(resource, action[, scope])` vindo do
+`ENFORCEMENT_MAP` (`src/lib/permissions/enforcement-map.ts`). É **off por default
+— sem mudança de comportamento**; o `requireOrgRole` continua sendo o gate real.
+
+```mermaid
+flowchart TD
+    A[enforceRoute, após requireOrgRole] --> M{CAN_ENFORCEMENT}
+    M -- off --> P[retorna current — can nunca roda]
+    M -- shadow --> S[roda can, loga agree vs requireOrgRole, retorna current]
+    M -- enforce --> E{can permite?}
+    E -- sim --> P2[segue]
+    E -- não --> D[403]
+```
+
+**Observado, ainda não enforçando (V2.3.5).** A observação shadow nos 25
+call-sites deu **100% `agree:true`** — o `can()` nunca discorda do
+`requireOrgRole`, porque `ROLE_PERMISSIONS` espelha os gates por nome de papel
+(todo membro em `allowedRoles` tem o grant). Logo, flipar pra `enforce` é
+**seguro porém inerte** hoje; o `can()` só muda comportamento quando a matriz
+puder divergir dos gates (o editor — V3). Rode com
+`CAN_ENFORCEMENT=shadow npm run test:integration -- --disable-console-intercept`
+(o vitest engole console em testes que passam sem a flag).
+
+**Roteados vs fantasma.** Dos 11 recursos do modelo, **5** têm rota
+`requireOrgRole` (`org`, `org_hierarchy`, `members`, `departments`, `locations`)
+— onde o `can()` enforçaria. Os outros **6** (`org_billing`, `org_settings`,
+`audit_log`, `integrations`, `blocks_schema`, `blocks_data`) não têm rota: modelo
+declarado só, com badge "modelo — sem superfície" na matriz. `integrations` é
+gateado por `requireSuperAdmin` (nível plataforma), fora do escopo do `can()` org.
+
 ## Operations
 
 **Atribuir ou trocar papel:** vá em `/admin/organization/members` e use o seletor
@@ -141,6 +176,9 @@ contagem de owner / isolamento cross-org se comportam em dados semeados.
 - **Matriz de permissões**: O mapa hardcoded `ROLE_PERMISSIONS` de papel → grants recurso×ação; o modelo de acesso declarado.
 - **super admin**: Um ator de nível plataforma (`isSuperAdmin`) que bypassa as checagens de permissão da org, mas nunca a invariante de ≥1 owner.
 - **Invariante ≥1 owner**: A regra de que uma organização precisa sempre manter ao menos um owner ativo.
+- **`CAN_ENFORCEMENT`**: Flag tri-estado (`off`/`shadow`/`enforce`) que gateia a camada de enforcement do `can()`; default `off`.
+- **Shadow mode**: O `can()` roda ao lado do `requireOrgRole` e loga concordância/divergência (`[can-shadow]`) sem nunca alterar o resultado.
+- **Recurso fantasma**: Recurso declarado em `ROLE_PERMISSIONS` sem rota `requireOrgRole` onde enforçar; só modelo ("modelo — sem superfície").
 
 ## Changelog
 

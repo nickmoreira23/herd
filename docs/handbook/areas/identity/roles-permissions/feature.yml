@@ -13,7 +13,7 @@ description:
 status: active
 owners: ["@nick"]
 since: 2026-06-01
-updated: 2026-06-01
+updated: 2026-06-02
 
 parent: herd.category.areas.identity
 children: []
@@ -30,6 +30,9 @@ source_paths:
   - "src/components/organization/permissions-matrix.tsx"
   - "src/app/api/org/members"
   - "src/app/admin/organization/members"
+  - "src/lib/permissions/enforce.ts"
+  - "src/lib/permissions/enforcement-map.ts"
+  - "docs/permissions/enforcement-map.md"
 
 admin_paths:
   - "/admin/organization/permissions"

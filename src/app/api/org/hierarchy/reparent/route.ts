@@ -1,4 +1,4 @@
-import { requireOrgRole } from "@/lib/permissions";
+import { requireOrgRole, enforceRoute } from "@/lib/permissions";
 import { apiSuccess, apiError } from "@/lib/api-utils";
 import { prisma } from "@/lib/prisma";
 import { assertNoCycle, OrgCycleError } from "@/lib/org-hierarchy";
@@ -16,6 +16,13 @@ import { assertNoCycle, OrgCycleError } from "@/lib/org-hierarchy";
 export async function PATCH(request: Request) {
   const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN"]);
   if (sessionOrResponse instanceof Response) return sessionOrResponse;
+
+  const enforced = await enforceRoute(
+    sessionOrResponse,
+    { resource: "org_hierarchy", action: "update" },
+    { current: sessionOrResponse, organizationId: sessionOrResponse.user.activeOrgId ?? "", routeId: "PATCH /api/org/hierarchy/reparent" }
+  );
+  if (enforced instanceof Response) return enforced;
 
   const body = (await request.json().catch(() => null)) as {
     orgId?: unknown;

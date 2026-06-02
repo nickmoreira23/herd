@@ -28,3 +28,31 @@ export type FeatureFlag = keyof typeof FEATURE_FLAGS;
 export function isFeatureEnabled(flag: FeatureFlag): boolean {
   return FEATURE_FLAGS[flag];
 }
+
+/**
+ * `can()`-based enforcement rollout switch (Roles & Permissions V2).
+ *
+ * Tri-state — `envFlag` above is boolean-only, so this is read here as a small
+ * localized union instead of forcing it into the boolean registry:
+ *   - `off`     (default) — `enforce()` is a no-op; `can()` never runs. Zero
+ *                           behavior change. This is the merged-state default.
+ *   - `shadow`  — `enforce()` runs `can()`, logs agreement/divergence vs
+ *                 `requireOrgRole`, but NEVER changes the result.
+ *   - `enforce` — `can()` denials tighten the gate (403) on top of
+ *                 `requireOrgRole` (defense-in-depth).
+ *
+ * Read at call time (not module load) so per-request / per-test env changes
+ * take effect. Set via `CAN_ENFORCEMENT=shadow|enforce`.
+ */
+export type CanEnforcementMode = "off" | "shadow" | "enforce";
+
+export function getCanEnforcementMode(): CanEnforcementMode {
+  const raw = (
+    typeof process !== "undefined" ? process.env?.CAN_ENFORCEMENT : undefined
+  )
+    ?.trim()
+    .toLowerCase();
+  if (raw === "shadow") return "shadow";
+  if (raw === "enforce") return "enforce";
+  return "off";
+}

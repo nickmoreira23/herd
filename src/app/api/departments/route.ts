@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-utils";
-import { requireOrgRole } from "@/lib/permissions";
+import { requireOrgRole, enforceRoute } from "@/lib/permissions";
 import { withTenant } from "@/lib/tenancy/context";
 import { writeAuditLog } from "@/lib/audit/write-audit-log";
 
@@ -8,6 +8,13 @@ export async function GET() {
   const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN", "MEMBER"]);
   if (sessionOrResponse instanceof Response) return sessionOrResponse;
   const session = sessionOrResponse;
+
+  const enforced = await enforceRoute(
+    session,
+    { resource: "departments", action: "read" },
+    { current: session, organizationId: session.user.activeOrgId ?? "", routeId: "GET /api/departments" }
+  );
+  if (enforced instanceof Response) return enforced;
 
   return withTenant(session.user.activeOrgId ?? "", async () => {
     const departments = await prisma.department.findMany({
@@ -27,6 +34,13 @@ export async function POST(request: Request) {
   const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN"]);
   if (sessionOrResponse instanceof Response) return sessionOrResponse;
   const session = sessionOrResponse;
+
+  const enforced = await enforceRoute(
+    session,
+    { resource: "departments", action: "create" },
+    { current: session, organizationId: session.user.activeOrgId ?? "", routeId: "POST /api/departments" }
+  );
+  if (enforced instanceof Response) return enforced;
 
   return withTenant(session.user.activeOrgId ?? "", async () => {
     try {

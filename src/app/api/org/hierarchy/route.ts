@@ -1,4 +1,4 @@
-import { requireOrgRole } from "@/lib/permissions";
+import { requireOrgRole, enforceRoute } from "@/lib/permissions";
 import { apiSuccess, apiError } from "@/lib/api-utils";
 import { getDescendants } from "@/lib/org-hierarchy";
 
@@ -13,6 +13,13 @@ export async function GET() {
   const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN", "MEMBER"]);
   if (sessionOrResponse instanceof Response) return sessionOrResponse;
   const session = sessionOrResponse;
+
+  const enforced = await enforceRoute(
+    session,
+    { resource: "org_hierarchy", action: "read" },
+    { current: session, organizationId: session.user.activeOrgId ?? "", routeId: "GET /api/org/hierarchy" }
+  );
+  if (enforced instanceof Response) return enforced;
 
   const orgId = session.user.activeOrgId;
   if (!orgId) return apiError("No active organization", 400);
