@@ -2,7 +2,7 @@
 
 > **Propósito:** Este arquivo é o estado canônico cross-session do trabalho de chat-architect em curso. Atualizado ao final de cada sub-etapa Fase 4. Qualquer nova sessão Claude.ai (chat-architect) deve ler este arquivo PRIMEIRO antes de propor qualquer trabalho.
 >
-> **Versão:** v1.9 (atualizado 2026-06-02, auto-migrate: #122 deploy FALHOU em PROD + revertido #123; re-fix slim+binstub em worktree isolada, gate local verde 2 arches — causa real do #122 ainda incógnita (dashboard); migrations seguem manuais até deploy de prova passar)
+> **Versão:** v1.10 (atualizado 2026-06-02, auto-migrate: build de prova INSTRUMENTADO — predeploy.sh versionado com marcos timestamped + tcp-check + exit $rc; gate local verde 2 arches; captura de stdout confirmada via `railway logs -d`; PENDENTE OK do Nick pro deploy de prova; migrations seguem manuais até a fase pre-deploy confirmar em PROD)
 >
 > **Próxima atualização esperada:** pós-merge da Fatia 1 (Locations piloto) do ADR-002.
 
@@ -380,6 +380,21 @@ Aguardando discovery antecipada antes da spec (regra cravada da skill).
   (invocação), então o motivo real do #122 ainda é incógnito; (2) deploy de prova em PROD, só com OK
   do Nick.** **O aviso "manual" acima permanece** até o deploy de prova confirmar a fase pre-deploy
   rodando + aplicando em PROD.
+
+  **Build de prova INSTRUMENTADO (v1.10).** Como o gate local NÃO reproduz a falha de 14s-sem-output
+  do #122 (path/binário/env-ausente todos descartados — env-ausente falha loud em 1s, não 14s) e os
+  Deploy Logs do `d47c70ca` no dashboard vieram vazios ("No logs in this time range" = artefato do
+  filtro de janela), o caminho de medição é um **deploy instrumentado**. O `preDeployCommand` virou
+  `sh /app/migrate-tools/predeploy.sh` (script versionado em `migrate-tools/predeploy.sh`, COPY +
+  `chmod +x` no stage `migrate-tools`). O script cospe marcos **com timestamp** (`date -Iseconds`):
+  `start → cd ok → DIRECT_URL set:yes → tcp ok/FAIL/TIMEOUT → migrate deploy → done=N`, com **`exit
+  $rc`** propagando o resultado do migrate (preserva o abort-on-failure — falha = PROD intacto). Marco
+  decisivo: se morrer no `tcp TIMEOUT` (~10s) → **egress de rede do container de pre-deploy bloqueado**
+  (casa com os 14s do #122); se passar o TCP e morrer no migrate → erro do prisma fica no log.
+  Captura de stdout **confirmada empiricamente**: `railway logs -d <deployment_id> --lines 300` puxa
+  deploy logs históricos (independe do filtro do dashboard). Gate local verde nos 2 arches (build +
+  boot-test + predeploy.sh in-image: COM env → marcos + `done=0`/exit 0; SEM env → marcos + guard +
+  `done=1`/exit 1). **Pendente: OK explícito do Nick pro merge + deploy de prova; ler os marcos via CLI.**
 - **[ALTA-SEGURANÇA] Camada 2 de auth `/api`.** O gate do #111 é **presence-based**
   (`isLoggedIn = !!cookie`) — **NÃO valida o JWT** → um cookie forjado passa. Falta:
   (a) validar o JWT no proxy, **e** (b) **scoping por-tenant nos handlers** (cross-tenant
