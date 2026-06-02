@@ -10,9 +10,15 @@ uid: herd.meta.glossary
 
 Glossário global agregado a partir das seções `## Glossary` de todas as entries do Handbook. Gerado automaticamente por `npm run gen:glossary`.
 
-**Última atualização:** 2026-06-01
+**Última atualização:** 2026-06-02
 
 <!-- BEGIN_GENERATED_GLOSSARY -->
+
+### `CAN_ENFORCEMENT`
+
+**From [Papéis e Permissões](/admin/handbook/areas/identity/roles-permissions):**
+
+Flag tri-estado (`off`/`shadow`/`enforce`) que gateia a camada de enforcement do `can()`; default `off`.
 
 ### 5-level hierarchy
 
@@ -850,6 +856,12 @@ instância concreta dentro de um block — o que o usuário cria/edita/lê.
 
 instância concreta dentro de um block — o registro que o usuário vê em tela.
 
+### Recurso fantasma
+
+**From [Papéis e Permissões](/admin/handbook/areas/identity/roles-permissions):**
+
+Recurso declarado em `ROLE_PERMISSIONS` sem rota `requireOrgRole` onde enforçar; só modelo ("modelo — sem superfície").
+
 ### Registry
 
 **From [Pattern: Tool](/admin/handbook/meta/pattern-tool-level):**
@@ -921,6 +933,12 @@ agrupamento configurável de items dentro do storefront.
 **From [Pattern: Naming Convention](/admin/handbook/meta/pattern-naming-convention):**
 
 princípio de diferenciação entre termos similares via contexto (ex: Profile tool singular vs profile-types block plural).
+
+### Shadow mode
+
+**From [Papéis e Permissões](/admin/handbook/areas/identity/roles-permissions):**
+
+O `can()` roda ao lado do `requireOrgRole` e loga concordância/divergência (`[can-shadow]`) sem nunca alterar o resultado.
 
 ### Single source of truth
 

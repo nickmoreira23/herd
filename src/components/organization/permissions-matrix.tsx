@@ -10,6 +10,8 @@ interface PermissionsMatrixProps {
   roles: string[];
   /** Roles defined in the model but not yet used as access gates. */
   departmentRoles: string[];
+  /** Resources declared in the model with no route to enforce against yet. */
+  ghostResources: string[];
   /** role → ["resource:action", ...] grant keys (serialized server-side). */
   grants: Record<string, string[]>;
 }
@@ -19,10 +21,12 @@ export function PermissionsMatrix({
   actions,
   roles,
   departmentRoles,
+  ghostResources,
   grants,
 }: PermissionsMatrixProps) {
   const t = useT();
   const inertRoles = new Set(departmentRoles);
+  const ghostSet = new Set(ghostResources);
 
   // Dynamic i18n keys — every value is enumerated in the dictionaries; the cast
   // mirrors the sub-panel registry pattern (labelKey kept loose, cast at lookup).
@@ -93,9 +97,18 @@ export function PermissionsMatrix({
                   {actionIndex === 0 && (
                     <td
                       rowSpan={actions.length}
-                      className="px-4 py-3 align-top font-medium text-gray-900 border-r border-gray-100"
+                      className="px-4 py-3 align-top border-r border-gray-100"
                     >
-                      {resourceLabel(resource)}
+                      <div className="flex flex-col gap-1">
+                        <span className="font-medium text-gray-900">
+                          {resourceLabel(resource)}
+                        </span>
+                        {ghostSet.has(resource) && (
+                          <span className="self-start rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-normal text-slate-500">
+                            {t("organization.permissions.ghost_badge")}
+                          </span>
+                        )}
+                      </div>
                     </td>
                   )}
                   <td className="px-4 py-2 text-gray-500">
@@ -125,9 +138,14 @@ export function PermissionsMatrix({
         </table>
       </div>
 
-      <p className="text-xs text-gray-400">
-        {t("organization.permissions.inert_legend")}
-      </p>
+      <div className="space-y-1">
+        <p className="text-xs text-gray-400">
+          {t("organization.permissions.inert_legend")}
+        </p>
+        <p className="text-xs text-gray-400">
+          {t("organization.permissions.ghost_legend")}
+        </p>
+      </div>
     </div>
   );
 }

@@ -1411,12 +1411,15 @@ export const messages = {
   "organization.permissions.subtitle":
     "O que cada papel concede no modelo de permissões.",
   "organization.permissions.honest_banner":
-    "Esta matriz mostra o que cada papel concede no modelo de permissões. Hoje a autorização é aplicada por nome de papel — um membro que detém o papel passa no gate. O enforcement fino por recurso × ação mostrado abaixo é incremental.",
+    "Esta matriz mostra o que cada papel concede no modelo de permissões. Hoje a autorização é aplicada por nome de papel — um membro que detém o papel passa no gate. O modelo recurso × ação abaixo foi observado e concorda com esse enforcement; está armado (testado em shadow) mas ainda não ativo — o enforcement ativo chega com o editor da matriz. Recursos marcados “modelo — sem superfície” ainda não têm rota.",
   "organization.permissions.resource_header": "Recurso",
   "organization.permissions.action_header": "Ação",
   "organization.permissions.inert_badge": "Definido — enforcement incremental",
   "organization.permissions.inert_legend":
     "Papéis com escopo de departamento estão definidos no modelo mas ainda não são usados como gates de acesso. O enforcement é incremental.",
+  "organization.permissions.ghost_badge": "Modelo — sem superfície",
+  "organization.permissions.ghost_legend":
+    "Recursos marcados “modelo — sem superfície” estão declarados no modelo de permissões mas ainda não têm rota onde enforçar; vão enforçar quando forem construídos.",
   "organization.permissions.role.OWNER": "Proprietário",
   "organization.permissions.role.ADMIN": "Administrador",
   "organization.permissions.role.MEMBER": "Membro",

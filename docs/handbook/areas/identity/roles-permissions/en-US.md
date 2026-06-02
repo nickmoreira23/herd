@@ -100,6 +100,42 @@ flowchart TD
 in two steps; under high concurrency two simultaneous demotions could in theory
 drop the org below one owner. Admin-initiated and rare — tracked as tech debt.
 
+**Enforcement infrastructure (V2 — armed, not active).** `enforce()` (sync,
+pure) wraps `can()` behind the tri-state `CAN_ENFORCEMENT` flag (default `off` |
+`shadow` | `enforce`); `enforceRoute()` is the async route adapter that resolves
+the actor lazily, so `off` is zero-cost (no `getActor`, no `can()`). All **25**
+org-scoped call-sites of the 5 routed resources call `enforceRoute()` right after
+`requireOrgRole`, with the `(resource, action[, scope])` pair from
+`ENFORCEMENT_MAP` (`src/lib/permissions/enforcement-map.ts`). It is **off by
+default — no runtime behavior change**; `requireOrgRole` remains the real gate.
+
+```mermaid
+flowchart TD
+    A[enforceRoute, after requireOrgRole] --> M{CAN_ENFORCEMENT}
+    M -- off --> P[return current — can never runs]
+    M -- shadow --> S[run can, log agree vs requireOrgRole, return current]
+    M -- enforce --> E{can allows?}
+    E -- yes --> P2[proceed]
+    E -- no --> D[403]
+```
+
+**Observed, not yet enforcing (V2.3.5).** Shadow observation across all 25
+call-sites returned **100% `agree:true`** — `can()` never disagrees with
+`requireOrgRole`, because `ROLE_PERMISSIONS` mirrors the role-name gates (every
+`allowedRoles` member holds the matching grant). So flipping to `enforce` is
+**safe but inert** today; `can()` only changes behavior once the matrix can
+diverge from the gates (the editor — V3). Run it with
+`CAN_ENFORCEMENT=shadow npm run test:integration -- --disable-console-intercept`
+(vitest swallows console on passing tests without the flag).
+
+**Routed vs ghost resources.** Of the 11 model resources, **5** have
+`requireOrgRole` routes (`org`, `org_hierarchy`, `members`, `departments`,
+`locations`) — where `can()` would enforce. The other **6** (`org_billing`,
+`org_settings`, `audit_log`, `integrations`, `blocks_schema`, `blocks_data`)
+have no route: declared model only, badged "model — no surface" in the matrix.
+`integrations` is gated by `requireSuperAdmin` (platform-level), out of scope for
+org `can()`.
+
 ## Operations
 
 **Assign or change a role:** go to `/admin/organization/members`, use the role
@@ -137,7 +173,11 @@ cross-org isolation helpers behave on seeded data.
 - **Permission matrix**: The hardcoded `ROLE_PERMISSIONS` map of role → resource×action grants; the declared access model.
 - **super admin**: A platform-level actor (`isSuperAdmin`) that bypasses org permission checks but never the ≥1-owner invariant.
 - **≥1-owner invariant**: The rule that an organization must always keep at least one active owner.
+- **`CAN_ENFORCEMENT`**: Tri-state flag (`off`/`shadow`/`enforce`) gating the `can()` enforcement layer; default `off`.
+- **Shadow mode**: `can()` runs alongside `requireOrgRole` and logs agreement/divergence (`[can-shadow]`) without ever changing the result.
+- **Ghost resource**: A resource declared in `ROLE_PERMISSIONS` with no `requireOrgRole` route to enforce against; model-only ("model — no surface").
 
 ## Changelog
 
 - **2026-06-01** — v1.0. Initial release: read-only permission matrix, inline ORG-role editing on the Members page, `PATCH /api/org/members/[memberId]/role` with OWNER-only fine rule, ≥1-owner invariant, manual org isolation, and audit logging. Enforcement is coarse (by role name); the matrix is a declared model.
+- **2026-06-02** — v1.1 (V2 closeout). Added the `can()` enforcement infrastructure: `ENFORCEMENT_MAP` contract (27 call-sites → resource×action), `enforce()`/`enforceRoute()` behind the `CAN_ENFORCEMENT` flag (default off), and shadow adoption across all 25 routed call-sites. Full shadow observation: 100% `agree:true`. Matrix UI now badges the 6 ghost resources "model — no surface". Enforcement remains **armed but inactive** — the flip + matrix editor are V3.
