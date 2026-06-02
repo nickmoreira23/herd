@@ -64,6 +64,10 @@ export default async function MembersPage() {
     viewer.isSuperAdmin === true ||
     viewerOrgRole === "OWNER" ||
     viewerOrgRole === "ADMIN";
+  // Mirrors the API's fine rule: only an owner (or super_admin) may promote to
+  // OWNER or alter an existing OWNER. Derived from the already-resolved viewer.
+  const canManageOwners =
+    viewer.isSuperAdmin === true || viewerOrgRole === "OWNER";
 
   return (
     <MembersClient
@@ -71,6 +75,7 @@ export default async function MembersPage() {
       pendingInvitations={pendingInvitations}
       organizationId={orgId}
       canManage={canManage}
+      canManageOwners={canManageOwners}
     />
   );
 }

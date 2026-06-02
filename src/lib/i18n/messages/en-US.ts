@@ -4509,6 +4509,16 @@ export const messages: Record<MessageKey, string> = {
   "organization.members.role_member": "Member",
   "organization.members.role_admin": "Admin",
   "organization.members.role_owner": "Owner",
+  "organization.members.role_updated": "Role updated.",
+  "organization.members.role_update_error": "Could not update role. Please try again.",
+  "organization.members.last_owner_error":
+    "The organization must keep at least one owner.",
+  "organization.members.permission_error":
+    "You do not have permission to make this change.",
+  "organization.members.confirm_promote_owner":
+    "Promote this member to Owner? Owners have full control of the organization.",
+  "organization.members.confirm_demote_owner":
+    "Change this owner's role? They will lose owner privileges.",
   "organization.members.cancel": "Cancel",
   "organization.members.sending": "Sending...",
   "organization.members.send_invite": "Send invitation",

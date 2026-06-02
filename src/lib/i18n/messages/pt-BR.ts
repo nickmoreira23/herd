@@ -4575,6 +4575,17 @@ export const messages = {
   "organization.members.role_member": "Membro",
   "organization.members.role_admin": "Admin",
   "organization.members.role_owner": "Owner",
+  "organization.members.role_updated": "Papel atualizado.",
+  "organization.members.role_update_error":
+    "Não foi possível atualizar o papel. Tente novamente.",
+  "organization.members.last_owner_error":
+    "A organização precisa manter ao menos um owner.",
+  "organization.members.permission_error":
+    "Você não tem permissão para fazer esta alteração.",
+  "organization.members.confirm_promote_owner":
+    "Promover este membro a Owner? Owners têm controle total da organização.",
+  "organization.members.confirm_demote_owner":
+    "Alterar o papel deste owner? Ele perderá os privilégios de owner.",
   "organization.members.cancel": "Cancelar",
   "organization.members.sending": "Enviando...",
   "organization.members.send_invite": "Enviar convite",
