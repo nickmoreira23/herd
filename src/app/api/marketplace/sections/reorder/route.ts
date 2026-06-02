@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod/v4";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError, parseAndValidate } from "@/lib/api-utils";
+import { requireSuperAdmin } from "@/lib/auth/require-super-admin";
 
 const reorderSchema = z.object({
   orders: z
@@ -16,6 +17,9 @@ const reorderSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const sessionOrResponse = await requireSuperAdmin();
+  if (sessionOrResponse instanceof Response) return sessionOrResponse;
+
   try {
     const result = await parseAndValidate(request, reorderSchema);
     if ("error" in result) return result.error;
