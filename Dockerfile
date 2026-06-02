@@ -66,6 +66,16 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Isolated migration toolchain for the preDeployCommand (`migrate deploy`).
+# Lives entirely under /app/migrate-tools/ with its OWN node_modules — it NEVER
+# touches /app/node_modules or the .next/standalone tree, so it cannot corrupt
+# the app runtime (the #118 failure mode). The prisma CLI resolves its siblings
+# (@prisma/engines, @prisma/config, dotenv, …) from /app/migrate-tools/node_modules
+# via standard node resolution when invoked with cwd there.
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules /app/migrate-tools/node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/prisma /app/migrate-tools/prisma
+COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts /app/migrate-tools/prisma.config.ts
+
 RUN mkdir -p /app/public/uploads
 
 EXPOSE 3000
