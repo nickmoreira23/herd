@@ -1,0 +1,49 @@
+id: roles-permissions
+uid: herd.tool.identity.roles-permissions
+level: tool
+technical_category: tool
+
+title:
+  pt-BR: "Papéis e Permissões"
+  en-US: "Roles & Permissions"
+description:
+  pt-BR: "Governança de acesso da organização — a matriz papel×permissão (modelo declarado) e a atribuição do papel ORG de cada membro (OWNER/ADMIN/MEMBER). O enforcement hoje é por nome de papel."
+  en-US: "Organization access governance — the role×permission matrix (declared model) and assignment of each member's ORG role (OWNER/ADMIN/MEMBER). Enforcement today is by role name."
+
+status: active
+owners: ["@nick"]
+since: 2026-06-01
+updated: 2026-06-01
+
+parent: herd.category.areas.identity
+children: []
+consumes:
+  - herd.tool.infrastructure.audit-log
+consumed_by: []
+related:
+  - herd.tool.identity.organization
+  - herd.tool.identity.profile
+
+source_paths:
+  - "src/lib/permissions"
+  - "src/app/admin/organization/permissions"
+  - "src/components/organization/permissions-matrix.tsx"
+  - "src/app/api/org/members"
+  - "src/app/admin/organization/members"
+
+admin_paths:
+  - "/admin/organization/permissions"
+  - "/admin/organization/members"
+
+artifacts:
+  handbook: true
+  skill: false
+  mcp: false
+
+perspectives:
+  - business
+  - product
+  - architecture
+  - operations
+  - glossary
+  - changelog

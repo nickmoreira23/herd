@@ -1405,6 +1405,40 @@ export const messages = {
   "organization.subpanel.network_map": "Mapa de Rede",
   "organization.coming_soon": "Esta funcionalidade está em desenvolvimento.",
   "organization.subpanel.dashboard": "Painel",
+  "organization.subpanel.access_category": "Acesso",
+  "organization.subpanel.permissions": "Permissões",
+  "organization.permissions.title": "Permissões",
+  "organization.permissions.subtitle":
+    "O que cada papel concede no modelo de permissões.",
+  "organization.permissions.honest_banner":
+    "Esta matriz mostra o que cada papel concede no modelo de permissões. Hoje a autorização é aplicada por nome de papel — um membro que detém o papel passa no gate. O enforcement fino por recurso × ação mostrado abaixo é incremental.",
+  "organization.permissions.resource_header": "Recurso",
+  "organization.permissions.action_header": "Ação",
+  "organization.permissions.inert_badge": "Definido — enforcement incremental",
+  "organization.permissions.inert_legend":
+    "Papéis com escopo de departamento estão definidos no modelo mas ainda não são usados como gates de acesso. O enforcement é incremental.",
+  "organization.permissions.role.OWNER": "Proprietário",
+  "organization.permissions.role.ADMIN": "Administrador",
+  "organization.permissions.role.MEMBER": "Membro",
+  "organization.permissions.role.DEPARTMENT_HEAD": "Líder de Departamento",
+  "organization.permissions.role.DEPARTMENT_MANAGER": "Gerente de Departamento",
+  "organization.permissions.role.DEPARTMENT_MEMBER": "Membro de Departamento",
+  "organization.permissions.resource.org": "Organização",
+  "organization.permissions.resource.org_settings": "Configurações",
+  "organization.permissions.resource.org_billing": "Cobrança",
+  "organization.permissions.resource.org_hierarchy": "Hierarquia",
+  "organization.permissions.resource.members": "Membros",
+  "organization.permissions.resource.departments": "Departamentos",
+  "organization.permissions.resource.locations": "Localizações",
+  "organization.permissions.resource.audit_log": "Log de Auditoria",
+  "organization.permissions.resource.integrations": "Integrações",
+  "organization.permissions.resource.blocks_schema": "Schema de Blocks",
+  "organization.permissions.resource.blocks_data": "Dados de Blocks",
+  "organization.permissions.action.read": "Ler",
+  "organization.permissions.action.create": "Criar",
+  "organization.permissions.action.update": "Atualizar",
+  "organization.permissions.action.delete": "Excluir",
+  "organization.permissions.action.invite": "Convidar",
   "organization.dashboard.title": "Painel Consolidado",
   "organization.dashboard.description":
     "Visão agregada desta organização e de todas as sub-organizações.",
@@ -4541,6 +4575,17 @@ export const messages = {
   "organization.members.role_member": "Membro",
   "organization.members.role_admin": "Admin",
   "organization.members.role_owner": "Owner",
+  "organization.members.role_updated": "Papel atualizado.",
+  "organization.members.role_update_error":
+    "Não foi possível atualizar o papel. Tente novamente.",
+  "organization.members.last_owner_error":
+    "A organização precisa manter ao menos um owner.",
+  "organization.members.permission_error":
+    "Você não tem permissão para fazer esta alteração.",
+  "organization.members.confirm_promote_owner":
+    "Promover este membro a Owner? Owners têm controle total da organização.",
+  "organization.members.confirm_demote_owner":
+    "Alterar o papel deste owner? Ele perderá os privilégios de owner.",
   "organization.members.cancel": "Cancelar",
   "organization.members.sending": "Enviando...",
   "organization.members.send_invite": "Enviar convite",

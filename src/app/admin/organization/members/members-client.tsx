@@ -21,7 +21,9 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Mail, Trash2 } from "lucide-react";
 import { MemberRole } from "@prisma/client";
+import { useRouter } from "next/navigation";
 import { useT, useLocale } from "@/lib/i18n/locale-context";
+import { notifySuccess, notifyError } from "@/lib/i18n/notify";
 import { formatDate as formatDateI18n } from "@/lib/i18n/format-date";
 
 interface MemberRow {
@@ -51,15 +53,19 @@ interface MembersClientProps {
   pendingInvitations: InvitationRow[];
   organizationId: string;
   canManage: boolean;
+  canManageOwners: boolean;
 }
 
 export function MembersClient({
   members: initialMembers,
   pendingInvitations: initialInvitations,
   canManage,
+  canManageOwners,
 }: MembersClientProps) {
   const t = useT();
   const locale = useLocale();
+  const router = useRouter();
+  const [roleLoadingId, setRoleLoadingId] = useState<string | null>(null);
   const [invitations, setInvitations] = useState(initialInvitations);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -110,6 +116,46 @@ export function MembersClient({
       }
     } finally {
       setRevokeLoadingId(null);
+    }
+  }
+
+  async function handleRoleChange(
+    memberId: string,
+    from: string,
+    to: string
+  ) {
+    if (to === from) return; // no-op: don't hit the API
+
+    const involvesOwner = to === "OWNER" || from === "OWNER";
+    if (involvesOwner) {
+      const message =
+        to === "OWNER"
+          ? t("organization.members.confirm_promote_owner")
+          : t("organization.members.confirm_demote_owner");
+      if (!confirm(message)) return;
+    }
+
+    setRoleLoadingId(memberId);
+    try {
+      const res = await fetch(`/api/org/members/${memberId}/role`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: to }),
+      });
+      if (res.ok) {
+        notifySuccess("organization.members.role_updated", t);
+        router.refresh();
+      } else if (res.status === 409) {
+        notifyError("organization.members.last_owner_error", t);
+      } else if (res.status === 403) {
+        notifyError("organization.members.permission_error", t);
+      } else {
+        notifyError("organization.members.role_update_error", t);
+      }
+    } catch {
+      notifyError("organization.members.role_update_error", t);
+    } finally {
+      setRoleLoadingId(null);
     }
   }
 
@@ -168,6 +214,10 @@ export function MembersClient({
               ) : (
                 initialMembers.map((m) => {
                   const orgRole = m.roles.find((r) => r.scopeType === "ORG");
+                  const currentRole = orgRole?.role ?? "MEMBER";
+                  // ADMIN cannot touch an OWNER row (API enforces; UI mirrors).
+                  const ownerRowLocked =
+                    currentRole === "OWNER" && !canManageOwners;
                   return (
                     <tr key={m.id} className="bg-white hover:bg-gray-50">
                       <td className="px-4 py-3 font-medium text-gray-900">
@@ -177,7 +227,37 @@ export function MembersClient({
                         {m.networkProfile.email}
                       </td>
                       <td className="px-4 py-3 text-gray-500">
-                        {orgRole ? formatRole(orgRole.role) : "—"}
+                        {canManage ? (
+                          <Select
+                            value={currentRole}
+                            onValueChange={(v) =>
+                              handleRoleChange(m.id, currentRole, v)
+                            }
+                            disabled={ownerRowLocked || roleLoadingId === m.id}
+                          >
+                            <SelectTrigger className="h-8 w-36">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="MEMBER">
+                                {t("organization.members.role_member")}
+                              </SelectItem>
+                              <SelectItem value="ADMIN">
+                                {t("organization.members.role_admin")}
+                              </SelectItem>
+                              <SelectItem
+                                value="OWNER"
+                                disabled={!canManageOwners}
+                              >
+                                {t("organization.members.role_owner")}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : orgRole ? (
+                          formatRole(orgRole.role)
+                        ) : (
+                          "—"
+                        )}
                       </td>
                       <td className="px-4 py-3 text-gray-500">
                         {formatDate(m.joinedAt)}

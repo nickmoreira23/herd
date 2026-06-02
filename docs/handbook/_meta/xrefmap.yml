@@ -414,6 +414,13 @@ references:
     title:
       pt-BR: Profile
       en-US: Profile
+  herd.tool.identity.roles-permissions:
+    level: tool
+    id: roles-permissions
+    path: docs/handbook/areas/identity/roles-permissions
+    title:
+      pt-BR: Papéis e Permissões
+      en-US: Roles & Permissions
   herd.tool.infrastructure.audit-log:
     level: tool
     id: audit-log
