@@ -10,7 +10,7 @@ uid: herd.meta.glossary
 
 Glossário global agregado a partir das seções `## Glossary` de todas as entries do Handbook. Gerado automaticamente por `npm run gen:glossary`.
 
-**Última atualização:** 2026-05-29
+**Última atualização:** 2026-06-01
 
 <!-- BEGIN_GENERATED_GLOSSARY -->
 
@@ -294,6 +294,12 @@ termo polissêmico — em Organization significa channel institucional (canal or
 
 linha que divide uma cobrança composta entre as assinaturas que cobre (junction N:N).
 
+### Coarse gating
+
+**From [Papéis e Permissões](/admin/handbook/areas/identity/roles-permissions):**
+
+Autorização por nome de papel (`requireOrgRole`), em oposição a checagens finas de recurso×ação.
+
 ### Cobrança (Charge)
 
 **From [Cobranças](/admin/handbook/blocks/financial/charges):**
@@ -546,6 +552,12 @@ surface dentro da plataforma; requer sessão autenticada.
 
 surface dentro da plataforma (tab embedded, modal, inline component, cross-area embed).
 
+### Invariante ≥1 owner
+
+**From [Papéis e Permissões](/admin/handbook/areas/identity/roles-permissions):**
+
+A regra de que uma organização precisa sempre manter ao menos um owner ativo.
+
 ### Journal entry
 
 **From [Ledger](/admin/handbook/tools/financial/ledger):**
@@ -606,6 +618,12 @@ pattern UX para tools que gerenciam templates + instances via header sub-action 
 
 declaração TypeScript que descreve a tool — identidade, paths, capabilities, block family.
 
+### Matriz de permissões
+
+**From [Papéis e Permissões](/admin/handbook/areas/identity/roles-permissions):**
+
+O mapa hardcoded `ROLE_PERMISSIONS` de papel → grants recurso×ação; o modelo de acesso declarado.
+
 ### MCP
 
 **From [Servidor MCP](/admin/handbook/meta/mcp):**
@@ -617,6 +635,12 @@ Model Context Protocol — spec aberta que define como AI assistants consultam r
 **From [Modelo de Integrações](/admin/handbook/integrations/integration-model):**
 
 Registro por-perfil que armazena tokens OAuth para integrações que suportam conexões pessoais.
+
+### Membership
+
+**From [Papéis e Permissões](/admin/handbook/areas/identity/roles-permissions):**
+
+Uma linha `OrganizationMember` ligando um profile a uma organização; carrega os papéis do membro.
 
 ### Mini-spec
 
@@ -683,6 +707,24 @@ A tabela `domain_events` que guarda eventos entre emissão e entrega. Transacion
 **From [R3 — Packages Refinement](/admin/handbook/refactor/r3-packages-refinement):**
 
 instância vendável que compõe um ProductGroup + termos comerciais (contrato, billing). Tool em sales.
+
+### Papel (Role)
+
+**From [Papéis e Permissões](/admin/handbook/areas/identity/roles-permissions):**
+
+Um conjunto nomeado de acesso (`OWNER`, `ADMIN`, `MEMBER` e três variantes com escopo de departamento), modelado como o enum `MemberRole`.
+
+### Papel com escopo de departamento
+
+**From [Papéis e Permissões](/admin/handbook/areas/identity/roles-permissions):**
+
+Um papel ligado a um departamento via `scopeId` (`scopeType = DEPARTMENT`); definido no modelo mas ainda não usado como gate.
+
+### Papel com escopo ORG
+
+**From [Papéis e Permissões](/admin/handbook/areas/identity/roles-permissions):**
+
+Um papel que se aplica à organização inteira (`scopeType = ORG`); no V1 cada membro tem exatamente um.
 
 ### period
 
@@ -1009,6 +1051,12 @@ sistema de sufixos canônicos que codificam semântica de blocks (`-events`, `-s
 **From [Pattern: Block](/admin/handbook/meta/pattern-block-level):**
 
 tag no id do block que codifica semântica (`-events`, `-snapshots`, `-progress`, etc.).
+
+### super admin
+
+**From [Papéis e Permissões](/admin/handbook/areas/identity/roles-permissions):**
+
+Um ator de nível plataforma (`isSuperAdmin`) que bypassa as checagens de permissão da org, mas nunca a invariante de ≥1 owner.
 
 ### Surface
 

@@ -1356,6 +1356,38 @@ o orphan recovery) revela que o endpoint mistura concerns.
 **Observação (não débito formal):** considerar split em sub-rotas se
 passar de 5 responsabilidades.
 
+## Roles & Permissions (Fase 4 — Opção A)
+
+A feature de Roles & Permissions (Handbook: `herd.tool.identity.roles-permissions`)
+foi entregue como **V1 Opção A**: matriz read-only + atribuição do papel ORG por
+membro. O enforcement é **coarse** (por nome de papel via `requireOrgRole`); a
+matriz `ROLE_PERMISSIONS` é o modelo declarado, não um gate vivo. Débitos
+conscientes, cada um com trigger:
+
+- **Ligar `can()` nas rotas / enforcement fino (Stream B).** `can()` +
+  `ROLE_PERMISSIONS` (resource×action) existem e têm testes, mas zero call-sites
+  de produção — toda autorização é por nome de papel. **Trigger:** necessidade de
+  permissão granular além do papel (ex: "ADMIN pode editar departamentos mas não
+  billing" exigir checagem por recurso, não só por papel).
+- **Tabela `RolePermission` DB-driven / matriz editável (Stream C).**
+  `ROLE_PERMISSIONS` é hardcoded em código (server-only). **Trigger:** cliente
+  pedir custom roles ou edição da matriz pela UI. Migração: criar tabela
+  `RolePermission`, trocar o lookup em `can.ts`, tornar a página Permissions
+  editável.
+- **Atribuição DEPARTMENT-scoped.** Os papéis `DEPARTMENT_HEAD/MANAGER/MEMBER`
+  existem no enum e na matriz mas nenhum call-site de `requireOrgRole` os usa, e a
+  UI/endpoint de atribuição só mexe no papel ORG. **Trigger:** papéis
+  departamentais precisarem gatekeepar de fato (`scopeId` apontando um dept).
+- **Race condition no role-change.** `PATCH /api/org/members/[memberId]/role` lê
+  `countActiveOwners` e depois faz o update em dois passos; sob alta concorrência
+  duas reduções simultâneas poderiam zerar owners. **Trigger:** evidência de org
+  com zero owners em prod. Fix: contagem + update numa transação com lock.
+- **`tenant_id` em `OrganizationMember`/`MembershipRole`.** Hoje escopados por
+  `organization_id` FK (RLS permissive), com isolamento **manual** no handler
+  (`assertMemberBelongsToOrg`). **Trigger:** consolidar isolamento automático via
+  tenancy Extension/RLS — exige migration (add `tenant_id` + backfill + entrada em
+  `TENANT_SCOPED_MODELS`).
+
 # Camada 1 — Retomada Sub-etapa 10 (API Key path)
 
 Pivot de OAuth Partner App para API Key direta após confirmação do

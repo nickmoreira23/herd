@@ -26,6 +26,7 @@
     "seed:recharge-connection": "tsx scripts/seed-member-connection.ts --slug=recharge",
     "smoke:camada-2": "tsx scripts/validate-camada-2-smoke.ts",
     "smoke:camada-1": "tsx scripts/validate-camada-1-smoke.ts",
+    "smoke:roles-permissions": "tsx scripts/validate-roles-permissions-smoke.ts",
     "recharge:register-webhooks": "tsx scripts/register-recharge-webhooks.ts",
     "recharge:list-webhooks": "tsx scripts/list-recharge-webhooks.ts",
     "recharge:delete-webhook": "tsx scripts/delete-recharge-webhook.ts",
