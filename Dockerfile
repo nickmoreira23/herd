@@ -66,6 +66,19 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Prisma migration toolchain for the preDeployCommand (which runs in THIS image).
+# The standalone output prunes the `prisma` CLI + schema/migrations; the
+# preDeployCommand needs them to run `migrate deploy`. Copied from the builder
+# (same node:20-slim base → schema-engine binary is compatible).
+# NOTE: this module set is PROVISIONAL — pinned by an in-image `migrate status`
+# run (Tarefa 0.3); expand if the build surfaces a missing module/engine.
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.ts
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma/engines ./node_modules/@prisma/engines
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma/config ./node_modules/@prisma/config
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/dotenv ./node_modules/dotenv
+
 RUN mkdir -p /app/public/uploads
 
 EXPOSE 3000
