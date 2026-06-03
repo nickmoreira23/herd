@@ -1,5 +1,21 @@
 # Runbook — flipping `CAN_ENFORCEMENT` safely
 
+> **⚠️ PROD STATE (2026-06-02) — READ BEFORE ANY FLIP.** PROD is in the safe
+> resting state: the `role_permissions` migration is **applied** and the table is
+> **seeded with the canonical matrix (97 grants)** — Step 1 (migrate) and Step 2
+> (seed) are both done. `CAN_ENFORCEMENT` is **unset (`off`)**. Because the
+> canonical matrix mirrors the role-name gates exactly, flipping to `shadow`/
+> `enforce` would be **inert** until someone deliberately edits a grant.
+>
+> **Load-bearing gate (principle):** never flip `shadow`/`enforce` while
+> `role_permissions` is **empty** — `enforce` + an empty matrix = every `can()`
+> denies = **org-wide lockout**. This gate is **currently satisfied** (the matrix
+> is seeded); re-verify the row count is non-zero and canonical before any flip.
+> A runtime fail-open guardrail (deny→allow when the matrix is empty) is
+> **deferred to Fase 4 (Fork B)** — until it lands, the seed is the only
+> protection against the empty-matrix lockout. Before any PROD flip, still run the
+> shadow-observation step below against PROD's matrix.
+
 **What the flip does.** `CAN_ENFORCEMENT` gates the `can()` enforcement layer
 (`enforce()`/`enforceRoute()` adopted in all 25 org-scoped route call-sites).
 
