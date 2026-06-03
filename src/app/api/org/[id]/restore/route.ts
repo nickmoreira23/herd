@@ -18,7 +18,7 @@ export async function POST(
 
   const enforced = await enforceRoute(
     sessionOrResponse,
-    { resource: "org", action: "update" },
+    { resource: "org", action: "restore" },
     { current: sessionOrResponse, organizationId: sessionOrResponse.user.activeOrgId ?? "", routeId: "POST /api/org/[id]/restore" }
   );
   if (enforced instanceof Response) return enforced;

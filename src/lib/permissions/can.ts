@@ -34,7 +34,9 @@ export async function can(
   // 3. Check each role against the DB-backed matrix (global + this org's overrides)
   const matrix = await loadRoleMatrix(organizationId);
   for (const actorRole of membership.roles) {
-    const rolePermissions = matrix[actorRole.role] ?? [];
+    // Custom roles key the matrix by roleId; system roles by the MemberRole enum.
+    const matrixKey = actorRole.roleId ?? actorRole.role;
+    const rolePermissions = matrix[matrixKey] ?? [];
 
     for (const granted of rolePermissions) {
       // Resource + action must match
