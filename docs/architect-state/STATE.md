@@ -2,7 +2,7 @@
 
 > **Propósito:** Este arquivo é o estado canônico cross-session do trabalho de chat-architect em curso. Atualizado ao final de cada sub-etapa Fase 4. Qualquer nova sessão Claude.ai (chat-architect) deve ler este arquivo PRIMEIRO antes de propor qualquer trabalho.
 >
-> **Versão:** v1.12 (atualizado 2026-06-02, auto-migrate: CORREÇÃO — a FORMA do comando é o defeito. O inline `cd … && binstub` do #129 FALHOU no pre-deploy (deploy `51511ea9`, logs vazios, DB up-to-date); o wrapper `sh /app/migrate-tools/predeploy.sh` FUNCIONA (`c0448bbd`/`f2cf037f`). Railway não trata inline `cd X && Y` como shell. Fix: predeploy.sh lean (`cd` + `exec binstub`). Explica o #122 retroativamente. Regra: preDeployCommand invoca binário real, nunca operador de shell inline. PROD intacto (fail-safe). Gate verde 2 arches incl. abort)
+> **Versão:** v1.13 (atualizado 2026-06-03, SE-0 truth-up: §5.1 auto-migrate FECHADA — happy-path (deploy ativo `f72c4c70` no-op; #134 auto-aplicou limpo) E abort real (deploy `25e72478`: #136 `marketplace_per_tenant` NOT NULL bateu em 2 linhas demo → P3009 → fail-safe abortou → recovery) exercitados em PROD. AGENTS.md §"Database migrations" corrigido no `709e23f` (não mais "PROD MANUAL/runner sem CLI"; descreve auto-apply + fail-safe + playbook P3009). Frente A fechada: live em PROD = `709e23f` ≥ 97a5197, código SE3 vivo, sem drift. Worktree auto-migrate removido. — histórico v1.12: a FORMA do comando era o defeito; wrapper `sh predeploy.sh` funciona, inline `cd && binstub` falha no executor do Railway)
 >
 > **Próxima atualização esperada:** pós-merge da Fatia 1 (Locations piloto) do ADR-002.
 
@@ -433,6 +433,24 @@ Aguardando discovery antecipada antes da spec (regra cravada da skill).
   binário real (`sh script.sh`), nunca operadores de shell inline.** Gate verde nos 2 arches (build +
   boot + isolamento + COM env no-op exit 0 + env ruim → exit ≠ 0). **PROD intacto** durante o erro —
   `51511ea9` FAILED não promoveu, fail-safe manteve `f2cf037f`.
+
+  **§5.1 FECHADA (v1.13, SE-0) — happy-path E abort exercitados em PROD real.** A pendência
+  "resta exercitar migration-nova + abort reais em PROD" está **cravada como exercitada**:
+  - **Happy-path:** múltiplos deploys aplicaram migrations novas via pre-deploy sem intervenção
+    manual — R&P #134 (`add_role_table_and_hybrid_grants`) auto-aplicou limpo, e o deploy ativo
+    `f72c4c70` (2026-06-03 13:40) rodou o pre-deploy/migrate como no-op (33 migrations, up to date).
+  - **Abort real:** o deploy `25e72478` (2026-06-02 23:02) — Marketplace #136
+    (`marketplace_per_tenant`, `ADD COLUMN tenant_id NOT NULL`) — auto-aplicou em PROD e **falhou
+    com P3009** (2 linhas demo violavam o NOT NULL; DEV tinha 0 linhas). O pre-deploy **abortou**,
+    PROD ficou no deploy anterior (fail-safe provado ponta a ponta), e o estado foi recuperado via
+    o playbook (`migrate resolve --rolled-back` + correção); `migrate status` hoje = up to date (33).
+  - **Truth-up do AGENTS.md entregue no `709e23f`** (2026-06-03) — a seção "Database migrations"
+    deixou de afirmar "PROD MANUAL / runner sem CLI" e agora descreve o auto-apply via predeploy
+    (#125 toolchain), o fail-safe, e o playbook de recovery P3009. **Lição nova cravada lá:** o
+    novo modo de falha é incompatibilidade com DADOS de PROD (PROD ≠ DEV) — migrations com
+    `NOT NULL`/`UNIQUE`/narrowing exigem validação contra os dados reais de PROD **antes** do merge.
+  - **Resíduo limpo (SE-0):** worktree `HERD-auto-migrate` (branch `fix/predeploy-wrapper`, #132
+    merjado) removido.
 - **[ALTA-SEGURANÇA] Camada 2 de auth `/api`.** O gate do #111 é **presence-based**
   (`isLoggedIn = !!cookie`) — **NÃO valida o JWT** → um cookie forjado passa. Falta:
   (a) validar o JWT no proxy, **e** (b) **scoping por-tenant nos handlers** (cross-tenant
