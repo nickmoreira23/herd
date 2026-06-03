@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 import { getEligibleBlocks } from "@/lib/marketplace/registry";
 import {
   BLOCK_CATEGORIES_SETTING_KEY,
@@ -20,15 +22,21 @@ export default async function EditSectionPage({
   await connection();
   const { id } = await params;
 
+  const orgId = await getOrgIdFromRequest();
+  if (!orgId) redirect("/admin/marketplace");
+
   // NetworkRole + NetworkProfileType removed in 3.5/3.6 — section gating
   // temporarily disabled until new RBAC/identity model.
-  const [section, categoriesSetting] = await Promise.all([
+  // Section read is tenant-scoped (withTenant + RLS); Setting is platform-wide.
+  const section = await withTenant(orgId, () =>
     prisma.marketplaceSection.findUnique({
       where: { id },
       include: { scopes: true },
-    }),
-    prisma.setting.findUnique({ where: { key: BLOCK_CATEGORIES_SETTING_KEY } }),
-  ]);
+    })
+  );
+  const categoriesSetting = await prisma.setting.findUnique({
+    where: { key: BLOCK_CATEGORIES_SETTING_KEY },
+  });
   const roles: { id: string; displayName: string }[] = [];
   const profileTypes: { id: string; displayName: string }[] = [];
 

@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 import { getViewerContext } from "@/lib/marketplace/visibility-helpers";
 import { buildRenderContext } from "@/lib/marketplace/render-resolver";
 import { MarketplaceSectionRenderer } from "@/components/marketplace/renderer/marketplace-section-renderer";
@@ -16,13 +18,18 @@ export default async function AdminSectionPreviewPage({
   await connection();
   const { id } = await params;
 
-  const section = await prisma.marketplaceSection.findUnique({
-    where: { id },
-    include: { scopes: true },
-  });
-  // Section may have been deleted while the user was viewing it — bounce
-  // back to /admin/marketplace, which redirects to the first remaining
-  // section (or shows the empty state).
+  const orgId = await getOrgIdFromRequest();
+  if (!orgId) redirect("/admin/marketplace");
+
+  const section = await withTenant(orgId, () =>
+    prisma.marketplaceSection.findUnique({
+      where: { id },
+      include: { scopes: true },
+    })
+  );
+  // Section may have been deleted while the user was viewing it (or belongs to
+  // another tenant — RLS hides it) — bounce back to /admin/marketplace, which
+  // redirects to the first remaining section (or shows the empty state).
   if (!section) redirect("/admin/marketplace");
 
   const session = await auth();

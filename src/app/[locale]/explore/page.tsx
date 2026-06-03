@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 import { getViewerContext } from "@/lib/marketplace/visibility-helpers";
 import { LocaleLink } from "@/components/i18n/locale-link";
 import { isSupportedLocale } from "@/lib/i18n/locales";
@@ -18,11 +20,28 @@ async function ExploreContent() {
   const userId = (session?.user as { id?: string } | undefined)?.id ?? null;
   const viewer = await getViewerContext(userId);
 
-  const sections = await prisma.marketplaceSection.findMany({
-    where: { status: "PUBLISHED" },
-    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-    include: { scopes: true },
-  });
+  // Per-tenant storefront resolved by host (subdomain/customDomain). No org for
+  // this host (e.g. apex) → there is no storefront to show.
+  const orgId = await getOrgIdFromRequest();
+  if (!orgId) {
+    return (
+      <div className="text-center py-20">
+        <h1 className="text-2xl font-semibold mb-2">No storefront here</h1>
+        <p className="text-muted-foreground">
+          This address isn&apos;t linked to an organization&apos;s marketplace.
+        </p>
+      </div>
+    );
+  }
+
+  // RLS isolates by tenant; the status filter stays (public sees PUBLISHED only).
+  const sections = await withTenant(orgId, () =>
+    prisma.marketplaceSection.findMany({
+      where: { status: "PUBLISHED" },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      include: { scopes: true },
+    })
+  );
 
   const visible = sections.filter((s) =>
     // Section is visible if at least one of its scopes is visible to the viewer

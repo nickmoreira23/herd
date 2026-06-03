@@ -3,37 +3,54 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError, parseAndValidate } from "@/lib/api-utils";
 import { requireSuperAdmin } from "@/lib/auth/require-super-admin";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 import { createSectionSchema } from "@/lib/validators/marketplace";
 
 export async function GET() {
-  try {
-    const sections = await prisma.marketplaceSection.findMany({
-      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-      include: { scopes: true },
-    });
-    return apiSuccess(sections);
-  } catch (e) {
-    console.error("GET /api/marketplace/sections error:", e);
-    return apiError("Failed to list sections", 500);
-  }
+  const orgId = await getOrgIdFromRequest();
+  // No org context (apex / unresolved host) → no storefront to list.
+  if (!orgId) return apiSuccess([]);
+
+  return withTenant(orgId, async () => {
+    try {
+      const sections = await prisma.marketplaceSection.findMany({
+        orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+        include: { scopes: true },
+      });
+      return apiSuccess(sections);
+    } catch (e) {
+      console.error("GET /api/marketplace/sections error:", e);
+      return apiError("Failed to list sections", 500);
+    }
+  });
 }
 
 export async function POST(request: NextRequest) {
   const sessionOrResponse = await requireSuperAdmin();
   if (sessionOrResponse instanceof Response) return sessionOrResponse;
 
-  try {
-    const result = await parseAndValidate(request, createSectionSchema);
-    if ("error" in result) return result.error;
+  const orgId = await getOrgIdFromRequest();
+  if (!orgId) return apiError("No active organization", 400);
 
-    const existing = await prisma.marketplaceSection.findUnique({
-      where: { slug: result.data.slug },
-    });
-    if (existing) return apiError("A section with this slug already exists", 409);
+  const result = await parseAndValidate(request, createSectionSchema);
+  if ("error" in result) return result.error;
 
-    const section = await prisma.$transaction(async (tx) => {
-      const created = await tx.marketplaceSection.create({
+  return withTenant(orgId, async () => {
+    try {
+      // slug is unique per tenant; under withTenant the read is tenant-scoped.
+      const existing = await prisma.marketplaceSection.findFirst({
+        where: { slug: result.data.slug },
+      });
+      if (existing) return apiError("A section with this slug already exists", 409);
+
+      // Sequential (not prisma.$transaction): each op is tenant-scoped, so the
+      // tenancy Extension wraps it in its own SET-LOCAL transaction — an outer
+      // interactive transaction would nest and break. tenantId set explicitly
+      // (Extension also injects it; explicit mirrors the locations route molde).
+      const created = await prisma.marketplaceSection.create({
         data: {
+          tenantId: orgId,
           slug: result.data.slug,
           name: result.data.name,
           description: result.data.description ?? null,
@@ -46,10 +63,12 @@ export async function POST(request: NextRequest) {
           layout: (result.data.layout ?? undefined) as never,
         },
       });
+
       const scopes = result.data.scopes ?? [];
       if (scopes.length > 0) {
-        await tx.marketplaceSectionScope.createMany({
+        await prisma.marketplaceSectionScope.createMany({
           data: scopes.map((s, idx) => ({
+            tenantId: orgId,
             sectionId: created.id,
             blockName: s.blockName,
             scopeType: s.scopeType,
@@ -60,17 +79,18 @@ export async function POST(request: NextRequest) {
           })),
         });
       }
-      return tx.marketplaceSection.findUniqueOrThrow({
+
+      const section = await prisma.marketplaceSection.findUniqueOrThrow({
         where: { id: created.id },
         include: { scopes: true },
       });
-    });
 
-    revalidatePath("/admin/marketplace");
-    revalidatePath("/explore");
-    return apiSuccess(section, 201);
-  } catch (e) {
-    console.error("POST /api/marketplace/sections error:", e);
-    return apiError("Failed to create section", 500);
-  }
+      revalidatePath("/admin/marketplace");
+      revalidatePath("/explore");
+      return apiSuccess(section, 201);
+    } catch (e) {
+      console.error("POST /api/marketplace/sections error:", e);
+      return apiError("Failed to create section", 500);
+    }
+  });
 }

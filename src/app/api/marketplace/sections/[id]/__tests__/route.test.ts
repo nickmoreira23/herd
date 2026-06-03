@@ -1,22 +1,41 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@/lib/auth/require-super-admin", () => ({ requireSuperAdmin: vi.fn() }));
+vi.mock("@/lib/tenant/get-org-from-request", () => ({ getOrgIdFromRequest: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/lib/prisma", () => ({
   prisma: {
-    marketplaceSection: { findUnique: vi.fn(), delete: vi.fn() },
-    $transaction: vi.fn(),
+    marketplaceSection: {
+      findUnique: vi.fn(),
+      findUniqueOrThrow: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+    marketplaceSectionScope: {
+      findMany: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      deleteMany: vi.fn(),
+    },
   },
 }));
 
 import { GET, PATCH, DELETE } from "../route";
 import { requireSuperAdmin } from "@/lib/auth/require-super-admin";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
 import { prisma } from "@/lib/prisma";
 
 const mockGuard = vi.mocked(requireSuperAdmin);
+const mockOrgId = vi.mocked(getOrgIdFromRequest);
 const mockFindUnique = vi.mocked(prisma.marketplaceSection.findUnique);
+const mockFindOrThrow = vi.mocked(prisma.marketplaceSection.findUniqueOrThrow);
+const mockUpdate = vi.mocked(prisma.marketplaceSection.update);
 const mockDelete = vi.mocked(prisma.marketplaceSection.delete);
-const mockTx = vi.mocked(prisma.$transaction);
+const scope = prisma.marketplaceSectionScope;
+const mockScopeFindMany = vi.mocked(scope.findMany);
+const mockScopeCreate = vi.mocked(scope.create);
+const mockScopeUpdate = vi.mocked(scope.update);
+const mockScopeDeleteMany = vi.mocked(scope.deleteMany);
 
 const SESSION = { user: { id: "u1" } } as never;
 const params = Promise.resolve({ id: "sec-1" });
@@ -32,9 +51,13 @@ function req(method: string, body?: unknown) {
 beforeEach(() => {
   vi.clearAllMocks();
   mockGuard.mockResolvedValue(SESSION);
+  mockOrgId.mockResolvedValue("org-1");
+  mockUpdate.mockResolvedValue({ id: "sec-1" } as never);
+  mockFindOrThrow.mockResolvedValue({ id: "sec-1", slug: "s", scopes: [] } as never);
+  mockScopeFindMany.mockResolvedValue([] as never);
 });
 
-describe("GET /api/marketplace/sections/[id] (read — no guard)", () => {
+describe("GET /api/marketplace/sections/[id] (read — host-scoped)", () => {
   it("returns the section with scopes", async () => {
     mockFindUnique.mockResolvedValueOnce({ id: "sec-1", scopes: [] } as never);
     const res = await GET(req("GET"), { params });
@@ -42,50 +65,44 @@ describe("GET /api/marketplace/sections/[id] (read — no guard)", () => {
     expect(mockGuard).not.toHaveBeenCalled();
   });
 
-  it("404 when the section is missing", async () => {
+  it("404 when the section is missing (or hidden by RLS / no org)", async () => {
     mockFindUnique.mockResolvedValueOnce(null as never);
     const res = await GET(req("GET"), { params });
     expect(res.status).toBe(404);
   });
+
+  it("404 when the host has no org", async () => {
+    mockOrgId.mockResolvedValueOnce(null);
+    const res = await GET(req("GET"), { params });
+    expect(res.status).toBe(404);
+    expect(mockFindUnique).not.toHaveBeenCalled();
+  });
 });
 
-describe("PATCH /api/marketplace/sections/[id] — guard + scope replace-total", () => {
+describe("PATCH /api/marketplace/sections/[id] — guard + tenant scoping + scope diff", () => {
   it("returns the guard Response when not super-admin", async () => {
     mockGuard.mockResolvedValueOnce(new Response("nope", { status: 401 }) as never);
     const res = await PATCH(req("PATCH", { name: "X" }), { params });
     expect(res.status).toBe(401);
-    expect(mockTx).not.toHaveBeenCalled();
+    expect(mockUpdate).not.toHaveBeenCalled();
   });
 
-  // Build a transaction-client mock exposing the scope ops the diff uses.
-  function makeTx(existingScopes: unknown[] = []) {
-    const tx = {
-      marketplaceSection: {
-        update: vi.fn().mockResolvedValue({ id: "sec-1" }),
-        findUniqueOrThrow: vi.fn().mockResolvedValue({ id: "sec-1", slug: "s", scopes: [] }),
-      },
-      marketplaceSectionScope: {
-        findMany: vi.fn().mockResolvedValue(existingScopes),
-        create: vi.fn(),
-        update: vi.fn(),
-        deleteMany: vi.fn(),
-      },
-    };
-    mockTx.mockImplementationOnce(((cb: (t: typeof tx) => unknown) => cb(tx)) as never);
-    return tx;
-  }
+  it("400 when the host has no org", async () => {
+    mockOrgId.mockResolvedValueOnce(null);
+    const res = await PATCH(req("PATCH", { name: "X" }), { params });
+    expect(res.status).toBe(400);
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
 
-  it("CORRECT (SE2.5): reconciles scopes via a diff — create new, update changed, delete absent, leave unchanged", async () => {
-    // Was the SE2 'BASELINE: replaces ALL scopes' test. Replace-total is gone.
-    const existing = [
+  it("reconciles scopes via a diff — create new, update changed, delete absent, leave unchanged", async () => {
+    mockScopeFindMany.mockResolvedValueOnce([
       // unchanged → must NOT be updated (no PK churn)
       { id: "e1", blockName: "products", scopeType: "ALL", scopeValue: null, sortOrder: 0, allowedProfileTypeIds: [], allowedRoleIds: [] },
       // same identity, sortOrder changes → update
       { id: "e2", blockName: "products", scopeType: "CATEGORY", scopeValue: "supplements", sortOrder: 1, allowedProfileTypeIds: [], allowedRoleIds: [] },
       // absent from payload → delete
       { id: "e3", blockName: "agents", scopeType: "ALL", scopeValue: null, sortOrder: 2, allowedProfileTypeIds: [], allowedRoleIds: [] },
-    ];
-    const tx = makeTx(existing);
+    ] as never);
 
     const res = await PATCH(
       req("PATCH", {
@@ -100,43 +117,34 @@ describe("PATCH /api/marketplace/sections/[id] — guard + scope replace-total",
     );
     expect(res.status).toBe(200);
 
-    // create: only the brand-new ITEM scope
-    expect(tx.marketplaceSectionScope.create).toHaveBeenCalledTimes(1);
-    expect(tx.marketplaceSectionScope.create.mock.calls[0][0].data).toMatchObject({
+    // create: only the brand-new ITEM scope, stamped with the host tenantId
+    expect(mockScopeCreate).toHaveBeenCalledTimes(1);
+    expect(mockScopeCreate.mock.calls[0][0].data).toMatchObject({
+      tenantId: "org-1",
       sectionId: "sec-1",
       scopeType: "ITEM",
       scopeValue: "xyz",
     });
     // update: only the changed e2 (unchanged e1 left alone)
-    expect(tx.marketplaceSectionScope.update).toHaveBeenCalledTimes(1);
-    expect(tx.marketplaceSectionScope.update.mock.calls[0][0].where).toEqual({ id: "e2" });
+    expect(mockScopeUpdate).toHaveBeenCalledTimes(1);
+    expect(mockScopeUpdate.mock.calls[0][0].where).toEqual({ id: "e2" });
     // delete: only the absent e3 — never a blanket sectionId wipe
-    expect(tx.marketplaceSectionScope.deleteMany).toHaveBeenCalledWith({
-      where: { id: { in: ["e3"] } },
-    });
+    expect(mockScopeDeleteMany).toHaveBeenCalledWith({ where: { id: { in: ["e3"] } } });
   });
 
-  it("CORRECT (SE2.5): a PATCH that OMITS scopes PRESERVES them (no scope ops at all)", async () => {
-    // Was the SE2 'LATENT BUG' baseline. The update schema no longer defaults
-    // scopes to [], so result.data.scopes is undefined and the block is skipped.
-    const tx = makeTx([{ id: "e1", blockName: "products", scopeType: "ALL", scopeValue: null, sortOrder: 0, allowedProfileTypeIds: [], allowedRoleIds: [] }]);
+  it("a PATCH that OMITS scopes PRESERVES them (no scope ops at all)", async () => {
     const res = await PATCH(req("PATCH", { name: "OnlyName" }), { params });
     expect(res.status).toBe(200);
-    expect(tx.marketplaceSectionScope.findMany).not.toHaveBeenCalled();
-    expect(tx.marketplaceSectionScope.create).not.toHaveBeenCalled();
-    expect(tx.marketplaceSectionScope.update).not.toHaveBeenCalled();
-    expect(tx.marketplaceSectionScope.deleteMany).not.toHaveBeenCalled();
+    expect(mockScopeFindMany).not.toHaveBeenCalled();
+    expect(mockScopeCreate).not.toHaveBeenCalled();
+    expect(mockScopeUpdate).not.toHaveBeenCalled();
+    expect(mockScopeDeleteMany).not.toHaveBeenCalled();
   });
 
-  it("CORRECT (SE2.5): a metadata-only PATCH does NOT reset omitted defaulted fields", async () => {
-    // Root-cause guard: .partial() used to leak .default() so an omitted
-    // status/blockNames/components/creationPath got reset/wiped. The update
-    // schema now drops those defaults → the handler's `!== undefined` guards
-    // skip them entirely.
-    const tx = makeTx([]);
+  it("a metadata-only PATCH does NOT reset omitted defaulted fields", async () => {
     const res = await PATCH(req("PATCH", { name: "JustRename" }), { params });
     expect(res.status).toBe(200);
-    const data = tx.marketplaceSection.update.mock.calls[0][0].data;
+    const data = mockUpdate.mock.calls[0][0].data;
     expect(data).toEqual({ name: "JustRename" });
     expect(data).not.toHaveProperty("status");
     expect(data).not.toHaveProperty("blockNames");
@@ -145,7 +153,7 @@ describe("PATCH /api/marketplace/sections/[id] — guard + scope replace-total",
   });
 });
 
-describe("DELETE /api/marketplace/sections/[id] — guard", () => {
+describe("DELETE /api/marketplace/sections/[id] — guard + tenant scoping", () => {
   it("returns the guard Response when not super-admin", async () => {
     mockGuard.mockResolvedValueOnce(new Response("nope", { status: 403 }) as never);
     const res = await DELETE(req("DELETE"), { params });
@@ -153,7 +161,14 @@ describe("DELETE /api/marketplace/sections/[id] — guard", () => {
     expect(mockDelete).not.toHaveBeenCalled();
   });
 
-  it("404 when the section is missing", async () => {
+  it("400 when the host has no org", async () => {
+    mockOrgId.mockResolvedValueOnce(null);
+    const res = await DELETE(req("DELETE"), { params });
+    expect(res.status).toBe(400);
+    expect(mockDelete).not.toHaveBeenCalled();
+  });
+
+  it("404 when the section is missing (or hidden by RLS)", async () => {
     mockFindUnique.mockResolvedValueOnce(null as never);
     const res = await DELETE(req("DELETE"), { params });
     expect(res.status).toBe(404);

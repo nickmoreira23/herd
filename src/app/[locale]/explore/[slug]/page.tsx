@@ -4,6 +4,8 @@ import { connection } from "next/server";
 import { ChevronLeft } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 import { getViewerContext } from "@/lib/marketplace/visibility-helpers";
 import { buildRenderContext } from "@/lib/marketplace/render-resolver";
 import { MarketplaceSectionRenderer } from "@/components/marketplace/renderer/marketplace-section-renderer";
@@ -27,10 +29,18 @@ async function SectionContent({ slug }: { slug: string }) {
   const userId = (session?.user as { id?: string } | undefined)?.id ?? null;
   const viewer = await getViewerContext(userId);
 
-  const section = await prisma.marketplaceSection.findUnique({
-    where: { slug },
-    include: { scopes: true },
-  });
+  // No org for this host → no storefront, so no section.
+  const orgId = await getOrgIdFromRequest();
+  if (!orgId) notFound();
+
+  // findFirst (not findUnique): slug is unique PER TENANT now. RLS scopes the
+  // read to the host org, so this resolves the org's own section by slug.
+  const section = await withTenant(orgId, () =>
+    prisma.marketplaceSection.findFirst({
+      where: { slug },
+      include: { scopes: true },
+    })
+  );
 
   if (!section || section.status !== "PUBLISHED") {
     notFound();

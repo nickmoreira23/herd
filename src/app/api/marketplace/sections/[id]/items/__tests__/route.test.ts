@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 
 vi.mock("@/lib/auth", () => ({ auth: vi.fn() }));
+vi.mock("@/lib/tenant/get-org-from-request", () => ({ getOrgIdFromRequest: vi.fn() }));
 vi.mock("@/lib/prisma", () => ({
   prisma: { marketplaceSection: { findUnique: vi.fn() } },
 }));
@@ -14,11 +15,13 @@ vi.mock("@/lib/marketplace/render-resolver", () => ({
 
 import { GET } from "../route";
 import { auth } from "@/lib/auth";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
 import { prisma } from "@/lib/prisma";
 import { getViewerContext } from "@/lib/marketplace/visibility-helpers";
 import { resolveItemsPage } from "@/lib/marketplace/render-resolver";
 
 const mockAuth = vi.mocked(auth);
+const mockOrgId = vi.mocked(getOrgIdFromRequest);
 const mockFindUnique = vi.mocked(prisma.marketplaceSection.findUnique);
 const mockViewer = vi.mocked(getViewerContext);
 const mockResolve = vi.mocked(resolveItemsPage);
@@ -36,6 +39,7 @@ function req(qs: string) {
 beforeEach(() => {
   vi.clearAllMocks();
   mockAuth.mockResolvedValue({ user: { id: "u1" } } as never);
+  mockOrgId.mockResolvedValue("org-1");
   mockFindUnique.mockResolvedValue({ id: "sec-1", scopes: [] } as never);
   mockViewer.mockResolvedValue({ profileId: "u1", profileTypeId: null, roleIds: [] });
   mockResolve.mockResolvedValue(PAGE as never);
@@ -90,5 +94,13 @@ describe("GET /api/marketplace/sections/[id]/items", () => {
     const res = await GET(req("?block=products"), { params });
     expect(res.status).toBe(200);
     expect(mockViewer).toHaveBeenCalledWith(null);
+  });
+
+  it("returns an empty page when the host has no org (no storefront)", async () => {
+    mockOrgId.mockResolvedValueOnce(null);
+    const res = await GET(req("?block=products"), { params });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ data: { items: [], total: 0, hasMore: false } });
+    expect(mockFindUnique).not.toHaveBeenCalled();
   });
 });

@@ -2,6 +2,8 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 import { resolveItemDetail } from "@/lib/marketplace/item-detail-resolver";
 import { MarketplaceItemDetail } from "@/components/marketplace/item-detail/marketplace-item-detail";
 import { isSupportedLocale } from "@/lib/i18n/locales";
@@ -22,10 +24,16 @@ async function ItemDetailContent({ params }: { params: PageParams }) {
   await connection();
   const { slug, blockName, itemId } = params;
 
-  const section = await prisma.marketplaceSection.findUnique({
-    where: { slug },
-    select: { id: true, name: true, slug: true, status: true },
-  });
+  const orgId = await getOrgIdFromRequest();
+  if (!orgId) notFound();
+
+  // findFirst: slug is unique per tenant; RLS scopes to the host org.
+  const section = await withTenant(orgId, () =>
+    prisma.marketplaceSection.findFirst({
+      where: { slug },
+      select: { id: true, name: true, slug: true, status: true },
+    })
+  );
   if (!section || section.status !== "PUBLISHED") notFound();
 
   const detail = await resolveItemDetail(blockName, itemId);
