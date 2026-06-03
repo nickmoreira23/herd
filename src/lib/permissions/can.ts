@@ -31,8 +31,8 @@ export async function can(
   );
   if (!membership) return false;
 
-  // 3. Check each role against the DB-backed matrix
-  const matrix = await loadRoleMatrix();
+  // 3. Check each role against the DB-backed matrix (global + this org's overrides)
+  const matrix = await loadRoleMatrix(organizationId);
   for (const actorRole of membership.roles) {
     const rolePermissions = matrix[actorRole.role] ?? [];
 
