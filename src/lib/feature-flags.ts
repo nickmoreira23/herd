@@ -56,3 +56,31 @@ export function getCanEnforcementMode(): CanEnforcementMode {
   if (raw === "enforce") return "enforce";
   return "off";
 }
+
+/**
+ * Proxy auth-gate validation mode (SE-PERM Peça 1).
+ *
+ * The proxy gate is presence-only today (`isLoggedIn = !!cookie`) — it does not
+ * validate the session JWT, so routes without their own `auth()` check trust a
+ * cookie that may be forged/expired. This flag rolls out real JWT validation:
+ *   - `off`     (default) — presence-only (current behavior). Zero change.
+ *   - `shadow`  — validate the JWT; if a cookie is present but invalid, LOG a
+ *                 structured "would-block" entry, but DO NOT block (presence wins).
+ *   - `enforce` — invalid token treated as not-logged (same destinations the
+ *                 presence-gate gives a missing cookie: /login redirect or 401).
+ *
+ * Read at call time (not module load) so per-request / per-test env changes
+ * take effect. Set via `AUTH_GATE_MODE=shadow|enforce`.
+ */
+export type AuthGateMode = "off" | "shadow" | "enforce";
+
+export function getAuthGateMode(): AuthGateMode {
+  const raw = (
+    typeof process !== "undefined" ? process.env?.AUTH_GATE_MODE : undefined
+  )
+    ?.trim()
+    .toLowerCase();
+  if (raw === "shadow") return "shadow";
+  if (raw === "enforce") return "enforce";
+  return "off";
+}
