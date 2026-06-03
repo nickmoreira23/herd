@@ -1729,6 +1729,8 @@ model Organization {
   curatedLocationsAsTenant OrganizationLocation[] @relation("OrgLocationTenant")
   members     OrganizationMember[]
   invitations OrganizationInvitation[]
+  roles       Role[]                  @relation("RoleTenant")
+  rolePermissionOverrides RolePermission[] @relation("RolePermissionTenant")
 
   memberConnections        MemberConnection[]        @relation("MemberConnectionTenant")
   integrationTierMappings  IntegrationTierMapping[]  @relation("IntegrationTierMappingTenant")
@@ -1814,17 +1816,52 @@ model MembershipRole {
 // reads the constant). GLOBAL: no tenantId, not in TENANT_SCOPED_MODELS.
 // resource/action are strings validated by the typed seed + parity test (the
 // source of truth stays the ResourceType/ActionType unions in code).
+// Hybrid grant (R&P Fase 3): exactly one of (role, roleId) is set — enforced by a
+// CHECK constraint added in raw SQL (Prisma does not model CHECKs). `role` = system
+// role (enum); `roleId` = custom Role. `tenantId` NULL = global grant (the 97 system
+// rows + any global custom), set = per-org override. The composite unique uses
+// NULLS NOT DISTINCT so global rows (tenantId/roleId NULL) still dedup correctly.
 model RolePermission {
   id        String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  role      MemberRole
+  role      MemberRole?
+  roleId    String?       @map("role_id") @db.Uuid
+  tenantId  String?       @map("tenant_id") @db.Uuid
   resource  String
   action    String
   scopeType RoleScopeType @default(ORG) @map("scope_type")
   createdAt DateTime      @default(now()) @map("created_at")
   updatedAt DateTime      @updatedAt @map("updated_at")
 
+  customRole Role?         @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  tenant     Organization? @relation("RolePermissionTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // System-row uniqueness (the 97 global rows: role set, roleId/tenantId NULL). Keeps the
+  // seed idempotent. Per-org override / custom-role uniqueness needs partial indexes
+  // (Postgres NULLS NOT DISTINCT, which Prisma 7 can't model) and is deferred to Fase 6,
+  // when overrides are actually written — none exist in Fase 3.
   @@unique([role, resource, action, scopeType])
+  @@index([tenantId])
+  @@index([roleId])
   @@map("role_permissions")
+}
+
+// Custom, per-org role (R&P Fase 3). Tenant-scoped (Sub-19 pattern). Global templates
+// are intentionally NOT modeled here — deferred to a future phase (see ADR note).
+model Role {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  name        String
+  key         String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tenant          Organization     @relation("RoleTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+  rolePermissions RolePermission[]
+
+  @@unique([tenantId, key])
+  @@index([tenantId])
+  @@map("roles")
 }
 
 model OrganizationInvitation {
