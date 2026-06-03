@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { decode } from "next-auth/jwt";
 import {
   isSupportedLocale,
   normalizeLocale,
@@ -9,6 +10,39 @@ import {
   isApexDomain,
   extractSubdomain,
 } from "@/lib/tenant/org-resolver";
+import { getAuthGateMode } from "@/lib/feature-flags";
+
+// Session-token validation (SE-PERM Peça 1). Mirrors the criterion `auth()`
+// uses: decrypt the Auth.js v5 JWE with the same secret + salt (= cookie name)
+// and reject on tamper/expiry. Gated by AUTH_GATE_MODE (off|shadow|enforce).
+const AUTH_SECRET = process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET;
+const SESSION_COOKIE_DEV = "authjs.session-token";
+const SESSION_COOKIE_PROD = "__Secure-authjs.session-token";
+
+type AuthInvalidReason = "missing" | "decode_failed" | "expired";
+
+async function validateSessionToken(
+  token: string | undefined,
+  cookieName: string,
+): Promise<{ valid: boolean; reason: AuthInvalidReason | null }> {
+  if (!token) return { valid: false, reason: "missing" };
+  try {
+    // salt = cookie name (Auth.js v5 encodes salted by cookie name); decode
+    // verifies the JWE and throws on expiry → same gate auth() applies.
+    const payload = await decode({
+      token,
+      secret: AUTH_SECRET ?? "",
+      salt: cookieName,
+    });
+    if (!payload) return { valid: false, reason: "decode_failed" };
+    return { valid: true, reason: null };
+  } catch (err) {
+    const code = (err as { code?: string })?.code ?? "";
+    const message = (err as { message?: string })?.message ?? "";
+    const expired = code === "ERR_JWT_EXPIRED" || /exp(ired)?/i.test(message);
+    return { valid: false, reason: expired ? "expired" : "decode_failed" };
+  }
+}
 
 // Surfaces públicas que devem ter prefixo de locale na URL.
 // Admin/api/auth ficam flat (cookie resolve).
@@ -123,11 +157,39 @@ export async function proxy(request: NextRequest) {
   const localeOverride = request.nextUrl.searchParams.get("locale");
   if (localeOverride) requestHeaders.set("x-locale-override", localeOverride);
 
-  // ─── 2. Auth gate (preserved) ────────────────────────────────────────
+  // ─── 2. Auth gate ────────────────────────────────────────────────────
+  // Presence is the legacy basis (a cookie merely EXISTS). AUTH_GATE_MODE
+  // (SE-PERM Peça 1) layers real JWT validation on top without changing the
+  // gate's structure or allowlist — only the value of `isLoggedIn`.
+  const devCookie = request.cookies.get(SESSION_COOKIE_DEV)?.value;
   const sessionToken =
-    request.cookies.get("authjs.session-token")?.value ||
-    request.cookies.get("__Secure-authjs.session-token")?.value;
-  const isLoggedIn = !!sessionToken;
+    devCookie || request.cookies.get(SESSION_COOKIE_PROD)?.value;
+  // Salt must match the cookie name the token was encoded under.
+  const cookieName = devCookie ? SESSION_COOKIE_DEV : SESSION_COOKIE_PROD;
+  const presence = !!sessionToken;
+
+  let isLoggedIn = presence;
+  const authMode = getAuthGateMode();
+  if (authMode !== "off") {
+    const { valid, reason } = await validateSessionToken(
+      sessionToken,
+      cookieName,
+    );
+    if (authMode === "shadow") {
+      // Never blocks; log only the delta enforce WOULD block (cookie present
+      // but invalid). No token/PII in the log — path + mode + reason only.
+      if (presence && !valid) {
+        console.warn(
+          "[auth-gate]",
+          JSON.stringify({ path: pathname, mode: "shadow", reason }),
+        );
+      }
+      // isLoggedIn stays = presence
+    } else {
+      // enforce: invalid token is treated exactly like a missing one.
+      isLoggedIn = valid;
+    }
+  }
 
   if (
     (pathname.startsWith("/admin") || pathname.startsWith("/orgs")) &&
