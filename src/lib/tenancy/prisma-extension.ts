@@ -32,6 +32,10 @@ export const TENANT_SCOPED_MODELS = [
   "AuditLog",
   // ADR-002 Fatia 1a — curated-consumption junction (tenantId scalar = organizationId)
   "OrganizationLocation",
+  // R&P Fase 3 — custom per-org roles. RolePermission is intentionally NOT here: it
+  // carries global rows (tenant_id NULL) that an auto-tenant filter would hide; its
+  // tenant scoping is manual in loadRoleMatrix().
+  "Role",
 ] as const satisfies readonly string[];
 
 const READ_OPS = new Set([

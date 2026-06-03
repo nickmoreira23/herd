@@ -2,7 +2,7 @@
 
 > **Propósito:** Este arquivo é o estado canônico cross-session do trabalho de chat-architect em curso. Atualizado ao final de cada sub-etapa Fase 4. Qualquer nova sessão Claude.ai (chat-architect) deve ler este arquivo PRIMEIRO antes de propor qualquer trabalho.
 >
-> **Versão:** v1.11 (atualizado 2026-06-02, auto-migrate: RESOLVIDO — deploy de prova instrumentado `c0448bbd` SUCEDEU em PROD (pre-deploy rodou, conectou, `No pending`, `done=0`, promovido); causa do #122/#125 era build travado/infra transiente do Railway, NÃO o comando; instrumentação removida, `preDeployCommand` enxuto inline; gate limpo verde 2 arches incl. abort; aviso operacional AFROUXADO — caminho feliz provado, resta exercitar migration-nova + abort reais)
+> **Versão:** v1.12 (atualizado 2026-06-02, auto-migrate: CORREÇÃO — a FORMA do comando é o defeito. O inline `cd … && binstub` do #129 FALHOU no pre-deploy (deploy `51511ea9`, logs vazios, DB up-to-date); o wrapper `sh /app/migrate-tools/predeploy.sh` FUNCIONA (`c0448bbd`/`f2cf037f`). Railway não trata inline `cd X && Y` como shell. Fix: predeploy.sh lean (`cd` + `exec binstub`). Explica o #122 retroativamente. Regra: preDeployCommand invoca binário real, nunca operador de shell inline. PROD intacto (fail-safe). Gate verde 2 arches incl. abort)
 >
 > **Próxima atualização esperada:** pós-merge da Fatia 1 (Locations piloto) do ADR-002.
 
@@ -414,6 +414,25 @@ Aguardando discovery antecipada antes da spec (regra cravada da skill).
   exit code → abort-on-failure de graça). `predeploy.sh` + COPY/chmod removidos. Gate limpo verde
   nos 2 arches (inclui cenário de abort: env ruim → exit ≠ 0). **Item rebaixado de [ALTA-OPERACIONAL]
   — caminho feliz provado; resta exercitar migration-nova + abort reais em PROD (ver aviso operacional).**
+
+  **CORREÇÃO (v1.12) — a FORMA do comando É o defeito; o #129 concluiu errado.** O #129 trocou
+  o `preDeployCommand` pelo **inline** `cd /app/migrate-tools && ./node_modules/.bin/prisma migrate
+  deploy` achando-o "são". O deploy de confirmação `51511ea9` (2026-06-02 18:50) **FALHOU no
+  pre-deploy com logs VAZIOS** — DB `up to date`, build completo (imagem pushed), migrate seria
+  no-op → o **único** que falhou foi a execução do comando. Placar controlado (mesma migrate, mesmo
+  DB, mesmo build; única variável = forma): **`sh /app/migrate-tools/predeploy.sh` (script) →
+  SUCCESS + logs** (`c0448bbd`, `f2cf037f`); **inline `cd … && binstub` → FAILED + logs vazios**
+  (`51511ea9`, e retroativamente `d47c70ca`/#122). **Conclusão: o executor de `preDeployCommand`
+  do Railway NÃO trata o inline `cd X && Y` como shell** (provável: passa a string como argv único →
+  "binário" inexistente → falha sem output). O `sh script.sh` funciona porque `sh` é um binário real.
+  **Isto explica o #122 retroativamente** — as 4 "hipóteses de comando falsificadas" no #126 foram
+  testadas num **shell local** (que interpreta `cd`/`&&`), não no executor do Railway; o defeito real
+  é a forma inline. Fix (este PR): voltar ao wrapper `sh /app/migrate-tools/predeploy.sh` com um
+  `predeploy.sh` **lean** (`cd` + `exec ./node_modules/.bin/prisma migrate deploy` — `exec` propaga o
+  exit code → abort preservado). **Regra cravada: o `preDeployCommand` do Railway DEVE invocar um
+  binário real (`sh script.sh`), nunca operadores de shell inline.** Gate verde nos 2 arches (build +
+  boot + isolamento + COM env no-op exit 0 + env ruim → exit ≠ 0). **PROD intacto** durante o erro —
+  `51511ea9` FAILED não promoveu, fail-safe manteve `f2cf037f`.
 - **[ALTA-SEGURANÇA] Camada 2 de auth `/api`.** O gate do #111 é **presence-based**
   (`isLoggedIn = !!cookie`) — **NÃO valida o JWT** → um cookie forjado passa. Falta:
   (a) validar o JWT no proxy, **e** (b) **scoping por-tenant nos handlers** (cross-tenant

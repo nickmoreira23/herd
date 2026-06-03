@@ -60,20 +60,69 @@ export async function PATCH(
         },
       });
 
-      // If scopes provided, replace them all (simpler than diffing for MVP).
+      // Reconcile scopes with a diff instead of a full wipe+recreate. Scope
+      // identity is (blockName, scopeType, scopeValue) — the payload carries no
+      // id. Create the new, update the changed, delete the absent, and leave
+      // unchanged scopes untouched (no PK churn, no destructive replace). Only
+      // runs when the caller actually sent `scopes`.
       if (result.data.scopes !== undefined) {
-        await tx.marketplaceSectionScope.deleteMany({ where: { sectionId: id } });
-        if (result.data.scopes.length > 0) {
-          await tx.marketplaceSectionScope.createMany({
-            data: result.data.scopes.map((s, idx) => ({
-              sectionId: id,
-              blockName: s.blockName,
-              scopeType: s.scopeType,
-              scopeValue: s.scopeValue ?? null,
-              sortOrder: s.sortOrder ?? idx,
-              allowedProfileTypeIds: s.allowedProfileTypeIds ?? [],
-              allowedRoleIds: s.allowedRoleIds ?? [],
-            })),
+        const keyOf = (s: {
+          blockName: string;
+          scopeType: string;
+          scopeValue: string | null;
+        }) => JSON.stringify([s.blockName, s.scopeType, s.scopeValue ?? null]);
+        const sameSet = (a: string[], b: string[]) =>
+          a.length === b.length &&
+          [...a].sort().join(",") === [...b].sort().join(",");
+
+        const existing = await tx.marketplaceSectionScope.findMany({
+          where: { sectionId: id },
+        });
+        const existingByKey = new Map(existing.map((s) => [keyOf(s), s]));
+        const desiredKeys = new Set<string>();
+
+        for (const [idx, s] of result.data.scopes.entries()) {
+          const desired = {
+            blockName: s.blockName,
+            scopeType: s.scopeType,
+            scopeValue: s.scopeValue ?? null,
+            sortOrder: s.sortOrder ?? idx,
+            allowedProfileTypeIds: s.allowedProfileTypeIds ?? [],
+            allowedRoleIds: s.allowedRoleIds ?? [],
+          };
+          const key = keyOf(desired);
+          desiredKeys.add(key);
+          const match = existingByKey.get(key);
+
+          if (!match) {
+            await tx.marketplaceSectionScope.create({
+              data: { sectionId: id, ...desired },
+            });
+            continue;
+          }
+
+          const unchanged =
+            match.sortOrder === desired.sortOrder &&
+            sameSet(match.allowedProfileTypeIds, desired.allowedProfileTypeIds) &&
+            sameSet(match.allowedRoleIds, desired.allowedRoleIds);
+          if (!unchanged) {
+            await tx.marketplaceSectionScope.update({
+              where: { id: match.id },
+              data: {
+                sortOrder: desired.sortOrder,
+                allowedProfileTypeIds: desired.allowedProfileTypeIds,
+                allowedRoleIds: desired.allowedRoleIds,
+              },
+            });
+          }
+        }
+
+        const removedIds = existing
+          .filter((s) => !desiredKeys.has(keyOf(s)))
+          .map((s) => s.id);
+        if (removedIds.length > 0) {
+          await tx.marketplaceSectionScope.deleteMany({
+            where: { id: { in: removedIds } },
           });
         }
       }
