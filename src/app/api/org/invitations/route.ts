@@ -58,7 +58,7 @@ export async function GET(_request: Request) {
 
   const enforced = await enforceRoute(
     session,
-    { resource: "members", action: "read" },
+    { resource: "invitations", action: "read" },
     { current: session, organizationId: session.user.activeOrgId ?? "", routeId: "GET /api/org/invitations" }
   );
   if (enforced instanceof Response) return enforced;

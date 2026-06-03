@@ -60,12 +60,12 @@ export const ENFORCEMENT_MAP = {
   "PATCH /api/org/members/[memberId]/role": { allowedRoles: O_A, resource: "members", action: "update", scopeType: "org", note: "V1 Etapa 2 — set member ORG role" },
   "RSC /admin/organization/members": { allowedRoles: O_A_M, resource: "members", action: "read", scopeType: "org", note: "page guard" },
   "POST /api/org/invitations": { allowedRoles: O_A, resource: "members", action: "invite", scopeType: "org" },
-  "GET /api/org/invitations": { allowedRoles: O_A, resource: "members", action: "read", scopeType: "org", note: "D6 corrected — route is GET (list), not DELETE" },
+  "GET /api/org/invitations": { allowedRoles: O_A, resource: "invitations", action: "read", scopeType: "org", note: "Fase 4a — own resource: invitations-read is O_A (members-read is O_A_M)" },
   "POST /api/org/invitations/[token]/revoke": { allowedRoles: O_A, resource: "members", action: "invite", scopeType: "org", note: "D7 — revoke = manage-invites capability" },
 
   // ── Org lifecycle ────────────────────────────────────────────────────
   "DELETE /api/org/[id]": { allowedRoles: O, resource: "org", action: "delete", scopeType: "org", note: "hard-delete (dissolution step 2)" },
-  "POST /api/org/[id]/restore": { allowedRoles: O, resource: "org", action: "update", scopeType: "org", note: "D4 — restore = state mutation (ARCHIVED→ACTIVE)" },
+  "POST /api/org/[id]/restore": { allowedRoles: O, resource: "org", action: "restore", scopeType: "org", note: "Fase 4a — own action: restore is Owner-only (org.update is also ADMIN)" },
   "POST /api/org/[id]/dissolve": { allowedRoles: O, resource: "org", action: "delete", scopeType: "org", note: "D5 — dissolve = soft-delete (ACTIVE→ARCHIVED)" },
 
   // ── Proxy (no dedicated resource) ────────────────────────────────────

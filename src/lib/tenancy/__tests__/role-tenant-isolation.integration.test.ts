@@ -65,9 +65,10 @@ describe("Role tenant isolation (integration)", () => {
   });
 
   it("RolePermission global rows stay readable without a tenant context", async () => {
-    // The 97 system rows have tenant_id NULL and RolePermission is NOT in
+    // System rows have tenant_id NULL and RolePermission is NOT in
     // TENANT_SCOPED_MODELS, so no GUC/filter is applied — they read freely.
+    // 100 after Fase 4a: + invitations.read (OWNER, ADMIN) + org.restore (OWNER).
     const globals = await prisma.rolePermission.count({ where: { tenantId: null } });
-    expect(globals).toBe(97);
+    expect(globals).toBe(100);
   });
 });
