@@ -3,24 +3,31 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError, parseAndValidate } from "@/lib/api-utils";
 import { requireSuperAdmin } from "@/lib/auth/require-super-admin";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 import { updateSectionSchema } from "@/lib/validators/marketplace";
 
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const { id } = await params;
-    const section = await prisma.marketplaceSection.findUnique({
-      where: { id },
-      include: { scopes: true },
-    });
-    if (!section) return apiError("Section not found", 404);
-    return apiSuccess(section);
-  } catch (e) {
-    console.error("GET /api/marketplace/sections/[id] error:", e);
-    return apiError("Failed to load section", 500);
-  }
+  const orgId = await getOrgIdFromRequest();
+  if (!orgId) return apiError("Section not found", 404);
+
+  return withTenant(orgId, async () => {
+    try {
+      const { id } = await params;
+      const section = await prisma.marketplaceSection.findUnique({
+        where: { id },
+        include: { scopes: true },
+      });
+      if (!section) return apiError("Section not found", 404);
+      return apiSuccess(section);
+    } catch (e) {
+      console.error("GET /api/marketplace/sections/[id] error:", e);
+      return apiError("Failed to load section", 500);
+    }
+  });
 }
 
 export async function PATCH(
@@ -30,13 +37,20 @@ export async function PATCH(
   const sessionOrResponse = await requireSuperAdmin();
   if (sessionOrResponse instanceof Response) return sessionOrResponse;
 
-  try {
-    const { id } = await params;
-    const result = await parseAndValidate(request, updateSectionSchema);
-    if ("error" in result) return result.error;
+  const orgId = await getOrgIdFromRequest();
+  if (!orgId) return apiError("No active organization", 400);
 
-    const updated = await prisma.$transaction(async (tx) => {
-      await tx.marketplaceSection.update({
+  const { id } = await params;
+  const result = await parseAndValidate(request, updateSectionSchema);
+  if ("error" in result) return result.error;
+
+  return withTenant(orgId, async () => {
+    try {
+      // Sequential ops (no interactive prisma.$transaction): each tenant-scoped
+      // op is wrapped by the tenancy Extension in its own SET-LOCAL transaction;
+      // nesting an outer interactive tx would break. RLS scopes every op to the
+      // host org — a cross-tenant id simply resolves to nothing.
+      await prisma.marketplaceSection.update({
         where: { id },
         data: {
           ...(result.data.slug !== undefined && { slug: result.data.slug }),
@@ -75,7 +89,7 @@ export async function PATCH(
           a.length === b.length &&
           [...a].sort().join(",") === [...b].sort().join(",");
 
-        const existing = await tx.marketplaceSectionScope.findMany({
+        const existing = await prisma.marketplaceSectionScope.findMany({
           where: { sectionId: id },
         });
         const existingByKey = new Map(existing.map((s) => [keyOf(s), s]));
@@ -95,8 +109,8 @@ export async function PATCH(
           const match = existingByKey.get(key);
 
           if (!match) {
-            await tx.marketplaceSectionScope.create({
-              data: { sectionId: id, ...desired },
+            await prisma.marketplaceSectionScope.create({
+              data: { tenantId: orgId, sectionId: id, ...desired },
             });
             continue;
           }
@@ -106,7 +120,7 @@ export async function PATCH(
             sameSet(match.allowedProfileTypeIds, desired.allowedProfileTypeIds) &&
             sameSet(match.allowedRoleIds, desired.allowedRoleIds);
           if (!unchanged) {
-            await tx.marketplaceSectionScope.update({
+            await prisma.marketplaceSectionScope.update({
               where: { id: match.id },
               data: {
                 sortOrder: desired.sortOrder,
@@ -121,26 +135,26 @@ export async function PATCH(
           .filter((s) => !desiredKeys.has(keyOf(s)))
           .map((s) => s.id);
         if (removedIds.length > 0) {
-          await tx.marketplaceSectionScope.deleteMany({
+          await prisma.marketplaceSectionScope.deleteMany({
             where: { id: { in: removedIds } },
           });
         }
       }
 
-      return tx.marketplaceSection.findUniqueOrThrow({
+      const updated = await prisma.marketplaceSection.findUniqueOrThrow({
         where: { id },
         include: { scopes: true },
       });
-    });
 
-    revalidatePath("/admin/marketplace");
-    revalidatePath("/explore");
-    revalidatePath(`/explore/${updated.slug}`);
-    return apiSuccess(updated);
-  } catch (e) {
-    console.error("PATCH /api/marketplace/sections/[id] error:", e);
-    return apiError("Failed to update section", 500);
-  }
+      revalidatePath("/admin/marketplace");
+      revalidatePath("/explore");
+      revalidatePath(`/explore/${updated.slug}`);
+      return apiSuccess(updated);
+    } catch (e) {
+      console.error("PATCH /api/marketplace/sections/[id] error:", e);
+      return apiError("Failed to update section", 500);
+    }
+  });
 }
 
 export async function DELETE(
@@ -150,21 +164,26 @@ export async function DELETE(
   const sessionOrResponse = await requireSuperAdmin();
   if (sessionOrResponse instanceof Response) return sessionOrResponse;
 
-  try {
-    const { id } = await params;
-    const section = await prisma.marketplaceSection.findUnique({
-      where: { id },
-      select: { slug: true },
-    });
-    if (!section) return apiError("Section not found", 404);
+  const orgId = await getOrgIdFromRequest();
+  if (!orgId) return apiError("No active organization", 400);
 
-    await prisma.marketplaceSection.delete({ where: { id } });
-    revalidatePath("/admin/marketplace");
-    revalidatePath("/explore");
-    revalidatePath(`/explore/${section.slug}`);
-    return apiSuccess({ id });
-  } catch (e) {
-    console.error("DELETE /api/marketplace/sections/[id] error:", e);
-    return apiError("Failed to delete section", 500);
-  }
+  return withTenant(orgId, async () => {
+    try {
+      const { id } = await params;
+      const section = await prisma.marketplaceSection.findUnique({
+        where: { id },
+        select: { slug: true },
+      });
+      if (!section) return apiError("Section not found", 404);
+
+      await prisma.marketplaceSection.delete({ where: { id } });
+      revalidatePath("/admin/marketplace");
+      revalidatePath("/explore");
+      revalidatePath(`/explore/${section.slug}`);
+      return apiSuccess({ id });
+    } catch (e) {
+      console.error("DELETE /api/marketplace/sections/[id] error:", e);
+      return apiError("Failed to delete section", 500);
+    }
+  });
 }

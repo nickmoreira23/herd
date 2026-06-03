@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { apiSuccess, apiError } from "@/lib/api-utils";
 import { getViewerContext } from "@/lib/marketplace/visibility-helpers";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 import {
   resolveItemsPage,
   INITIAL_ITEMS_PAGE_SIZE,
@@ -29,40 +31,47 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const { id } = await params;
-    const sp = request.nextUrl.searchParams;
-    const blockName = sp.get("block");
-    if (!blockName) return apiError("`block` is required", 400);
-    const offset = Math.max(0, Number(sp.get("offset") ?? 0) || 0);
-    const limitRaw = Number(sp.get("limit") ?? INITIAL_ITEMS_PAGE_SIZE);
-    const limit = Math.min(
-      MAX_ITEMS_PAGE_SIZE,
-      Math.max(1, Number.isFinite(limitRaw) ? limitRaw : INITIAL_ITEMS_PAGE_SIZE)
-    );
-    const query = sp.get("q") ?? "";
-    const filters = parseFilters(sp.get("filters"));
+  const orgId = await getOrgIdFromRequest();
+  // Public grid: no org context for this host → nothing to show.
+  if (!orgId) return apiSuccess({ items: [], total: 0, hasMore: false });
 
-    const section = await prisma.marketplaceSection.findUnique({
-      where: { id },
-      include: { scopes: true },
-    });
-    if (!section) return apiError("Section not found", 404);
+  return withTenant(orgId, async () => {
+    try {
+      const { id } = await params;
+      const sp = request.nextUrl.searchParams;
+      const blockName = sp.get("block");
+      if (!blockName) return apiError("`block` is required", 400);
+      const offset = Math.max(0, Number(sp.get("offset") ?? 0) || 0);
+      const limitRaw = Number(sp.get("limit") ?? INITIAL_ITEMS_PAGE_SIZE);
+      const limit = Math.min(
+        MAX_ITEMS_PAGE_SIZE,
+        Math.max(1, Number.isFinite(limitRaw) ? limitRaw : INITIAL_ITEMS_PAGE_SIZE)
+      );
+      const query = sp.get("q") ?? "";
+      const filters = parseFilters(sp.get("filters"));
 
-    const session = await auth();
-    const userId = (session?.user as { id?: string } | undefined)?.id ?? null;
-    const viewer = await getViewerContext(userId);
+      // Tenant-scoped: RLS returns the section only if it belongs to this org.
+      const section = await prisma.marketplaceSection.findUnique({
+        where: { id },
+        include: { scopes: true },
+      });
+      if (!section) return apiError("Section not found", 404);
 
-    const page = await resolveItemsPage(section, blockName, viewer, {
-      offset,
-      limit,
-      query,
-      filters,
-    });
+      const session = await auth();
+      const userId = (session?.user as { id?: string } | undefined)?.id ?? null;
+      const viewer = await getViewerContext(userId);
 
-    return apiSuccess(page);
-  } catch (e) {
-    console.error("GET /api/marketplace/sections/[id]/items error:", e);
-    return apiError("Failed to load items page", 500);
-  }
+      const page = await resolveItemsPage(section, blockName, viewer, {
+        offset,
+        limit,
+        query,
+        filters,
+      });
+
+      return apiSuccess(page);
+    } catch (e) {
+      console.error("GET /api/marketplace/sections/[id]/items error:", e);
+      return apiError("Failed to load items page", 500);
+    }
+  });
 }

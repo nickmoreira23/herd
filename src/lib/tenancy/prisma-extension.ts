@@ -36,6 +36,9 @@ export const TENANT_SCOPED_MODELS = [
   // carries global rows (tenant_id NULL) that an auto-tenant filter would hide; its
   // tenant scoping is manual in loadRoleMatrix().
   "Role",
+  // Fase 0 SE3 — Marketplace per-tenant
+  "MarketplaceSection",
+  "MarketplaceSectionScope",
 ] as const satisfies readonly string[];
 
 const READ_OPS = new Set([

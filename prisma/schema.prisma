@@ -1753,6 +1753,10 @@ model Organization {
   // Sub-etapa 25 — Audit Log
   auditLogs         AuditLog[]         @relation("AuditLogTenant")
 
+  // Fase 0 SE3 — Marketplace per-tenant
+  marketplaceSections      MarketplaceSection[]      @relation("MarketplaceSectionTenant")
+  marketplaceSectionScopes MarketplaceSectionScope[] @relation("MarketplaceSectionScopeTenant")
+
   @@index([parentOrgId])
   @@map("organizations")
 }
@@ -2649,7 +2653,8 @@ enum MarketplaceScopeType {
 
 model MarketplaceSection {
   id           String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  slug         String                   @unique
+  tenantId     String                   @map("tenant_id") @db.Uuid
+  slug         String
   name         String
   description  String?
   iconKey      String?
@@ -2667,13 +2672,19 @@ model MarketplaceSection {
   updatedAt DateTime @updatedAt
 
   scopes MarketplaceSectionScope[]
+  tenant Organization @relation("MarketplaceSectionTenant", fields: [tenantId], references: [id], onDelete: Cascade)
 
+  // slug is unique PER TENANT (each org builds its own marketplace) — was a
+  // global @unique, incompatible with per-tenant (Department molde, Sub-19).
+  @@unique([tenantId, slug])
   @@index([status])
+  @@index([tenantId])
   @@map("marketplace_sections")
 }
 
 model MarketplaceSectionScope {
   id         String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String               @map("tenant_id") @db.Uuid
   sectionId  String               @db.Uuid
   blockName  String
   scopeType  MarketplaceScopeType
@@ -2687,9 +2698,11 @@ model MarketplaceSectionScope {
   updatedAt DateTime @updatedAt
 
   section MarketplaceSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  tenant  Organization       @relation("MarketplaceSectionScopeTenant", fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([sectionId])
   @@index([blockName])
+  @@index([tenantId])
   @@map("marketplace_section_scopes")
 }
 
