@@ -191,28 +191,39 @@ This project uses `prisma migrate`, not `db push`.
 - Production/CI: `npm run db:deploy` (applies pending migrations without prompting).
 - Never run `prisma db push` — it bypasses the migration history.
 
-**🛑 PROD migrations are MANUAL until the auto-migrate is redesigned (cravado 2026-06-01).**
-After **every** merge that adds a migration, apply it to PROD by hand:
-```
-railway run -- npx prisma migrate deploy     # applies pending migrations (DIRECT_URL / owner)
-railway run -- npx prisma migrate status      # MUST print "Database schema is up to date!"
-```
-Skipping this leaves PROD drifted — the client (built from the new schema) expects columns the
-DB lacks → `P2022` (`column ... does not exist`). The proxy runs `organization.findUnique` on
-every request *before* the auth gate, so a drifted column there = **universal 500** (the morning
-incident: 8 migrations accumulated). A partial drift (e.g. a new `Location.source`) 500s only
-that feature.
+**⚙️ PROD migrations AUTO-APPLY on merge to main (cravado 2026-06-03 — supersedes the old
+"manual" contract).** The predeploy was repaired in #125 (isolated `migrate-tools` stage with
+its own `prisma` CLI + `schema.prisma`/`prisma.config.ts`/`prisma/migrations/`), so the Railway
+predeploy now runs `prisma migrate deploy` against PROD on **every** deploy. Confirmed by two
+independent merges on 2026-06-03: R&P #134 (`role_table_and_hybrid_grants`) auto-applied cleanly
+(verified roles+RLS+CHECK), and Marketplace #136 (`marketplace_per_tenant`) auto-applied and
+**failed in PROD** (see below). You normally do **not** run `migrate deploy` by hand anymore —
+but you **own** what the merge ships.
 
-**Why the predeploy does NOT cover this (the #112 attempt is broken):** `railway.json` sets
-`predeploy: "npx prisma generate && npx prisma migrate deploy"`, but the predeploy runs in the
-**runner/standalone image**, which the multi-stage Dockerfile builds by copying only
-`.next/standalone` + `.next/static` + `public`. That image has **no `prisma` CLI, no
-`schema.prisma`/`prisma.config.ts`, no `prisma/migrations/`** → `migrate deploy` cannot run, and
-Railway's predeploy is **best-effort (failure does NOT abort the promotion)**, so the deploy ships
-anyway with the migration unapplied. Confirmed on the Fatia 1a deploy (#115). Tracked as
-**[ALTA-OPERACIONAL]** tech debt (redesign: copy `prisma/`+CLI into the runner, OR migrate from
-the builder image, OR a blocking release step). Until then, **manual `migrate deploy` is the
-contract** — do not assume the predeploy applied anything.
+**🔴 The load-bearing consequence: a bad migration goes to PROD automatically on merge.** The
+old `[ALTA-OPERACIONAL]` "predeploy is broken / manual is the contract" note is **obsolete** and
+was removed. The new failure mode is the opposite: PROD-data incompatibilities that DEV never had.
+
+**Mandatory: data-aware pre-checks BEFORE merge** (not after). Because the migration auto-applies
+to PROD on merge, any migration with `NOT NULL` (without a default/backfill), a new `UNIQUE`, a
+narrowing type change, or a backfill **must be validated against PROD's real data** before the PR
+merges — PROD ≠ DEV (demo/legacy rows). The Marketplace incident: `ADD COLUMN tenant_id NOT NULL`
+passed in DEV (0 rows) but hit `P3009` in PROD (2 demo rows violated NOT NULL).
+
+**Recovery playbook if an auto-applied migration fails in PROD (P3009 / partial state):**
+1. **Do NOT assume the failure rolled everything back.** On Supabase/pooler the migration is
+   **not atomic** — verify the REAL schema (columns/indexes) via SQL before acting; it can leave
+   loose ends (e.g. an early `DROP INDEX` persisted while a later `ADD COLUMN` did not).
+2. **Manually restore** whatever the partial migration changed before it aborted (e.g. recreate a
+   dropped index: `CREATE UNIQUE INDEX ...`).
+3. `railway run -- npx prisma migrate resolve --rolled-back "<migration>"` — clears the failed
+   marker that otherwise blocks every subsequent deploy.
+4. **Fix the root cause** (e.g. delete the rows violating NOT NULL, or add a default/backfill to
+   the migration), then `railway run -- npx prisma migrate deploy` → `migrate status`
+   (`"Database schema is up to date!"`).
+
+Manual `railway run -- npx prisma migrate deploy` + `migrate status` remain the right tools for
+the recovery path above, and for verifying PROD after a merge.
 
 # Account seeding
 
