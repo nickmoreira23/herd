@@ -9,6 +9,9 @@ export type ResourceType =
   // R&P Fase 4a — split from `members`: reading the pending-invitations list is
   // O_A (not O_A_M like the members directory). Keeps can() exact vs requireOrgRole.
   | "invitations"
+  // R&P Fase 5 — custom per-org role management (create/update/delete/list).
+  // Assigning a custom role to a member reuses `members.update` (it edits a member).
+  | "roles"
   | "departments"
   | "locations"
   | "audit_log"
@@ -28,12 +31,12 @@ export type Permission = {
 };
 
 export type ActorRole = {
-  role: MemberRole;
+  // System role (enum) OR null for a custom-role assignment row (R&P Fase 5 SOMA).
+  role: MemberRole | null;
   scopeType: RoleScopeType;
   scopeId: string | null;
-  // Custom-role assignment (R&P Fase 4a). When set, can() keys the matrix by this
-  // roleId instead of the system `role` enum. MembershipRole carries no roleId yet
-  // (Fase 5/6 assigns custom roles), so getActor() never populates it today.
+  // Custom-role assignment. When set, can() keys the matrix by this roleId instead
+  // of the system `role` enum. getActor() now populates it from MembershipRole.roleId.
   roleId?: string | null;
 };
 

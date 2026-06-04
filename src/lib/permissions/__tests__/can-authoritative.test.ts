@@ -44,8 +44,8 @@ function permFor(entry: (typeof ENFORCEMENT_MAP)[keyof typeof ENFORCEMENT_MAP]):
 describe("can() authoritative — reproduces ENFORCEMENT_MAP grant-sets (T2 + T3)", () => {
   const entries = Object.entries(ENFORCEMENT_MAP);
 
-  it("covers all 27 ORG-scoped enforcement-map entries", () => {
-    expect(entries.length).toBe(27);
+  it("covers all 33 ORG-scoped enforcement-map entries", () => {
+    expect(entries.length).toBe(33); // 27 (V1→4a) + 6 (Fase 5: roles CRUD + assign)
   });
 
   for (const [routeId, entry] of entries) {

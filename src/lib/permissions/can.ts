@@ -36,6 +36,7 @@ export async function can(
   for (const actorRole of membership.roles) {
     // Custom roles key the matrix by roleId; system roles by the MemberRole enum.
     const matrixKey = actorRole.roleId ?? actorRole.role;
+    if (!matrixKey) continue; // CHECK guarantees one is set; defensive.
     const rolePermissions = matrix[matrixKey] ?? [];
 
     for (const granted of rolePermissions) {

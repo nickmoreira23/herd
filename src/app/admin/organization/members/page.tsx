@@ -37,6 +37,9 @@ export default async function MembersPage() {
           },
         },
         roles: {
+          // Members directory shows SYSTEM roles only; custom-role rows (role NULL,
+          // R&P Fase 5 SOMA) are managed in the roles UI, not here.
+          where: { role: { not: null } },
           select: { role: true, scopeType: true },
         },
       },
@@ -69,9 +72,15 @@ export default async function MembersPage() {
   const canManageOwners =
     viewer.isSuperAdmin === true || viewerOrgRole === "OWNER";
 
+  // Coerce to the client's system-role shape (the query already excludes null roles).
+  const membersForClient = members.map((m) => ({
+    ...m,
+    roles: m.roles.map((r) => ({ role: r.role as string, scopeType: r.scopeType as string })),
+  }));
+
   return (
     <MembersClient
-      members={members}
+      members={membersForClient}
       pendingInvitations={pendingInvitations}
       organizationId={orgId}
       canManage={canManage}

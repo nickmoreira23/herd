@@ -95,9 +95,9 @@ function actAs(actorId: string, orgId: string, isSuperAdmin = false) {
 
 async function orgRoleOf(memberId: string): Promise<string | undefined> {
   const row = await db.membershipRole.findFirst({
-    where: { memberId, scopeType: "ORG" },
+    where: { memberId, scopeType: "ORG", role: { not: null } },
   });
-  return row?.role;
+  return row?.role ?? undefined;
 }
 
 async function auditCount(memberId: string): Promise<number> {

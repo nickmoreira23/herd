@@ -29,11 +29,16 @@ export async function assertMemberBelongsToOrg(
   return member;
 }
 
-/** The single ORG-scoped role row of a member (V1 invariant: at most one). */
+/**
+ * The member's single SYSTEM ORG-scoped role row (OWNER/ADMIN/MEMBER).
+ * Fase 5 SOMA: a member may also hold custom ORG-scoped rows (roleId set, role
+ * NULL); those are NOT system roles, so filter to `role != null` to keep the
+ * "one system ORG role" invariant the V1 assignment relies on.
+ */
 export function getOrgRole(
   member: OrgMemberWithRoles
 ): MembershipRole | undefined {
-  return member.roles.find((r) => r.scopeType === "ORG");
+  return member.roles.find((r) => r.scopeType === "ORG" && r.role !== null);
 }
 
 /** Active members of `orgId` holding an ORG-scoped OWNER role. */
