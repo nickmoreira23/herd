@@ -23,6 +23,7 @@ export async function getActor(session: Session): Promise<Actor | null> {
           roles: {
             select: {
               role: true,
+              roleId: true,
               scopeType: true,
               scopeId: true,
             },

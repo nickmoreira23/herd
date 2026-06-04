@@ -69,6 +69,6 @@ describe("Role tenant isolation (integration)", () => {
     // TENANT_SCOPED_MODELS, so no GUC/filter is applied — they read freely.
     // 100 after Fase 4a: + invitations.read (OWNER, ADMIN) + org.restore (OWNER).
     const globals = await prisma.rolePermission.count({ where: { tenantId: null } });
-    expect(globals).toBe(100);
+    expect(globals).toBe(108);
   });
 });

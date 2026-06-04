@@ -63,6 +63,14 @@ export const ENFORCEMENT_MAP = {
   "GET /api/org/invitations": { allowedRoles: O_A, resource: "invitations", action: "read", scopeType: "org", note: "Fase 4a — own resource: invitations-read is O_A (members-read is O_A_M)" },
   "POST /api/org/invitations/[token]/revoke": { allowedRoles: O_A, resource: "members", action: "invite", scopeType: "org", note: "D7 — revoke = manage-invites capability" },
 
+  // ── Custom roles (R&P Fase 5) ────────────────────────────────────────
+  "GET /api/org/roles": { allowedRoles: O_A, resource: "roles", action: "read", scopeType: "org" },
+  "POST /api/org/roles": { allowedRoles: O_A, resource: "roles", action: "create", scopeType: "org" },
+  "PATCH /api/org/roles/[id]": { allowedRoles: O_A, resource: "roles", action: "update", scopeType: "org" },
+  "DELETE /api/org/roles/[id]": { allowedRoles: O_A, resource: "roles", action: "delete", scopeType: "org" },
+  "POST /api/org/members/[memberId]/roles": { allowedRoles: O_A, resource: "members", action: "update", scopeType: "org", note: "Fase 5 — assign a custom role to a member (additive)" },
+  "DELETE /api/org/members/[memberId]/roles/[roleId]": { allowedRoles: O_A, resource: "members", action: "update", scopeType: "org", note: "Fase 5 — unassign a custom role from a member" },
+
   // ── Org lifecycle ────────────────────────────────────────────────────
   "DELETE /api/org/[id]": { allowedRoles: O, resource: "org", action: "delete", scopeType: "org", note: "hard-delete (dissolution step 2)" },
   "POST /api/org/[id]/restore": { allowedRoles: O, resource: "org", action: "restore", scopeType: "org", note: "Fase 4a — own action: restore is Owner-only (org.update is also ADMIN)" },
