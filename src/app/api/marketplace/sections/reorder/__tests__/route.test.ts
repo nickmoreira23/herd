@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("@/lib/auth/require-super-admin", () => ({ requireSuperAdmin: vi.fn() }));
+vi.mock("@/lib/permissions", () => ({ requireOrgRole: vi.fn() }));
 vi.mock("@/lib/tenant/get-org-from-request", () => ({ getOrgIdFromRequest: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/lib/prisma", () => ({
@@ -10,11 +10,12 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 import { POST } from "../route";
-import { requireSuperAdmin } from "@/lib/auth/require-super-admin";
+import { requireOrgRole } from "@/lib/permissions";
 import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
 import { prisma } from "@/lib/prisma";
 
-const mockGuard = vi.mocked(requireSuperAdmin);
+// Role matrix owned by require-org-role.test.ts; requireOrgRole mocked here.
+const mockGuard = vi.mocked(requireOrgRole);
 const mockOrgId = vi.mocked(getOrgIdFromRequest);
 const mockUpdate = vi.mocked(prisma.marketplaceSection.update);
 
@@ -38,11 +39,12 @@ beforeEach(() => {
 });
 
 describe("POST /api/marketplace/sections/reorder — guard + tenant-scoped batch update", () => {
-  it("returns the guard Response when not super-admin", async () => {
-    mockGuard.mockResolvedValueOnce(new Response("nope", { status: 401 }) as never);
+  it("returns the guard Response when caller lacks OWNER/ADMIN", async () => {
+    mockGuard.mockResolvedValueOnce(new Response("nope", { status: 403 }) as never);
     const res = await POST(req({ orders: [{ id: UUID_A, sortOrder: 0 }] }));
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(403);
     expect(mockUpdate).not.toHaveBeenCalled();
+    expect(mockGuard).toHaveBeenCalledWith(["OWNER", "ADMIN"]);
   });
 
   it("400 when the host has no org", async () => {
