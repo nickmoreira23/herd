@@ -2,9 +2,9 @@
 
 > **Propósito:** Este arquivo é o estado canônico cross-session do trabalho de chat-architect em curso. Atualizado ao final de cada sub-etapa Fase 4. Qualquer nova sessão Claude.ai (chat-architect) deve ler este arquivo PRIMEIRO antes de propor qualquer trabalho.
 >
-> **Versão:** v1.13 (atualizado 2026-06-03, SE-0 truth-up: §5.1 auto-migrate FECHADA — happy-path (deploy ativo `f72c4c70` no-op; #134 auto-aplicou limpo) E abort real (deploy `25e72478`: #136 `marketplace_per_tenant` NOT NULL bateu em 2 linhas demo → P3009 → fail-safe abortou → recovery) exercitados em PROD. AGENTS.md §"Database migrations" corrigido no `709e23f` (não mais "PROD MANUAL/runner sem CLI"; descreve auto-apply + fail-safe + playbook P3009). Frente A fechada: live em PROD = `709e23f` ≥ 97a5197, código SE3 vivo, sem drift. Worktree auto-migrate removido. — histórico v1.12: a FORMA do comando era o defeito; wrapper `sh predeploy.sh` funciona, inline `cd && binstub` falha no executor do Railway)
+> **Versão:** v1.14 (atualizado 2026-06-04, sync STATE↔main `e1c91c7`. **28.5 majoritariamente ENTREGUE** — Resend (SE-4 `055f217`), domain envs (NEXTAUTH_URL/APEX_HOST/COOKIE_DOMAIN setados em PROD), Bucked Up org+`custom_domain` (SE-5 `#140`), `herd.buckedup.com` **Active + servindo no Railway** (cert + branding confirmados), e **aceite e2e validado ponta-a-ponta** (e-mail→link→aceite→logado em buckedup.comecaai.com.br/admin, cookie cross-subdomínio provado). **28.5 resta SÓ o flip auth-gate.** Nova **§2.1 Linha de segurança** (SE-PERM/Fix-1/2/3 merjados; flip `AUTH_GATE_MODE` shadow→enforce ~11/06 = único item ativo). SE-0 fechou auto-migrate. **Abertas: 27 (UI), 28 (smoke Fase 4), 28.4 (rename docs/.agents, cosmético).** — histórico v1.13: SE-0 §5.1 auto-migrate FECHADA + AGENTS.md truth-up `709e23f`)
 >
-> **Próxima atualização esperada:** pós-merge da Fatia 1 (Locations piloto) do ADR-002.
+> **Próxima atualização esperada:** flip `AUTH_GATE_MODE` shadow→enforce em PROD (~11/06); depois Sub-27 (UI) e Sub-28 (smoke Fase 4).
 
 ---
 
@@ -94,15 +94,48 @@ de 500. E a prevenção de drift via predeploy **ainda não existe de fato** (ve
 | 14 | **24 — Invitation flow + EmailProvider mock** | ✅ | `9149412` (PRs #77→#85) | — |
 | 15 | **25 — Audit log** | ✅ | `fdc7a75` (PR #88) | — |
 | 16 | 26 — Sub-org hierarchy (Escopo C) — **COMPLETA** (26.1 `ebc6344` · 26.2 `3c036cc` · 26.3 `1c2472b` · 26.4a `eed8eb0` · 26.4b `29666b2`) | ✅ | `29666b2` (#103) | `post-sub-26-{1,2,3,4a,4b}` |
-| 17 | 27 — UI consolidation | ⏭️ pending | — | — |
-| 18 | 28 — Smoke harness DEV | ⏭️ pending | — | — |
-| 19 | 28.5 — Domain cutover + Resend + Bucked Up PROD | ⏭️ pending | — | — |
+| 17 | 27 — UI consolidation | ⏭️ TODO (não começou; precedida pela etapa Proveniência ADR-002) | — | — |
+| 18 | 28 — Smoke harness Fase 4 (DEV) | ⏭️ TODO (NÃO construído; os `smoke:camada-1/2` + `smoke:roles-permissions` são de camadas anteriores, não Fase 4) | — | — |
+| 19 | 28.4 — Rename batch docs/.agents/scripts | ⏭️ TODO cosmético/deferido (185 arquivos ainda com "HERD"; o rename de runtime `src/` foi a 18.1) | — | — |
+| 20 | **28.5 — Domain + Resend + Bucked Up PROD** | 🟡 **PARCIAL** (resta só o flip auth-gate) | — | — |
 
-**Progresso:** 16/17 cravadas (94%).
+**28.5 sub-status:**
+- Resend (código) ✅ `055f217` (SE-4).
+- Domain envs (`NEXTAUTH_URL`/`APEX_HOST`/`COOKIE_DOMAIN`) ✅ setados em PROD.
+- Bucked Up org + `custom_domain=herd.buckedup.com` ✅ `#140` `f89344d` (SE-5).
+- `herd.buckedup.com` ✅ **Active + servindo no Railway** (Fase 2b FECHADA: DNS do time Bucked Up resolvido, cert válido, branding Bucked Up confirmado).
+- Aceite e2e ✅ **validado ponta-a-ponta** (2026-06-04): e-mail Resend → link vivo (`www.comecaai.com.br/accept/<token>`) → aceite → cai **logado** em `buckedup.comecaai.com.br/admin` (cookie cross-subdomínio `.comecaai.com.br` provado).
+- **FALTA:** flip `AUTH_GATE_MODE` shadow→enforce (ver §2.1; alvo ~11/06).
+
+**Progresso:** núcleo 18–26 ✅ cravado. 28.5 ~80% (só o flip). **Abertas:** 27, 28, 28.4 (cosmético). Trabalho não-planejado (SE-0/4/5 + linha de segurança) entregue à parte — ver abaixo e §2.1.
+
+**Trabalho não-planejado entregue (convenção SE-*, sem renumerar a sequência):**
+- **SE-0** — auto-migrate close (`54d40c0`) ✅ (ver §5.1 / header).
+- **SE-4** — Resend provider (`055f217`) ✅ — compõe a 28.5.
+- **SE-5** — Bucked Up promote (`#140` `f89344d`) + Fix-1 (`#142`) + cleanup membership e2e (`#145`) ✅ — compõe a 28.5.
+
+---
+
+## 2.1 Linha de segurança paralela (SE-PERM / Fix-1/2/3)
+
+Trabalho de segurança **não-numerado** (emergiu de discoveries pré-go-live; paralelo à sequência 18→28.5). **Todos merjados em main `e1c91c7`.**
+
+| Item | PR / hash | Estado |
+|---|---|---|
+| **SE-PERM Peça 1** — auth-gate JWT no proxy (presence→validity, atrás de `AUTH_GATE_MODE`) | `#141` `24b5374` | em main; **`AUTH_GATE_MODE=shadow` em PROD**; **flip `enforce` PENDENTE (~11/06) = ÚNICO item ativo** |
+| **Fix-1** — restore `is_super_admin` de `nick@comecaai.com.br` | `#142` `7e69185` | aplicado em PROD (DELETE de teste limpo via `#145`) |
+| **Fix-2** — guard de membership na área `/admin/organization` | `#143` `8debbe9` | em main |
+| **Fix-3** — guards em `/admin/blocks` (requireOrgRole) + `/admin/marketplace` (requireSuperAdmin) | `#144` `e1c91c7` | em main |
+| **SE-PERM Peça 2** — can-map (enforce wiring) | — | **ABANDONAR** (dead weight: diverge de #134/#135 já em main) |
+| **SE-PERM Peça 3** — `CAN_ENFORCEMENT` | — | já `shadow` em PROD (inerte; observabilidade) |
+
+**Item ativo:** o **flip do auth-gate** (`AUTH_GATE_MODE=shadow→enforce`) é a única pendência viva desta linha — fecha o cookie-forjado nas ~399 rotas presence-only. Alvo ~11/06, após janela de shadow limpa nos logs `[auth-gate]`. (Cross-ref: §3 e §5 Tier 1.)
 
 ---
 
 ## 3. Pendência ativa
+
+> **Única pendência VIVA hoje: o flip do auth-gate** (`AUTH_GATE_MODE=shadow→enforce` em PROD, ~11/06 — ver **§2.1** e §5 Tier 1). Tudo de 28.5 fora isso está entregue (Resend, domain envs, Bucked Up, e2e). 27/28/28.4 são trabalho **futuro** (não "em voo"). Os blocos abaixo são histórico das sub-etapas já cravadas.
 
 ### Sub-etapa 25 (Audit log) — ✅ MERGED (2026-05-29)
 
@@ -326,6 +359,20 @@ Aguardando discovery antecipada antes da spec (regra cravada da skill).
 
 ### Tier 1 (resolve durante Fase 4)
 
+- **[ALTA-SEG / ATIVO] Flip do auth-gate** — `AUTH_GATE_MODE=shadow→enforce` em PROD (~11/06).
+  Hoje `shadow`: valida o JWT mas não bloqueia. O flip fecha o cookie-forjado nas ~399 rotas
+  presence-only (ver §2.1). Pré: janela de shadow limpa nos logs `[auth-gate]`. Kill-switch:
+  `AUTH_GATE_MODE=off`/`shadow` (env, sem deploy de código).
+- **[ALTA-SEG] Furo B — `/api/settings` sem guard.** `Setting` é **global/plataforma** (não
+  tenant-scoped) e a rota não tem `requireSuperAdmin`/`requireOrgRole` → qualquer logado lê/edita
+  config da plataforma (e as páginas "org profile/brand" escrevem nela). Decisão de produto:
+  super_admin-only vs migrar `Setting` pra per-org. NÃO coberto pela Fix-2/Fix-3 (essas são guards
+  de página; isto é a API).
+- **🔴 [MINA — pré apex-cutover] `app.comecaai.com.br` serve HERD, não GCP.** O subdomínio `app`
+  pertence à org **ComeçaAI** (slug `comecaai`, subdomain `app`) e serve o app. Há premissa de
+  engenharia de que `app` seria GCP / "nenhuma org usa `app`" — **FALSO**. Se o apex-cutover
+  rotear `app→GCP`, o **login da org ComeçaAI quebra**. `app` é subdomínio **reservado**: alinhar
+  ANTES de qualquer cutover de apex/DNS.
 - **[ALTA-OPERACIONAL] Reprojetar o auto-migrate — design isolado implementado, gate local verde, PENDENTE deploy de prova.**
   **Causa-raiz do #112 (corrige relatos anteriores):** o `railway.json` usava o campo
   **inválido `predeploy`** (o canônico do Railway é **`preDeployCommand`**) → o comando
@@ -535,12 +582,23 @@ Aguardando discovery antecipada antes da spec (regra cravada da skill).
 
 ### Tier 2 (resolve em Sub-etapa 28.5 ou cutover)
 
+- **[ESTRUTURAL] Isolamento `withTenant` host-scoped → membership-scoped.** A RLS isola pelo tenant
+  do **host** (`x-org-id`), sem checar a membership do **viewer**. Fix-2/Fix-3 fecharam por **guard
+  de layout** (tático); o fix de raiz é tornar a checagem de membership intrínseca à resolução de
+  org (só `withTenant(x-org-id)` se o viewer for membro). Quando cair, os layout guards viram
+  redundância defensiva.
+- **`ADMIN_EMAIL` em PROD = `nick@getpumped.ai`** (≠ owner documentado `nick@comecaai.com.br`). Por
+  isso o auto-promote de login nunca setou super_admin no comecaai (corrigido manual via Fix-1).
+  Realinhar o env OU documentar qual identidade é o super_admin "abençoado".
 - Refactor pra abandonar JWT `activeOrgId` completamente.
-- Resend integration real (substitui MockEmailProvider).
+- ~~Resend integration real~~ ✅ FEITO (SE-4 `055f217`).
 - Marketing site `comecaai.com.br` root.
-- Cloudflare DNS migration de GoDaddy.
-- Railway wildcard `*.comecaai.com.br`.
-- Bucked Up CNAME `herd.buckedup.com` (3 DNS records).
+- ~~Cloudflare DNS / wildcard `*.comecaai.com.br` / Bucked Up CNAME `herd.buckedup.com`~~ ✅
+  Domain envs setados em PROD + `herd.buckedup.com` Active/servindo (Fase 2b FECHADA). (Cloudflare
+  cutover formal de GoDaddy: confirmar com o Nick se ainda aplica.)
+- **Cosméticos/impl menores** (rename batch 28.4 docs/.agents; melhoria de link de convite
+  por-subdomínio-da-org; borda do proxy invalid-subdomain→apex sem banner se apex=GCP): **ver o
+  plano-mestre §11 follow-ups** em vez de duplicar aqui.
 
 ### Tier 3 (pós-Fase 4)
 
@@ -619,12 +677,12 @@ Pressure verbal de Nick durante execução não substitui pause-and-report pra m
 
 ## 8. Pré-cutover Sub-etapa 28.5
 
-Pendências do Nick (não-código):
+Estado (não-código):
 
-- Cloudflare account + DNS migration de GoDaddy.
-- Resend account + `comecaai.com.br` domain verification.
-- Railway wildcard `*.comecaai.com.br`.
-- Bucked Up DNS team coordination (CNAME `herd.buckedup.com`).
+- ✅ Resend + `comecaai.com.br` domain verification (provedor ativo; aceite e2e provado).
+- ✅ Railway wildcard `*.comecaai.com.br` (domain envs ativos; subdomínios de org servindo).
+- ✅ Bucked Up DNS / CNAME `herd.buckedup.com` — **Active + servindo** (cert válido, branding Bucked Up confirmado). **Fase 2b FECHADA.**
+- ⏳ Cloudflare account + DNS migration de GoDaddy — **confirmar com o Nick se o cutover formal ainda aplica** (os subdomínios já resolvem; pode já estar coberto). ⚠️ ANTES do apex-cutover, ver a **MINA `app.comecaai.com.br`** no §5 Tier 1.
 
 ---
 
