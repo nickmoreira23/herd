@@ -33,8 +33,7 @@ export default async function AdminSectionPreviewPage({
   if (!section) redirect("/admin/marketplace");
 
   const session = await auth();
-  const userId = (session?.user as { id?: string } | undefined)?.id ?? null;
-  const viewer = await getViewerContext(userId);
+  const viewer = await getViewerContext(session, orgId);
 
   const ctx = await buildRenderContext(section, viewer);
   const components = Array.isArray(section.components)

@@ -5,13 +5,17 @@ const slugSchema = z
   .min(1, "Slug is required")
   .regex(/^[a-z0-9-]+$/, "Slug must be lowercase letters, numbers, and dashes only");
 
+// SE5a — internal visibility roles. Org-level MemberRole values only (the
+// department-scoped ones are not meaningful for org-level section gating).
+// Empty/omitted = unrestricted (any logged member of the org sees the scope).
+export const SECTION_SCOPE_ROLES = ["OWNER", "ADMIN", "MEMBER"] as const;
+
 export const sectionScopeSchema = z.object({
   blockName: z.string().min(1),
   scopeType: z.enum(["ALL", "CATEGORY", "SUB_CATEGORY", "ITEM"]),
   scopeValue: z.string().nullable().optional(),
   sortOrder: z.coerce.number().int().optional(),
-  allowedProfileTypeIds: z.array(z.string().uuid()).optional(),
-  allowedRoleIds: z.array(z.string().uuid()).optional(),
+  allowedRoles: z.array(z.enum(SECTION_SCOPE_ROLES)).optional(),
 });
 
 export const createSectionSchema = z.object({

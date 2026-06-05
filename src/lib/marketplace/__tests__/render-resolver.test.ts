@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { MarketplaceScopeType } from "@prisma/client";
+import type { MemberRole } from "@prisma/client";
 import type { ArtifactMeta, CatalogItem } from "@/lib/chat/types";
 
 // ── Mock the two collaborators loadBlockItems depends on ────────────────
@@ -42,8 +43,7 @@ type Scope = {
   scopeType: MarketplaceScopeType;
   scopeValue: string | null;
   sortOrder: number;
-  allowedProfileTypeIds: string[];
-  allowedRoleIds: string[];
+  allowedRoles: MemberRole[];
   createdAt: Date;
   updatedAt: Date;
 };
@@ -56,8 +56,7 @@ function scope(partial: Partial<Scope>): Scope {
     scopeType: MarketplaceScopeType.ALL,
     scopeValue: null,
     sortOrder: 0,
-    allowedProfileTypeIds: [],
-    allowedRoleIds: [],
+    allowedRoles: [],
     createdAt: new Date(),
     updatedAt: new Date(),
     ...partial,
@@ -70,7 +69,7 @@ function section(scopes: Scope[]) {
   return { id: "sec1", scopes } as never;
 }
 
-const VIEWER = { profileTypeId: null, roleIds: [] as string[] };
+const VIEWER = { isSuperAdmin: false, roles: [] as MemberRole[] };
 
 /** Build a product ArtifactMeta in the real "type:uuid" id shape. */
 function product(
@@ -177,63 +176,53 @@ describe("render-resolver — scope × item matching (via resolveItemsPage)", ()
   });
 });
 
-describe("render-resolver — visibility gating (BASELINE, changes in SE5)", () => {
+describe("render-resolver — internal role visibility (SE5a)", () => {
   beforeEach(() =>
     seed([product("aaa", { name: "Whey" }), product("bbb", { name: "Creatine" })])
   );
 
-  it("unrestricted scope (empty allowed arrays) passes ANY viewer — the de-facto fail-open", async () => {
-    // This is THE current 'passes everything' behavior: the admin UI can no
-    // longer populate allowed*Ids (NetworkProfileType/Role removed in Sub-3.5/3.6),
-    // so every scope is unrestricted and visible to all viewers.
-    const page = await resolveItemsPage(
-      section([scope({ scopeType: MarketplaceScopeType.ALL })]),
-      "products",
-      { profileTypeId: null, roleIds: [] },
-      { offset: 0, limit: 50 }
-    );
-    expect(page.total).toBe(2);
+  const items = (s: ReturnType<typeof scope>[], viewer: { isSuperAdmin: boolean; roles: MemberRole[] }) =>
+    resolveItemsPage(section(s), "products", viewer, { offset: 0, limit: 50 }).then((p) => p.total);
+
+  it("unrestricted scope (empty allowedRoles) is visible to any logged member", async () => {
+    expect(await items([scope({})], { isSuperAdmin: false, roles: ["MEMBER"] })).toBe(2);
   });
 
-  it("restricted scope is HIDDEN from a viewer lacking the attribute (fail-CLOSED at scope level)", async () => {
-    // CHARACTERIZATION NOTE / DISCREPANCY WITH SPEC: the SE2 spec assumed a
-    // populated allowedProfileTypeIds + an attribute-less viewer would still
-    // "pass anyway". The code does the OPPOSITE: scopeMatchesViewer returns
-    // false, the scope is filtered out, and the item disappears. Since
-    // getViewerContext always yields profileTypeId=null today, ANY restricted
-    // scope would be invisible to everyone. Captured as the real baseline; the
-    // SE5 visibility decision must account for this.
-    const page = await resolveItemsPage(
-      section([
-        scope({ scopeType: MarketplaceScopeType.ALL, allowedProfileTypeIds: ["pt-1"] }),
-      ]),
-      "products",
-      { profileTypeId: null, roleIds: [] },
-      { offset: 0, limit: 50 }
-    );
-    expect(page.total).toBe(0);
+  it("unrestricted scope is visible to an anonymous viewer (roles [])", async () => {
+    expect(await items([scope({})], { isSuperAdmin: false, roles: [] })).toBe(2);
   });
 
-  it("restricted scope is VISIBLE to a viewer whose profileTypeId matches", async () => {
-    const page = await resolveItemsPage(
-      section([
-        scope({ scopeType: MarketplaceScopeType.ALL, allowedProfileTypeIds: ["pt-1"] }),
-      ]),
-      "products",
-      { profileTypeId: "pt-1", roleIds: [] },
-      { offset: 0, limit: 50 }
-    );
-    expect(page.total).toBe(2);
+  it("restricted scope [ADMIN] is VISIBLE to an ADMIN viewer", async () => {
+    expect(
+      await items([scope({ allowedRoles: ["ADMIN"] })], { isSuperAdmin: false, roles: ["ADMIN"] })
+    ).toBe(2);
   });
 
-  it("restricted-by-role scope is VISIBLE when a viewer role intersects", async () => {
-    const page = await resolveItemsPage(
-      section([scope({ scopeType: MarketplaceScopeType.ALL, allowedRoleIds: ["r-1"] })]),
-      "products",
-      { profileTypeId: null, roleIds: ["r-1", "r-2"] },
-      { offset: 0, limit: 50 }
-    );
-    expect(page.total).toBe(2);
+  it("restricted scope [ADMIN] is HIDDEN from a MEMBER viewer", async () => {
+    expect(
+      await items([scope({ allowedRoles: ["ADMIN"] })], { isSuperAdmin: false, roles: ["MEMBER"] })
+    ).toBe(0);
+  });
+
+  it("restricted scope is HIDDEN from an anonymous viewer (roles [])", async () => {
+    expect(
+      await items([scope({ allowedRoles: ["ADMIN"] })], { isSuperAdmin: false, roles: [] })
+    ).toBe(0);
+  });
+
+  it("super_admin sees a restricted scope regardless of roles", async () => {
+    expect(
+      await items([scope({ allowedRoles: ["ADMIN"] })], { isSuperAdmin: true, roles: [] })
+    ).toBe(2);
+  });
+
+  it("visible when any of the viewer's roles intersects allowedRoles", async () => {
+    expect(
+      await items([scope({ allowedRoles: ["OWNER", "ADMIN"] })], {
+        isSuperAdmin: false,
+        roles: ["MEMBER", "ADMIN"],
+      })
+    ).toBe(2);
   });
 });
 
@@ -335,12 +324,10 @@ describe("render-resolver — buildRenderContext", () => {
 
   it("only includes blocks whose scopes are visible to the viewer", async () => {
     const ctx = await buildRenderContext(
-      section([
-        scope({ scopeType: MarketplaceScopeType.ALL, allowedProfileTypeIds: ["pt-1"] }),
-      ]),
-      { profileTypeId: null, roleIds: [] }
+      section([scope({ scopeType: MarketplaceScopeType.ALL, allowedRoles: ["ADMIN"] })]),
+      { isSuperAdmin: false, roles: ["MEMBER"] }
     );
-    // restricted scope hidden from attribute-less viewer → block absent
+    // role-restricted scope hidden from a MEMBER viewer → block absent
     expect(ctx.itemsByBlock.products).toBeUndefined();
   });
 });

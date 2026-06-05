@@ -58,8 +58,7 @@ export async function GET(
       if (!section) return apiError("Section not found", 404);
 
       const session = await auth();
-      const userId = (session?.user as { id?: string } | undefined)?.id ?? null;
-      const viewer = await getViewerContext(userId);
+      const viewer = await getViewerContext(session, orgId);
 
       const page = await resolveItemsPage(section, blockName, viewer, {
         offset,

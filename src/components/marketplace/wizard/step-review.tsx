@@ -46,8 +46,7 @@ export function StepReview({ onBack, goToStep }: Props) {
             scopeType: s.scopeType,
             scopeValue: s.scopeValue,
             sortOrder: s.sortOrder,
-            allowedProfileTypeIds: s.allowedProfileTypeIds,
-            allowedRoleIds: s.allowedRoleIds,
+            allowedRoles: s.allowedRoles,
           })),
         }),
       });
@@ -129,10 +128,7 @@ export function StepReview({ onBack, goToStep }: Props) {
         <div className="rounded-md border bg-muted/20 p-3">
           <p className="text-xs text-muted-foreground">
             Visibility per scope:&nbsp;
-            {state.scopes.filter(
-              (s) =>
-                s.allowedProfileTypeIds.length > 0 || s.allowedRoleIds.length > 0
-            ).length}{" "}
+            {state.scopes.filter((s) => s.allowedRoles.length > 0).length}{" "}
             of {state.scopes.length} scope(s) are restricted.
           </p>
         </div>

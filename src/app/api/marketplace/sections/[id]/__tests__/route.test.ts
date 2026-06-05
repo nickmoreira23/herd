@@ -100,11 +100,11 @@ describe("PATCH /api/marketplace/sections/[id] — guard + tenant scoping + scop
   it("reconciles scopes via a diff — create new, update changed, delete absent, leave unchanged", async () => {
     mockScopeFindMany.mockResolvedValueOnce([
       // unchanged → must NOT be updated (no PK churn)
-      { id: "e1", blockName: "products", scopeType: "ALL", scopeValue: null, sortOrder: 0, allowedProfileTypeIds: [], allowedRoleIds: [] },
+      { id: "e1", blockName: "products", scopeType: "ALL", scopeValue: null, sortOrder: 0, allowedRoles: [] },
       // same identity, sortOrder changes → update
-      { id: "e2", blockName: "products", scopeType: "CATEGORY", scopeValue: "supplements", sortOrder: 1, allowedProfileTypeIds: [], allowedRoleIds: [] },
+      { id: "e2", blockName: "products", scopeType: "CATEGORY", scopeValue: "supplements", sortOrder: 1, allowedRoles: [] },
       // absent from payload → delete
-      { id: "e3", blockName: "agents", scopeType: "ALL", scopeValue: null, sortOrder: 2, allowedProfileTypeIds: [], allowedRoleIds: [] },
+      { id: "e3", blockName: "agents", scopeType: "ALL", scopeValue: null, sortOrder: 2, allowedRoles: [] },
     ] as never);
 
     const res = await PATCH(
