@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError, parseAndValidate } from "@/lib/api-utils";
+import { requireOrgRole } from "@/lib/permissions";
 import {
   bulkActionSchema,
   bulkImportRowSchema,
@@ -9,6 +10,9 @@ import { z } from "zod/v4";
 
 // POST: Bulk CSV import
 export async function POST(request: Request) {
+  const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN"]);
+  if (sessionOrResponse instanceof Response) return sessionOrResponse;
+
   try {
     const result = await parseAndValidate(
       request,
@@ -54,6 +58,9 @@ export async function POST(request: Request) {
 
 // PATCH: Bulk actions (activate, deactivate, price adjust)
 export async function PATCH(request: Request) {
+  const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN"]);
+  if (sessionOrResponse instanceof Response) return sessionOrResponse;
+
   try {
     const result = await parseAndValidate(request, bulkActionSchema);
     if ("error" in result) return result.error;

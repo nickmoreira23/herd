@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError, parseAndValidate } from "@/lib/api-utils";
+import { requireOrgRole } from "@/lib/permissions";
 import { createProductSchema } from "@/lib/validators/product";
 
 export async function GET(request: NextRequest) {
@@ -37,6 +38,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN"]);
+  if (sessionOrResponse instanceof Response) return sessionOrResponse;
+
   try {
     const result = await parseAndValidate(request, createProductSchema);
     if ("error" in result) return result.error;
