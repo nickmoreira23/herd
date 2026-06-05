@@ -56,9 +56,10 @@ export async function requireOrgRole(
   );
   if (!membership) return apiError("Not a member of this organization", 403);
 
-  // Check role match
-  const hasAllowedRole = membership.roles.some((r) =>
-    allowedRoles.includes(r.role)
+  // Check role match. Custom-role rows (role === null) carry no system-role gate;
+  // only system roles satisfy requireOrgRole. Custom-role authz is can()'s job.
+  const hasAllowedRole = membership.roles.some(
+    (r) => r.role !== null && allowedRoles.includes(r.role)
   );
   if (!hasAllowedRole) {
     return apiError(

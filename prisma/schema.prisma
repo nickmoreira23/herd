@@ -1800,17 +1800,24 @@ model OrganizationMember {
   @@map("organization_members")
 }
 
+// Hybrid (R&P Fase 5, SOMA model): a row is EITHER a system role (`role` enum set,
+// `roleId` NULL) OR a custom per-org role assignment (`roleId` FK set, `role` NULL).
+// A member may hold one system ORG role + N custom roles at once (additive). The
+// exactly-one(role, roleId) invariant is a raw-SQL CHECK (Prisma can't model it).
 model MembershipRole {
-  id         String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  memberId   String        @map("member_id") @db.Uuid
-  role       MemberRole
-  scopeType  RoleScopeType @default(ORG) @map("scope_type")
-  scopeId    String?       @map("scope_id") @db.Uuid
-  assignedAt DateTime      @default(now()) @map("assigned_at")
+  id         String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  memberId   String         @map("member_id") @db.Uuid
+  role       MemberRole?
+  roleId     String?        @map("role_id") @db.Uuid
+  scopeType  RoleScopeType  @default(ORG) @map("scope_type")
+  scopeId    String?        @map("scope_id") @db.Uuid
+  assignedAt DateTime       @default(now()) @map("assigned_at")
 
-  member OrganizationMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  member     OrganizationMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  customRole Role?              @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@index([memberId])
+  @@index([roleId])
   @@map("membership_roles")
 }
 
@@ -1862,6 +1869,7 @@ model Role {
 
   tenant          Organization     @relation("RoleTenant", fields: [tenantId], references: [id], onDelete: Cascade)
   rolePermissions RolePermission[]
+  membershipRoles MembershipRole[]
 
   @@unique([tenantId, key])
   @@index([tenantId])
