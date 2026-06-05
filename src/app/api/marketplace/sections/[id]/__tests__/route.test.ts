@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("@/lib/auth/require-super-admin", () => ({ requireSuperAdmin: vi.fn() }));
+vi.mock("@/lib/permissions", () => ({ requireOrgRole: vi.fn() }));
 vi.mock("@/lib/tenant/get-org-from-request", () => ({ getOrgIdFromRequest: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/lib/prisma", () => ({
@@ -21,11 +21,13 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 import { GET, PATCH, DELETE } from "../route";
-import { requireSuperAdmin } from "@/lib/auth/require-super-admin";
+import { requireOrgRole } from "@/lib/permissions";
 import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
 import { prisma } from "@/lib/prisma";
 
-const mockGuard = vi.mocked(requireSuperAdmin);
+// Role matrix (OWNER/ADMIN allow, MEMBER/non-member deny, super_admin bypass,
+// cross-org) is owned by require-org-role.test.ts. requireOrgRole is mocked here.
+const mockGuard = vi.mocked(requireOrgRole);
 const mockOrgId = vi.mocked(getOrgIdFromRequest);
 const mockFindUnique = vi.mocked(prisma.marketplaceSection.findUnique);
 const mockFindOrThrow = vi.mocked(prisma.marketplaceSection.findUniqueOrThrow);
@@ -80,11 +82,12 @@ describe("GET /api/marketplace/sections/[id] (read — host-scoped)", () => {
 });
 
 describe("PATCH /api/marketplace/sections/[id] — guard + tenant scoping + scope diff", () => {
-  it("returns the guard Response when not super-admin", async () => {
-    mockGuard.mockResolvedValueOnce(new Response("nope", { status: 401 }) as never);
+  it("returns the guard Response when caller lacks OWNER/ADMIN", async () => {
+    mockGuard.mockResolvedValueOnce(new Response("nope", { status: 403 }) as never);
     const res = await PATCH(req("PATCH", { name: "X" }), { params });
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(403);
     expect(mockUpdate).not.toHaveBeenCalled();
+    expect(mockGuard).toHaveBeenCalledWith(["OWNER", "ADMIN"]);
   });
 
   it("400 when the host has no org", async () => {
@@ -154,11 +157,12 @@ describe("PATCH /api/marketplace/sections/[id] — guard + tenant scoping + scop
 });
 
 describe("DELETE /api/marketplace/sections/[id] — guard + tenant scoping", () => {
-  it("returns the guard Response when not super-admin", async () => {
+  it("returns the guard Response when caller lacks OWNER/ADMIN", async () => {
     mockGuard.mockResolvedValueOnce(new Response("nope", { status: 403 }) as never);
     const res = await DELETE(req("DELETE"), { params });
     expect(res.status).toBe(403);
     expect(mockDelete).not.toHaveBeenCalled();
+    expect(mockGuard).toHaveBeenCalledWith(["OWNER", "ADMIN"]);
   });
 
   it("400 when the host has no org", async () => {

@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError, parseAndValidate } from "@/lib/api-utils";
-import { requireSuperAdmin } from "@/lib/auth/require-super-admin";
+import { requireOrgRole } from "@/lib/permissions";
 import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
 import { withTenant } from "@/lib/tenancy/context";
 import { createSectionSchema } from "@/lib/validators/marketplace";
@@ -27,7 +27,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const sessionOrResponse = await requireSuperAdmin();
+  const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN"]);
   if (sessionOrResponse instanceof Response) return sessionOrResponse;
 
   const orgId = await getOrgIdFromRequest();
