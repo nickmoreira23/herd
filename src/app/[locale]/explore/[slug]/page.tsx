@@ -26,12 +26,12 @@ interface PageParams {
 async function SectionContent({ slug }: { slug: string }) {
   await connection();
   const session = await auth();
-  const userId = (session?.user as { id?: string } | undefined)?.id ?? null;
-  const viewer = await getViewerContext(userId);
 
   // No org for this host → no storefront, so no section.
   const orgId = await getOrgIdFromRequest();
   if (!orgId) notFound();
+
+  const viewer = await getViewerContext(session, orgId);
 
   // findFirst (not findUnique): slug is unique PER TENANT now. RLS scopes the
   // read to the host org, so this resolves the org's own section by slug.

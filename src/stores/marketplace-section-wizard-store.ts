@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { ComponentNode } from "@/types/landing-page";
+import type { MemberRole } from "@prisma/client";
 
 // ─── Types ────────────────────────────────────────────────
 
@@ -20,8 +21,8 @@ export interface SectionScopeDraft {
   /** null when scopeType=ALL */
   scopeValue: string | null;
   sortOrder: number;
-  allowedProfileTypeIds: string[];
-  allowedRoleIds: string[];
+  /** SE5a — internal visibility roles. Empty = unrestricted (any logged member). */
+  allowedRoles: MemberRole[];
 }
 
 /** Snapshot of an item used by the picker (so we can show name/image even

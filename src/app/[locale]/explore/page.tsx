@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth";
 import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
 import { withTenant } from "@/lib/tenancy/context";
 import { getViewerContext } from "@/lib/marketplace/visibility-helpers";
+import { scopeMatchesViewer } from "@/lib/marketplace/render-resolver";
 import { LocaleLink } from "@/components/i18n/locale-link";
 import { isSupportedLocale } from "@/lib/i18n/locales";
 
@@ -17,8 +18,6 @@ import { isSupportedLocale } from "@/lib/i18n/locales";
 async function ExploreContent() {
   await connection();
   const session = await auth();
-  const userId = (session?.user as { id?: string } | undefined)?.id ?? null;
-  const viewer = await getViewerContext(userId);
 
   // Per-tenant storefront resolved by host (subdomain/customDomain). No org for
   // this host (e.g. apex) → there is no storefront to show.
@@ -34,6 +33,8 @@ async function ExploreContent() {
     );
   }
 
+  const viewer = await getViewerContext(session, orgId);
+
   // RLS isolates by tenant; the status filter stays (public sees PUBLISHED only).
   const sections = await withTenant(orgId, () =>
     prisma.marketplaceSection.findMany({
@@ -43,25 +44,10 @@ async function ExploreContent() {
     })
   );
 
-  const visible = sections.filter((s) =>
-    // Section is visible if at least one of its scopes is visible to the viewer
-    // OR if it has no scopes (display anyway).
-    s.scopes.length === 0 ||
-    s.scopes.some((sc) => {
-      const restrictedByType = sc.allowedProfileTypeIds.length > 0;
-      const restrictedByRole = sc.allowedRoleIds.length > 0;
-      if (!restrictedByType && !restrictedByRole) return true;
-      if (
-        restrictedByType &&
-        viewer.profileTypeId &&
-        sc.allowedProfileTypeIds.includes(viewer.profileTypeId)
-      ) return true;
-      if (
-        restrictedByRole &&
-        viewer.roleIds.some((r) => sc.allowedRoleIds.includes(r))
-      ) return true;
-      return false;
-    })
+  // Section is visible if it has no scopes (display anyway) OR at least one of
+  // its scopes is visible to the viewer (shared scopeMatchesViewer — no dup).
+  const visible = sections.filter(
+    (s) => s.scopes.length === 0 || s.scopes.some((sc) => scopeMatchesViewer(sc, viewer))
   );
 
   if (visible.length === 0) {
@@ -69,7 +55,7 @@ async function ExploreContent() {
       <div className="text-center py-20">
         <h1 className="text-2xl font-semibold mb-2">Nothing to explore yet</h1>
         <p className="text-muted-foreground">
-          {userId
+          {session?.user
             ? "No sections are available for your profile right now."
             : "Sign in to see content tailored to your profile."}
         </p>

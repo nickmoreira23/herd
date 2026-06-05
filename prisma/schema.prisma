@@ -2699,8 +2699,10 @@ model MarketplaceSectionScope {
   scopeValue String?
   sortOrder  Int                  @default(0)
 
-  allowedProfileTypeIds String[] @db.Uuid
-  allowedRoleIds        String[] @db.Uuid
+  // SE5a — internal RBAC visibility. Empty = unrestricted (any logged member
+  // of the org sees it). Replaces the orphan uuid[] arrays that pointed to
+  // NetworkProfileRole/NetworkProfileType (removed in Fase 3).
+  allowedRoles MemberRole[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -74,8 +74,7 @@ export async function POST(request: NextRequest) {
             scopeType: s.scopeType,
             scopeValue: s.scopeValue ?? null,
             sortOrder: s.sortOrder ?? idx,
-            allowedProfileTypeIds: s.allowedProfileTypeIds ?? [],
-            allowedRoleIds: s.allowedRoleIds ?? [],
+            allowedRoles: s.allowedRoles ?? [],
           })),
         });
       }

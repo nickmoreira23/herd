@@ -37,9 +37,8 @@ import {
 import type { EligibleBlock } from "@/lib/marketplace/types";
 import { BLOCK_ICON_MAP, BLOCK_LABEL_MAP } from "@/lib/blocks/block-meta";
 import { Layers as DefaultBlockIcon } from "lucide-react";
-
-type ProfileTypeOption = { id: string; displayName: string };
-type RoleOption = { id: string; displayName: string };
+import { SECTION_SCOPE_ROLES } from "@/lib/validators/marketplace";
+import type { MemberRole } from "@prisma/client";
 
 interface ScopeItem {
   id: string;
@@ -57,8 +56,6 @@ interface ScopeOptions {
 
 interface Props {
   eligibleBlocks: EligibleBlock[];
-  profileTypes: ProfileTypeOption[];
-  roles: RoleOption[];
   onNext: () => void;
   onBack: () => void;
 }
@@ -83,8 +80,6 @@ function genId() {
 
 export function StepItems({
   eligibleBlocks,
-  profileTypes,
-  roles,
   onNext,
   onBack,
 }: Props) {
@@ -112,12 +107,7 @@ export function StepItems({
           const block = eligibleBlocks.find((b) => b.name === blockName);
           if (!block) return null;
           return (
-            <BlockScopesPanel
-              key={blockName}
-              block={block}
-              profileTypes={profileTypes}
-              roles={roles}
-            />
+            <BlockScopesPanel key={blockName} block={block} />
           );
         })}
       </div>
@@ -136,15 +126,7 @@ export function StepItems({
 
 // ─── Per-block panel ─────────────────────────────────────
 
-function BlockScopesPanel({
-  block,
-  profileTypes,
-  roles,
-}: {
-  block: EligibleBlock;
-  profileTypes: ProfileTypeOption[];
-  roles: RoleOption[];
-}) {
+function BlockScopesPanel({ block }: { block: EligibleBlock }) {
   const { scopes, addScope, updateScope, removeScope, cacheItemSnapshot } =
     useMarketplaceWizardStore();
   const [options, setOptions] = useState<ScopeOptions | null>(null);
@@ -207,8 +189,7 @@ function BlockScopesPanel({
       scopeType,
       scopeValue,
       sortOrder: blockScopes.length,
-      allowedProfileTypeIds: [],
-      allowedRoleIds: [],
+      allowedRoles: [],
     });
   }
 
@@ -238,8 +219,6 @@ function BlockScopesPanel({
             <ScopeRow
               key={s.clientId}
               scope={s}
-              profileTypes={profileTypes}
-              roles={roles}
               onUpdate={(patch) => updateScope(s.clientId, patch)}
               onRemove={() => removeScope(s.clientId)}
             />
@@ -261,21 +240,16 @@ function BlockScopesPanel({
 
 function ScopeRow({
   scope,
-  profileTypes,
-  roles,
   onUpdate,
   onRemove,
 }: {
   scope: SectionScopeDraft;
-  profileTypes: ProfileTypeOption[];
-  roles: RoleOption[];
   onUpdate: (patch: Partial<SectionScopeDraft>) => void;
   onRemove: () => void;
 }) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const Icon = SCOPE_ICONS[scope.scopeType];
-  const restricted =
-    scope.allowedProfileTypeIds.length > 0 || scope.allowedRoleIds.length > 0;
+  const restricted = scope.allowedRoles.length > 0;
   const { itemSnapshots } = useMarketplaceWizardStore();
   const itemSnap =
     scope.scopeType === "ITEM" && scope.scopeValue
@@ -324,16 +298,10 @@ function ScopeRow({
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <CheckboxList
-              label="Allowed profile types"
-              options={profileTypes.map((p) => ({ id: p.id, label: p.displayName }))}
-              selected={scope.allowedProfileTypeIds}
-              onChange={(ids) => onUpdate({ allowedProfileTypeIds: ids })}
-            />
-            <CheckboxList
               label="Allowed roles"
-              options={roles.map((r) => ({ id: r.id, label: r.displayName }))}
-              selected={scope.allowedRoleIds}
-              onChange={(ids) => onUpdate({ allowedRoleIds: ids })}
+              options={SECTION_SCOPE_ROLES.map((r) => ({ id: r, label: r }))}
+              selected={scope.allowedRoles}
+              onChange={(ids) => onUpdate({ allowedRoles: ids as MemberRole[] })}
             />
           </div>
         </div>

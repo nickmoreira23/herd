@@ -41,7 +41,7 @@ beforeEach(() => {
   mockAuth.mockResolvedValue({ user: { id: "u1" } } as never);
   mockOrgId.mockResolvedValue("org-1");
   mockFindUnique.mockResolvedValue({ id: "sec-1", scopes: [] } as never);
-  mockViewer.mockResolvedValue({ profileId: "u1", profileTypeId: null, roleIds: [] });
+  mockViewer.mockResolvedValue({ profileId: "u1", isSuperAdmin: false, roles: [] });
   mockResolve.mockResolvedValue(PAGE as never);
 });
 
@@ -93,7 +93,9 @@ describe("GET /api/marketplace/sections/[id]/items", () => {
     mockAuth.mockResolvedValueOnce(null as never);
     const res = await GET(req("?block=products"), { params });
     expect(res.status).toBe(200);
-    expect(mockViewer).toHaveBeenCalledWith(null);
+    // Anonymous: getViewerContext is called with (null session, host orgId) →
+    // empty roles → only unrestricted scopes match (SE5a internal facet).
+    expect(mockViewer).toHaveBeenCalledWith(null, "org-1");
   });
 
   it("returns an empty page when the host has no org (no storefront)", async () => {

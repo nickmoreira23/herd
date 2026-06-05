@@ -11,15 +11,7 @@ import { StepItems } from "./step-items";
 import { StepSection } from "./step-section";
 import { StepIdentity } from "./step-identity";
 import { StepReview } from "./step-review";
-
-interface ProfileTypeOption {
-  id: string;
-  displayName: string;
-}
-interface RoleOption {
-  id: string;
-  displayName: string;
-}
+import type { MemberRole } from "@prisma/client";
 
 export interface InitialSectionForEdit {
   id: string;
@@ -38,15 +30,12 @@ export interface InitialSectionForEdit {
     scopeType: "ALL" | "CATEGORY" | "SUB_CATEGORY" | "ITEM";
     scopeValue: string | null;
     sortOrder: number;
-    allowedProfileTypeIds: string[];
-    allowedRoleIds: string[];
+    allowedRoles: MemberRole[];
   }>;
 }
 
 interface SectionWizardShellProps {
   eligibleBlocks: EligibleBlock[];
-  profileTypes: ProfileTypeOption[];
-  roles: RoleOption[];
   blockCategories: BlockCategory[];
   /** When provided, the wizard hydrates state from this section instead of resetting. */
   initialSection?: InitialSectionForEdit;
@@ -64,8 +53,6 @@ const STEPS = [1, 2, 3, 4, 5];
 
 export function SectionWizardShell({
   eligibleBlocks,
-  profileTypes,
-  roles,
   blockCategories,
   initialSection,
 }: SectionWizardShellProps) {
@@ -100,8 +87,7 @@ export function SectionWizardShell({
           scopeType: sc.scopeType,
           scopeValue: sc.scopeValue,
           sortOrder: sc.sortOrder,
-          allowedProfileTypeIds: sc.allowedProfileTypeIds,
-          allowedRoleIds: sc.allowedRoleIds,
+          allowedRoles: sc.allowedRoles,
         });
       }
     } else {
@@ -147,8 +133,6 @@ export function SectionWizardShell({
       {currentStep === 2 && (
         <StepItems
           eligibleBlocks={eligibleBlocks}
-          profileTypes={profileTypes}
-          roles={roles}
           onNext={handleNext}
           onBack={handleBack}
         />
