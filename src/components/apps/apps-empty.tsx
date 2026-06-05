@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Plug, Plus } from "lucide-react";
 import { useT } from "@/lib/i18n/locale-context";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export function AppsEmpty() {
   const t = useT();
@@ -22,19 +23,13 @@ export function AppsEmpty() {
       />
 
       {/* Empty state — fills remaining space */}
-      <div className="flex-1 flex flex-col items-center justify-center text-center rounded-xl border border-dashed bg-card">
-        <div className="flex items-center justify-center h-16 w-16 rounded-2xl bg-violet-500/10 mb-5">
-          <Plug className="h-8 w-8 text-violet-500" />
-        </div>
-        <h3 className="text-lg font-semibold mb-2">{t("apps.empty.title")}</h3>
-        <p className="text-sm text-muted-foreground max-w-md mb-6">
-          {t("apps.empty.description")}
-        </p>
-        <Button variant="outline" disabled>
-          <Plug className="mr-2 h-4 w-4" />
-          {t("apps.empty.cta")}
-        </Button>
-      </div>
+      <EmptyState
+        icon={Plug}
+        iconColor="violet"
+        title={t("apps.empty.title")}
+        description={t("apps.empty.description")}
+        action={{ label: t("apps.empty.cta"), icon: Plug, disabled: true }}
+      />
     </div>
   );
 }

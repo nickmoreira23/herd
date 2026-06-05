@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Music, Plus, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useT } from "@/lib/i18n/locale-context";
+import { EmptyState } from "@/components/ui/empty-state";
 import { AudioUploadModal } from "./audio-upload-modal";
 
 export function AudiosEmpty() {
@@ -29,19 +30,17 @@ export function AudiosEmpty() {
         />
 
         {/* Empty state — fills remaining space */}
-        <div className="flex-1 flex flex-col items-center justify-center text-center rounded-xl border border-dashed bg-card">
-          <div className="flex items-center justify-center h-16 w-16 rounded-2xl bg-violet-500/10 mb-5">
-            <Music className="h-8 w-8 text-violet-500" />
-          </div>
-          <h3 className="text-lg font-semibold mb-2">{t("audios.empty.title")}</h3>
-          <p className="text-sm text-muted-foreground max-w-md mb-6">
-            {t("audios.empty.description")}
-          </p>
-          <Button variant="outline" onClick={() => setShowUpload(true)}>
-            <Upload className="mr-2 h-4 w-4" />
-            {t("audios.empty.upload_first")}
-          </Button>
-        </div>
+        <EmptyState
+          icon={Music}
+          iconColor="violet"
+          title={t("audios.empty.title")}
+          description={t("audios.empty.description")}
+          action={{
+            label: t("audios.empty.upload_first"),
+            onClick: () => setShowUpload(true),
+            icon: Upload,
+          }}
+        />
       </div>
 
       <AudioUploadModal

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { FileText, Plus, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useT } from "@/lib/i18n/locale-context";
+import { EmptyState } from "@/components/ui/empty-state";
 import { UploadModal } from "./upload-modal";
 
 export function DocumentsEmpty() {
@@ -29,19 +30,17 @@ export function DocumentsEmpty() {
         />
 
         {/* Empty state — fills remaining space */}
-        <div className="flex-1 flex flex-col items-center justify-center text-center rounded-xl border border-dashed bg-card">
-          <div className="flex items-center justify-center h-16 w-16 rounded-2xl bg-blue-500/10 mb-5">
-            <FileText className="h-8 w-8 text-blue-500" />
-          </div>
-          <h3 className="text-lg font-semibold mb-2">{t("documents.empty.title")}</h3>
-          <p className="text-sm text-muted-foreground max-w-md mb-6">
-            {t("documents.empty.description")}
-          </p>
-          <Button variant="outline" onClick={() => setShowUpload(true)}>
-            <Upload className="mr-2 h-4 w-4" />
-            {t("documents.empty.upload_first")}
-          </Button>
-        </div>
+        <EmptyState
+          icon={FileText}
+          iconColor="blue"
+          title={t("documents.empty.title")}
+          description={t("documents.empty.description")}
+          action={{
+            label: t("documents.empty.upload_first"),
+            onClick: () => setShowUpload(true),
+            icon: Upload,
+          }}
+        />
       </div>
 
       <UploadModal
