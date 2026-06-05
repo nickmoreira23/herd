@@ -37,8 +37,6 @@ export default async function EditSectionPage({
   const categoriesSetting = await prisma.setting.findUnique({
     where: { key: BLOCK_CATEGORIES_SETTING_KEY },
   });
-  const roles: { id: string; displayName: string }[] = [];
-  const profileTypes: { id: string; displayName: string }[] = [];
 
   if (!section) redirect("/admin/marketplace");
   const categories = parseBlockCategories(categoriesSetting?.value);
@@ -62,16 +60,13 @@ export default async function EditSectionPage({
       scopeType: s.scopeType,
       scopeValue: s.scopeValue,
       sortOrder: s.sortOrder,
-      allowedProfileTypeIds: s.allowedProfileTypeIds,
-      allowedRoleIds: s.allowedRoleIds,
+      allowedRoles: s.allowedRoles,
     })),
   };
 
   return (
     <SectionWizardShell
       eligibleBlocks={getEligibleBlocks()}
-      profileTypes={profileTypes}
-      roles={roles}
       blockCategories={categories}
       initialSection={initial}
     />

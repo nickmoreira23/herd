@@ -1,7 +1,7 @@
 import { providers as dataProviders } from "@/lib/chat/data-retrieval";
 import { blockRegistry } from "@/lib/blocks/registry";
 import type { ArtifactMeta } from "@/lib/chat/types";
-import type { MarketplaceSection, MarketplaceSectionScope } from "@prisma/client";
+import type { MarketplaceSection, MarketplaceSectionScope, MemberRole } from "@prisma/client";
 import { MarketplaceScopeType } from "@prisma/client";
 import {
   applyFilters,
@@ -30,32 +30,27 @@ export interface RenderContext {
   facetsByBlock: Record<string, Facet[]>;
 }
 
-interface ScopeViewer {
-  profileTypeId: string | null;
-  roleIds: string[];
+/** Minimal viewer shape the scope gating needs (subset of ViewerContext). */
+export interface ScopeViewer {
+  isSuperAdmin: boolean;
+  roles: MemberRole[];
 }
 
-function scopeMatchesViewer(
-  scope: MarketplaceSectionScope,
+/**
+ * SE5a — internal RBAC visibility. A scope is visible to the viewer when:
+ *  - the viewer is super_admin (sees everything), OR
+ *  - the scope is unrestricted (empty allowedRoles), OR
+ *  - the viewer holds at least one of the scope's allowedRoles.
+ * Anonymous viewers carry roles=[] → only unrestricted scopes match.
+ * Shared by render-resolver and the /explore index (no duplicated logic).
+ */
+export function scopeMatchesViewer(
+  scope: Pick<MarketplaceSectionScope, "allowedRoles">,
   viewer: ScopeViewer
 ): boolean {
-  const restrictedByType = scope.allowedProfileTypeIds.length > 0;
-  const restrictedByRole = scope.allowedRoleIds.length > 0;
-  if (!restrictedByType && !restrictedByRole) return true;
-  if (
-    restrictedByType &&
-    viewer.profileTypeId &&
-    scope.allowedProfileTypeIds.includes(viewer.profileTypeId)
-  ) {
-    return true;
-  }
-  if (
-    restrictedByRole &&
-    viewer.roleIds.some((rid) => scope.allowedRoleIds.includes(rid))
-  ) {
-    return true;
-  }
-  return false;
+  if (viewer.isSuperAdmin) return true;
+  if (scope.allowedRoles.length === 0) return true;
+  return viewer.roles.some((r) => scope.allowedRoles.includes(r));
 }
 
 function itemMatchesScope(item: RenderItem, scope: MarketplaceSectionScope): boolean {

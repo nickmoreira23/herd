@@ -1,36 +1,74 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
-    networkProfile: { findUnique: vi.fn() },
-  },
-}));
+vi.mock("@/lib/permissions", () => ({ getActor: vi.fn() }));
 
 import { getViewerContext } from "../visibility-helpers";
-import { prisma } from "@/lib/prisma";
+import { getActor } from "@/lib/permissions";
+import type { Session } from "next-auth";
 
-const mockFindUnique = vi.mocked(prisma.networkProfile.findUnique);
+const mockGetActor = vi.mocked(getActor);
+const session = { user: { id: "p-1" } } as Session;
 
 beforeEach(() => vi.clearAllMocks());
 
-describe("getViewerContext (BASELINE — placeholder post Sub-3.5/3.6)", () => {
-  it("returns an empty context for an anonymous viewer (no profileId)", async () => {
-    const ctx = await getViewerContext(null);
-    expect(ctx).toEqual({ profileId: null, profileTypeId: null, roleIds: [] });
-    expect(mockFindUnique).not.toHaveBeenCalled();
+describe("getViewerContext (SE5a — real RBAC from getActor)", () => {
+  it("anonymous (no session) → empty, never calls getActor", async () => {
+    const ctx = await getViewerContext(null, "org-1");
+    expect(ctx).toEqual({ profileId: null, isSuperAdmin: false, roles: [] });
+    expect(mockGetActor).not.toHaveBeenCalled();
   });
 
-  it("resolves the profile id but always yields empty profileTypeId + roleIds", async () => {
-    mockFindUnique.mockResolvedValueOnce({ id: "p-1" } as never);
-    const ctx = await getViewerContext("p-1");
-    // The gating attributes are hard-coded empty until the new RBAC/identity
-    // model lands — this is the placeholder baseline SE5 will replace.
-    expect(ctx).toEqual({ profileId: "p-1", profileTypeId: null, roleIds: [] });
+  it("populates the viewer's system roles in the effective org", async () => {
+    mockGetActor.mockResolvedValueOnce({
+      profileId: "p-1",
+      isSuperAdmin: false,
+      memberships: [
+        { organizationId: "org-1", status: "ACTIVE", roles: [{ role: "ADMIN", scopeType: "ORG", scopeId: null }] },
+        { organizationId: "org-2", status: "ACTIVE", roles: [{ role: "OWNER", scopeType: "ORG", scopeId: null }] },
+      ],
+    } as never);
+    const ctx = await getViewerContext(session, "org-1");
+    expect(ctx).toEqual({ profileId: "p-1", isSuperAdmin: false, roles: ["ADMIN"] });
   });
 
-  it("falls back to the passed id (still empty attrs) when the profile is not found", async () => {
-    mockFindUnique.mockResolvedValueOnce(null as never);
-    const ctx = await getViewerContext("ghost");
-    expect(ctx).toEqual({ profileId: "ghost", profileTypeId: null, roleIds: [] });
+  it("drops null roles (custom-role rows carry roleId, not a system role)", async () => {
+    mockGetActor.mockResolvedValueOnce({
+      profileId: "p-1",
+      isSuperAdmin: false,
+      memberships: [
+        {
+          organizationId: "org-1",
+          status: "ACTIVE",
+          roles: [
+            { role: "MEMBER", scopeType: "ORG", scopeId: null },
+            { role: null, roleId: "custom-1", scopeType: "ORG", scopeId: null },
+          ],
+        },
+      ],
+    } as never);
+    const ctx = await getViewerContext(session, "org-1");
+    expect(ctx.roles).toEqual(["MEMBER"]);
+  });
+
+  it("no membership in the effective org → empty roles", async () => {
+    mockGetActor.mockResolvedValueOnce({
+      profileId: "p-1",
+      isSuperAdmin: false,
+      memberships: [
+        { organizationId: "other-org", status: "ACTIVE", roles: [{ role: "OWNER", scopeType: "ORG", scopeId: null }] },
+      ],
+    } as never);
+    const ctx = await getViewerContext(session, "org-1");
+    expect(ctx.roles).toEqual([]);
+  });
+
+  it("super_admin → isSuperAdmin true (sees everything; roles need not be populated)", async () => {
+    mockGetActor.mockResolvedValueOnce({
+      profileId: "admin-1",
+      isSuperAdmin: true,
+      memberships: [],
+    } as never);
+    const ctx = await getViewerContext(session, "org-1");
+    expect(ctx).toEqual({ profileId: "admin-1", isSuperAdmin: true, roles: [] });
   });
 });

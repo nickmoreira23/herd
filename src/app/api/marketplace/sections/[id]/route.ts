@@ -101,8 +101,7 @@ export async function PATCH(
             scopeType: s.scopeType,
             scopeValue: s.scopeValue ?? null,
             sortOrder: s.sortOrder ?? idx,
-            allowedProfileTypeIds: s.allowedProfileTypeIds ?? [],
-            allowedRoleIds: s.allowedRoleIds ?? [],
+            allowedRoles: s.allowedRoles ?? [],
           };
           const key = keyOf(desired);
           desiredKeys.add(key);
@@ -117,15 +116,13 @@ export async function PATCH(
 
           const unchanged =
             match.sortOrder === desired.sortOrder &&
-            sameSet(match.allowedProfileTypeIds, desired.allowedProfileTypeIds) &&
-            sameSet(match.allowedRoleIds, desired.allowedRoleIds);
+            sameSet(match.allowedRoles, desired.allowedRoles);
           if (!unchanged) {
             await prisma.marketplaceSectionScope.update({
               where: { id: match.id },
               data: {
                 sortOrder: desired.sortOrder,
-                allowedProfileTypeIds: desired.allowedProfileTypeIds,
-                allowedRoleIds: desired.allowedRoleIds,
+                allowedRoles: desired.allowedRoles,
               },
             });
           }
