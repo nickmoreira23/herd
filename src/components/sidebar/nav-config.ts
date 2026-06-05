@@ -32,6 +32,15 @@ import {
 import type { ProfileView } from "@/lib/core/profile-view/types";
 import type { MessageKey } from "@/lib/i18n/t";
 
+/**
+ * Visibility gate for a nav item (Sub-27c — UX only, NOT security; the server
+ * guards (#143/#144) still enforce). Absent = visible to everyone.
+ *   - "member"     → mirrors requireOrgRole([...any role]): visible to a member
+ *                    of the current org (any role) OR super_admin.
+ *   - "superAdmin" → mirrors requireSuperAdmin: visible only to super_admin.
+ */
+export type NavGate = "member" | "superAdmin";
+
 export interface NavLink {
   type: "link";
   href: string;
@@ -41,6 +50,8 @@ export interface NavLink {
   icon: LucideIcon;
   /** When set, render a colored square in the icon slot instead of the LucideIcon. */
   squareColor?: string;
+  /** Visibility gate (Sub-27c). Absent = visible to all. Fail-open. */
+  gate?: NavGate;
 }
 
 export interface NavGroup {
@@ -49,6 +60,8 @@ export interface NavGroup {
   labelKey?: MessageKey;
   icon: LucideIcon;
   children: NavLink[];
+  /** Visibility gate (Sub-27c). Absent = visible to all. Fail-open. */
+  gate?: NavGate;
 }
 
 export type NavItem = NavLink | NavGroup;
@@ -158,8 +171,8 @@ export function buildNavForView(view: ProfileView): ProfileNav {
       top: [
         { type: "link", href: "/admin", label: "Dashboard", labelKey: "nav.sidebar.dashboard", icon: LayoutDashboard },
         { type: "link", href: "/admin/chat", label: "Chat", labelKey: "nav.sidebar.chat", icon: MessageSquare },
-        { type: "link", href: "/admin/organization/profile", label: "Organization", labelKey: "nav.sidebar.organization", icon: Building2 },
-        { type: "link", href: "/admin/organization/members", label: "Members", labelKey: "nav.sidebar.members", icon: Users },
+        { type: "link", href: "/admin/organization/profile", label: "Organization", labelKey: "nav.sidebar.organization", icon: Building2, gate: "member" },
+        { type: "link", href: "/admin/organization/members", label: "Members", labelKey: "nav.sidebar.members", icon: Users, gate: "member" },
         { type: "link", href: "/admin/knowledge", label: "Knowledge", labelKey: "nav.sidebar.knowledge", icon: Brain },
         { type: "link", href: "/admin/marketplace", label: "Marketplace", labelKey: "nav.sidebar.marketplace", icon: ShoppingBag },
       ],
@@ -170,7 +183,7 @@ export function buildNavForView(view: ProfileView): ProfileNav {
         items: allCategories.map((c) => categoryToSquareLink(c.name, c.displayName, c.icon, c.color)),
       },
       bottom: [
-        { type: "link", href: "/admin/blocks", label: "Blocks", labelKey: "nav.sidebar.blocks", icon: BlocksIcon },
+        { type: "link", href: "/admin/blocks", label: "Blocks", labelKey: "nav.sidebar.blocks", icon: BlocksIcon, gate: "member" },
         { type: "link", href: "/admin/integrations", label: "Integrations", labelKey: "nav.sidebar.integrations", icon: Plug },
         { type: "link", href: "/admin/roadmap", label: "Roadmap", labelKey: "nav.sidebar.roadmap", icon: KanbanSquare },
         { type: "link", href: "/admin/help", label: "Help Center", labelKey: "nav.sidebar.help_center", icon: LifeBuoy },
@@ -187,7 +200,7 @@ export function buildNavForView(view: ProfileView): ProfileNav {
       { type: "link", href: "/admin/knowledge", label: "Knowledge", labelKey: "nav.sidebar.knowledge", icon: Brain },
       { type: "link", href: "/admin/marketplace", label: "Marketplace", labelKey: "nav.sidebar.marketplace", icon: ShoppingBag },
       { type: "link", href: "/admin/ledger", label: "Ledger", labelKey: "nav.sidebar.ledger", icon: Receipt },
-      { type: "link", href: "/admin/organization/profile", label: "Organization", labelKey: "nav.sidebar.organization", icon: Building2 },
+      { type: "link", href: "/admin/organization/profile", label: "Organization", labelKey: "nav.sidebar.organization", icon: Building2, gate: "member" },
     ],
     middle: {
       label: "Tools",
@@ -196,7 +209,7 @@ export function buildNavForView(view: ProfileView): ProfileNav {
       items: allCategories.map((c) => categoryToSquareLink(c.name, c.displayName, c.icon, c.color)),
     },
     bottom: [
-      { type: "link", href: "/admin/blocks", label: "Blocks", labelKey: "nav.sidebar.blocks", icon: BlocksIcon },
+      { type: "link", href: "/admin/blocks", label: "Blocks", labelKey: "nav.sidebar.blocks", icon: BlocksIcon, gate: "member" },
       { type: "link", href: "/admin/integrations", label: "Integrations", labelKey: "nav.sidebar.integrations", icon: Plug },
       { type: "link", href: "/admin/roadmap", label: "Roadmap", labelKey: "nav.sidebar.roadmap", icon: KanbanSquare },
       { type: "link", href: "/admin/handbook", label: "Handbook", labelKey: "nav.sidebar.handbook", icon: BookOpen },

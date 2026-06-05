@@ -39,6 +39,8 @@ import {
   type NavItem,
   type NavLink,
 } from "@/components/sidebar/nav-config";
+import { filterNavByAccess } from "@/components/sidebar/filter-nav";
+import type { MemberRole } from "@prisma/client";
 
 // Closed sidebar width: 16px padding + 40px logo/icon + 16px padding
 const ICON_COL = 72; // px
@@ -77,6 +79,9 @@ export function Sidebar() {
   // ORG-scoped role for the current host's org. Falls back to the host-blind
   // JWT role, then "admin" (super_admin without membership lands here).
   const [orgRole, setOrgRole] = useState<string | null>(null);
+  // Sub-27c: distinguishes "loading" (orgLoaded false → nav fail-open, shows
+  // gated items) from "loaded non-member" (orgLoaded true + orgRole null → hide).
+  const [orgLoaded, setOrgLoaded] = useState(false);
   const userRole =
     orgRole ??
     (session?.user as { role?: string } | undefined)?.role ??
@@ -128,9 +133,14 @@ export function Sidebar() {
       .then((res) => res.json())
       .then((json) => {
         if (json.data?.name) setCompanyName(json.data.name);
-        if (json.data?.role) setOrgRole(json.data.role);
+        // role may be absent (non-member) — store null so the nav gate can make
+        // a definitive decision; orgLoaded marks the load complete.
+        setOrgRole(json.data?.role ?? null);
+        setOrgLoaded(true);
       })
-      .catch(() => {});
+      .catch(() => {
+        // fail-open: on error leave orgLoaded false → gated items stay visible.
+      });
 
     // Org memberships — drive the switcher dropdown visibility and options.
     fetch("/api/auth/memberships")
@@ -455,7 +465,14 @@ export function Sidebar() {
 
       {/* Navigation — top / middle / bottom sections */}
       {(() => {
-        const nav = buildNavForView(profileView);
+        // Sub-27c: hide nav items the viewer cannot access (UX mirror of the
+        // server guards #143/#144). Fail-open while orgRole is still loading.
+        const nav = filterNavByAccess(buildNavForView(profileView), {
+          orgRole: orgLoaded ? (orgRole as MemberRole | null) : undefined,
+          isSuperAdmin: Boolean(
+            (session?.user as { isSuperAdmin?: boolean } | undefined)?.isSuperAdmin,
+          ),
+        });
         const middle = nav.middle;
         const renderItem = (item: NavItem) =>
           item.type === "group" ? renderGroup(item) : renderLink(item);
