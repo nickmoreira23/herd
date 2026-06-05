@@ -16,9 +16,6 @@ import {
   KanbanSquare,
   Dumbbell,
   Apple,
-  Droplet,
-  Moon,
-  HeartPulse,
   DollarSign,
   Folder,
   GraduationCap,
@@ -113,9 +110,6 @@ export function buildNavForView(view: ProfileView): ProfileNav {
     const spaces: NavItem[] = [
       { type: "link", href: "/admin/spaces/exercise", label: "Exercise", labelKey: "nav.sidebar.exercise", icon: Dumbbell, squareColor: SPACE_SQUARE },
       { type: "link", href: "/admin/spaces/nutrition", label: "Nutrition", labelKey: "nav.sidebar.nutrition", icon: Apple, squareColor: SPACE_SQUARE },
-      { type: "link", href: "/admin/spaces/hydration", label: "Hydration", labelKey: "nav.sidebar.hydration", icon: Droplet, squareColor: SPACE_SQUARE },
-      { type: "link", href: "/admin/spaces/sleep", label: "Sleep", labelKey: "nav.sidebar.sleep", icon: Moon, squareColor: SPACE_SQUARE },
-      { type: "link", href: "/admin/spaces/recovery", label: "Recovery", labelKey: "nav.sidebar.recovery", icon: HeartPulse, squareColor: SPACE_SQUARE },
     ];
 
     return {
