@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("@/lib/auth/require-super-admin", () => ({ requireSuperAdmin: vi.fn() }));
+vi.mock("@/lib/permissions", () => ({ requireOrgRole: vi.fn() }));
 vi.mock("@/lib/tenant/get-org-from-request", () => ({ getOrgIdFromRequest: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/lib/prisma", () => ({
@@ -16,11 +16,15 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 import { GET, POST } from "../route";
-import { requireSuperAdmin } from "@/lib/auth/require-super-admin";
+import { requireOrgRole } from "@/lib/permissions";
 import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
 import { prisma } from "@/lib/prisma";
 
-const mockGuard = vi.mocked(requireSuperAdmin);
+// Role→outcome matrix (OWNER/ADMIN allow, MEMBER/non-member deny, super_admin
+// bypass, cross-org) is owned by src/lib/permissions/__tests__/require-org-role.test.ts.
+// Here requireOrgRole is mocked: these tests verify the HANDLER honours its
+// Session(allow)/Response(deny) contract.
+const mockGuard = vi.mocked(requireOrgRole);
 const mockOrgId = vi.mocked(getOrgIdFromRequest);
 const mockFindMany = vi.mocked(prisma.marketplaceSection.findMany);
 const mockFindFirst = vi.mocked(prisma.marketplaceSection.findFirst);
@@ -63,12 +67,13 @@ describe("GET /api/marketplace/sections (read — host-scoped)", () => {
   });
 });
 
-describe("POST /api/marketplace/sections — super-admin guard + tenant scoping", () => {
-  it("returns the guard Response when caller is not super-admin", async () => {
+describe("POST /api/marketplace/sections — org-role guard + tenant scoping", () => {
+  it("returns the guard Response when caller lacks OWNER/ADMIN (e.g. MEMBER/non-member)", async () => {
     mockGuard.mockResolvedValueOnce(new Response("forbidden", { status: 403 }) as never);
     const res = await POST(postReq({ slug: "deals", name: "Deals" }));
     expect(res.status).toBe(403);
     expect(mockCreate).not.toHaveBeenCalled();
+    expect(mockGuard).toHaveBeenCalledWith(["OWNER", "ADMIN"]);
   });
 
   it("400 when the host has no org (cannot create a section without a tenant)", async () => {
