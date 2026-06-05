@@ -7,6 +7,7 @@ import {
   type MemberRole,
 } from "@prisma/client";
 import { ROLE_PERMISSIONS } from "@/lib/permissions/role-permissions";
+import { bulkEnsureGrants, type GrantSlot } from "@/lib/permissions/grant-repository";
 
 /**
  * V3.1 — materialize the hardcoded ROLE_PERMISSIONS into the global
@@ -48,11 +49,18 @@ export function rolePermissionRows(): RolePermissionRow[] {
 export async function seedRolePermissions(
   db: PrismaClient | Prisma.TransactionClient
 ): Promise<number> {
-  // Single createMany with skipDuplicates — idempotent (the @@unique compound
-  // key dedups on re-run) and one round-trip.
-  const data = rolePermissionRows();
-  await db.rolePermission.createMany({ data, skipDuplicates: true });
-  return data.length;
+  // Fase 6a: the legacy @@unique was dropped, so skipDuplicates no longer dedups.
+  // Route through the grant choke point's slot-safe bulk path: inserts only the
+  // system-global slots not already present (idempotent, no dup, no churn).
+  const slots: GrantSlot[] = rolePermissionRows().map((r) => ({
+    tenantId: null,
+    role: r.role,
+    roleId: null,
+    resource: r.resource,
+    action: r.action,
+    scopeType: r.scopeType,
+  }));
+  return bulkEnsureGrants(db, slots);
 }
 
 async function main() {

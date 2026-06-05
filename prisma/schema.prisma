@@ -1840,17 +1840,22 @@ model RolePermission {
   resource  String
   action    String
   scopeType RoleScopeType @default(ORG) @map("scope_type")
+  // R&P Fase 6a — grant | deny. Default grant (the existing rows backfill to grant).
+  // Deny processing in the loader + the admin floor land in Fase 6b; effect is inert here.
+  effect    RoleEffect    @default(grant)
   createdAt DateTime      @default(now()) @map("created_at")
   updatedAt DateTime      @updatedAt @map("updated_at")
 
   customRole Role?         @relation(fields: [roleId], references: [id], onDelete: Cascade)
   tenant     Organization? @relation("RolePermissionTenant", fields: [tenantId], references: [id], onDelete: Cascade)
 
-  // System-row uniqueness (the 97 global rows: role set, roleId/tenantId NULL). Keeps the
-  // seed idempotent. Per-org override / custom-role uniqueness needs partial indexes
-  // (Postgres NULLS NOT DISTINCT, which Prisma 7 can't model) and is deferred to Fase 6,
-  // when overrides are actually written — none exist in Fase 3.
-  @@unique([role, resource, action, scopeType])
+  // Uniqueness is enforced APP-LEVEL via the single write choke point
+  // (src/lib/permissions/grant-repository.ts) — "one row per logical slot"
+  // (tenant_id, role, role_id, resource, action, scope_type). The old
+  // @@unique([role,resource,action,scopeType]) was DROPPED in Fase 6a: it ignored
+  // tenant_id and blocked per-org overrides. A DB partial/NULLS NOT DISTINCT unique
+  // is intentionally NOT used (Prisma 7 can't model it → would drift, breaking the
+  // empty-_probe invariant the auto-migrate relies on).
   @@index([tenantId])
   @@index([roleId])
   @@map("role_permissions")
@@ -3611,6 +3616,16 @@ enum RoleScopeType {
   DEPARTMENT
 
   @@map("role_scope_type")
+}
+
+// R&P Fase 6a — a RolePermission row either grants or denies its slot. Deny is the
+// per-org override mechanism (subtract a system grant for one org); processed in the
+// loader from Fase 6b. Default grant keeps all existing rows behavior-identical.
+enum RoleEffect {
+  grant
+  deny
+
+  @@map("role_effect")
 }
 
 enum InvitationStatus {

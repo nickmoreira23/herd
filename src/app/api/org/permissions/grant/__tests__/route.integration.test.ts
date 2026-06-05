@@ -46,15 +46,9 @@ function asSuper() {
 
 const ORG = "ORG" as const;
 async function rowExists(role: string, resource: string, action: string) {
-  const row = await db.rolePermission.findUnique({
-    where: {
-      role_resource_action_scopeType: {
-        role: role as never,
-        resource,
-        action,
-        scopeType: ORG,
-      },
-    },
+  // Fase 6a: legacy @@unique dropped — address the system-global slot by fields.
+  const row = await db.rolePermission.findFirst({
+    where: { tenantId: null, roleId: null, role: role as never, resource, action, scopeType: ORG },
   });
   return row !== null;
 }
