@@ -21,8 +21,10 @@ import {
   GraduationCap,
   Users,
   Building2,
+  ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
+import type { ResourceType, ActionType } from "@/lib/permissions/types";
 import { getAllToolCategories } from "@/lib/tools/registry";
 import {
   CATEGORY_ICON_MAP,
@@ -39,7 +41,15 @@ import type { MessageKey } from "@/lib/i18n/t";
  *                    of the current org (any role) OR super_admin.
  *   - "superAdmin" → mirrors requireSuperAdmin: visible only to super_admin.
  */
-export type NavGate = "member" | "superAdmin";
+// R&P Fase 7b — "ownerOnly" gates GOVERNANCE items (the override editor) by the
+// enum OWNER role, OUTSIDE can() (D13). DOMAIN items use `perm` (useCan) instead.
+export type NavGate = "member" | "superAdmin" | "ownerOnly";
+
+/** Domain permission gate (Fase 7b): the item is visible iff useCan(resource, action). */
+export interface NavPerm {
+  resource: ResourceType;
+  action: ActionType;
+}
 
 export interface NavLink {
   type: "link";
@@ -52,6 +62,8 @@ export interface NavLink {
   squareColor?: string;
   /** Visibility gate (Sub-27c). Absent = visible to all. Fail-open. */
   gate?: NavGate;
+  /** Domain permission gate (Fase 7b) — derived from the resolved matrix via useCan. */
+  perm?: NavPerm;
 }
 
 export interface NavGroup {
@@ -171,8 +183,9 @@ export function buildNavForView(view: ProfileView): ProfileNav {
       top: [
         { type: "link", href: "/admin", label: "Dashboard", labelKey: "nav.sidebar.dashboard", icon: LayoutDashboard },
         { type: "link", href: "/admin/chat", label: "Chat", labelKey: "nav.sidebar.chat", icon: MessageSquare },
-        { type: "link", href: "/admin/organization/profile", label: "Organization", labelKey: "nav.sidebar.organization", icon: Building2, gate: "member" },
-        { type: "link", href: "/admin/organization/members", label: "Members", labelKey: "nav.sidebar.members", icon: Users, gate: "member" },
+        { type: "link", href: "/admin/organization/profile", label: "Organization", labelKey: "nav.sidebar.organization", icon: Building2, perm: { resource: "org", action: "read" } },
+        { type: "link", href: "/admin/organization/members", label: "Members", labelKey: "nav.sidebar.members", icon: Users, perm: { resource: "members", action: "read" } },
+        { type: "link", href: "/admin/organization/role-overrides", label: "Permissions", labelKey: "nav.sidebar.role_overrides", icon: ShieldCheck, gate: "ownerOnly" },
         { type: "link", href: "/admin/knowledge", label: "Knowledge", labelKey: "nav.sidebar.knowledge", icon: Brain },
         { type: "link", href: "/admin/marketplace", label: "Marketplace", labelKey: "nav.sidebar.marketplace", icon: ShoppingBag },
       ],
@@ -184,7 +197,7 @@ export function buildNavForView(view: ProfileView): ProfileNav {
       },
       bottom: [
         { type: "link", href: "/admin/blocks", label: "Blocks", labelKey: "nav.sidebar.blocks", icon: BlocksIcon, gate: "member" },
-        { type: "link", href: "/admin/integrations", label: "Integrations", labelKey: "nav.sidebar.integrations", icon: Plug },
+        { type: "link", href: "/admin/integrations", label: "Integrations", labelKey: "nav.sidebar.integrations", icon: Plug, gate: "superAdmin" },
         { type: "link", href: "/admin/roadmap", label: "Roadmap", labelKey: "nav.sidebar.roadmap", icon: KanbanSquare },
         { type: "link", href: "/admin/help", label: "Help Center", labelKey: "nav.sidebar.help_center", icon: LifeBuoy },
       ],
@@ -200,7 +213,7 @@ export function buildNavForView(view: ProfileView): ProfileNav {
       { type: "link", href: "/admin/knowledge", label: "Knowledge", labelKey: "nav.sidebar.knowledge", icon: Brain },
       { type: "link", href: "/admin/marketplace", label: "Marketplace", labelKey: "nav.sidebar.marketplace", icon: ShoppingBag },
       { type: "link", href: "/admin/ledger", label: "Ledger", labelKey: "nav.sidebar.ledger", icon: Receipt },
-      { type: "link", href: "/admin/organization/profile", label: "Organization", labelKey: "nav.sidebar.organization", icon: Building2, gate: "member" },
+      { type: "link", href: "/admin/organization/profile", label: "Organization", labelKey: "nav.sidebar.organization", icon: Building2, perm: { resource: "org", action: "read" } },
     ],
     middle: {
       label: "Tools",
@@ -210,7 +223,7 @@ export function buildNavForView(view: ProfileView): ProfileNav {
     },
     bottom: [
       { type: "link", href: "/admin/blocks", label: "Blocks", labelKey: "nav.sidebar.blocks", icon: BlocksIcon, gate: "member" },
-      { type: "link", href: "/admin/integrations", label: "Integrations", labelKey: "nav.sidebar.integrations", icon: Plug },
+      { type: "link", href: "/admin/integrations", label: "Integrations", labelKey: "nav.sidebar.integrations", icon: Plug, gate: "superAdmin" },
       { type: "link", href: "/admin/roadmap", label: "Roadmap", labelKey: "nav.sidebar.roadmap", icon: KanbanSquare },
       { type: "link", href: "/admin/handbook", label: "Handbook", labelKey: "nav.sidebar.handbook", icon: BookOpen },
       { type: "link", href: "/admin/help", label: "Help Center", labelKey: "nav.sidebar.help_center", icon: LifeBuoy },

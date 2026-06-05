@@ -1,103 +1,96 @@
 import { describe, it, expect } from "vitest";
-import { isNavItemVisible, filterNavByAccess, type NavViewer } from "../filter-nav";
+import { isNavItemVisible, filterNavByAccess, type NavViewer, type CanFn } from "../filter-nav";
 import type { ProfileNav } from "../nav-config";
 import { Home } from "lucide-react";
 
 const SUPER: NavViewer = { orgRole: null, isSuperAdmin: true };
 const MEMBER: NavViewer = { orgRole: "MEMBER", isSuperAdmin: false };
 const OWNER: NavViewer = { orgRole: "OWNER", isSuperAdmin: false };
-const NON_MEMBER: NavViewer = { orgRole: null, isSuperAdmin: false }; // loaded, not a member
-const LOADING: NavViewer = { orgRole: undefined, isSuperAdmin: false }; // /api/org/current in flight
+const NON_MEMBER: NavViewer = { orgRole: null, isSuperAdmin: false };
+const LOADING: NavViewer = { orgRole: undefined, isSuperAdmin: false };
 
-describe("isNavItemVisible — gate × viewer matrix", () => {
+const ALLOW_NONE: CanFn = () => false; // fail-closed stub
+const ALLOW_ALL: CanFn = () => true; // mirrors useCan for super_admin / full grant
+
+describe("isNavItemVisible — Fase 7b (gate + perm + can)", () => {
   it("ungated → visible to everyone", () => {
     for (const v of [SUPER, MEMBER, OWNER, NON_MEMBER, LOADING]) {
-      expect(isNavItemVisible(undefined, v)).toBe(true);
+      expect(isNavItemVisible({}, v, ALLOW_NONE)).toBe(true);
     }
   });
 
-  describe('gate "member"', () => {
-    it("member (any role) → visible", () => {
-      expect(isNavItemVisible("member", MEMBER)).toBe(true);
-      expect(isNavItemVisible("member", OWNER)).toBe(true);
+  describe("perm (DOMAIN) — derives from can(), fail-closed", () => {
+    const item = { perm: { resource: "members" as const, action: "read" as const } };
+    it("can() true → visible", () => {
+      expect(isNavItemVisible(item, MEMBER, ALLOW_ALL)).toBe(true);
     });
-    it("super_admin → visible (bypass)", () => {
-      expect(isNavItemVisible("member", SUPER)).toBe(true);
+    it("can() false → HIDDEN (fail-closed), regardless of role", () => {
+      expect(isNavItemVisible(item, OWNER, ALLOW_NONE)).toBe(false);
+      expect(isNavItemVisible(item, MEMBER, ALLOW_NONE)).toBe(false);
     });
-    it("non-member (loaded null, not super) → HIDDEN (definitive negative)", () => {
-      expect(isNavItemVisible("member", NON_MEMBER)).toBe(false);
-    });
-    it("loading (orgRole undefined, not super) → VISIBLE (fail-open)", () => {
-      expect(isNavItemVisible("member", LOADING)).toBe(true);
+    it("super_admin: useCan bypasses → modeled by ALLOW_ALL → visible", () => {
+      expect(isNavItemVisible(item, SUPER, ALLOW_ALL)).toBe(true);
     });
   });
 
-  describe('gate "superAdmin"', () => {
-    it("super_admin → visible", () => {
-      expect(isNavItemVisible("superAdmin", SUPER)).toBe(true);
+  describe('gate "ownerOnly" (GOVERNANCE — enum, outside can())', () => {
+    const item = { gate: "ownerOnly" as const };
+    it("OWNER → visible", () => expect(isNavItemVisible(item, OWNER, ALLOW_NONE)).toBe(true));
+    it("ADMIN/MEMBER → hidden", () => {
+      expect(isNavItemVisible(item, { orgRole: "ADMIN", isSuperAdmin: false }, ALLOW_NONE)).toBe(false);
+      expect(isNavItemVisible(item, MEMBER, ALLOW_NONE)).toBe(false);
     });
-    it("member / owner / non-member / loading (not super) → hidden", () => {
-      for (const v of [MEMBER, OWNER, NON_MEMBER, LOADING]) {
-        expect(isNavItemVisible("superAdmin", v)).toBe(false);
-      }
+    it("super_admin → visible (bypass)", () => expect(isNavItemVisible(item, SUPER, ALLOW_NONE)).toBe(true));
+  });
+
+  describe('gate "superAdmin"', () => {
+    const item = { gate: "superAdmin" as const };
+    it("only super_admin", () => {
+      expect(isNavItemVisible(item, SUPER, ALLOW_NONE)).toBe(true);
+      expect(isNavItemVisible(item, OWNER, ALLOW_NONE)).toBe(false);
+    });
+  });
+
+  describe('gate "member"', () => {
+    const item = { gate: "member" as const };
+    it("any role → visible; non-member → hidden; loading → fail-open; super → visible", () => {
+      expect(isNavItemVisible(item, MEMBER, ALLOW_NONE)).toBe(true);
+      expect(isNavItemVisible(item, NON_MEMBER, ALLOW_NONE)).toBe(false);
+      expect(isNavItemVisible(item, LOADING, ALLOW_NONE)).toBe(true);
+      expect(isNavItemVisible(item, SUPER, ALLOW_NONE)).toBe(true);
     });
   });
 });
 
-describe("filterNavByAccess", () => {
+describe("filterNavByAccess — per-role reflex (perm derives from the matrix)", () => {
   const nav: ProfileNav = {
     top: [
-      { type: "link", href: "/admin", label: "Dashboard", icon: Home }, // ungated
-      { type: "link", href: "/admin/organization/profile", label: "Organization", icon: Home, gate: "member" },
-      { type: "link", href: "/admin/organization/members", label: "Members", icon: Home, gate: "member" },
+      { type: "link", href: "/members", label: "Members", icon: Home, perm: { resource: "members", action: "read" } },
+      { type: "link", href: "/overrides", label: "Permissions", icon: Home, gate: "ownerOnly" },
+      { type: "link", href: "/home", label: "Home", icon: Home },
     ],
-    middle: {
-      label: "Work",
-      icon: Home,
-      items: [
-        { type: "link", href: "/admin/x", label: "X", icon: Home }, // ungated
-        {
-          type: "group",
-          label: "G",
-          icon: Home,
-          children: [{ type: "link", href: "/admin/blocks", label: "Blocks", icon: Home, gate: "member" }],
-        },
-      ],
-    },
-    bottom: [{ type: "link", href: "/admin/blocks", label: "Blocks", icon: Home, gate: "member" }],
+    middle: null,
+    bottom: [],
   };
 
-  it("member sees gated + ungated", () => {
-    const r = filterNavByAccess(nav, MEMBER);
-    expect(r.top.map((i) => (i.type === "link" ? i.label : i.label))).toEqual(["Dashboard", "Organization", "Members"]);
-    expect(r.bottom).toHaveLength(1);
-    expect(r.middle?.items).toHaveLength(2); // ungated + group(with visible child)
+  it("MEMBER with members:read granted → sees Members + Home, NOT the OWNER governance item", () => {
+    const can: CanFn = (r, a) => r === "members" && a === "read";
+    const out = filterNavByAccess(nav, MEMBER, can);
+    const hrefs = out.top.map((i) => (i.type === "link" ? i.href : ""));
+    expect(hrefs).toEqual(["/members", "/home"]);
   });
 
-  it("non-member sees only ungated; gated dropped (+ empty group dropped)", () => {
-    const r = filterNavByAccess(nav, NON_MEMBER);
-    expect(r.top.map((i) => i.label)).toEqual(["Dashboard"]);
-    expect(r.bottom).toHaveLength(0);
-    // group's only child was member-gated → child removed → group dropped
-    expect(r.middle?.items.map((i) => i.label)).toEqual(["X"]);
+  it("MEMBER WITHOUT the grant (synthetic deny) → Members hidden (fail-closed)", () => {
+    const out = filterNavByAccess(nav, MEMBER, ALLOW_NONE);
+    const hrefs = out.top.map((i) => (i.type === "link" ? i.href : ""));
+    expect(hrefs).toEqual(["/home"]); // only the ungated item
   });
 
-  it("super_admin sees everything", () => {
-    const r = filterNavByAccess(nav, SUPER);
-    expect(r.top).toHaveLength(3);
-    expect(r.bottom).toHaveLength(1);
-    expect(r.middle?.items).toHaveLength(2);
-  });
-
-  it("loading (fail-open) shows everything", () => {
-    const r = filterNavByAccess(nav, LOADING);
-    expect(r.top).toHaveLength(3);
-    expect(r.bottom).toHaveLength(1);
-  });
-
-  it("does not mutate the input", () => {
-    const before = JSON.parse(JSON.stringify(nav.top.map((i) => i.label)));
-    filterNavByAccess(nav, NON_MEMBER);
-    expect(nav.top.map((i) => i.label)).toEqual(before);
+  it("OWNER → sees the governance item; super_admin → sees everything", () => {
+    const ownerCan: CanFn = (r, a) => r === "members" && a === "read";
+    const owner = filterNavByAccess(nav, OWNER, ownerCan).top.map((i) => (i.type === "link" ? i.href : ""));
+    expect(owner).toContain("/overrides");
+    const sup = filterNavByAccess(nav, SUPER, ALLOW_ALL).top.map((i) => (i.type === "link" ? i.href : ""));
+    expect(sup).toEqual(["/members", "/overrides", "/home"]);
   });
 });

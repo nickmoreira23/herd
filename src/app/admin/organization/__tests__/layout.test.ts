@@ -8,22 +8,14 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const { requireOrgRoleMock, redirectMock, getActorMock, resolveMock } = vi.hoisted(() => ({
+const { requireOrgRoleMock, redirectMock } = vi.hoisted(() => ({
   requireOrgRoleMock: vi.fn(),
   redirectMock: vi.fn((url: string) => {
     throw new Error("REDIRECT:" + url);
   }),
-  getActorMock: vi.fn(async () => ({ profileId: "u1", isSuperAdmin: false, memberships: [] })),
-  // Fase 7a: the layout now seeds the permission provider; mock the resolver +
-  // provider so this stays a unit test (no DB). The guard behavior is unchanged.
-  resolveMock: vi.fn(async () => ({ allowSet: [], orgRole: null, isSuperAdmin: false })),
 }));
 
-vi.mock("@/lib/permissions", () => ({ requireOrgRole: requireOrgRoleMock, getActor: getActorMock }));
-vi.mock("@/lib/permissions/resolve-viewer-permissions", () => ({ resolveViewerPermissions: resolveMock }));
-vi.mock("@/lib/permissions/permission-context", () => ({
-  PermissionProvider: ({ children }: { children: unknown }) => children,
-}));
+vi.mock("@/lib/permissions", () => ({ requireOrgRole: requireOrgRoleMock }));
 vi.mock("next/navigation", () => ({ redirect: redirectMock }));
 
 import OrganizationLayout from "../layout";
