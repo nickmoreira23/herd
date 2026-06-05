@@ -38,7 +38,8 @@ const GRANT = {
   action: "read",
   scopeType: "ORG" as const,
 };
-const grantWhere = { role_resource_action_scopeType: GRANT };
+// Fase 6a: the @@unique compound key was dropped; address the slot by fields.
+const grantWhere = { tenantId: null, roleId: null, ...GRANT };
 
 function getLocations(): Promise<Response> {
   return locationsGet(
@@ -88,16 +89,13 @@ describe("flip has teeth: matrix edit changes authorization", () => {
     process.env.CAN_ENFORCEMENT = "enforce";
 
     // Baseline — grant present + enforce → MEMBER passes the gate.
-    await db.rolePermission.upsert({
-      where: grantWhere,
-      update: {},
-      create: GRANT,
-    });
+    await db.rolePermission.deleteMany({ where: grantWhere });
+    await db.rolePermission.create({ data: GRANT });
     const baseline = await getLocations();
     expect(baseline.status).not.toBe(403);
 
     // Remove the grant → can() denies → 403 (no code change, only data).
-    await db.rolePermission.delete({ where: grantWhere });
+    await db.rolePermission.deleteMany({ where: grantWhere });
     const denied = await getLocations();
     expect(denied.status).toBe(403);
 
@@ -111,7 +109,7 @@ describe("flip has teeth: matrix edit changes authorization", () => {
 
   it("with flag off, the same removed grant does NOT block (inert)", async () => {
     delete process.env.CAN_ENFORCEMENT; // off
-    await db.rolePermission.delete({ where: grantWhere }).catch(() => {});
+    await db.rolePermission.deleteMany({ where: grantWhere });
     const res = await getLocations();
     expect(res.status).not.toBe(403); // off → can() never runs
     await db.rolePermission.create({ data: GRANT }); // restore

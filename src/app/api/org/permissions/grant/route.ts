@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-utils";
 import { requireSuperAdmin } from "@/lib/auth/require-super-admin";
 import { writeAuditLog } from "@/lib/audit/write-audit-log";
+import { upsertGrant, removeGrant } from "@/lib/permissions/grant-repository";
 
 // Editable surface (V3.3, cravado): the 3 ORG roles × the 5 routed resources,
 // ORG scope only. Ghost resources (no route) and department-scoped roles are
@@ -56,10 +57,12 @@ export async function PATCH(request: Request) {
     return apiError("An owner's members permissions cannot be removed", 422);
   }
 
-  const where = {
-    role_resource_action_scopeType: { role, resource, action, scopeType },
-  };
-  const existing = await prisma.rolePermission.findUnique({ where });
+  // System-global slot (the V3 editor manages the canonical matrix: tenant/role_id null).
+  const slot = { tenantId: null, role, roleId: null, resource, action, scopeType };
+  const existing = await prisma.rolePermission.findFirst({
+    where: { tenantId: null, role, roleId: null, resource, action, scopeType },
+    select: { id: true },
+  });
   const currentlyGranted = existing !== null;
 
   // No-op — already in the requested state: no write, no audit.
@@ -67,12 +70,11 @@ export async function PATCH(request: Request) {
     return apiSuccess({ role, resource, action, scopeType, granted });
   }
 
+  // All writes go through the single grant choke point (Fase 6a).
   if (granted) {
-    await prisma.rolePermission.create({
-      data: { role, resource, action, scopeType },
-    });
+    await upsertGrant(slot, "grant");
   } else {
-    await prisma.rolePermission.delete({ where });
+    await removeGrant(slot);
   }
 
   // Audit under the super_admin's active org (discovery decision c). Best-effort.
