@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Link2, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useT } from "@/lib/i18n/locale-context";
+import { EmptyState } from "@/components/ui/empty-state";
 import { AddLinkModal } from "./add-link-modal";
 
 export function LinksEmpty() {
@@ -29,19 +30,17 @@ export function LinksEmpty() {
         />
 
         {/* Empty state — fills remaining space */}
-        <div className="flex-1 flex flex-col items-center justify-center text-center rounded-xl border border-dashed bg-card">
-          <div className="flex items-center justify-center h-16 w-16 rounded-2xl bg-orange-500/10 mb-5">
-            <Link2 className="h-8 w-8 text-orange-500" />
-          </div>
-          <h3 className="text-lg font-semibold mb-2">{t("links.empty.title")}</h3>
-          <p className="text-sm text-muted-foreground max-w-md mb-6">
-            {t("links.empty.description")}
-          </p>
-          <Button variant="outline" onClick={() => setShowAdd(true)}>
-            <Link2 className="mr-2 h-4 w-4" />
-            {t("links.empty.add_first")}
-          </Button>
-        </div>
+        <EmptyState
+          icon={Link2}
+          iconColor="orange"
+          title={t("links.empty.title")}
+          description={t("links.empty.description")}
+          action={{
+            label: t("links.empty.add_first"),
+            onClick: () => setShowAdd(true),
+            icon: Link2,
+          }}
+        />
       </div>
 
       <AddLinkModal

@@ -8,6 +8,7 @@ import { CreateTableModal } from "./create-table-modal";
 import { AirtableImportModal } from "./airtable-import-modal";
 import { useRouter } from "next/navigation";
 import { useT } from "@/lib/i18n/locale-context";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface TablesEmptyProps {
   airtableConnected?: boolean;
@@ -49,21 +50,17 @@ export function TablesEmpty({
         />
 
         {/* Empty state — fills remaining space */}
-        <div className="flex-1 flex flex-col items-center justify-center text-center rounded-xl border border-dashed bg-card">
-          <div className="flex items-center justify-center h-16 w-16 rounded-2xl bg-emerald-500/10 mb-5">
-            <Table2 className="h-8 w-8 text-emerald-500" />
-          </div>
-          <h3 className="text-lg font-semibold mb-2">
-            {t("tables.empty.title")}
-          </h3>
-          <p className="text-sm text-muted-foreground max-w-md mb-6">
-            {t("tables.empty.description")}
-          </p>
-          <Button variant="outline" onClick={() => setShowCreate(true)}>
-            <Table2 className="mr-2 h-4 w-4" />
-            {t("tables.empty.cta_create")}
-          </Button>
-        </div>
+        <EmptyState
+          icon={Table2}
+          iconColor="emerald"
+          title={t("tables.empty.title")}
+          description={t("tables.empty.description")}
+          action={{
+            label: t("tables.empty.cta_create"),
+            onClick: () => setShowCreate(true),
+            icon: Table2,
+          }}
+        />
       </div>
 
       <CreateTableModal
