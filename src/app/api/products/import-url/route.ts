@@ -1,6 +1,7 @@
 import { z } from "zod/v4";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError, parseAndValidate } from "@/lib/api-utils";
+import { requireOrgRole } from "@/lib/permissions";
 
 const importUrlSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -42,6 +43,9 @@ const importUrlSchema = z.object({
  * Creates a product from scraped data (after user review/edit).
  */
 export async function POST(request: Request) {
+  const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN"]);
+  if (sessionOrResponse instanceof Response) return sessionOrResponse;
+
   try {
     const result = await parseAndValidate(request, importUrlSchema);
     if ("error" in result) return result.error;

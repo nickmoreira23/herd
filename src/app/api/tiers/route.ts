@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError, parseAndValidate } from "@/lib/api-utils";
+import { requireOrgRole } from "@/lib/permissions";
 import { createTierSchema } from "@/lib/validators/tier";
 
 export async function GET() {
@@ -15,6 +16,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN"]);
+  if (sessionOrResponse instanceof Response) return sessionOrResponse;
+
   try {
     const result = await parseAndValidate(request, createTierSchema);
     if ("error" in result) return result.error;

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError, parseAndValidate } from "@/lib/api-utils";
+import { requireOrgRole } from "@/lib/permissions";
 import { agentTierAccessSchema } from "@/lib/validators/agent";
 
 export async function GET(
@@ -28,6 +29,9 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN"]);
+  if (sessionOrResponse instanceof Response) return sessionOrResponse;
+
   try {
     const { id } = await params;
     const result = await parseAndValidate(request, agentTierAccessSchema);

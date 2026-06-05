@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError, parseAndValidate } from "@/lib/api-utils";
+import { requireOrgRole } from "@/lib/permissions";
 import { updateRedemptionRuleSchema } from "@/lib/validators/redemption-rule";
 import { recalculateTierProductCosts } from "@/lib/recalculate-tier-costs";
 
@@ -8,6 +9,9 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ tierId: string; id: string }> }
 ) {
+  const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN"]);
+  if (sessionOrResponse instanceof Response) return sessionOrResponse;
+
   const { tierId, id } = await params;
   try {
     const existing = await prisma.subscriptionRedemptionRule.findFirst({
@@ -38,6 +42,9 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ tierId: string; id: string }> }
 ) {
+  const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN"]);
+  if (sessionOrResponse instanceof Response) return sessionOrResponse;
+
   const { tierId, id } = await params;
   try {
     const existing = await prisma.subscriptionRedemptionRule.findFirst({

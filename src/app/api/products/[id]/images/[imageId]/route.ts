@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-utils";
+import { requireOrgRole } from "@/lib/permissions";
 import { z } from "zod/v4";
 
 const updateImageSchema = z.object({
@@ -10,6 +11,9 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string; imageId: string }> }
 ) {
+  const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN"]);
+  if (sessionOrResponse instanceof Response) return sessionOrResponse;
+
   try {
     const { id, imageId } = await params;
     const body = await request.json();
@@ -42,6 +46,9 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string; imageId: string }> }
 ) {
+  const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN"]);
+  if (sessionOrResponse instanceof Response) return sessionOrResponse;
+
   try {
     const { id, imageId } = await params;
     await prisma.productImage.delete({

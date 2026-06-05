@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError, parseAndValidate } from "@/lib/api-utils";
+import { requireOrgRole } from "@/lib/permissions";
 import { createRedemptionRuleSchema } from "@/lib/validators/redemption-rule";
 import { recalculateTierProductCosts } from "@/lib/recalculate-tier-costs";
 
@@ -26,6 +27,9 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ tierId: string }> }
 ) {
+  const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN"]);
+  if (sessionOrResponse instanceof Response) return sessionOrResponse;
+
   const { tierId } = await params;
   try {
     // Verify tier exists
