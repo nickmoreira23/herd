@@ -25,6 +25,7 @@ import { useRouter } from "next/navigation";
 import { useT, useLocale } from "@/lib/i18n/locale-context";
 import { notifySuccess, notifyError } from "@/lib/i18n/notify";
 import { formatDate as formatDateI18n } from "@/lib/i18n/format-date";
+import { useCan } from "@/lib/permissions/permission-context";
 
 interface MemberRow {
   id: string;
@@ -52,19 +53,21 @@ interface MembersClientProps {
   members: MemberRow[];
   pendingInvitations: InvitationRow[];
   organizationId: string;
-  canManage: boolean;
   canManageOwners: boolean;
 }
 
 export function MembersClient({
   members: initialMembers,
   pendingInvitations: initialInvitations,
-  canManage,
   canManageOwners,
 }: MembersClientProps) {
   const t = useT();
   const locale = useLocale();
   const router = useRouter();
+  // R&P Fase 7b — manage capability derives from the resolved matrix (single
+  // source), not a server-passed enum prop. canManageOwners stays a prop: it is a
+  // finer-than-grant rule (OWNER-only for owner rows), not a plain resource:action.
+  const canManage = useCan()("members", "update");
   const [roleLoadingId, setRoleLoadingId] = useState<string | null>(null);
   const [invitations, setInvitations] = useState(initialInvitations);
   const [dialogOpen, setDialogOpen] = useState(false);

@@ -63,12 +63,9 @@ export default async function MembersPage() {
   const viewerOrgRole = members
     .find((m) => m.networkProfile.id === viewer.id)
     ?.roles.find((r) => r.scopeType === "ORG")?.role;
-  const canManage =
-    viewer.isSuperAdmin === true ||
-    viewerOrgRole === "OWNER" ||
-    viewerOrgRole === "ADMIN";
-  // Mirrors the API's fine rule: only an owner (or super_admin) may promote to
-  // OWNER or alter an existing OWNER. Derived from the already-resolved viewer.
+  // R&P Fase 7b — `canManage` moved client-side (useCan in MembersClient). Only
+  // `canManageOwners` stays a prop: it is the finer OWNER-only rule (promote/alter
+  // an OWNER), not a plain members.update grant.
   const canManageOwners =
     viewer.isSuperAdmin === true || viewerOrgRole === "OWNER";
 
@@ -83,7 +80,6 @@ export default async function MembersPage() {
       members={membersForClient}
       pendingInvitations={pendingInvitations}
       organizationId={orgId}
-      canManage={canManage}
       canManageOwners={canManageOwners}
     />
   );

@@ -454,6 +454,7 @@ export const messages: Record<MessageKey, string> = {
   "nav.sidebar.sell": "Sell",
   "nav.sidebar.earn": "Earn",
   "nav.sidebar.members": "Members",
+  "nav.sidebar.role_overrides": "Permissions",
   "nav.sidebar.roadmap": "Roadmap",
   "nav.sidebar.fitness_spaces": "Fitness Spaces",
   "nav.sidebar.work": "Work",
