@@ -47,6 +47,27 @@ the gate goes live.
    Compare against intent. To reset to canonical: `npm run seed:role-permissions`
    (idempotent; only adds missing canonical grants — it does NOT remove edits).
 
+## ⚠️ Per-org overrides + deny (Fase 6c) — inert under shadow, BITE on flip
+
+Fase 6c shipped the OWNER-only per-org override editor (`PATCH /api/org/roles/matrix`,
+grid at `/admin/organization/role-overrides`). An OWNER can now write **per-org
+`deny` rows** (`role_permissions` with `tenant_id = orgId`, `effect = deny`).
+
+Under `shadow`/`off` these denies are **INERT** — the loader resolves them but
+`enforce()` doesn't apply, so `requireOrgRole` still grants. **At the instant of the
+flip to `enforce`, every existing deny starts NEGATING for real.** The OWNER floor
+(`roles.{create,read,update,delete}` + `members.update`) is protected in BOTH the
+loader and the editor (422), so an OWNER can't self-lock; ADMIN/MEMBER/custom roles
+have no floor and CAN be emptied by a deny.
+
+**Before flipping `enforce` in PROD, audit existing per-org denies** (they were
+invisible under shadow):
+```sql
+SELECT tenant_id, role, role_id, resource, action
+FROM role_permissions WHERE effect = 'deny' ORDER BY 1,2;
+```
+Each row is a real `403` that turns on at the flip — confirm each is intended.
+
 ## Safe flip sequence
 
 1. **(a) Matrix in a known state** — canonical seed, or your deliberate edits.

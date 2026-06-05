@@ -1427,6 +1427,27 @@ export const messages = {
     "Apenas um super admin pode editar permissões.",
   "organization.permissions.grant_locked":
     "Esta permissão não é editável.",
+  "organization.role_overrides.title": "Permissões por organização",
+  "organization.role_overrides.subtitle":
+    "Sobreponha a matriz padrão para esta organização — conceda ou negue permissões por papel.",
+  "organization.role_overrides.read_only":
+    "Você pode visualizar, mas só o Proprietário edita as permissões da organização.",
+  "organization.role_overrides.system_roles": "Papéis de sistema",
+  "organization.role_overrides.custom_roles": "Papéis personalizados",
+  "organization.role_overrides.no_custom_roles":
+    "Nenhum papel personalizado criado ainda.",
+  "organization.role_overrides.saved": "Permissão atualizada.",
+  "organization.role_overrides.floor_locked":
+    "Não é possível remover permissões essenciais do Proprietário.",
+  "organization.role_overrides.forbidden": "Você não tem permissão para esta alteração.",
+  "organization.role_overrides.error": "Falha ao atualizar a permissão.",
+  "organization.role_overrides.floor_tooltip":
+    "Permissão essencial do Proprietário — não pode ser negada.",
+  "organization.role_overrides.badge_grant": "concedido",
+  "organization.role_overrides.badge_deny": "negado",
+  "organization.role_overrides.effect_inherit": "Herdar",
+  "organization.role_overrides.effect_grant": "Conceder",
+  "organization.role_overrides.effect_deny": "Negar",
   "organization.permissions.role.OWNER": "Proprietário",
   "organization.permissions.role.ADMIN": "Administrador",
   "organization.permissions.role.MEMBER": "Membro",

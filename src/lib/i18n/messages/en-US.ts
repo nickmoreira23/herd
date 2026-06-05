@@ -1402,6 +1402,26 @@ export const messages: Record<MessageKey, string> = {
     "Only a super admin can edit permissions.",
   "organization.permissions.grant_locked":
     "This permission is not editable.",
+  "organization.role_overrides.title": "Organization permissions",
+  "organization.role_overrides.subtitle":
+    "Override the default matrix for this organization — grant or deny permissions per role.",
+  "organization.role_overrides.read_only":
+    "You can view, but only the Owner edits the organization's permissions.",
+  "organization.role_overrides.system_roles": "System roles",
+  "organization.role_overrides.custom_roles": "Custom roles",
+  "organization.role_overrides.no_custom_roles": "No custom roles created yet.",
+  "organization.role_overrides.saved": "Permission updated.",
+  "organization.role_overrides.floor_locked":
+    "An owner's essential permissions cannot be denied.",
+  "organization.role_overrides.forbidden": "You don't have permission for this change.",
+  "organization.role_overrides.error": "Failed to update the permission.",
+  "organization.role_overrides.floor_tooltip":
+    "Essential owner permission — cannot be denied.",
+  "organization.role_overrides.badge_grant": "granted",
+  "organization.role_overrides.badge_deny": "denied",
+  "organization.role_overrides.effect_inherit": "Inherit",
+  "organization.role_overrides.effect_grant": "Grant",
+  "organization.role_overrides.effect_deny": "Deny",
   "organization.permissions.role.OWNER": "Owner",
   "organization.permissions.role.ADMIN": "Admin",
   "organization.permissions.role.MEMBER": "Member",
