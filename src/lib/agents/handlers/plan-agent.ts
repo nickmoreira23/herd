@@ -276,6 +276,20 @@ const ALLOWED_FIELDS = new Set([
 // ─── Tool Handler ──────────────────────────────────────────────
 
 /**
+ * Catalog-mutating tools. L1.0b — gated behind OWNER/ADMIN (canWriteCatalog),
+ * resolved once at the route. Read tools stay open to current roles so MEMBER
+ * agents keep working. Mirrors the L1.0 HTTP-route guard via the chat path.
+ */
+const PLAN_WRITE_TOOLS = new Set([
+  "update_plan_fields",
+  "create_discount_rule",
+  "delete_discount_rule",
+  "manage_agent_access",
+  "manage_perks",
+  "manage_community",
+]);
+
+/**
  * Handle all Plans Architect tool calls.
  * Returns the tool result string, or null if the tool is not handled here.
  */
@@ -283,8 +297,14 @@ export async function handlePlanAgentToolCall(
   toolName: string,
   input: Record<string, unknown>,
   send: SendFn,
-  allPlans?: Array<{ id: string; name: string; status: string; monthlyPrice: unknown }>
+  allPlans?: Array<{ id: string; name: string; status: string; monthlyPrice: unknown }>,
+  canWriteCatalog = false
 ): Promise<string | null> {
+  if (PLAN_WRITE_TOOLS.has(toolName) && !canWriteCatalog) {
+    send("step_complete", { text: "Permission denied" });
+    return "Error: This action requires the OWNER or ADMIN role in this organization.";
+  }
+
   switch (toolName) {
     case "list_plans":
       return handleListPlans(send);

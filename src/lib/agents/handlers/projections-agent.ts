@@ -207,11 +207,24 @@ When modifying assumptions, always explain the impact on key metrics. When compa
 
 // ─── Tool Handler ─────────────────────────────────────────────
 
+/**
+ * Catalog-mutating tools. L1.0b — gated behind OWNER/ADMIN (canWriteCatalog),
+ * resolved once at the route. Read tools (list/get/calculate/compare/defaults)
+ * stay open to current roles.
+ */
+const PROJECTIONS_WRITE_TOOLS = new Set(["save_scenario", "delete_scenario"]);
+
 export async function handleProjectionsToolCall(
   toolName: string,
   input: Record<string, unknown>,
-  send: SendFn
+  send: SendFn,
+  canWriteCatalog = false
 ): Promise<string | null> {
+  if (PROJECTIONS_WRITE_TOOLS.has(toolName) && !canWriteCatalog) {
+    send("step_complete", { text: "Permission denied" });
+    return "Error: This action requires the OWNER or ADMIN role in this organization.";
+  }
+
   switch (toolName) {
     case "list_scenarios": {
       const scenarios = await prisma.financialSnapshot.findMany({
