@@ -5,8 +5,10 @@ export function apiSuccess<T>(data: T, status = 200) {
   return NextResponse.json({ data }, { status });
 }
 
-export function apiError(message: string, status = 400, details?: unknown) {
-  return NextResponse.json({ error: message, details }, { status });
+export function apiError(message: string, status = 400, details?: unknown, code?: string) {
+  // `code` is a stable machine identifier the UI maps to an i18n key (never the
+  // prose). Omitted from the body when not provided (back-compat).
+  return NextResponse.json({ error: message, details, code }, { status });
 }
 
 export async function parseAndValidate<T>(

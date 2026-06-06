@@ -36,7 +36,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const { name, key, description } = parsed.data;
 
   if ((key && RESERVED.has(key.toLowerCase())) || (name && RESERVED.has(name.toLowerCase()))) {
-    return apiError("Name/key collides with a system role", 422);
+    return apiError("Name/key collides with a system role", 422, undefined, "name_reserved");
   }
 
   const actorProfileId = (session.user as { id?: string }).id ?? null;
@@ -63,7 +63,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return apiSuccess(updated);
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
-        return apiError("A role with this key already exists", 422);
+        return apiError("A role with this key already exists", 422, undefined, "key_duplicate");
       }
       throw e;
     }
