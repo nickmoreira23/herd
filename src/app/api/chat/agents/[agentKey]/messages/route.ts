@@ -9,6 +9,7 @@ import { blockRegistry, actionToBlock } from "@/lib/blocks/registry";
 import { searchData, SEARCH_DATA_TOOL } from "@/lib/chat/data-retrieval";
 import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
 import { withTenant } from "@/lib/tenancy/context";
+import { hasOrgRole } from "@/lib/permissions";
 import {
   EXECUTE_ACTION_TOOL,
   executeAction,
@@ -117,11 +118,16 @@ export async function POST(
     if (!conv) return apiError("Conversation not found", 404);
   }
 
+  // L1.0b — resolve catalog-write authorization once; specialist dispatchers
+  // gate their write-tools by it (read-tools stay open to current roles).
+  const canWriteCatalog = await hasOrgRole(["OWNER", "ADMIN"]);
+
   // Build role-specific tools and context
   const { extraTools, extraSystemPrompt, onToolCall } = await buildRoleConfig(
     agent,
     userId,
-    body.context
+    body.context,
+    canWriteCatalog
   );
 
   const stream = createAgentStream({
@@ -147,7 +153,8 @@ async function buildRoleConfig(
     key: string;
   },
   userId: string,
-  clientContext?: Record<string, unknown>
+  clientContext: Record<string, unknown> | undefined,
+  canWriteCatalog: boolean
 ): Promise<{
   extraTools: Anthropic.Tool[];
   extraSystemPrompt: string;
@@ -162,7 +169,7 @@ async function buildRoleConfig(
       return buildBlockConfig(agent.scope || agent.key, userId);
 
     case "SPECIALIST":
-      return buildSpecialistConfig(agent.key, clientContext);
+      return buildSpecialistConfig(agent.key, clientContext, canWriteCatalog);
 
     case "ORCHESTRATOR":
       return buildOrchestratorConfig(userId);
@@ -336,7 +343,11 @@ ${actionCatalog}`;
 
 // ─── Specialist Agent Config ───────────────────────────────────
 
-async function buildSpecialistConfig(agentKey: string, clientContext?: Record<string, unknown>): Promise<{
+async function buildSpecialistConfig(
+  agentKey: string,
+  clientContext: Record<string, unknown> | undefined,
+  canWriteCatalog: boolean
+): Promise<{
   extraTools: Anthropic.Tool[];
   extraSystemPrompt: string;
   onToolCall: (
@@ -353,7 +364,7 @@ async function buildSpecialistConfig(agentKey: string, clientContext?: Record<st
         extraTools: PLAN_AGENT_TOOLS,
         extraSystemPrompt: extraPrompt,
         onToolCall: async (name, input, send) =>
-          handlePlanAgentToolCall(name, input, send, allPlans),
+          handlePlanAgentToolCall(name, input, send, allPlans, canWriteCatalog),
       };
     }
 
@@ -363,7 +374,7 @@ async function buildSpecialistConfig(agentKey: string, clientContext?: Record<st
         extraTools: PROJECTIONS_AGENT_TOOLS,
         extraSystemPrompt: extraPrompt,
         onToolCall: async (name, input, send) =>
-          handleProjectionsToolCall(name, input, send),
+          handleProjectionsToolCall(name, input, send, canWriteCatalog),
       };
     }
 
