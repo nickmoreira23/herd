@@ -68,6 +68,35 @@ FROM role_permissions WHERE effect = 'deny' ORDER BY 1,2;
 ```
 Each row is a real `403` that turns on at the flip — confirm each is intended.
 
+## Promotion gate: shadow → enforce in PROD (D16)
+
+**Supersedes the volume-based gate** (the old "≥500 shadow requests / ≥24h
+observation"). PROD is pre-traffic — too few users for a volume threshold to be
+comparable — so promotion is gated on **deterministic evidence**, not request
+counts. Flip to `enforce` in PROD only when ALL four are green in the same window:
+
+1. **Oracle green** — `can()` == `ENFORCEMENT_MAP` across the 33 routes.
+   Deterministic, no traffic: `src/lib/permissions/__tests__/can-authoritative.test.ts`.
+2. **PROD == canonical** — reconfirmed in-window: 108 grants, **zero**
+   override/deny/custom rows (`SELECT count(*) FROM role_permissions` and the deny
+   query below).
+3. **Denies = zero** — reconfirmed in-window. Each deny becomes a real `403` at the
+   flip (see the deny audit above); zero denies = the flip is inert by construction.
+4. **Directed smoke** — test accounts for OWNER / ADMIN / MEMBER exercise the 3
+   Owner-only routes + a sample of the O_A routes under `shadow`; **100% `agree:true`**
+   confirmed in the `[can-shadow]` log.
+
+**Mitigations that make the swap safe:** `requireOrgRole` stays active (D7,
+defense-in-depth) · rollback is env-only, no schema (`enforce`→`shadow`+redeploy) ·
+blast radius is minimal (pre-traffic, few users).
+
+**Trade-off accepted consciously:** the directed smoke does NOT cover paths that
+only organic traffic would reveal — covered instead by the oracle (33 routes) + the
+redundant `requireOrgRole` guard.
+
+**Roles of the actors:** the flip stays a **deliberate human act in the chat**. Any
+log collector / reader is **read-only and never flips** `CAN_ENFORCEMENT`.
+
 ## Safe flip sequence
 
 1. **(a) Matrix in a known state** — canonical seed, or your deliberate edits.
@@ -101,6 +130,7 @@ production starts 403-ing unexpectedly after the flip:
 ## Production
 
 PROD flip is a **manual, deliberate** step (not done by CI/automation). Set
-`CAN_ENFORCEMENT` in the Railway environment variables. Always run step (b)
-shadow observation against PROD's matrix first. Keep the rollback one env-var
-away.
+`CAN_ENFORCEMENT` in the Railway environment variables. Before flipping, confirm
+the four-point **Promotion gate (D16)** above is green in the same window; the
+shadow observation in step (b) is how criterion 4 (directed smoke) is gathered.
+Keep the rollback one env-var away.
