@@ -459,6 +459,7 @@ export const messages = {
   "nav.sidebar.sell": "Vender",
   "nav.sidebar.earn": "Ganhos",
   "nav.sidebar.members": "Membros",
+  "nav.sidebar.role_overrides": "Permissões",
   "nav.sidebar.roadmap": "Roadmap",
   "nav.sidebar.fitness_spaces": "Espaços Fitness",
   "nav.sidebar.work": "Trabalho",

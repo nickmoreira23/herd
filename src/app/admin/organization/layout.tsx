@@ -1,7 +1,5 @@
 import { redirect } from "next/navigation";
-import { requireOrgRole, getActor } from "@/lib/permissions";
-import { resolveViewerPermissions } from "@/lib/permissions/resolve-viewer-permissions";
-import { PermissionProvider } from "@/lib/permissions/permission-context";
+import { requireOrgRole } from "@/lib/permissions";
 
 /**
  * Membership guard for the entire Organization admin area (Fix-2).
@@ -26,21 +24,9 @@ export default async function OrganizationLayout({
 }) {
   const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN", "MEMBER"]);
   if (sessionOrResponse instanceof Response) redirect("/login");
-  const session = sessionOrResponse;
 
-  // R&P Fase 7a — seed the client permission provider from the server (single
-  // source = the resolved matrix). INERT: nothing consumes useCan yet (that is
-  // 7b); this only makes the allow-set available at first paint (no fetch/flicker).
-  const orgId = session.user.activeOrgId;
-  const actor = orgId ? await getActor(session) : null;
-  const viewerPermissions =
-    orgId && actor
-      ? await resolveViewerPermissions(orgId, actor)
-      : {
-          allowSet: [],
-          orgRole: null,
-          isSuperAdmin: (session.user as { isSuperAdmin?: boolean }).isSuperAdmin === true,
-        };
-
-  return <PermissionProvider value={viewerPermissions}>{children}</PermissionProvider>;
+  // R&P Fase 7b — the permission provider moved UP to admin/layout.tsx (it must
+  // wrap the nav/AdminShell, which lives above this org layout). This layout keeps
+  // only the membership guard; no provider seed here (avoids a double provider).
+  return <>{children}</>;
 }

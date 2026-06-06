@@ -40,6 +40,7 @@ import {
   type NavLink,
 } from "@/components/sidebar/nav-config";
 import { filterNavByAccess } from "@/components/sidebar/filter-nav";
+import { useCan, useViewerPermissions } from "@/lib/permissions/permission-context";
 import type { MemberRole } from "@prisma/client";
 
 // Closed sidebar width: 16px padding + 40px logo/icon + 16px padding
@@ -82,6 +83,11 @@ export function Sidebar() {
   // Sub-27c: distinguishes "loading" (orgLoaded false → nav fail-open, shows
   // gated items) from "loaded non-member" (orgLoaded true + orgRole null → hide).
   const [orgLoaded, setOrgLoaded] = useState(false);
+  // R&P Fase 7b — nav gating now derives from the server-seeded provider (single
+  // source): domain items via useCan, governance via the enum orgRole. The fetched
+  // orgRole above stays only for the role-label display (cosmetic).
+  const can = useCan();
+  const viewerPerms = useViewerPermissions();
   const userRole =
     orgRole ??
     (session?.user as { role?: string } | undefined)?.role ??
@@ -465,14 +471,17 @@ export function Sidebar() {
 
       {/* Navigation — top / middle / bottom sections */}
       {(() => {
-        // Sub-27c: hide nav items the viewer cannot access (UX mirror of the
-        // server guards #143/#144). Fail-open while orgRole is still loading.
-        const nav = filterNavByAccess(buildNavForView(profileView), {
-          orgRole: orgLoaded ? (orgRole as MemberRole | null) : undefined,
-          isSuperAdmin: Boolean(
-            (session?.user as { isSuperAdmin?: boolean } | undefined)?.isSuperAdmin,
-          ),
-        });
+        // R&P Fase 7b: hide nav items the viewer cannot access (UX mirror of the
+        // server guards). Domain items via useCan (resolved matrix, fail-closed);
+        // governance/coarse via the provider's enum orgRole + isSuperAdmin.
+        const nav = filterNavByAccess(
+          buildNavForView(profileView),
+          {
+            orgRole: (viewerPerms?.orgRole ?? null) as MemberRole | null,
+            isSuperAdmin: viewerPerms?.isSuperAdmin ?? false,
+          },
+          can,
+        );
         const middle = nav.middle;
         const renderItem = (item: NavItem) =>
           item.type === "group" ? renderGroup(item) : renderLink(item);
