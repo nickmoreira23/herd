@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { toKebab, roleErrorKey, canMutateRoles } from "../roles-manager.helpers";
+import { toKebab, roleErrorKey, grantErrorKey, canMutateRoles } from "../roles-manager.helpers";
 
 describe("toKebab", () => {
   it("lowercases and hyphenates", () => {
@@ -17,20 +17,28 @@ describe("toKebab", () => {
   });
 });
 
-describe("roleErrorKey — 422 prose → i18n key", () => {
-  it("duplicate key", () => {
-    expect(roleErrorKey("A role with this key already exists")).toBe(
-      "organization.roles.error.duplicate",
-    );
+describe("roleErrorKey — 422 CODE → i18n key", () => {
+  it("key_duplicate", () => {
+    expect(roleErrorKey("key_duplicate")).toBe("organization.roles.error.duplicate");
   });
-  it("reserved collision", () => {
-    expect(roleErrorKey("Name/key collides with a system role")).toBe(
-      "organization.roles.error.reserved",
-    );
+  it("name_reserved", () => {
+    expect(roleErrorKey("name_reserved")).toBe("organization.roles.error.reserved");
   });
-  it("unknown → generic invalid", () => {
+  it("unknown/empty → generic invalid", () => {
     expect(roleErrorKey("")).toBe("organization.roles.error.invalid");
-    expect(roleErrorKey("something else")).toBe("organization.roles.error.invalid");
+    expect(roleErrorKey("whatever")).toBe("organization.roles.error.invalid");
+  });
+});
+
+describe("grantErrorKey — grant-editor CODE → i18n key", () => {
+  it("role_not_found", () => {
+    expect(grantErrorKey("role_not_found")).toBe("organization.roles.grants.role_not_found");
+  });
+  it("invalid_grant", () => {
+    expect(grantErrorKey("invalid_grant")).toBe("organization.roles.grants.invalid_grant");
+  });
+  it("unknown → generic save_error", () => {
+    expect(grantErrorKey("")).toBe("organization.roles.grants.save_error");
   });
 });
 

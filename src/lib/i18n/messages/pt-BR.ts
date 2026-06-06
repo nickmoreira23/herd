@@ -1454,6 +1454,16 @@ export const messages = {
   "organization.roles.feedback.load_error": "Não foi possível carregar os papéis",
   "organization.roles.feedback.save_error": "Não foi possível salvar o papel",
   "organization.roles.feedback.delete_error": "Não foi possível excluir o papel",
+  "organization.roles.grants.open": "Editar permissões",
+  "organization.roles.grants.title": "Permissões — {name}",
+  "organization.roles.grants.additive_hint":
+    "Estas permissões são somadas ao papel-base de cada membro. Papéis personalizados só concedem — nunca removem.",
+  "organization.roles.grants.loading": "Carregando permissões…",
+  "organization.roles.grants.close": "Concluir",
+  "organization.roles.grants.load_error": "Não foi possível carregar as permissões deste papel",
+  "organization.roles.grants.save_error": "Não foi possível atualizar a permissão",
+  "organization.roles.grants.role_not_found": "Este papel não existe mais",
+  "organization.roles.grants.invalid_grant": "Essa permissão não pode ser concedida",
   "organization.permissions.title": "Permissões",
   "organization.permissions.subtitle":
     "O que cada papel concede no modelo de permissões.",
