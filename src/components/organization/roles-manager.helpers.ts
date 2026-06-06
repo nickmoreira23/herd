@@ -10,14 +10,21 @@ export function toKebab(value: string): string {
 }
 
 /**
- * Map a 422 error body from the /roles endpoints to an i18n key. The endpoints
- * return distinct prose (no machine code today — Fase 7c-1 is zero-backend), so
- * we match on the message. Unknown → generic invalid.
+ * Map a 422 error CODE from the /roles endpoints to an i18n key (Fase 7c-2a:
+ * the endpoints now emit stable codes — never matched by prose). Unknown →
+ * generic invalid.
  */
-export function roleErrorKey(errorMsg: string): MessageKey {
-  if (/already exists/i.test(errorMsg)) return "organization.roles.error.duplicate";
-  if (/collides/i.test(errorMsg)) return "organization.roles.error.reserved";
+export function roleErrorKey(code: string): MessageKey {
+  if (code === "key_duplicate") return "organization.roles.error.duplicate";
+  if (code === "name_reserved") return "organization.roles.error.reserved";
   return "organization.roles.error.invalid";
+}
+
+/** Map the grant-editor endpoint's stable error codes to an i18n key. */
+export function grantErrorKey(code: string): MessageKey {
+  if (code === "role_not_found") return "organization.roles.grants.role_not_found";
+  if (code === "invalid_grant") return "organization.roles.grants.invalid_grant";
+  return "organization.roles.grants.save_error";
 }
 
 /**

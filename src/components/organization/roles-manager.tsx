@@ -19,7 +19,11 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { useT } from "@/lib/i18n/locale-context";
 import { notifySuccess, notifyError } from "@/lib/i18n/notify";
 import { useViewerPermissions } from "@/lib/permissions/permission-context";
-import { toKebab, roleErrorKey, canMutateRoles } from "./roles-manager.helpers";
+import { GRANT_RESOURCES, GRANT_ACTIONS } from "@/lib/permissions/grant-catalog";
+import type { MessageKey } from "@/lib/i18n/messages/pt-BR";
+import { toKebab, roleErrorKey, grantErrorKey, canMutateRoles } from "./roles-manager.helpers";
+
+const grantKey = (resource: string, action: string) => `${resource}:${action}`;
 
 interface RoleRow {
   id: string;
@@ -38,6 +42,7 @@ export function RolesManager() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<RoleRow | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<RoleRow | null>(null);
+  const [grantsTarget, setGrantsTarget] = useState<RoleRow | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -115,15 +120,22 @@ export function RolesManager() {
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    {role._count.rolePermissions === 0 ? (
-                      <Badge variant="outline" className="text-gray-400">
-                        {t("organization.roles.no_permissions")}
-                      </Badge>
-                    ) : (
-                      <span className="text-gray-700">
-                        {t("organization.roles.permission_count", { count: role._count.rolePermissions })}
-                      </span>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => setGrantsTarget(role)}
+                      className="text-left hover:underline"
+                      title={t("organization.roles.grants.open")}
+                    >
+                      {role._count.rolePermissions === 0 ? (
+                        <Badge variant="outline" className="text-gray-400">
+                          {t("organization.roles.no_permissions")}
+                        </Badge>
+                      ) : (
+                        <span className="text-gray-700">
+                          {t("organization.roles.permission_count", { count: role._count.rolePermissions })}
+                        </span>
+                      )}
+                    </button>
                   </td>
                   <td className="px-4 py-3 text-gray-700">
                     {t("organization.roles.member_count", { count: role._count.membershipRoles })}
@@ -155,6 +167,14 @@ export function RolesManager() {
           onOpenChange={setFormOpen}
           editing={editing}
           onSaved={load}
+        />
+      )}
+      {grantsTarget && (
+        <GrantsEditorDialog
+          role={grantsTarget}
+          canEdit={canMutate}
+          onOpenChange={(open) => !open && setGrantsTarget(null)}
+          onChanged={load}
         />
       )}
       {canMutate && deleteTarget && (
@@ -232,8 +252,8 @@ function RoleFormDialog({
       }
       if (res.status === 422) {
         const json = await res.json().catch(() => null);
-        const msg = typeof json?.error === "string" ? json.error : "";
-        setFieldError(t(roleErrorKey(msg)));
+        const code = typeof json?.code === "string" ? json.code : "";
+        setFieldError(t(roleErrorKey(code)));
         return;
       }
       notifyError("organization.roles.feedback.save_error", t);
@@ -353,6 +373,137 @@ function DeleteRoleDialog({
           </Button>
           <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
             {t("organization.roles.delete.confirm")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function GrantsEditorDialog({
+  role,
+  canEdit,
+  onOpenChange,
+  onChanged,
+}: {
+  role: RoleRow;
+  canEdit: boolean;
+  onOpenChange: (open: boolean) => void;
+  onChanged: () => void;
+}) {
+  const t = useT();
+  const [granted, setGranted] = useState<Set<string> | null>(null);
+  const [pending, setPending] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch(`/api/org/roles/${role.id}/permissions`);
+        if (!res.ok) throw new Error();
+        const json = await res.json();
+        const keys = (json.data?.grants ?? []).map((g: { resource: string; action: string }) =>
+          grantKey(g.resource, g.action),
+        );
+        if (active) setGranted(new Set(keys));
+      } catch {
+        if (active) {
+          setGranted(new Set());
+          notifyError("organization.roles.grants.load_error", t);
+        }
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [role.id, t]);
+
+  async function toggle(resource: string, action: string, currentlyOn: boolean) {
+    if (!canEdit) return;
+    const key = grantKey(resource, action);
+    setPending(key);
+    try {
+      const res = await fetch(`/api/org/roles/${role.id}/permissions`, {
+        method: currentlyOn ? "DELETE" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resource, action }),
+      });
+      if (res.ok) {
+        setGranted((prev) => {
+          const next = new Set(prev ?? []);
+          if (currentlyOn) next.delete(key);
+          else next.add(key);
+          return next;
+        });
+        onChanged();
+        return;
+      }
+      const json = await res.json().catch(() => null);
+      notifyError(grantErrorKey(typeof json?.code === "string" ? json.code : ""), t);
+    } catch {
+      notifyError("organization.roles.grants.save_error", t);
+    } finally {
+      setPending(null);
+    }
+  }
+
+  return (
+    <Dialog open onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{t("organization.roles.grants.title", { name: role.name })}</DialogTitle>
+          <DialogDescription>{t("organization.roles.grants.additive_hint")}</DialogDescription>
+        </DialogHeader>
+
+        {granted === null ? (
+          <p className="text-sm text-gray-400">{t("organization.roles.grants.loading")}</p>
+        ) : (
+          <div className="rounded-lg border border-gray-200 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-gray-500 uppercase text-xs">
+                <tr>
+                  <th className="px-3 py-2 text-left font-medium">
+                    {t("organization.permissions.resource_header")}
+                  </th>
+                  {GRANT_ACTIONS.map((a) => (
+                    <th key={a} className="px-3 py-2 text-center font-medium">
+                      {t(`organization.permissions.action.${a}` as MessageKey)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {GRANT_RESOURCES.map((resource) => (
+                  <tr key={resource}>
+                    <td className="px-3 py-2 text-gray-700">
+                      {t(`organization.permissions.resource.${resource}` as MessageKey)}
+                    </td>
+                    {GRANT_ACTIONS.map((action) => {
+                      const key = grantKey(resource, action);
+                      const on = granted.has(key);
+                      return (
+                        <td key={action} className="px-3 py-2 text-center">
+                          <input
+                            type="checkbox"
+                            checked={on}
+                            disabled={!canEdit || pending === key}
+                            onChange={() => toggle(resource, action, on)}
+                            aria-label={`${resource}:${action}`}
+                            className="h-4 w-4 accent-primary disabled:opacity-50"
+                          />
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            {t("organization.roles.grants.close")}
           </Button>
         </DialogFooter>
       </DialogContent>

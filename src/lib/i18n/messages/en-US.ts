@@ -1429,6 +1429,16 @@ export const messages: Record<MessageKey, string> = {
   "organization.roles.feedback.load_error": "Couldn't load roles",
   "organization.roles.feedback.save_error": "Couldn't save the role",
   "organization.roles.feedback.delete_error": "Couldn't delete the role",
+  "organization.roles.grants.open": "Edit permissions",
+  "organization.roles.grants.title": "Permissions — {name}",
+  "organization.roles.grants.additive_hint":
+    "These permissions are added on top of each member's base role. Custom roles only grant — they never remove.",
+  "organization.roles.grants.loading": "Loading permissions…",
+  "organization.roles.grants.close": "Done",
+  "organization.roles.grants.load_error": "Couldn't load this role's permissions",
+  "organization.roles.grants.save_error": "Couldn't update the permission",
+  "organization.roles.grants.role_not_found": "This role no longer exists",
+  "organization.roles.grants.invalid_grant": "That permission can't be granted",
   "organization.permissions.title": "Permissions",
   "organization.permissions.subtitle":
     "What each role grants in the permission model.",
