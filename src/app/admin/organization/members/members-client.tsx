@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -19,7 +20,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Mail, Trash2 } from "lucide-react";
+import { Plus, Mail, Trash2, X } from "lucide-react";
 import { MemberRole } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { useT, useLocale } from "@/lib/i18n/locale-context";
@@ -38,6 +39,7 @@ interface MemberRow {
     avatarUrl: string | null;
   };
   roles: Array<{ role: string; scopeType: string }>;
+  customRoles: Array<{ roleId: string; name: string }>;
 }
 
 interface InvitationRow {
@@ -76,6 +78,61 @@ export function MembersClient({
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [invitePending, setInvitePending] = useState(false);
   const [revokeLoadingId, setRevokeLoadingId] = useState<string | null>(null);
+  // R&P Fase 7c-2b — custom roles available in this org (for the assign picker).
+  const [availableRoles, setAvailableRoles] = useState<Array<{ id: string; name: string }>>([]);
+  const [customRoleBusy, setCustomRoleBusy] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!canManage) return;
+    fetch("/api/org/roles")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (j?.data?.roles) {
+          setAvailableRoles(
+            (j.data.roles as Array<{ id: string; name: string }>).map((r) => ({ id: r.id, name: r.name })),
+          );
+        }
+      })
+      .catch(() => {});
+  }, [canManage]);
+
+  async function assignCustomRole(memberId: string, roleId: string) {
+    setCustomRoleBusy(`${memberId}:${roleId}`);
+    try {
+      const res = await fetch(`/api/org/members/${memberId}/roles`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ roleId }),
+      });
+      if (res.ok) {
+        notifySuccess("organization.members.custom_role.assigned", t);
+        router.refresh();
+      } else {
+        notifyError("organization.members.custom_role.assign_error", t);
+      }
+    } catch {
+      notifyError("organization.members.custom_role.assign_error", t);
+    } finally {
+      setCustomRoleBusy(null);
+    }
+  }
+
+  async function removeCustomRole(memberId: string, roleId: string) {
+    setCustomRoleBusy(`${memberId}:${roleId}`);
+    try {
+      const res = await fetch(`/api/org/members/${memberId}/roles/${roleId}`, { method: "DELETE" });
+      if (res.ok) {
+        notifySuccess("organization.members.custom_role.removed", t);
+        router.refresh();
+      } else {
+        notifyError("organization.members.custom_role.remove_error", t);
+      }
+    } catch {
+      notifyError("organization.members.custom_role.remove_error", t);
+    } finally {
+      setCustomRoleBusy(null);
+    }
+  }
 
   async function handleInvite() {
     setInviteError(null);
@@ -261,6 +318,51 @@ export function MembersClient({
                         ) : (
                           "—"
                         )}
+                        {/* R&P Fase 7c-2b — custom roles are ADDITIVE to the system
+                            role above (SOMA), shown as a separate chips control. */}
+                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                          {m.customRoles.map((cr) => (
+                            <Badge key={cr.roleId} variant="secondary" className="gap-1">
+                              {cr.name}
+                              {canManage && (
+                                <button
+                                  type="button"
+                                  onClick={() => removeCustomRole(m.id, cr.roleId)}
+                                  disabled={customRoleBusy === `${m.id}:${cr.roleId}`}
+                                  className="hover:text-red-500 disabled:opacity-50"
+                                  aria-label={t("organization.members.custom_role.remove_action")}
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              )}
+                            </Badge>
+                          ))}
+                          {canManage &&
+                            (() => {
+                              const assigned = new Set(m.customRoles.map((cr) => cr.roleId));
+                              const addable = availableRoles.filter((r) => !assigned.has(r.id));
+                              if (addable.length === 0) return null;
+                              return (
+                                <Select
+                                  value=""
+                                  onValueChange={(roleId) => assignCustomRole(m.id, roleId)}
+                                  disabled={customRoleBusy?.startsWith(`${m.id}:`)}
+                                >
+                                  <SelectTrigger className="h-7 w-auto gap-1 border-dashed text-xs text-gray-500">
+                                    <Plus className="h-3 w-3" />
+                                    <SelectValue placeholder={t("organization.members.custom_role.add")} />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {addable.map((r) => (
+                                      <SelectItem key={r.id} value={r.id}>
+                                        {r.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              );
+                            })()}
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-gray-500">
                         {formatDate(m.joinedAt)}
