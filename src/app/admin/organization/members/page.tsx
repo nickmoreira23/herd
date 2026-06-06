@@ -37,10 +37,15 @@ export default async function MembersPage() {
           },
         },
         roles: {
-          // Members directory shows SYSTEM roles only; custom-role rows (role NULL,
-          // R&P Fase 5 SOMA) are managed in the roles UI, not here.
-          where: { role: { not: null } },
-          select: { role: true, scopeType: true },
+          // System role (role≠null) AND custom-role assignments (roleId≠null,
+          // R&P Fase 7c-2b SOMA). Split server-side below into `roles` (system)
+          // and `customRoles` so the system-role path stays untouched.
+          select: {
+            role: true,
+            scopeType: true,
+            roleId: true,
+            customRole: { select: { id: true, name: true } },
+          },
         },
       },
       orderBy: { joinedAt: "asc" },
@@ -62,17 +67,24 @@ export default async function MembersPage() {
   // super_admin can always manage (matches requireOrgRole's bypass).
   const viewerOrgRole = members
     .find((m) => m.networkProfile.id === viewer.id)
-    ?.roles.find((r) => r.scopeType === "ORG")?.role;
+    ?.roles.find((r) => r.scopeType === "ORG" && r.role)?.role;
   // R&P Fase 7b — `canManage` moved client-side (useCan in MembersClient). Only
   // `canManageOwners` stays a prop: it is the finer OWNER-only rule (promote/alter
   // an OWNER), not a plain members.update grant.
   const canManageOwners =
     viewer.isSuperAdmin === true || viewerOrgRole === "OWNER";
 
-  // Coerce to the client's system-role shape (the query already excludes null roles).
+  // Split each member's rows: `roles` keeps the SYSTEM-role shape (role≠null) the
+  // client's <Select> reads, unchanged; `customRoles` carries the SOMA custom-role
+  // assignments (roleId≠null) for the chips control.
   const membersForClient = members.map((m) => ({
     ...m,
-    roles: m.roles.map((r) => ({ role: r.role as string, scopeType: r.scopeType as string })),
+    roles: m.roles
+      .filter((r) => r.role)
+      .map((r) => ({ role: r.role as string, scopeType: r.scopeType as string })),
+    customRoles: m.roles
+      .filter((r) => r.roleId && r.customRole)
+      .map((r) => ({ roleId: r.roleId as string, name: r.customRole!.name })),
   }));
 
   return (
