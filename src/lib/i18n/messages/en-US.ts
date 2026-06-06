@@ -4596,6 +4596,12 @@ export const messages: Record<MessageKey, string> = {
   "organization.members.role_member": "Member",
   "organization.members.role_admin": "Admin",
   "organization.members.role_owner": "Owner",
+  "organization.members.custom_role.add": "Add role",
+  "organization.members.custom_role.remove_action": "Remove role",
+  "organization.members.custom_role.assigned": "Role assigned",
+  "organization.members.custom_role.removed": "Role removed",
+  "organization.members.custom_role.assign_error": "Couldn't assign the role",
+  "organization.members.custom_role.remove_error": "Couldn't remove the role",
   "organization.members.role_updated": "Role updated.",
   "organization.members.role_update_error": "Could not update role. Please try again.",
   "organization.members.last_owner_error":

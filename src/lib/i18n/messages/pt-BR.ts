@@ -4663,6 +4663,12 @@ export const messages = {
   "organization.members.role_member": "Membro",
   "organization.members.role_admin": "Admin",
   "organization.members.role_owner": "Owner",
+  "organization.members.custom_role.add": "Adicionar papel",
+  "organization.members.custom_role.remove_action": "Remover papel",
+  "organization.members.custom_role.assigned": "Papel atribuído",
+  "organization.members.custom_role.removed": "Papel removido",
+  "organization.members.custom_role.assign_error": "Não foi possível atribuir o papel",
+  "organization.members.custom_role.remove_error": "Não foi possível remover o papel",
   "organization.members.role_updated": "Papel atualizado.",
   "organization.members.role_update_error":
     "Não foi possível atualizar o papel. Tente novamente.",
