@@ -60,7 +60,7 @@ export async function POST(request: Request) {
   const { name, key, description } = parsed.data;
 
   if (RESERVED.has(key.toLowerCase()) || RESERVED.has(name.toLowerCase())) {
-    return apiError("Name/key collides with a system role", 422);
+    return apiError("Name/key collides with a system role", 422, undefined, "name_reserved");
   }
 
   const actorProfileId = (session.user as { id?: string }).id ?? null;
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
       });
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
-        return apiError("A role with this key already exists", 422);
+        return apiError("A role with this key already exists", 422, undefined, "key_duplicate");
       }
       throw e;
     }
