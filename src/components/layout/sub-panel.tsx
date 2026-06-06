@@ -14,6 +14,7 @@ import {
   Users,
   Layers,
   Shield,
+  ShieldCheck,
   Image,
   Palette,
   Type,
@@ -63,6 +64,8 @@ import {
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
 import { useProfileView } from "@/lib/core/profile-view/hook";
+import { useCan } from "@/lib/permissions/permission-context";
+import type { ResourceType, ActionType } from "@/lib/permissions/types";
 import { BLOCK_ICON_MAP, BLOCK_LABEL_MAP } from "@/lib/blocks/block-meta";
 import { getBlockLabel, getCategoryLabel } from "@/lib/blocks/block-labels";
 import { useLocale, useT } from "@/lib/i18n/locale-context";
@@ -108,6 +111,12 @@ export interface SubPanelLink {
    */
   labelKey?: string;
   icon?: LucideIcon;
+  /**
+   * Optional permission gate (R&P Fase 7c-1, UX-only). When present, the link
+   * is hidden unless the viewer `can(resource, action)`. The page itself still
+   * guards server-side — this only avoids surfacing a link that would bounce.
+   */
+  perm?: { resource: ResourceType; action: ActionType };
 }
 
 export interface SubPanelCategory {
@@ -180,6 +189,7 @@ export const subPanelRegistry: Record<string, SubPanelConfig> = {
         labelKey: "organization.subpanel.access_category",
         links: [
           { href: "/admin/organization/permissions", label: "Permissions", labelKey: "organization.subpanel.permissions", icon: Shield },
+          { href: "/admin/organization/roles", label: "Roles", labelKey: "organization.subpanel.roles", icon: ShieldCheck, perm: { resource: "roles", action: "read" } },
         ],
       },
       {
@@ -885,8 +895,14 @@ function OrganizationSubPanel() {
   const pathname = usePathname();
   const { setSubPanelCollapsed } = useUIStore();
   const t = useT();
+  const can = useCan();
   const config = subPanelRegistry.organization;
-  const categories = config?.categories ?? [];
+  // UX-only gate (R&P Fase 7c-1): drop links the viewer cannot access. The page
+  // server-guards regardless; this just avoids surfacing a link that bounces.
+  const categories = (config?.categories ?? []).map((cat) => ({
+    ...cat,
+    links: cat.links.filter((l) => !l.perm || can(l.perm.resource, l.perm.action)),
+  }));
 
   const allHrefs = categories.flatMap((cat) => cat.links.map((l) => l.href));
   const activeHref = allHrefs
