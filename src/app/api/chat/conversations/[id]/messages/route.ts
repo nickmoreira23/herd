@@ -17,6 +17,8 @@ import {
 import { buildActionCatalog, actionToBlock } from "@/lib/blocks/registry";
 import { buildToolActionCatalog } from "@/lib/tools/registry";
 import { resolveAnthropicKey } from "@/lib/integration-keys";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 
 const ORCHESTRATOR_KEY = "orchestrator";
 
@@ -103,6 +105,10 @@ export async function POST(
   const session = await auth();
   const userId = (session?.user as { id?: string } | undefined)?.id;
   if (!userId) return apiError("Unauthorized", 401);
+
+  // L1a.2 — searchData reads tenant-scoped data (incl. Product) via providers;
+  // resolve the host org so the search runs under withTenant. No org → no data.
+  const orgId = await getOrgIdFromRequest();
 
   let anthropic: Anthropic;
   try {
@@ -336,7 +342,9 @@ export async function POST(
                     });
                   }
 
-                  const results = await searchData(typedInput);
+                  const results = orgId
+                    ? await withTenant(orgId, () => searchData(typedInput))
+                    : [];
 
                   // Track new sources from this call
                   const newSources: Array<{ type: string; id: string; name: string }> = [];

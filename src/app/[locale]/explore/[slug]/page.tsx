@@ -46,7 +46,9 @@ async function SectionContent({ slug }: { slug: string }) {
     notFound();
   }
 
-  const ctx = await buildRenderContext(section, viewer);
+  // L1a.2 — buildRenderContext loads block items (incl. tenant-scoped Product
+  // via the provider), so it must run under the host org's tenant context.
+  const ctx = await withTenant(orgId, () => buildRenderContext(section, viewer));
   const components = Array.isArray(section.components)
     ? (section.components as unknown as ComponentNode[])
     : [];

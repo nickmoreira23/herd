@@ -1,65 +1,72 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-utils";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 
 // GET /api/products/search?q=&category=&subCategory=
 // Returns lightweight product results for the SKU picker
 export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = request.nextUrl;
-    const q = searchParams.get("q") || "";
-    const category = searchParams.get("category") || undefined;
-    const subCategory = searchParams.get("subCategory") || undefined;
+  const orgId = await getOrgIdFromRequest();
+  if (!orgId) return apiSuccess([]);
 
-    const where = {
-      isActive: true,
-      ...(q && {
-        OR: [
-          { name: { contains: q, mode: "insensitive" as const } },
-          { sku: { contains: q, mode: "insensitive" as const } },
-        ],
-      }),
-      ...(category && { category }),
-      ...(subCategory && { subCategory }),
-    };
+  return withTenant(orgId, async () => {
+    try {
+      const { searchParams } = request.nextUrl;
+      const q = searchParams.get("q") || "";
+      const category = searchParams.get("category") || undefined;
+      const subCategory = searchParams.get("subCategory") || undefined;
 
-    const products = await prisma.product.findMany({
-      where,
-      select: {
-        id: true,
-        name: true,
-        sku: true,
-        category: true,
-        subCategory: true,
-        retailPrice: true,
-        costOfGoods: true,
-        memberPrice: true,
-        shippingCost: true,
-        handlingCost: true,
-        paymentProcessingPct: true,
-        paymentProcessingFlat: true,
-        redemptionType: true,
-        imageUrl: true,
-      },
-      orderBy: { name: "asc" },
-      take: 20,
-    });
+      const where = {
+        isActive: true,
+        ...(q && {
+          OR: [
+            { name: { contains: q, mode: "insensitive" as const } },
+            { sku: { contains: q, mode: "insensitive" as const } },
+          ],
+        }),
+        ...(category && { category }),
+        ...(subCategory && { subCategory }),
+      };
 
-    // Serialize Decimals
-    const serialized = products.map((p) => ({
-      ...p,
-      retailPrice: Number(p.retailPrice),
-      costOfGoods: Number(p.costOfGoods),
-      memberPrice: Number(p.memberPrice),
-      shippingCost: Number(p.shippingCost),
-      handlingCost: Number(p.handlingCost),
-      paymentProcessingPct: Number(p.paymentProcessingPct),
-      paymentProcessingFlat: Number(p.paymentProcessingFlat),
-    }));
+      const products = await prisma.product.findMany({
+        where,
+        select: {
+          id: true,
+          name: true,
+          sku: true,
+          category: true,
+          subCategory: true,
+          retailPrice: true,
+          costOfGoods: true,
+          memberPrice: true,
+          shippingCost: true,
+          handlingCost: true,
+          paymentProcessingPct: true,
+          paymentProcessingFlat: true,
+          redemptionType: true,
+          imageUrl: true,
+        },
+        orderBy: { name: "asc" },
+        take: 20,
+      });
 
-    return apiSuccess(serialized);
-  } catch (e) {
-    console.error("GET /api/products/search error:", e);
-    return apiError("Failed to search products", 500);
-  }
+      // Serialize Decimals
+      const serialized = products.map((p) => ({
+        ...p,
+        retailPrice: Number(p.retailPrice),
+        costOfGoods: Number(p.costOfGoods),
+        memberPrice: Number(p.memberPrice),
+        shippingCost: Number(p.shippingCost),
+        handlingCost: Number(p.handlingCost),
+        paymentProcessingPct: Number(p.paymentProcessingPct),
+        paymentProcessingFlat: Number(p.paymentProcessingFlat),
+      }));
+
+      return apiSuccess(serialized);
+    } catch (e) {
+      console.error("GET /api/products/search error:", e);
+      return apiError("Failed to search products", 500);
+    }
+  });
 }

@@ -4,6 +4,8 @@ import { calculateBlendedRevenue } from "@/lib/financial-engine";
 import { Badge } from "@/components/ui/badge";
 import { connection } from "next/server";
 import { PageHeader } from "@/components/layout/page-header";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 
 export default async function DashboardPage() {
   await connection();
@@ -11,14 +13,19 @@ export default async function DashboardPage() {
   // Commission Structure" card is collapsed until new commission feature
   // lands post-Fase 3.
   // PartnerBrand dropped in Sub-etapa 3.5.5 — partner stats card removed.
+  // L1a.2 — Product is tenant-scoped: counts are host-org scoped (orgs without a
+  // catalog see 0). SubscriptionTier stays global until L1b.
+  const orgId = await getOrgIdFromRequest();
   const [
     productCount,
     activeProducts,
     tiers,
     snapshotCount,
   ] = await Promise.all([
-    prisma.product.count(),
-    prisma.product.count({ where: { isActive: true } }),
+    orgId ? withTenant(orgId, () => prisma.product.count()) : Promise.resolve(0),
+    orgId
+      ? withTenant(orgId, () => prisma.product.count({ where: { isActive: true } }))
+      : Promise.resolve(0),
     prisma.subscriptionTier.findMany({
       orderBy: { sortOrder: "asc" },
     }),

@@ -4,6 +4,8 @@ import { apiError } from "@/lib/api-utils";
 import { aiSuggestSchema } from "@/lib/validators/package";
 import { computeCreditCost, resolveDiscount, type RedemptionRule } from "@/lib/credit-cost";
 import { resolveAnthropicKey } from "@/lib/integration-keys";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 
 const FITNESS_GOAL_SPECIALIST_PROMPT = `You are an expert fitness and nutrition specialist. Your job is to recommend TYPES of products (not specific products) that would best support a person's fitness goal.
 
@@ -72,6 +74,10 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: packageId } = await params;
+
+  // L1a.2 — Product is tenant-scoped; resolve host org for the catalog read.
+  const orgId = await getOrgIdFromRequest();
+  if (!orgId) return apiError("No active organization", 400);
 
   let anthropic: Anthropic;
   try {
@@ -213,26 +219,28 @@ export async function POST(
   );
 
   // Fetch all active products with credit costs
-  const allProducts = await prisma.product.findMany({
-    where: { isActive: true },
-    select: {
-      id: true,
-      name: true,
-      sku: true,
-      category: true,
-      subCategory: true,
-      retailPrice: true,
-      memberPrice: true,
-      costOfGoods: true,
-      shippingCost: true,
-      handlingCost: true,
-      paymentProcessingPct: true,
-      paymentProcessingFlat: true,
-      description: true,
-      brand: true,
-      imageUrl: true,
-    },
-  });
+  const allProducts = await withTenant(orgId, () =>
+    prisma.product.findMany({
+      where: { isActive: true },
+      select: {
+        id: true,
+        name: true,
+        sku: true,
+        category: true,
+        subCategory: true,
+        retailPrice: true,
+        memberPrice: true,
+        costOfGoods: true,
+        shippingCost: true,
+        handlingCost: true,
+        paymentProcessingPct: true,
+        paymentProcessingFlat: true,
+        description: true,
+        brand: true,
+        imageUrl: true,
+      },
+    })
+  );
 
   const rules: RedemptionRule[] = tier.redemptionRules.map((r) => ({
     redemptionType: r.redemptionType,

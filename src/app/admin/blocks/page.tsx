@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { AllBlocksPage } from "@/components/blocks/all-blocks-page";
 import { BLOCK_CATEGORIES_SETTING_KEY, parseBlockCategories } from "@/lib/blocks/block-categories";
 import { connection } from "next/server";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 
 export default async function BlocksPage() {
   await connection();
@@ -11,6 +13,9 @@ export default async function BlocksPage() {
     where: { key: BLOCK_CATEGORIES_SETTING_KEY },
   });
   const categories = parseBlockCategories(setting?.value);
+
+  // L1a.2 — Product is tenant-scoped: its count is host-org scoped.
+  const orgId = await getOrgIdFromRequest();
 
   // Fetch counts for all block types in parallel
   const [
@@ -33,7 +38,7 @@ export default async function BlocksPage() {
     appCount,
   ] = await Promise.all([
     prisma.landingPage.count(),
-    prisma.product.count(),
+    orgId ? withTenant(orgId, () => prisma.product.count()) : Promise.resolve(0),
     prisma.agent.count(),
     prisma.perk.count(),
     prisma.communityBenefit.count(),

@@ -2,6 +2,8 @@ import { z } from "zod/v4";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError, parseAndValidate } from "@/lib/api-utils";
 import { requireOrgRole } from "@/lib/permissions";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 
 const importUrlSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -46,63 +48,69 @@ export async function POST(request: Request) {
   const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN"]);
   if (sessionOrResponse instanceof Response) return sessionOrResponse;
 
-  try {
-    const result = await parseAndValidate(request, importUrlSchema);
-    if ("error" in result) return result.error;
+  const orgId = await getOrgIdFromRequest();
+  if (!orgId) return apiError("No active organization", 400);
 
-    const { images: imageList, ...productData } = result.data;
+  return withTenant(orgId, async () => {
+    try {
+      const result = await parseAndValidate(request, importUrlSchema);
+      if ("error" in result) return result.error;
 
-    // Check for duplicate SKU
-    const existing = await prisma.product.findUnique({
-      where: { sku: productData.sku },
-    });
-    if (existing) {
-      return apiError(`A product with SKU "${productData.sku}" already exists`, 409);
-    }
+      const { images: imageList, ...productData } = result.data;
 
-    // Set primary image from images list if not explicitly provided
-    let primaryImageUrl = productData.imageUrl;
-    if (!primaryImageUrl && imageList?.length) {
-      const primary = imageList.find((i) => i.isPrimary) || imageList[0];
-      primaryImageUrl = primary.url;
-    }
-
-    // Compute member price if not provided (default to retail)
-    const memberPrice = productData.memberPrice ?? productData.retailPrice;
-
-    const product = await prisma.$transaction(async (tx) => {
-      const created = await tx.product.create({
-        data: {
-          ...productData,
-          imageUrl: primaryImageUrl || undefined,
-          memberPrice,
-          scrapeStatus: productData.sourceUrl ? "READY" : undefined,
-          lastScrapedAt: productData.sourceUrl ? new Date() : undefined,
-        },
+      // Check for duplicate SKU
+      const existing = await prisma.product.findUnique({
+        where: { sku: productData.sku },
       });
-
-      // Create product images
-      if (imageList?.length) {
-        await tx.productImage.createMany({
-          data: imageList.map((img, idx) => ({
-            productId: created.id,
-            url: img.url,
-            alt: img.alt || null,
-            isPrimary: img.isPrimary ?? idx === 0,
-            sortOrder: idx,
-          })),
-        });
+      if (existing) {
+        return apiError(`A product with SKU "${productData.sku}" already exists`, 409);
       }
 
-      return tx.product.findUnique({
-        where: { id: created.id },
-        include: { images: { orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }] } },
-      });
-    });
+      // Set primary image from images list if not explicitly provided
+      let primaryImageUrl = productData.imageUrl;
+      if (!primaryImageUrl && imageList?.length) {
+        const primary = imageList.find((i) => i.isPrimary) || imageList[0];
+        primaryImageUrl = primary.url;
+      }
 
-    return apiSuccess(product, 201);
-  } catch (e) {
-    console.error("POST /api/products/import-url error:", e);
-    return apiError("Failed to import product", 500);
-  }
+      // Compute member price if not provided (default to retail)
+      const memberPrice = productData.memberPrice ?? productData.retailPrice;
+
+      const product = await prisma.$transaction(async (tx) => {
+        const created = await tx.product.create({
+          data: {
+            ...productData,
+            tenantId: orgId,
+            imageUrl: primaryImageUrl || undefined,
+            memberPrice,
+            scrapeStatus: productData.sourceUrl ? "READY" : undefined,
+            lastScrapedAt: productData.sourceUrl ? new Date() : undefined,
+          },
+        });
+
+        // Create product images
+        if (imageList?.length) {
+          await tx.productImage.createMany({
+            data: imageList.map((img, idx) => ({
+              productId: created.id,
+              url: img.url,
+              alt: img.alt || null,
+              isPrimary: img.isPrimary ?? idx === 0,
+              sortOrder: idx,
+            })),
+          });
+        }
+
+        return tx.product.findUnique({
+          where: { id: created.id },
+          include: { images: { orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }] } },
+        });
+      });
+
+      return apiSuccess(product, 201);
+    } catch (e) {
+      console.error("POST /api/products/import-url error:", e);
+      return apiError("Failed to import product", 500);
+    }
+  });
 }

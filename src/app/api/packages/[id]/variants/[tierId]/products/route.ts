@@ -5,6 +5,8 @@ import {
   addVariantProductSchema,
 } from "@/lib/validators/package";
 import { computeCreditCost, type RedemptionRule } from "@/lib/credit-cost";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 
 async function getTierRules(tierId: string): Promise<RedemptionRule[]> {
   const rules = await prisma.subscriptionRedemptionRule.findMany({
@@ -49,6 +51,10 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string; tierId: string }> }
 ) {
+  // L1a.2 — Product is tenant-scoped; resolve host org for the catalog read.
+  const orgId = await getOrgIdFromRequest();
+  if (!orgId) return apiError("No active organization", 400);
+
   try {
     const { id, tierId } = await params;
     const result = await parseAndValidate(request, upsertVariantProductsSchema);
@@ -60,10 +66,12 @@ export async function PUT(
     // Fetch product details and tier rules for server-side cost computation
     const productIds = result.data.products.map((p) => p.productId);
     const [dbProducts, rules] = await Promise.all([
-      prisma.product.findMany({
-        where: { id: { in: productIds } },
-        select: { id: true, sku: true, category: true, subCategory: true, memberPrice: true },
-      }),
+      withTenant(orgId, () =>
+        prisma.product.findMany({
+          where: { id: { in: productIds } },
+          select: { id: true, sku: true, category: true, subCategory: true, memberPrice: true },
+        })
+      ),
       getTierRules(tierId),
     ]);
     const productMap = new Map(dbProducts.map((p) => [p.id, p]));
@@ -146,6 +154,10 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string; tierId: string }> }
 ) {
+  // L1a.2 — Product is tenant-scoped; resolve host org for the catalog read.
+  const orgId = await getOrgIdFromRequest();
+  if (!orgId) return apiError("No active organization", 400);
+
   try {
     const { id, tierId } = await params;
     const result = await parseAndValidate(request, addVariantProductSchema);
@@ -167,10 +179,12 @@ export async function POST(
 
     // Fetch product details and tier rules for server-side cost computation
     const [product, rules] = await Promise.all([
-      prisma.product.findUnique({
-        where: { id: result.data.productId },
-        select: { sku: true, category: true, subCategory: true, memberPrice: true },
-      }),
+      withTenant(orgId, () =>
+        prisma.product.findUnique({
+          where: { id: result.data.productId },
+          select: { sku: true, category: true, subCategory: true, memberPrice: true },
+        })
+      ),
       getTierRules(tierId),
     ]);
 
