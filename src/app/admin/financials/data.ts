@@ -1,6 +1,8 @@
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { toNumber } from "@/lib/utils";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 import type {
   TierFinancialInput,
   CommissionCalcInput,
@@ -59,12 +61,12 @@ export const getFinancialDefaults = cache(async function getFinancialDefaults() 
   // Network MLM removal). The "Commission" block below uses manual defaults
   // — D2D commission feature will be re-introduced cleanly post-Fase 3.
   // PartnerBrand removed in Sub-etapa 3.5.5; partner kickbacks dataset empty.
-  const [
-    tiers,
-    opexCategories,
-    products,
-    packages,
-  ] = await Promise.all([
+  // L1a.2 — Product is tenant-scoped (direct read + the nested include under
+  // Package), so both are read under the host org. SubscriptionTier and
+  // OpexCategory stay global until L1b. Orgs without a catalog see no products.
+  const orgId = await getOrgIdFromRequest();
+
+  const [tiers, opexCategories] = await Promise.all([
     prisma.subscriptionTier.findMany({ orderBy: { sortOrder: "asc" } }),
     prisma.opexCategory.findMany({
       where: { isActive: true },
@@ -79,38 +81,48 @@ export const getFinancialDefaults = cache(async function getFinancialDefaults() 
         },
       },
     }),
-    prisma.product.findMany({
-      where: { isActive: true },
-      select: {
-        id: true,
-        memberPrice: true,
-        costOfGoods: true,
-        handlingCost: true,
-        shippingCost: true,
-      },
-    }),
-    prisma.package.findMany({
-      where: { status: { not: "ARCHIVED" } },
-      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-      include: {
-        variants: {
+  ]);
+
+  const products = orgId
+    ? await withTenant(orgId, () =>
+        prisma.product.findMany({
+          where: { isActive: true },
+          select: {
+            id: true,
+            memberPrice: true,
+            costOfGoods: true,
+            handlingCost: true,
+            shippingCost: true,
+          },
+        })
+      )
+    : [];
+
+  const packages = orgId
+    ? await withTenant(orgId, () =>
+        prisma.package.findMany({
+          where: { status: { not: "ARCHIVED" } },
+          orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
           include: {
-            products: {
-              orderBy: { sortOrder: "asc" },
+            variants: {
               include: {
-                // Pull product name in addition to COGS so the
-                // Reference Package UI can show a per-tier line-item
-                // breakdown (qty × cost-each) and not just the lump
-                // total — that breakdown is how the CFO double-checks
-                // the cost figure feeding the projection.
-                product: { select: { id: true, name: true, costOfGoods: true } },
+                products: {
+                  orderBy: { sortOrder: "asc" },
+                  include: {
+                    // Pull product name in addition to COGS so the
+                    // Reference Package UI can show a per-tier line-item
+                    // breakdown (qty × cost-each) and not just the lump
+                    // total — that breakdown is how the CFO double-checks
+                    // the cost figure feeding the projection.
+                    product: { select: { id: true, name: true, costOfGoods: true } },
+                  },
+                },
               },
             },
           },
-        },
-      },
-    }),
-  ]);
+        })
+      )
+    : [];
 
   // ─── Product-derived COGS metrics ──────────────────────────────
 

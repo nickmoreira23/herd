@@ -36,7 +36,8 @@ async function ItemDetailContent({ params }: { params: PageParams }) {
   );
   if (!section || section.status !== "PUBLISHED") notFound();
 
-  const detail = await resolveItemDetail(blockName, itemId);
+  // L1a.2 — resolveItemDetail reads tenant-scoped Product; run under host org.
+  const detail = await withTenant(orgId, () => resolveItemDetail(blockName, itemId));
   if (!detail) notFound();
 
   return (

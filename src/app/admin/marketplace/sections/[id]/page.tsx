@@ -35,7 +35,9 @@ export default async function AdminSectionPreviewPage({
   const session = await auth();
   const viewer = await getViewerContext(session, orgId);
 
-  const ctx = await buildRenderContext(section, viewer);
+  // L1a.2 — buildRenderContext loads tenant-scoped Product via the provider;
+  // run under the host org's tenant context.
+  const ctx = await withTenant(orgId, () => buildRenderContext(section, viewer));
   const components = Array.isArray(section.components)
     ? (section.components as unknown as ComponentNode[])
     : [];

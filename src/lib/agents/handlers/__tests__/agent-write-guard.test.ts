@@ -35,6 +35,14 @@ vi.mock("@/lib/financial-engine", () => ({
   calculateScenario: vi.fn(() => ({ mrr: 0, netMarginPercent: 0 })),
 }));
 
+// L1a.2 — search_products now reads the host org's catalog under withTenant.
+vi.mock("@/lib/tenant/get-org-from-request", () => ({
+  getOrgIdFromRequest: vi.fn(async () => "org-1"),
+}));
+vi.mock("@/lib/tenancy/context", () => ({
+  withTenant: vi.fn(async (_tenantId: string, fn: () => unknown) => fn()),
+}));
+
 const { prisma } = await import("@/lib/prisma");
 const { handlePlanAgentToolCall } = await import("../plan-agent");
 const { handleProjectionsToolCall } = await import("../projections-agent");

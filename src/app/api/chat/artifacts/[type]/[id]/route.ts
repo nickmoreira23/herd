@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { apiSuccess, apiError } from "@/lib/api-utils";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 
 export async function GET(
   _request: Request,
@@ -17,12 +19,18 @@ export async function GET(
 
     switch (type) {
       case "product": {
-        const product = await prisma.product.findUnique({
-          where: { id },
-          include: {
-            images: { select: { id: true, url: true, alt: true, sortOrder: true }, orderBy: { sortOrder: "asc" } },
-          },
-        });
+        // L1a.2 — Product is tenant-scoped; resolve under host org.
+        const orgId = await getOrgIdFromRequest();
+        const product = orgId
+          ? await withTenant(orgId, () =>
+              prisma.product.findUnique({
+                where: { id },
+                include: {
+                  images: { select: { id: true, url: true, alt: true, sortOrder: true }, orderBy: { sortOrder: "asc" } },
+                },
+              })
+            )
+          : null;
         if (product) {
           data = {
             ...product,

@@ -2,6 +2,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import { prisma } from "@/lib/prisma";
 import type { SendFn } from "../runtime";
 import { toNumber } from "@/lib/utils";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 
 // ─── Tool Definitions ──────────────────────────────────────────
 
@@ -604,6 +606,8 @@ async function handleSearchProducts(
   send: SendFn
 ): Promise<string> {
   try {
+    // L1a.2 — Product is tenant-scoped; search the host org's catalog.
+    const orgId = await getOrgIdFromRequest();
     const where: Record<string, unknown> = { isActive: true };
     if (input.category) where.category = String(input.category);
     if (input.subCategory) where.subCategory = String(input.subCategory);
@@ -615,21 +619,25 @@ async function handleSearchProducts(
       ];
     }
 
-    const products = await prisma.product.findMany({
-      where,
-      select: {
-        id: true,
-        name: true,
-        sku: true,
-        category: true,
-        subCategory: true,
-        retailPrice: true,
-        costOfGoods: true,
-        memberPrice: true,
-      },
-      take: 100,
-      orderBy: { name: "asc" },
-    });
+    const products = orgId
+      ? await withTenant(orgId, () =>
+          prisma.product.findMany({
+            where,
+            select: {
+              id: true,
+              name: true,
+              sku: true,
+              category: true,
+              subCategory: true,
+              retailPrice: true,
+              costOfGoods: true,
+              memberPrice: true,
+            },
+            take: 100,
+            orderBy: { name: "asc" },
+          })
+        )
+      : [];
 
     let filtered = products.map((p) => {
       const retail = Number(p.retailPrice);

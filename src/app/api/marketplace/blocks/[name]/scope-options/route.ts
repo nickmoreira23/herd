@@ -2,6 +2,8 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-utils";
 import { isEligibleBlock } from "@/lib/marketplace/registry";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 
 interface ScopeOptions {
   categories: string[];
@@ -29,17 +31,23 @@ export async function GET(
     const empty: ScopeOptions = { categories: [], subCategories: [], items: [] };
 
     if (name === "products") {
-      const products = await prisma.product.findMany({
-        where: { isActive: true },
-        orderBy: { name: "asc" },
-        select: {
-          id: true,
-          name: true,
-          imageUrl: true,
-          category: true,
-          subCategory: true,
-        },
-      });
+      // L1a.2 — Product is tenant-scoped; scope options come from host org's catalog.
+      const orgId = await getOrgIdFromRequest();
+      const products = orgId
+        ? await withTenant(orgId, () =>
+            prisma.product.findMany({
+              where: { isActive: true },
+              orderBy: { name: "asc" },
+              select: {
+                id: true,
+                name: true,
+                imageUrl: true,
+                category: true,
+                subCategory: true,
+              },
+            })
+          )
+        : [];
       const categories = Array.from(
         new Set(products.map((p) => p.category).filter(Boolean) as string[])
       ).sort();

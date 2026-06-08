@@ -7,11 +7,19 @@ import {
   toNumber,
   calculateMargin,
 } from "@/lib/utils";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 
 export default async function ProductsPage() {
   await connection();
-  const [products, tiers, redemptionRules] = await Promise.all([
-    prisma.product.findMany({ orderBy: { name: "asc" } }),
+  // L1a.2 — Product is tenant-scoped: list the host org's catalog (fetched
+  // separately under withTenant). SubscriptionTier + redemption rules stay
+  // global until L1b.
+  const orgId = await getOrgIdFromRequest();
+  const products = orgId
+    ? await withTenant(orgId, () => prisma.product.findMany({ orderBy: { name: "asc" } }))
+    : [];
+  const [tiers, redemptionRules] = await Promise.all([
     prisma.subscriptionTier.findMany({
       where: { isActive: true },
       orderBy: { sortOrder: "asc" },

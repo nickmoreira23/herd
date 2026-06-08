@@ -2,24 +2,31 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError, parseAndValidate } from "@/lib/api-utils";
 import { requireOrgRole } from "@/lib/permissions";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 import { updateProductSchema } from "@/lib/validators/product";
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const { id } = await params;
-    const product = await prisma.product.findUnique({
-      where: { id },
-      include: { images: { orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }] } },
-    });
-    if (!product) return apiError("Product not found", 404);
-    return apiSuccess(product);
-  } catch (e) {
-    console.error("GET /api/products/[id] error:", e);
-    return apiError("Failed to fetch product", 500);
-  }
+  const orgId = await getOrgIdFromRequest();
+  if (!orgId) return apiError("Product not found", 404);
+
+  return withTenant(orgId, async () => {
+    try {
+      const { id } = await params;
+      const product = await prisma.product.findUnique({
+        where: { id },
+        include: { images: { orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }] } },
+      });
+      if (!product) return apiError("Product not found", 404);
+      return apiSuccess(product);
+    } catch (e) {
+      console.error("GET /api/products/[id] error:", e);
+      return apiError("Failed to fetch product", 500);
+    }
+  });
 }
 
 export async function PATCH(
@@ -29,46 +36,51 @@ export async function PATCH(
   const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN"]);
   if (sessionOrResponse instanceof Response) return sessionOrResponse;
 
-  try {
-    const { id } = await params;
-    const result = await parseAndValidate(request, updateProductSchema);
-    if ("error" in result) return result.error;
+  const orgId = await getOrgIdFromRequest();
+  if (!orgId) return apiError("No active organization", 400);
 
-    const data: Record<string, unknown> = { ...result.data };
+  return withTenant(orgId, async () => {
+    try {
+      const { id } = await params;
+      const result = await parseAndValidate(request, updateProductSchema);
+      if ("error" in result) return result.error;
 
-    // Compute nextRescrapeAt when rescrapeInterval changes
-    if ("rescrapeInterval" in data) {
-      if (data.rescrapeInterval) {
-        const now = new Date();
-        switch (data.rescrapeInterval) {
-          case "DAILY":
-            data.nextRescrapeAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-            break;
-          case "WEEKLY":
-            data.nextRescrapeAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-            break;
-          case "MONTHLY":
-            data.nextRescrapeAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-            break;
+      const data: Record<string, unknown> = { ...result.data };
+
+      // Compute nextRescrapeAt when rescrapeInterval changes
+      if ("rescrapeInterval" in data) {
+        if (data.rescrapeInterval) {
+          const now = new Date();
+          switch (data.rescrapeInterval) {
+            case "DAILY":
+              data.nextRescrapeAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+              break;
+            case "WEEKLY":
+              data.nextRescrapeAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+              break;
+            case "MONTHLY":
+              data.nextRescrapeAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+              break;
+          }
+        } else {
+          data.nextRescrapeAt = null;
         }
-      } else {
-        data.nextRescrapeAt = null;
       }
+
+      const product = await prisma.product.update({
+        where: { id },
+        data,
+      });
+
+      revalidatePath("/admin/blocks/products");
+      revalidatePath(`/admin/blocks/products/${id}`);
+
+      return apiSuccess(product);
+    } catch (e) {
+      console.error("PATCH /api/products/[id] error:", e);
+      return apiError("Failed to update product", 500);
     }
-
-    const product = await prisma.product.update({
-      where: { id },
-      data,
-    });
-
-    revalidatePath("/admin/blocks/products");
-    revalidatePath(`/admin/blocks/products/${id}`);
-
-    return apiSuccess(product);
-  } catch (e) {
-    console.error("PATCH /api/products/[id] error:", e);
-    return apiError("Failed to update product", 500);
-  }
+  });
 }
 
 export async function DELETE(
@@ -78,15 +90,20 @@ export async function DELETE(
   const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN"]);
   if (sessionOrResponse instanceof Response) return sessionOrResponse;
 
-  try {
-    const { id } = await params;
-    await prisma.product.delete({ where: { id } });
+  const orgId = await getOrgIdFromRequest();
+  if (!orgId) return apiError("No active organization", 400);
 
-    revalidatePath("/admin/blocks/products");
+  return withTenant(orgId, async () => {
+    try {
+      const { id } = await params;
+      await prisma.product.delete({ where: { id } });
 
-    return apiSuccess({ deleted: true });
-  } catch (e) {
-    console.error("DELETE /api/products/[id] error:", e);
-    return apiError("Failed to delete product", 500);
-  }
+      revalidatePath("/admin/blocks/products");
+
+      return apiSuccess({ deleted: true });
+    } catch (e) {
+      console.error("DELETE /api/products/[id] error:", e);
+      return apiError("Failed to delete product", 500);
+    }
+  });
 }

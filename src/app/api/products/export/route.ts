@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { productConfig } from "@/lib/import-export/entity-config";
 import { buildExportWorkbook } from "@/lib/import-export/export-utils";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 
 export async function GET(request: Request) {
   try {
@@ -12,9 +14,13 @@ export async function GET(request: Request) {
       ? columnsParam.split(",").filter(Boolean)
       : productConfig.columns.map((c) => c.key);
 
-    const products = await prisma.product.findMany({
-      orderBy: { name: "asc" },
-    });
+    // L1a.2 — Product is tenant-scoped; export the host org's catalog only.
+    const orgId = await getOrgIdFromRequest();
+    const products = orgId
+      ? await withTenant(orgId, () =>
+          prisma.product.findMany({ orderBy: { name: "asc" } })
+        )
+      : [];
 
     const records = products.map((p) => {
       const rec: Record<string, unknown> = {};
