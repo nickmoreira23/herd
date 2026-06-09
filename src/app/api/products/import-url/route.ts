@@ -76,35 +76,39 @@ export async function POST(request: Request) {
       // Compute member price if not provided (default to retail)
       const memberPrice = productData.memberPrice ?? productData.retailPrice;
 
-      const product = await prisma.$transaction(async (tx) => {
-        const created = await tx.product.create({
-          data: {
-            ...productData,
-            tenantId: orgId,
-            imageUrl: primaryImageUrl || undefined,
-            memberPrice,
-            scrapeStatus: productData.sourceUrl ? "READY" : undefined,
-            lastScrapedAt: productData.sourceUrl ? new Date() : undefined,
-          },
-        });
+      // L1a.3 — sequential ops (not an interactive prisma.$transaction): Product
+      // is now tenant-scoped, so the tenancy Extension wraps each op in its own
+      // SET-LOCAL transaction; an outer interactive transaction would nest and
+      // break (CLAUDE.md, MarketplaceSection precedent). Mirrors the sections
+      // POST molde. Trade-off: no all-or-nothing — if image creation fails, the
+      // Product persists without images (recoverable; images can be re-added).
+      const created = await prisma.product.create({
+        data: {
+          ...productData,
+          tenantId: orgId,
+          imageUrl: primaryImageUrl || undefined,
+          memberPrice,
+          scrapeStatus: productData.sourceUrl ? "READY" : undefined,
+          lastScrapedAt: productData.sourceUrl ? new Date() : undefined,
+        },
+      });
 
-        // Create product images
-        if (imageList?.length) {
-          await tx.productImage.createMany({
-            data: imageList.map((img, idx) => ({
-              productId: created.id,
-              url: img.url,
-              alt: img.alt || null,
-              isPrimary: img.isPrimary ?? idx === 0,
-              sortOrder: idx,
-            })),
-          });
-        }
-
-        return tx.product.findUnique({
-          where: { id: created.id },
-          include: { images: { orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }] } },
+      // Create product images
+      if (imageList?.length) {
+        await prisma.productImage.createMany({
+          data: imageList.map((img, idx) => ({
+            productId: created.id,
+            url: img.url,
+            alt: img.alt || null,
+            isPrimary: img.isPrimary ?? idx === 0,
+            sortOrder: idx,
+          })),
         });
+      }
+
+      const product = await prisma.product.findUnique({
+        where: { id: created.id },
+        include: { images: { orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }] } },
       });
 
       return apiSuccess(product, 201);

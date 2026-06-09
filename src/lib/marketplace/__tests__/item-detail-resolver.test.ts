@@ -27,6 +27,9 @@ vi.mock("@/lib/chat/data-retrieval", () => ({ providers: [genericProvider] }));
 
 import { resolveItemDetail } from "../item-detail-resolver";
 import { prisma } from "@/lib/prisma";
+// L1a.3 — Product is tenant-scoped; resolveProduct now requires a tenant context
+// (loud-fail). Product cases run under withTenant. (real impl, not mocked.)
+import { withTenant } from "@/lib/tenancy/context";
 
 const mockProduct = vi.mocked(prisma.product.findUnique);
 const mockAgent = vi.mocked(prisma.agent.findUnique);
@@ -66,7 +69,7 @@ describe("resolveItemDetail — products", () => {
       images: [],
     } as never);
 
-    const detail = await resolveItemDetail("products", "p-1");
+    const detail = await withTenant("org-1", () => resolveItemDetail("products", "p-1"));
     expect(detail).not.toBeNull();
     expect(detail!.blockName).toBe("products");
     expect(detail!.type).toBe("product");
@@ -115,7 +118,7 @@ describe("resolveItemDetail — products", () => {
       images: [],
     } as never);
 
-    const detail = await resolveItemDetail("products", "p-2");
+    const detail = await withTenant("org-1", () => resolveItemDetail("products", "p-2"));
     const cost = detail!.sections.find((s) => s.heading === "Cost & margin");
     expect(cost).toBeDefined();
     expect(detail!.status).toBe("Inactive");
@@ -123,7 +126,9 @@ describe("resolveItemDetail — products", () => {
 
   it("returns null when the product does not exist", async () => {
     mockProduct.mockResolvedValueOnce(null as never);
-    expect(await resolveItemDetail("products", "missing")).toBeNull();
+    expect(
+      await withTenant("org-1", () => resolveItemDetail("products", "missing"))
+    ).toBeNull();
   });
 });
 

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { requireTenantId } from "@/lib/tenancy/context";
 import type { ArtifactMeta, CatalogItem, DataProvider, SearchResult } from "../types";
 import { truncate } from "../types";
 
@@ -81,6 +82,9 @@ export class ProductProvider implements DataProvider {
   types = ["product"];
 
   async getCatalogItems(): Promise<CatalogItem[]> {
+    // L1a.3 — Product is tenant-scoped; reading it without a tenant context is a
+    // bug (would be unscoped). Fail loud instead of returning cross-tenant data.
+    requireTenantId();
     const products = await prisma.product.findMany({
       where: { isActive: true },
       select: {
@@ -111,6 +115,7 @@ export class ProductProvider implements DataProvider {
   ): Promise<SearchResult[]> {
     if (!grouped.product) return [];
 
+    requireTenantId(); // L1a.3 — tenant-scoped read; fail loud without context.
     const products = await prisma.product.findMany({
       where: { id: { in: grouped.product } },
       include: { images: { select: { url: true, alt: true, isPrimary: true } } },
@@ -131,6 +136,7 @@ export class ProductProvider implements DataProvider {
   ): Promise<SearchResult[]> {
     if (types.length > 0 && !types.includes("product")) return [];
 
+    requireTenantId(); // L1a.3 — tenant-scoped read; fail loud without context.
     const products = await prisma.product.findMany({
       where: {
         isActive: true,
@@ -156,6 +162,8 @@ export class ProductProvider implements DataProvider {
   }
 
   async getArtifactMeta(ids: string[]): Promise<ArtifactMeta[]> {
+    // L1a.3 — tenant-scoped read; fail loud without context.
+    requireTenantId();
     const products = await prisma.product.findMany({
       where: { id: { in: ids } },
       select: {
