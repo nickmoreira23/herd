@@ -658,7 +658,16 @@ export function Sidebar() {
               <LocaleSelector />
               <div className="border-t border-border my-1" />
               <button
-                onClick={() => signOut({ callbackUrl: "/login" })}
+                onClick={async () => {
+                  // Built-in signOut only clears the domain-scoped cookie; expire
+                  // any legacy host-only session cookie first so logout sticks.
+                  try {
+                    await fetch("/api/logout", { method: "POST" });
+                  } catch {
+                    // Best-effort: built-in signOut below still runs.
+                  }
+                  await signOut({ callbackUrl: "/login" });
+                }}
                 className="flex items-center gap-3 px-4 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-destructive transition-colors w-full"
               >
                 <LogOut className="h-4 w-4" />
