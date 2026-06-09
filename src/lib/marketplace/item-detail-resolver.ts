@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { requireTenantId } from "@/lib/tenancy/context";
 import { blockRegistry } from "@/lib/blocks/registry";
 
 /**
@@ -62,6 +63,8 @@ function notEmpty<T>(x: T | null | undefined): x is T {
 // ─── Per-block resolvers ──────────────────────────────────────
 
 async function resolveProduct(itemId: string): Promise<ItemDetail | null> {
+  // L1a.3 — Product is tenant-scoped; reading without a tenant context is a bug.
+  requireTenantId();
   const product = await prisma.product.findUnique({
     where: { id: itemId },
     include: { images: { orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }] } },
