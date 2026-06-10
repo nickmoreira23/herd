@@ -78,10 +78,15 @@ describe("enforce() — shadow mode", async () => {
     expect(entry.canResult).toBe(true);
   });
 
-  it("can() disagrees: still returns current (never blocks), logs agree:false", async () => {
+  it("can() disagrees: still returns current (never blocks), logs [can-shadow] agree:false — never [can-enforce-block]", async () => {
     mockedCan.mockResolvedValue(false);
     const result = await enforce(member, permission, ctx(ALLOW));
     expect(result).toBe(ALLOW); // NOT a 403 — shadow never blocks
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy.mock.calls[0]![0]).toBe("[can-shadow]");
+    expect(
+      warnSpy.mock.calls.some((c: unknown[]) => c[0] === "[can-enforce-block]")
+    ).toBe(false);
     const entry = warnSpy.mock.calls[0]![1] as Record<string, unknown>;
     expect(entry.agree).toBe(false);
     expect(entry.requireOrgRoleResult).toBe("allow");
@@ -102,17 +107,47 @@ describe("enforce() — enforce mode", async () => {
     process.env.CAN_ENFORCEMENT = "enforce";
   });
 
-  it("can() grants: proceeds (returns current)", async () => {
+  it("can() grants: proceeds (returns current), logs nothing (agree → no noise)", async () => {
     mockedCan.mockResolvedValue(true);
     const result = await enforce(member, permission, ctx(ALLOW));
     expect(result).toBe(ALLOW);
+    expect(warnSpy).not.toHaveBeenCalled();
   });
 
-  it("can() denies: blocks with 403", async () => {
+  it("can() denies: blocks with 403 AND emits [can-enforce-block] with the shadow shape", async () => {
     mockedCan.mockResolvedValue(false);
     const result = await enforce(member, permission, ctx(ALLOW));
     expect(result).toBeInstanceOf(Response);
     expect((result as Response).status).toBe(403);
+
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy.mock.calls[0]![0]).toBe("[can-enforce-block]");
+    const entry = warnSpy.mock.calls[0]![1] as Record<string, unknown>;
+    expect(entry).toMatchObject({
+      routeId: "POST /api/departments/[id]/members",
+      resource: "departments",
+      action: "update",
+      scopeType: "department",
+      actorProfileId: "profile-member",
+      actorKind: "member",
+      requireOrgRoleResult: "allow",
+      canResult: false,
+    });
+  });
+
+  it("super_admin block: log marks actorKind super_admin", async () => {
+    mockedCan.mockResolvedValue(false);
+    await enforce(superAdmin, permission, ctx(ALLOW));
+    expect(warnSpy.mock.calls[0]![0]).toBe("[can-enforce-block]");
+    const entry = warnSpy.mock.calls[0]![1] as Record<string, unknown>;
+    expect(entry.actorKind).toBe("super_admin");
+    expect(entry.actorProfileId).toBe("profile-super");
+  });
+
+  it("requireOrgRole already denied: no enforce-block log (only tightens on a pass)", async () => {
+    mockedCan.mockResolvedValue(true);
+    await enforce(member, permission, ctx(DENY));
+    expect(warnSpy).not.toHaveBeenCalled();
   });
 
   it("requireOrgRole already denied: returns that Response, never loosens", async () => {

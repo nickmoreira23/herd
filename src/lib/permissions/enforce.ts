@@ -48,6 +48,25 @@ function logShadow(entry: ShadowLogEntry): void {
   console.warn("[can-shadow]", entry);
 }
 
+interface EnforceBlockLogEntry {
+  routeId: string;
+  resource: string;
+  action: string;
+  scopeType?: string;
+  actorProfileId: string;
+  actorKind: "super_admin" | "member";
+  requireOrgRoleResult: "allow" | "deny";
+  canResult: boolean;
+}
+
+function logEnforceBlock(entry: EnforceBlockLogEntry): void {
+  // Emitted ONLY when enforce mode flips the result: requireOrgRole passed but
+  // can() denied → the request that becomes 403 because of can(). Shadow logging
+  // stops once CAN_ENFORCEMENT=enforce, so this is the only post-flip visibility
+  // into what enforcement is blocking. Mirrors the [can-shadow] shape.
+  console.warn("[can-enforce-block]", entry);
+}
+
 export async function enforce<T>(
   actor: Actor,
   permission: Permission,
@@ -78,7 +97,18 @@ export async function enforce<T>(
 
   // enforce — only tightens on top of an already-passing requireOrgRole.
   if (!requireOrgRoleAllowed) return ctx.current; // already denied upstream
-  if (!(await can(actor, permission, ctx.organizationId))) {
+  const canResult = await can(actor, permission, ctx.organizationId);
+  if (!canResult) {
+    logEnforceBlock({
+      routeId: ctx.routeId,
+      resource: permission.resource,
+      action: permission.action,
+      scopeType: permission.scopeType,
+      actorProfileId: actor.profileId,
+      actorKind: actor.isSuperAdmin ? "super_admin" : "member",
+      requireOrgRoleResult: "allow",
+      canResult,
+    });
     return apiError("Forbidden: insufficient permission", 403);
   }
   return ctx.current;
