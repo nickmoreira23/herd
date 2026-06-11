@@ -3,6 +3,7 @@ import { apiSuccess, apiError, parseAndValidate } from "@/lib/api-utils";
 import { requireOrgRole } from "@/lib/permissions";
 import { updateRedemptionRuleSchema } from "@/lib/validators/redemption-rule";
 import { recalculateTierProductCosts } from "@/lib/recalculate-tier-costs";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
 
 // PATCH: Update discount percent on a rule
 export async function PATCH(
@@ -11,6 +12,10 @@ export async function PATCH(
 ) {
   const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN"]);
   if (sessionOrResponse instanceof Response) return sessionOrResponse;
+
+  // L1a.4 — the cost recalculation reads the tenant-scoped catalog.
+  const orgId = await getOrgIdFromRequest();
+  if (!orgId) return apiError("No active organization", 400);
 
   const { tierId, id } = await params;
   try {
@@ -28,7 +33,7 @@ export async function PATCH(
     });
 
     // Recalculate package product costs affected by this rule change
-    const productsRecalculated = await recalculateTierProductCosts(tierId);
+    const productsRecalculated = await recalculateTierProductCosts(tierId, orgId);
 
     return apiSuccess({ ...rule, productsRecalculated });
   } catch (e) {
@@ -45,6 +50,10 @@ export async function DELETE(
   const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN"]);
   if (sessionOrResponse instanceof Response) return sessionOrResponse;
 
+  // L1a.4 — the cost recalculation reads the tenant-scoped catalog.
+  const orgId = await getOrgIdFromRequest();
+  if (!orgId) return apiError("No active organization", 400);
+
   const { tierId, id } = await params;
   try {
     const existing = await prisma.subscriptionRedemptionRule.findFirst({
@@ -55,7 +64,7 @@ export async function DELETE(
     await prisma.subscriptionRedemptionRule.delete({ where: { id } });
 
     // Recalculate package product costs after rule removal
-    const productsRecalculated = await recalculateTierProductCosts(tierId);
+    const productsRecalculated = await recalculateTierProductCosts(tierId, orgId);
 
     return apiSuccess({ deleted: true, productsRecalculated });
   } catch (e) {

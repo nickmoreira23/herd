@@ -19,6 +19,7 @@ vi.mock("@/lib/prisma", () => ({
     $transaction: vi.fn(),
     product: {
       findUnique: vi.fn(async () => null),
+      findFirst: vi.fn(async () => null),
       findMany: vi.fn(async () => []),
       create: vi.fn(async () => ({ id: "new" })),
     },

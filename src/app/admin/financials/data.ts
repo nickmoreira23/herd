@@ -98,7 +98,13 @@ export const getFinancialDefaults = cache(async function getFinancialDefaults() 
       )
     : [];
 
-  const packages = orgId
+  // L1a.4 — Package is not tenant-scoped, so a nested product include runs
+  // without the tenant GUC and strict RLS denies it. Fetch the join rows
+  // plain, then read the catalog directly under the tenant and join in
+  // memory. The product name rides along with COGS so the Reference Package
+  // UI can show the per-tier line-item breakdown (qty × cost-each) the CFO
+  // uses to double-check the figure feeding the projection.
+  const rawPackages = orgId
     ? await withTenant(orgId, () =>
         prisma.package.findMany({
           where: { status: { not: "ARCHIVED" } },
@@ -106,23 +112,37 @@ export const getFinancialDefaults = cache(async function getFinancialDefaults() 
           include: {
             variants: {
               include: {
-                products: {
-                  orderBy: { sortOrder: "asc" },
-                  include: {
-                    // Pull product name in addition to COGS so the
-                    // Reference Package UI can show a per-tier line-item
-                    // breakdown (qty × cost-each) and not just the lump
-                    // total — that breakdown is how the CFO double-checks
-                    // the cost figure feeding the projection.
-                    product: { select: { id: true, name: true, costOfGoods: true } },
-                  },
-                },
+                products: { orderBy: { sortOrder: "asc" } },
               },
             },
           },
         })
       )
     : [];
+
+  const packageProductIds = rawPackages.flatMap((p) =>
+    p.variants.flatMap((v) => v.products.map((pp) => pp.productId))
+  );
+  const packageProducts = orgId
+    ? await withTenant(orgId, () =>
+        prisma.product.findMany({
+          where: { id: { in: packageProductIds } },
+          select: { id: true, name: true, costOfGoods: true },
+        })
+      )
+    : [];
+  const packageProductById = new Map(packageProducts.map((p) => [p.id, p]));
+
+  const packages = rawPackages.map((p) => ({
+    ...p,
+    variants: p.variants.map((v) => ({
+      ...v,
+      products: v.products.flatMap((pp) => {
+        const product = packageProductById.get(pp.productId);
+        return product ? [{ ...pp, product }] : [];
+      }),
+    })),
+  }));
 
   // ─── Product-derived COGS metrics ──────────────────────────────
 

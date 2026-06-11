@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-utils";
 import { toNumber } from "@/lib/utils";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 import { z } from "zod/v4";
 
 // GET /api/shared/:token — resolve share link and return package data
@@ -40,23 +42,7 @@ export async function GET(
                 iconUrl: true,
               },
             },
-            products: {
-              include: {
-                product: {
-                  select: {
-                    id: true,
-                    name: true,
-                    sku: true,
-                    category: true,
-                    subCategory: true,
-                    retailPrice: true,
-                    memberPrice: true,
-                    imageUrl: true,
-                  },
-                },
-              },
-              orderBy: { sortOrder: "asc" },
-            },
+            products: { orderBy: { sortOrder: "asc" } },
           },
           orderBy: { subscriptionTier: { sortOrder: "asc" } },
         },
@@ -64,6 +50,31 @@ export async function GET(
     });
 
     if (!pkg) return apiError("Package not found", 404);
+
+    // L1a.4 — Product is strictly tenant-scoped; the nested include through
+    // the unscoped Package family would run without the tenant GUC and be
+    // denied by RLS. Read the catalog under the host org and join in memory
+    // (share links are opened on the owning org's subdomain).
+    const orgId = await getOrgIdFromRequest();
+    const productIds = pkg.variants.flatMap((v) => v.products.map((p) => p.productId));
+    const catalogProducts = orgId
+      ? await withTenant(orgId, () =>
+          prisma.product.findMany({
+            where: { id: { in: productIds } },
+            select: {
+              id: true,
+              name: true,
+              sku: true,
+              category: true,
+              subCategory: true,
+              retailPrice: true,
+              memberPrice: true,
+              imageUrl: true,
+            },
+          })
+        )
+      : [];
+    const productById = new Map(catalogProducts.map((p) => [p.id, p]));
 
     // Serialize Decimals
     const serialized = {
@@ -80,16 +91,22 @@ export async function GET(
           monthlyCredits: toNumber(v.subscriptionTier.monthlyCredits),
           monthlyPrice: toNumber(v.subscriptionTier.monthlyPrice),
         },
-        products: v.products.map((p) => ({
-          ...p,
-          creditCost: toNumber(p.creditCost),
-          createdAt: p.createdAt.toISOString(),
-          product: {
-            ...p.product,
-            retailPrice: toNumber(p.product.retailPrice),
-            memberPrice: toNumber(p.product.memberPrice),
-          },
-        })),
+        products: v.products.flatMap((p) => {
+          const product = productById.get(p.productId);
+          if (!product) return [];
+          return [
+            {
+              ...p,
+              creditCost: toNumber(p.creditCost),
+              createdAt: p.createdAt.toISOString(),
+              product: {
+                ...product,
+                retailPrice: toNumber(product.retailPrice),
+                memberPrice: toNumber(product.memberPrice),
+              },
+            },
+          ];
+        }),
       })),
     };
 

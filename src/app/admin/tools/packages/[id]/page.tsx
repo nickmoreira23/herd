@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { PackageDetailView } from "@/components/packages/package-detail-view";
 import { toNumber } from "@/lib/utils";
 import { connection } from "next/server";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 
 export default async function PackageDetailPage({
   params,
@@ -33,24 +35,7 @@ export default async function PackageDetailPage({
               processingFeeFlat: true,
             },
           },
-          products: {
-            include: {
-              product: {
-                select: {
-                  id: true,
-                  name: true,
-                  sku: true,
-                  category: true,
-                  subCategory: true,
-                  retailPrice: true,
-                  memberPrice: true,
-                  imageUrl: true,
-                  costOfGoods: true,
-                },
-              },
-            },
-            orderBy: { sortOrder: "asc" },
-          },
+          products: { orderBy: { sortOrder: "asc" } },
         },
         orderBy: { subscriptionTier: { sortOrder: "asc" } },
       },
@@ -58,6 +43,31 @@ export default async function PackageDetailPage({
   });
 
   if (!pkg) return notFound();
+
+  // L1a.4 — Product is strictly tenant-scoped; the nested include through the
+  // unscoped Package family would run without the tenant GUC and be denied by
+  // RLS. Read the catalog directly under the host org and join in memory.
+  const orgId = await getOrgIdFromRequest();
+  const productIds = pkg.variants.flatMap((v) => v.products.map((p) => p.productId));
+  const catalogProducts = orgId
+    ? await withTenant(orgId, () =>
+        prisma.product.findMany({
+          where: { id: { in: productIds } },
+          select: {
+            id: true,
+            name: true,
+            sku: true,
+            category: true,
+            subCategory: true,
+            retailPrice: true,
+            memberPrice: true,
+            imageUrl: true,
+            costOfGoods: true,
+          },
+        })
+      )
+    : [];
+  const productById = new Map(catalogProducts.map((p) => [p.id, p]));
 
   // Fetch redemption rules for all tiers in this package
   const tierIds = pkg.variants.map((v) => v.subscriptionTierId);
@@ -103,16 +113,22 @@ export default async function PackageDetailPage({
         processingFeePct: toNumber(v.subscriptionTier.processingFeePct),
         processingFeeFlat: toNumber(v.subscriptionTier.processingFeeFlat),
       },
-      products: v.products.map((p) => ({
-        ...p,
-        creditCost: toNumber(p.creditCost),
-        product: {
-          ...p.product,
-          retailPrice: toNumber(p.product.retailPrice),
-          memberPrice: toNumber(p.product.memberPrice),
-          costOfGoods: toNumber(p.product.costOfGoods),
-        },
-      })),
+      products: v.products.flatMap((p) => {
+        const product = productById.get(p.productId);
+        if (!product) return [];
+        return [
+          {
+            ...p,
+            creditCost: toNumber(p.creditCost),
+            product: {
+              ...product,
+              retailPrice: toNumber(product.retailPrice),
+              memberPrice: toNumber(product.memberPrice),
+              costOfGoods: toNumber(product.costOfGoods),
+            },
+          },
+        ];
+      }),
     })),
   };
 

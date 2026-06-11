@@ -3,6 +3,8 @@ import { connection } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { toNumber } from "@/lib/utils";
 import { getLocale } from "@/lib/i18n/get-locale";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 import { SubscriptionWizard } from "@/components/subscribe/subscription-wizard";
 
 export default async function SubscribePage({
@@ -46,18 +48,28 @@ export default async function SubscribePage({
     },
     include: {
       package: true,
-      products: {
-        orderBy: { sortOrder: "asc" },
-        include: {
-          product: { select: { id: true, name: true, imageUrl: true } },
-        },
-      },
+      products: { orderBy: { sortOrder: "asc" } },
     },
     orderBy: [
       { package: { sortOrder: "asc" } },
       { package: { name: "asc" } },
     ],
   });
+
+  // L1a.4 — Product is strictly tenant-scoped; a nested include through the
+  // (unscoped) Package family runs without the tenant GUC and RLS denies it.
+  // Fetch the catalog directly under the host org and join in memory.
+  const orgId = await getOrgIdFromRequest();
+  const productIds = variants.flatMap((v) => v.products.map((p) => p.productId));
+  const catalogProducts = orgId
+    ? await withTenant(orgId, () =>
+        prisma.product.findMany({
+          where: { id: { in: productIds } },
+          select: { id: true, name: true, imageUrl: true },
+        })
+      )
+    : [];
+  const productById = new Map(catalogProducts.map((p) => [p.id, p]));
 
   const tierData = {
     id: tier.id,
@@ -102,12 +114,18 @@ export default async function SubscribePage({
     imageUrl: v.package.imageUrl,
     isComplete: v.isComplete,
     creditsUsed: toNumber(v.totalCreditsUsed),
-    products: v.products.map((p) => ({
-      id: p.product.id,
-      name: p.product.name,
-      imageUrl: p.product.imageUrl,
-      quantity: p.quantity,
-    })),
+    products: v.products.flatMap((p) => {
+      const product = productById.get(p.productId);
+      if (!product) return [];
+      return [
+        {
+          id: product.id,
+          name: product.name,
+          imageUrl: product.imageUrl,
+          quantity: p.quantity,
+        },
+      ];
+    }),
   }));
 
   return (
