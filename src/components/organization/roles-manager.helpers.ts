@@ -20,6 +20,22 @@ export function roleErrorKey(code: string): MessageKey {
   return "organization.roles.error.invalid";
 }
 
+/**
+ * Render a 400 validation body (`{ details: zodError.flatten() }`) as a short
+ * inline detail line, e.g. "description: Expected string, received null". The
+ * zod messages are API-side English — shown raw as contract diagnostics, after
+ * the translated generic message. Empty/malformed details → null.
+ */
+export function formatFieldErrors(details: unknown): string | null {
+  const fieldErrors = (details as { fieldErrors?: Record<string, string[]> } | null)
+    ?.fieldErrors;
+  if (!fieldErrors || typeof fieldErrors !== "object") return null;
+  const parts = Object.entries(fieldErrors)
+    .filter(([, msgs]) => Array.isArray(msgs) && msgs.length > 0)
+    .map(([field, msgs]) => `${field}: ${msgs.join(", ")}`);
+  return parts.length > 0 ? parts.join("; ") : null;
+}
+
 /** Map the grant-editor endpoint's stable error codes to an i18n key. */
 export function grantErrorKey(code: string): MessageKey {
   if (code === "role_not_found") return "organization.roles.grants.role_not_found";

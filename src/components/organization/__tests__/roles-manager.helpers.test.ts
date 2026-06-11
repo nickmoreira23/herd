@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { toKebab, roleErrorKey, grantErrorKey, canMutateRoles } from "../roles-manager.helpers";
+import { toKebab, roleErrorKey, grantErrorKey, canMutateRoles, formatFieldErrors } from "../roles-manager.helpers";
 
 describe("toKebab", () => {
   it("lowercases and hyphenates", () => {
@@ -39,6 +39,31 @@ describe("grantErrorKey — grant-editor CODE → i18n key", () => {
   });
   it("unknown → generic save_error", () => {
     expect(grantErrorKey("")).toBe("organization.roles.grants.save_error");
+  });
+});
+
+describe("formatFieldErrors — 400 details → inline diagnostic line", () => {
+  it("renders the description-null contract error (the PROD incident shape)", () => {
+    expect(
+      formatFieldErrors({
+        formErrors: [],
+        fieldErrors: { description: ["Expected string, received null"] },
+      }),
+    ).toBe("description: Expected string, received null");
+  });
+  it("joins multiple fields and messages", () => {
+    expect(
+      formatFieldErrors({
+        fieldErrors: { key: ["key must be kebab-case"], name: ["too big", "bad"] },
+      }),
+    ).toBe("key: key must be kebab-case; name: too big, bad");
+  });
+  it("null / malformed / empty details → null", () => {
+    expect(formatFieldErrors(null)).toBeNull();
+    expect(formatFieldErrors(undefined)).toBeNull();
+    expect(formatFieldErrors("oops")).toBeNull();
+    expect(formatFieldErrors({ fieldErrors: {} })).toBeNull();
+    expect(formatFieldErrors({ fieldErrors: { a: [] } })).toBeNull();
   });
 });
 
