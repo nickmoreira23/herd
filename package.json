@@ -19,6 +19,7 @@
     "db:seed": "npx prisma db seed",
     "db:seed:ledger": "tsx prisma/seeds/seed-ledger.ts",
     "seed:role-permissions": "tsx scripts/seed-role-permissions.ts",
+    "seed:ci-integration": "tsx scripts/seed-ci-integration.ts",
     "seed:recharge": "tsx scripts/seed-recharge-integration.ts",
     "seed:braintree": "tsx scripts/seed-braintree-integration.ts",
     "braintree:test-webhook": "tsx scripts/test-braintree-webhook.ts",
