@@ -80,13 +80,16 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
+      # Role must pre-exist: migrations from sub_19 onward reference herd_app.
+      # Default privileges in the bootstrap auto-grant the migrated tables.
+      - name: Bootstrap herd_app role
+        run: psql "$DIRECT_URL" -v ON_ERROR_STOP=1 -f scripts/ci/bootstrap-ci-role.sql
+
       - name: Apply migrations
         run: npx prisma migrate deploy
 
-      - name: Bootstrap herd_app role + enable RLS
-        run: |
-          psql "$DIRECT_URL" -v ON_ERROR_STOP=1 -f scripts/ci/bootstrap-ci-role.sql
-          psql "$DIRECT_URL" -v ON_ERROR_STOP=1 -f scripts/enable-rls.sql
+      - name: Enable RLS on platform tables
+        run: psql "$DIRECT_URL" -v ON_ERROR_STOP=1 -f scripts/enable-rls.sql
 
       - name: Seed baseline data
         run: |
