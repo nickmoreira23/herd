@@ -21,7 +21,7 @@ import { notifySuccess, notifyError } from "@/lib/i18n/notify";
 import { useViewerPermissions } from "@/lib/permissions/permission-context";
 import { GRANT_RESOURCES, GRANT_ACTIONS } from "@/lib/permissions/grant-catalog";
 import type { MessageKey } from "@/lib/i18n/messages/pt-BR";
-import { toKebab, roleErrorKey, grantErrorKey, canMutateRoles } from "./roles-manager.helpers";
+import { toKebab, roleErrorKey, grantErrorKey, canMutateRoles, formatFieldErrors } from "./roles-manager.helpers";
 
 const grantKey = (resource: string, action: string) => `${resource}:${action}`;
 
@@ -250,15 +250,27 @@ function RoleFormDialog({
         onSaved();
         return;
       }
+      // Every failure surfaces INSIDE the modal — a toast is too easy to miss
+      // and leaves "Create role does nothing" undiagnosable (the 400-contract
+      // incident: zod rejected description:null and only a generic toast fired).
+      const json = await res.json().catch(() => null);
       if (res.status === 422) {
-        const json = await res.json().catch(() => null);
         const code = typeof json?.code === "string" ? json.code : "";
         setFieldError(t(roleErrorKey(code)));
         return;
       }
-      notifyError("organization.roles.feedback.save_error", t);
+      if (res.status === 400) {
+        const detail = formatFieldErrors(json?.details);
+        setFieldError(
+          detail
+            ? `${t("organization.roles.error.invalid")} (${detail})`
+            : t("organization.roles.error.invalid"),
+        );
+        return;
+      }
+      setFieldError(t("organization.roles.feedback.save_error"));
     } catch {
-      notifyError("organization.roles.feedback.save_error", t);
+      setFieldError(t("organization.roles.feedback.save_error"));
     } finally {
       setSaving(false);
     }

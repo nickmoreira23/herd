@@ -16,7 +16,10 @@ const RESERVED = new Set([
 const createSchema = z.object({
   name: z.string().trim().min(1).max(120),
   key: z.string().trim().min(1).max(120).regex(/^[a-z0-9-]+$/, "key must be kebab-case"),
-  description: z.string().trim().max(1000).optional(),
+  // .nullish(): the form sends `description: null` when empty — `.optional()`
+  // alone rejects null (400) and silently broke every create. Mirrors the PATCH
+  // schema's `.nullable().optional()`.
+  description: z.string().trim().max(1000).nullish(),
 });
 
 /** GET /api/org/roles — list the org's custom roles. */

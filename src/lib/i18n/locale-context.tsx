@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, useCallback, type ReactNode } from "react";
 import { DEFAULT_LOCALE, type Locale } from "./locales";
 import { t as translate, type MessageKey } from "./t";
 
@@ -24,6 +24,13 @@ export function useLocale(): Locale {
 
 export function useT() {
   const locale = useLocale();
-  return (key: MessageKey, params?: Record<string, string | number>) =>
-    translate(key, locale, params);
+  // Stable identity per locale. The previous per-render arrow made `t` an
+  // unstable hook dependency: roles-manager's load (useCallback([t])) fed a
+  // useEffect([load]) that setState'd → render → new t → refetch, flooding
+  // GET /api/org/roles several times per second in PROD.
+  return useCallback(
+    (key: MessageKey, params?: Record<string, string | number>) =>
+      translate(key, locale, params),
+    [locale],
+  );
 }
