@@ -2,6 +2,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-utils";
 import { resolveAnthropicKey } from "@/lib/integration-keys";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 
 const IDENTITY_PROMPT = `You are a fitness brand copywriter. Given a fitness goal and optional product summary, generate a compelling package name and description for a subscription product bundle.
 
@@ -42,25 +44,44 @@ export async function POST(
     return apiError("fitnessGoal is required", 400);
   }
 
-  // Optionally fetch product summary for context
+  // Optionally fetch product summary for context. L1a.4 — Product is
+  // tenant-scoped, so the names come from a direct read under the host org
+  // (nested include would run without the GUC and be denied by RLS). The
+  // summary is best-effort: no org → no summary.
   let productSummary = "";
   try {
+    const orgId = await getOrgIdFromRequest();
     const variants = await prisma.packageTierVariant.findMany({
       where: { packageId },
       include: {
-        products: {
-          include: { product: { select: { name: true, category: true } } },
-        },
+        products: true,
         subscriptionTier: { select: { name: true } },
       },
     });
 
+    const productIds = variants.flatMap((v) => v.products.map((p) => p.productId));
+    const catalogProducts =
+      orgId && productIds.length > 0
+        ? await withTenant(orgId, () =>
+            prisma.product.findMany({
+              where: { id: { in: productIds } },
+              select: { id: true, name: true },
+            })
+          )
+        : [];
+    const productById = new Map(catalogProducts.map((p) => [p.id, p]));
+
     const tierSummaries = variants
-      .filter((v) => v.products.length > 0)
       .map((v) => {
-        const productNames = v.products.map((p) => p.product.name).join(", ");
-        return `${v.subscriptionTier.name}: ${productNames}`;
-      });
+        const productNames = v.products
+          .flatMap((p) => {
+            const product = productById.get(p.productId);
+            return product ? [product.name] : [];
+          })
+          .join(", ");
+        return productNames ? `${v.subscriptionTier.name}: ${productNames}` : "";
+      })
+      .filter(Boolean);
 
     if (tierSummaries.length > 0) {
       productSummary = `\nProducts by tier:\n${tierSummaries.join("\n")}`;

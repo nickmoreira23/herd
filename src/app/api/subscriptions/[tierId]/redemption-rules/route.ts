@@ -3,6 +3,7 @@ import { apiSuccess, apiError, parseAndValidate } from "@/lib/api-utils";
 import { requireOrgRole } from "@/lib/permissions";
 import { createRedemptionRuleSchema } from "@/lib/validators/redemption-rule";
 import { recalculateTierProductCosts } from "@/lib/recalculate-tier-costs";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
 
 // GET: Fetch all redemption rules for a tier
 export async function GET(
@@ -29,6 +30,10 @@ export async function POST(
 ) {
   const sessionOrResponse = await requireOrgRole(["OWNER", "ADMIN"]);
   if (sessionOrResponse instanceof Response) return sessionOrResponse;
+
+  // L1a.4 — the cost recalculation reads the tenant-scoped catalog.
+  const orgId = await getOrgIdFromRequest();
+  if (!orgId) return apiError("No active organization", 400);
 
   const { tierId } = await params;
   try {
@@ -65,7 +70,7 @@ export async function POST(
     });
 
     // Recalculate package product costs affected by this new rule
-    const productsRecalculated = await recalculateTierProductCosts(tierId);
+    const productsRecalculated = await recalculateTierProductCosts(tierId, orgId);
 
     return apiSuccess({ ...rule, productsRecalculated }, 201);
   } catch (e) {

@@ -119,28 +119,40 @@ export async function PUT(
 
     const total = await recalcTotalCredits(variant.id);
 
-    const updated = await prisma.packageTierVariant.findUnique({
+    // L1a.4 — re-read post-write without traversing into the tenant-scoped
+    // Product (a nested include runs without the GUC and RLS denies it):
+    // fetch the join rows plain, read the catalog under the tenant, join.
+    const updatedVariant = await prisma.packageTierVariant.findUnique({
       where: { id: variant.id },
-      include: {
-        products: {
-          include: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-                sku: true,
-                category: true,
-                subCategory: true,
-                retailPrice: true,
-                memberPrice: true,
-                imageUrl: true,
-              },
-            },
-          },
-          orderBy: { sortOrder: "asc" },
-        },
-      },
+      include: { products: { orderBy: { sortOrder: "asc" } } },
     });
+
+    const updatedIds = updatedVariant?.products.map((p) => p.productId) ?? [];
+    const catalogProducts = await withTenant(orgId, () =>
+      prisma.product.findMany({
+        where: { id: { in: updatedIds } },
+        select: {
+          id: true,
+          name: true,
+          sku: true,
+          category: true,
+          subCategory: true,
+          retailPrice: true,
+          memberPrice: true,
+          imageUrl: true,
+        },
+      })
+    );
+    const productById = new Map(catalogProducts.map((p) => [p.id, p]));
+    const updated = updatedVariant
+      ? {
+          ...updatedVariant,
+          products: updatedVariant.products.flatMap((p) => {
+            const product = productById.get(p.productId);
+            return product ? [{ ...p, product }] : [];
+          }),
+        }
+      : null;
 
     return apiSuccess({ variant: updated, totalCreditsUsed: total });
   } catch (e) {

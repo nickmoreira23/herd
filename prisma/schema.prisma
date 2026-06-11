@@ -142,7 +142,7 @@ model Product {
   id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenantId       String  @map("tenant_id") @db.Uuid
   name           String
-  sku            String  @unique
+  sku            String
   category       String // SUPPLEMENT | APPAREL | ACCESSORY
   subCategory    String?
   redemptionType String  @default("Members Store") // "Members Store" | "Members Rate"
@@ -189,6 +189,9 @@ model Product {
   // L1a — catalog detenanting. tenant_id NOT NULL + strict RLS (L1a.4).
   tenant Organization @relation("ProductTenant", fields: [tenantId], references: [id], onDelete: Cascade)
 
+  // L1a.4 addendum — SKU is unique per tenant, not globally (0 collisions
+  // verified in DEV/PROD before the swap).
+  @@unique([tenantId, sku])
   @@index([tenantId])
 }
 

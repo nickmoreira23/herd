@@ -1,11 +1,17 @@
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError, parseAndValidate } from "@/lib/api-utils";
 import { updatePackageSchema } from "@/lib/validators/package";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // L1a.4 — Product is tenant-scoped; resolve host org for the catalog read.
+  const orgId = await getOrgIdFromRequest();
+  if (!orgId) return apiError("No active organization", 400);
+
   try {
     const { id } = await params;
     const pkg = await prisma.package.findUnique({
@@ -24,23 +30,7 @@ export async function GET(
                 sortOrder: true,
               },
             },
-            products: {
-              include: {
-                product: {
-                  select: {
-                    id: true,
-                    name: true,
-                    sku: true,
-                    category: true,
-                    subCategory: true,
-                    retailPrice: true,
-                    memberPrice: true,
-                    imageUrl: true,
-                  },
-                },
-              },
-              orderBy: { sortOrder: "asc" },
-            },
+            products: { orderBy: { sortOrder: "asc" } },
           },
           orderBy: { subscriptionTier: { sortOrder: "asc" } },
         },
@@ -48,7 +38,40 @@ export async function GET(
     });
 
     if (!pkg) return apiError("Package not found", 404);
-    return apiSuccess(pkg);
+
+    // Nested product include through the unscoped Package family would run
+    // without the tenant GUC and be denied by RLS — read the catalog directly
+    // under the tenant and join in memory.
+    const productIds = pkg.variants.flatMap((v) => v.products.map((p) => p.productId));
+    const catalogProducts = await withTenant(orgId, () =>
+      prisma.product.findMany({
+        where: { id: { in: productIds } },
+        select: {
+          id: true,
+          name: true,
+          sku: true,
+          category: true,
+          subCategory: true,
+          retailPrice: true,
+          memberPrice: true,
+          imageUrl: true,
+        },
+      })
+    );
+    const productById = new Map(catalogProducts.map((p) => [p.id, p]));
+
+    const joined = {
+      ...pkg,
+      variants: pkg.variants.map((v) => ({
+        ...v,
+        products: v.products.flatMap((p) => {
+          const product = productById.get(p.productId);
+          return product ? [{ ...p, product }] : [];
+        }),
+      })),
+    };
+
+    return apiSuccess(joined);
   } catch (e) {
     console.error("GET /api/packages/[id] error:", e);
     return apiError("Failed to fetch package", 500);

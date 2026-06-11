@@ -13,6 +13,17 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log("Seeding database (non-destructive upsert mode)...\n");
 
+  // ==============================================
+  // CATALOG TENANT (Product.tenantId is NOT NULL)
+  // ==============================================
+  console.log("Ensuring catalog org (buckedup)...");
+
+  const catalogOrg = await prisma.organization.upsert({
+    where: { slug: "buckedup" },
+    update: {},
+    create: { slug: "buckedup", subdomain: "buckedup", name: "Bucked Up" },
+  });
+
   // ========================
   // PRODUCTS (upsert by SKU)
   // ========================
@@ -57,9 +68,9 @@ async function main() {
   const products = await Promise.all(
     productData.map((p) =>
       prisma.product.upsert({
-        where: { sku: p.sku },
+        where: { tenantId_sku: { tenantId: catalogOrg.id, sku: p.sku } },
         update: { subCategory: p.subCategory }, // only patch subCategory onto existing rows
-        create: { ...p },
+        create: { ...p, tenantId: catalogOrg.id },
       })
     )
   );

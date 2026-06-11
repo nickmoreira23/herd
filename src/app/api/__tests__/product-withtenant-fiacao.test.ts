@@ -35,6 +35,7 @@ vi.mock("@/lib/prisma", () => ({
     product: {
       findMany: vi.fn(async () => []),
       findUnique: vi.fn(async () => null),
+      findFirst: vi.fn(async () => null),
       create: vi.fn(async (args: unknown) => ({ id: "new", ...(args as { data: object }).data })),
     },
   },

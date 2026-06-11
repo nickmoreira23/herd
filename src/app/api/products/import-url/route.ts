@@ -59,7 +59,9 @@ export async function POST(request: Request) {
       const { images: imageList, ...productData } = result.data;
 
       // Check for duplicate SKU
-      const existing = await prisma.product.findUnique({
+      // L1a.4 — sku is unique per tenant; the scoped findFirst checks
+      // within the current org only.
+      const existing = await prisma.product.findFirst({
         where: { sku: productData.sku },
       });
       if (existing) {
