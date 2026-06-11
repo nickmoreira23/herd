@@ -40,3 +40,62 @@ jobs:
 
       - name: Test
         run: npm test
+
+  integration:
+    name: Integration Tests (Postgres + RLS)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: herd_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/herd_ci
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/herd_ci
+      # herd_app (NOBYPASSRLS) — the runtime client exercises real RLS policies.
+      RUNTIME_DATABASE_URL: postgresql://herd_app:herd_app_ci@localhost:5432/herd_ci
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      # Role must pre-exist: migrations from sub_19 onward reference herd_app.
+      # Default privileges in the bootstrap auto-grant the migrated tables.
+      - name: Bootstrap herd_app role
+        run: psql "$DIRECT_URL" -v ON_ERROR_STOP=1 -f scripts/ci/bootstrap-ci-role.sql
+
+      - name: Apply migrations
+        run: npx prisma migrate deploy
+
+      - name: Enable RLS on platform tables
+        run: psql "$DIRECT_URL" -v ON_ERROR_STOP=1 -f scripts/enable-rls.sql
+
+      - name: Seed baseline data
+        run: |
+          npm run seed:role-permissions
+          npm run db:seed:ledger
+          npm run seed:ci-integration
+
+      - name: Run integration tests
+        run: npm run test:integration
