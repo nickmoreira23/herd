@@ -26,8 +26,10 @@
 -- CREATE for re-runnability.
 -- =============================================================
 
--- Products
-ALTER TABLE "Product" ENABLE ROW LEVEL SECURITY;
+-- Products — L1a.4 moved Product to migration-managed STRICT policies
+-- (tenant_isolation + vertical_read, no permissive). Do NOT re-add it here:
+-- the permissive herd_app_full_access would OR with the strict policies and
+-- silently disable tenant isolation on any environment this file runs on.
 
 -- AI Agents
 ALTER TABLE "Agent" ENABLE ROW LEVEL SECURITY;
@@ -87,11 +89,6 @@ ALTER TABLE "IntegrationSyncLog" ENABLE ROW LEVEL SECURITY;
 -- operar livremente.
 --
 -- Idempotent via DROP POLICY IF EXISTS + CREATE POLICY.
-
--- Products
-DROP POLICY IF EXISTS herd_app_full_access ON public."Product";
-CREATE POLICY herd_app_full_access ON public."Product"
-  FOR ALL TO herd_app USING (true) WITH CHECK (true);
 
 -- AI Agents (5)
 DROP POLICY IF EXISTS herd_app_full_access ON public."Agent";
