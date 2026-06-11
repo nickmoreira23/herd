@@ -1,7 +1,12 @@
 -- CI adaptation of scripts/bootstrap-supabase-project.sh (role + GRANTs only).
 -- Targets the throwaway postgres:16 service container in GitHub Actions —
--- fixed password is intentional (DB dies with the job). Apply AFTER
--- `prisma migrate deploy`, then apply scripts/enable-rls.sql.
+-- fixed password is intentional (DB dies with the job).
+--
+-- Apply BEFORE `prisma migrate deploy`: migrations from sub_19 onward GRANT /
+-- CREATE POLICY ... TO herd_app and fail with 42704 on a fresh database if the
+-- role doesn't exist yet. ALTER DEFAULT PRIVILEGES below makes the tables the
+-- migrations create auto-grant to herd_app. Apply scripts/enable-rls.sql after
+-- migrations (it needs the tables).
 --
 -- NOBYPASSRLS is the load-bearing property: RUNTIME_DATABASE_URL connects as
 -- herd_app so the RLS integration tests exercise real policies.
