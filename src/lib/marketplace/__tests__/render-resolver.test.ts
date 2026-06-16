@@ -162,6 +162,41 @@ describe("render-resolver — scope × item matching (via resolveItemsPage)", ()
     ).toEqual([]);
   });
 
+  // L2a.2b — scopeValue is the stable SLUG; the resolver slug-normalizes the
+  // item's raw category/subcategory before comparing.
+  it("CATEGORY scope (slug) matches an item whose RAW category is non-slug", async () => {
+    seed([
+      product("raw1", { name: "Pre", category: "SUPPLEMENT", subCategory: "Pre-Workout" }),
+      product("raw2", { name: "Tee", category: "APPAREL", subCategory: "Tee" }),
+    ]);
+    expect(
+      await idsFor([
+        scope({ scopeType: MarketplaceScopeType.CATEGORY, scopeValue: "supplement" }),
+      ])
+    ).toEqual(["product:raw1"]);
+  });
+
+  it("SUB_CATEGORY scope (slug) matches an item whose RAW subcategory is non-slug", async () => {
+    seed([
+      product("raw1", { name: "Pre", category: "SUPPLEMENT", subCategory: "Pre-Workout" }),
+      product("raw2", { name: "Whey", category: "SUPPLEMENT", subCategory: "Protein" }),
+    ]);
+    expect(
+      await idsFor([
+        scope({ scopeType: MarketplaceScopeType.SUB_CATEGORY, scopeValue: "pre-workout" }),
+      ])
+    ).toEqual(["product:raw1"]);
+  });
+
+  it("CATEGORY scope does NOT match when slugs differ", async () => {
+    seed([product("raw2", { name: "Tee", category: "APPAREL" })]);
+    expect(
+      await idsFor([
+        scope({ scopeType: MarketplaceScopeType.CATEGORY, scopeValue: "supplement" }),
+      ])
+    ).toEqual([]);
+  });
+
   it("de-dupes items matched by multiple scopes", async () => {
     expect(
       await idsFor([
