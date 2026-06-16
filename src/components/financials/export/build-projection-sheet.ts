@@ -10,6 +10,7 @@
 import type { FinancialInputs, ScenarioResults } from "@/lib/financial-engine";
 import type { MessageKey } from "@/lib/i18n/t";
 import { aggregateLifecyclesByCalendarMonth } from "../spreadsheet-shared";
+import { buildCascadeSection } from "./build-cascade-section";
 import type { ExportRow, ExportSection, ExportSheet, ExportTranslate } from "./types";
 
 export function buildProjectionSheet(
@@ -151,27 +152,14 @@ export function buildProjectionSheet(
     }),
   );
 
-  // Profit split — per party + cumulative running total.
-  const profitSplitRows: ExportRow[] = [];
-  for (const party of results.profitSplit?.parties ?? []) {
-    const partyValues = netProfit.map((np) => (np > 0 ? np * (party.percent / 100) : 0));
-    let running = 0;
-    profitSplitRows.push({
-      label: t("financials.pl.party_label", { name: party.name, percent: party.percent }),
-      type: "currency",
-      totalMode: "sum",
-      values: partyValues,
-    });
-    profitSplitRows.push({
-      label: t("financials.projection.row.profit_split_cumulative", {
-        name: party.name,
-        percent: party.percent,
-      }),
-      type: "currency",
-      totalMode: "latest",
-      values: partyValues.map((v) => (running += v)),
-    });
-  }
+  // Profit cascade (accrual) — mirrors projection-spreadsheet's on-screen
+  // cascade, sourced from profitDistribution.accrual + totals.accrual.
+  const cascadeSection = buildCascadeSection(
+    results.profitDistribution.accrual.slice(0, n),
+    results.profitDistribution.totals.accrual,
+    subscriptionRevenue,
+    t,
+  );
 
   const sections: ExportSection[] = [
     {
@@ -233,9 +221,7 @@ export function buildProjectionSheet(
         { label: t("financials.projection.row.net_margin_pct"), type: "percent", totalMode: "average", values: netMarginPct },
       ],
     },
-    ...(profitSplitRows.length > 0
-      ? [{ header: t("financials.projection.section.profit_split"), rows: profitSplitRows }]
-      : []),
+    ...(cascadeSection ? [cascadeSection] : []),
   ];
 
   return {

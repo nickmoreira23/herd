@@ -1109,7 +1109,6 @@ export const messages = {
   "financials.projection.row.buck": "Buck",
   "financials.projection.row.add_ons": "Add-Ons",
   "financials.projection.row.path_scale": "Path Scale",
-  "financials.projection.row.profit_split_cumulative": "{name} — Acumulado ({percent}%)",
   "financials.projection.row.overhead": "Overhead",
   "financials.projection.row.total_opex": "OpEx Total",
   "financials.projection.row.net_profit": "Lucro Líquido",

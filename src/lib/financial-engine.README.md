@@ -17,7 +17,7 @@ FinancialInputs                   ScenarioResults
 tiers[], cycles,           ┌──►   mrr, arr*, margins, …
 overhead, channels,    ────┤      cohortProjection[36]
 commissions, partners      │      cohortLifecycles[≤36]
-                           │      ltvCac, profitSplit
+                           │      ltvCac, profitDistribution
                            ▼
                   PROJECTION LOOP
               (36 months, churn-aware,
@@ -65,7 +65,7 @@ bug class eradicated by Threads A.2 / A.3.2 / D.2 / D.3.2.
 | `tierDetails[].{revenuePerSub, cogsPerSub, marginPerSub, marginPercent, ltv}` | per-sub steady-state | time-invariant | `aggregate-scalars` |
 | `cohortProjection[]` | per-month emissions | accrual basis source-of-truth | every regression file |
 | `cohortLifecycles[]` | per-acquisition cohorts | cash-flow attribution | reconciliation |
-| `profitSplit.{parties[], totalDistributedPercent, undistributedPercent, overAllocatedPercent, status}` | derived from inputs + period netProfit | declarative split | covered indirectly |
+| `profitDistribution.{accrual[], cash[], totals}` | per-month cascade (shared/party cost attribution + loss handling) + per-party totals | canonical profit split | `profit-distribution` |
 | `operationBreakevenMonth` | first month `cumulativeProfit > 0` (sustained) | months until profitable | `stressed-overhead` |
 | `commissionBreakdown?` | optional D2D breakdown | snapshot when D2D plan active | — |
 
