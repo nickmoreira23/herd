@@ -954,6 +954,19 @@ export const messages = {
   "financials.pl.unnamed": "Sem nome",
   "financials.pl.undistributed": "Não distribuído ({percent}%)",
 
+  // Profit cascade (shared/party) — rendered in both the Projection
+  // Spreadsheet and the P&L Statement (S3). Labels carry the (−)/(=)
+  // operators to make the cascade read top-to-bottom.
+  "financials.cascade.revenue": "Receita",
+  "financials.cascade.shared_costs": "(−) Custos compartilhados",
+  "financials.cascade.distributable": "(=) Lucro distribuível",
+  "financials.cascade.party_gross": "Fatia bruta",
+  "financials.cascade.party_cost": "(−) Custos da party",
+  "financials.cascade.undistributed": "Não distribuído / perda não alocada",
+  "financials.cascade.undistributed_tooltip":
+    "Resíduo positivo quando as parties somam menos de 100%; negativo quando é uma perda do canal absorvida (mês de prejuízo sem responsável definido).",
+  "financials.cascade.channel_result": "(=) Resultado do canal",
+
   // Profit split — shared between P&L Statement and Metrics panel
   "financials.profit_split.over_allocated.label": "Sobre-alocado:",
   "financials.profit_split.over_allocated.body":

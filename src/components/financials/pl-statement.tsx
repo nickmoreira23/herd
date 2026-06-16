@@ -9,6 +9,8 @@ import type { Locale } from "@/lib/i18n/locales";
 import { formatNumberAsMoney } from "@/lib/money/format";
 import { formatNumber } from "@/lib/i18n/format-number";
 import { AccountingBasisBadge } from "./accounting-basis-reconciliation";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Fragment } from "react";
 
 interface PLStatementProps {
   multiplier: number;
@@ -81,6 +83,22 @@ export function PLStatement({ multiplier, periodLabel, locale }: PLStatementProp
   const totalOtherIncome = results.totalKickbackRevenue * m;
   const breakageProfit = sumOver("breakageProfit");
   const netIncome = sumOver("netProfit");
+
+  // Profit cascade (S3) — per-month accrual distribution summed over the
+  // visible window. `cascadeChannel` ≡ netIncome by construction (channel
+  // result == net profit), so the section footer matches the Net Income box.
+  const dist = results.profitDistribution.accrual.slice(0, m);
+  const cascadeParties = results.profitDistribution.totals.accrual;
+  const cascadeRevenue = totalRevenue;
+  const cascadeShared = dist.reduce((s, d) => s + d.sharedCosts, 0);
+  const cascadeDistributable = dist.reduce((s, d) => s + d.distributable, 0);
+  const cascadeUndistributed = dist.reduce((s, d) => s + d.undistributed, 0);
+  const cascadeChannel = dist.reduce((s, d) => s + d.channelResult, 0);
+  const partyTotal = (partyId: string, key: "amount" | "partyCost" | "net") =>
+    dist.reduce(
+      (s, d) => s + (d.byParty.find((b) => b.partyId === partyId)?.[key] ?? 0),
+      0,
+    );
 
   return (
     <div className="space-y-3">
@@ -210,67 +228,53 @@ export function PLStatement({ multiplier, periodLabel, locale }: PLStatementProp
         </div>
       </div>
 
-      {/* Profit Split Section */}
-      {results.profitSplit.parties.length > 0 && (
-        <>
-          <PLSection
-            label={t("financials.pl.profit_distribution")}
-            // Profit-split distribution per party = sum of (netProfit × pct)
-            // across the first `m` months. `monthlyAmount × m` would use
-            // the avg netMargin × m which equals sum only when the netProfit
-            // series is constant. Sum-of-period preserves accuracy under
-            // ramp/growth (Thread D.2).
-            total={projection.reduce((rowSum, mo) => {
-              const monthDist = mo.netProfit > 0
-                ? results.profitSplit.parties.reduce(
-                    (s, p) => s + mo.netProfit * (p.percent / 100),
-                    0,
-                  )
-                : 0;
-              return rowSum + monthDist;
-            }, 0)}
-            totalLabel={t("financials.pl.distributed", { percent: results.profitSplit.totalDistributedPercent })}
-            variant="income"
-            locale={locale}
-          >
-            {results.profitSplit.parties.map((party) => (
+      {/* Profit Cascade (S3) — shared/party. Footer total = channel result
+          (≡ Net Income, the invariant). Per party: net headline (level 1) +
+          gross / −party costs (level 2). Single undistributed/loss line with
+          a tooltip. Replaces the legacy aggregate Profit Split section. */}
+      {cascadeParties.length > 0 && (
+        <PLSection
+          label={t("financials.pl.profit_distribution")}
+          total={cascadeChannel}
+          totalLabel={t("financials.cascade.channel_result")}
+          variant="income"
+          locale={locale}
+        >
+          <LineItem label={t("financials.cascade.revenue")} value={cascadeRevenue} locale={locale} />
+          <LineItem label={t("financials.cascade.shared_costs")} value={cascadeShared} locale={locale} />
+          <LineItem label={t("financials.cascade.distributable")} value={cascadeDistributable} locale={locale} />
+          {cascadeParties.map((party) => (
+            <Fragment key={party.partyId}>
               <LineItem
-                key={party.id}
+                level={1}
                 label={t("financials.pl.party_label", {
                   name: party.name || t("financials.pl.unnamed"),
                   percent: party.percent,
                 })}
-                // Per-party distribution: sum (netProfit × percent) over
-                // first `m` months. See Thread D.2 doc.
-                value={projection.reduce(
-                  (s, mo) =>
-                    s +
-                    (mo.netProfit > 0
-                      ? mo.netProfit * (party.percent / 100)
-                      : 0),
-                  0,
-                )}
+                value={partyTotal(party.partyId, "net")}
                 locale={locale}
               />
-            ))}
-            {results.profitSplit.undistributedPercent > 0 && (
               <LineItem
-                label={t("financials.pl.undistributed", { percent: results.profitSplit.undistributedPercent })}
-                value={netIncome > 0 ? netIncome * (results.profitSplit.undistributedPercent / 100) : 0}
+                level={2}
+                label={t("financials.cascade.party_gross")}
+                value={partyTotal(party.partyId, "amount")}
                 locale={locale}
               />
-            )}
-            {results.profitSplit.status === "over" && (
-              <div className="px-3 py-2 mt-1 rounded-md border border-rose-300 bg-rose-50 text-rose-700 text-xs">
-                <strong>{t("financials.profit_split.over_allocated.label")}</strong>{" "}
-                {t("financials.profit_split.over_allocated.body", {
-                  total: results.profitSplit.totalDistributedPercent.toFixed(1),
-                  overage: results.profitSplit.overAllocatedPercent.toFixed(1),
-                })}
-              </div>
-            )}
-          </PLSection>
-        </>
+              <LineItem
+                level={2}
+                label={t("financials.cascade.party_cost")}
+                value={partyTotal(party.partyId, "partyCost")}
+                locale={locale}
+              />
+            </Fragment>
+          ))}
+          <LineItem
+            label={t("financials.cascade.undistributed")}
+            tooltip={t("financials.cascade.undistributed_tooltip")}
+            value={cascadeUndistributed}
+            locale={locale}
+          />
+        </PLSection>
       )}
     </div>
   );
@@ -323,14 +327,34 @@ function LineItem({
   label,
   value,
   locale,
+  level = 0,
+  tooltip,
 }: {
   label: string;
   value: number;
   locale: Locale;
+  level?: 0 | 1 | 2;
+  tooltip?: string;
 }) {
   return (
-    <div className="flex justify-between text-sm py-0.5">
-      <span className="text-muted-foreground">{label}</span>
+    <div
+      className="flex justify-between text-sm py-0.5"
+      style={{ paddingLeft: level * 12 }}
+    >
+      <span className="text-muted-foreground">
+        {tooltip ? (
+          <Tooltip>
+            <TooltipTrigger className="cursor-help underline decoration-dotted underline-offset-2">
+              {label}
+            </TooltipTrigger>
+            <TooltipContent className="max-w-[280px] text-[11px]">
+              {tooltip}
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          label
+        )}
+      </span>
       <span className={`tabular-nums ${value < 0 ? "text-red-500" : ""}`}>
         {formatNumberAsMoney(value, locale)}
       </span>

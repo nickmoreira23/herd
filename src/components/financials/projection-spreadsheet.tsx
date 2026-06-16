@@ -16,6 +16,7 @@ import {
   aggregateLifecyclesByCalendarMonth,
   useSpreadsheetCollapse,
 } from "./spreadsheet-shared";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ProjectionSpreadsheetProps {
   months?: number;
@@ -38,6 +39,8 @@ interface RowDef {
   parentId?: string;
   /** Indent depth; 0 = top, 1 = child, 2 = grandchild. Defaults to 0. */
   level?: 0 | 1 | 2;
+  /** Optional help text shown on a dotted-underline label via Tooltip. */
+  tooltip?: string;
 }
 
 interface SectionDef {
@@ -257,34 +260,96 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
     netMarginPct.push(monthNetMargin);
   }
 
-  // Profit split rows — per-party monthly distribution + cumulative
-  // running total. Mirrors AggregateCohortTable's Profit Split section.
-  const profitSplitRows: RowDef[] = [];
-  if (results.profitSplit.parties.length > 0) {
-    for (const party of results.profitSplit.parties) {
-      const partyValues = netProfit.map((np) =>
-        np > 0 ? np * (party.percent / 100) : 0,
-      );
-      let runningTotal = 0;
-      const partyCumulative = partyValues.map((v) => (runningTotal += v));
-      profitSplitRows.push({
-        label: t("financials.pl.party_label", { name: party.name, percent: party.percent }),
-        type: "currency",
-        totalMode: "sum",
-        values: partyValues,
-        colorBySign: true,
-      });
-      profitSplitRows.push({
-        label: t("financials.projection.row.profit_split_cumulative", {
+  // Profit cascade (S3) — replaces the legacy aggregate Profit Split. Consumes
+  // the per-month accrual distribution: Receita − shared costs = distributable;
+  // then per party (parent row = net, children = gross / −party costs); a single
+  // undistributed/loss line; and the channel result (≡ Net Profit — the bottom-
+  // line invariant). All-shared → party costs are 0 and channel == distributable.
+  const dist = results.profitDistribution.accrual.slice(0, projection.length);
+  const cascadeParties = results.profitDistribution.totals.accrual;
+  const partySlice = (partyId: string, key: "amount" | "partyCost" | "net") =>
+    dist.map((d) => d.byParty.find((b) => b.partyId === partyId)?.[key] ?? 0);
+
+  const cascadeRows: RowDef[] = [];
+  if (
+    dist.length > 0 &&
+    (cascadeParties.length > 0 || dist.some((d) => d.undistributed !== 0))
+  ) {
+    cascadeRows.push({
+      id: "cascade-revenue",
+      label: t("financials.cascade.revenue"),
+      type: "currency",
+      totalMode: "sum",
+      values: projection.map((mo) => mo.revenue),
+    });
+    cascadeRows.push({
+      id: "cascade-shared",
+      label: t("financials.cascade.shared_costs"),
+      type: "currency",
+      totalMode: "sum",
+      values: dist.map((d) => d.sharedCosts),
+    });
+    cascadeRows.push({
+      id: "cascade-distributable",
+      label: t("financials.cascade.distributable"),
+      type: "currency",
+      totalMode: "sum",
+      bold: true,
+      colorBySign: true,
+      values: dist.map((d) => d.distributable),
+    });
+    for (const party of cascadeParties) {
+      const partyRowId = `cascade-party--${party.partyId}`;
+      cascadeRows.push({
+        id: partyRowId,
+        parentId: "cascade-distributable",
+        level: 1,
+        label: t("financials.pl.party_label", {
           name: party.name,
           percent: party.percent,
         }),
         type: "currency",
-        totalMode: "latest",
-        values: partyCumulative,
+        totalMode: "sum",
         colorBySign: true,
+        values: partySlice(party.partyId, "net"),
+      });
+      cascadeRows.push({
+        id: `${partyRowId}--gross`,
+        parentId: partyRowId,
+        level: 2,
+        label: t("financials.cascade.party_gross"),
+        type: "currency",
+        totalMode: "sum",
+        values: partySlice(party.partyId, "amount"),
+      });
+      cascadeRows.push({
+        id: `${partyRowId}--cost`,
+        parentId: partyRowId,
+        level: 2,
+        label: t("financials.cascade.party_cost"),
+        type: "currency",
+        totalMode: "sum",
+        values: partySlice(party.partyId, "partyCost"),
       });
     }
+    cascadeRows.push({
+      id: "cascade-undistributed",
+      label: t("financials.cascade.undistributed"),
+      tooltip: t("financials.cascade.undistributed_tooltip"),
+      type: "currency",
+      totalMode: "sum",
+      colorBySign: true,
+      values: dist.map((d) => d.undistributed),
+    });
+    cascadeRows.push({
+      id: "cascade-channel",
+      label: t("financials.cascade.channel_result"),
+      type: "currency",
+      totalMode: "sum",
+      bold: true,
+      colorBySign: true,
+      values: dist.map((d) => d.channelResult),
+    });
   }
 
   // Per-tier breakdown of new sales — children of `subscribers-gross`.
@@ -550,12 +615,12 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
         { label: t("financials.projection.row.net_margin_pct"), type: "percent", totalMode: "average", values: netMarginPct },
       ],
     },
-    ...(profitSplitRows.length > 0
+    ...(cascadeRows.length > 0
       ? [
           {
-            id: "profit-split",
+            id: "profit-cascade",
             header: t("financials.projection.section.profit_split"),
-            rows: profitSplitRows,
+            rows: cascadeRows,
           },
         ]
       : []),
@@ -759,7 +824,21 @@ function DataRow({
               )}
             />
           )}
-          {row.label}
+          {row.tooltip ? (
+            <Tooltip>
+              <TooltipTrigger
+                className="cursor-help underline decoration-dotted underline-offset-2"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {row.label}
+              </TooltipTrigger>
+              <TooltipContent className="max-w-[280px] text-[11px]">
+                {row.tooltip}
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            row.label
+          )}
         </span>
       </td>
       {/* Month values */}
