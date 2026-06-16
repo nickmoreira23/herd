@@ -1776,6 +1776,7 @@ model Organization {
   // Fase 0 SE3 — Marketplace per-tenant
   marketplaceSections      MarketplaceSection[]      @relation("MarketplaceSectionTenant")
   marketplaceSectionScopes MarketplaceSectionScope[] @relation("MarketplaceSectionScopeTenant")
+  marketplaceSettings      MarketplaceSettings?      @relation("MarketplaceSettingsTenant")
 
   // L1a — catalog detenanting (Passo 1/3)
   products Product[] @relation("ProductTenant")
@@ -2743,6 +2744,27 @@ model MarketplaceSectionScope {
   @@index([blockName])
   @@index([tenantId])
   @@map("marketplace_section_scopes")
+}
+
+// L2a.1 — per-org marketplace config (1:1 with Organization). Born minimal:
+// just the storefront toggle. Richer fields (explore defaults, per-block
+// opt-in) land in L2a.2+ once taxonomy and Listing exist — do not over-design.
+// Tenant-scoped via the same Sub-26.2 2-policy molde as MarketplaceSection.
+model MarketplaceSettings {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId String @map("tenant_id") @db.Uuid
+
+  // The toggle: is the marketplace/storefront active for this org?
+  storefrontEnabled Boolean @default(false) @map("storefront_enabled")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Organization @relation("MarketplaceSettingsTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // 1:1 per org.
+  @@unique([tenantId])
+  @@map("marketplace_settings")
 }
 
 enum DealStage {
