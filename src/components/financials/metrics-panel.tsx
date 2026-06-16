@@ -33,10 +33,12 @@ interface MetricsPanelProps {
   multiplier: number;
   periodLabel: string;
   locale: Locale;
+  /** Perspective filter (S4): "general" (all parties) | partyId. */
+  perspective?: string;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function MetricsPanel({ multiplier: m, periodLabel, locale }: MetricsPanelProps) {
+export function MetricsPanel({ multiplier: m, periodLabel, locale, perspective = "general" }: MetricsPanelProps) {
   const t = useT();
   const results = useFinancialStore((s) => s.results);
 
@@ -341,7 +343,11 @@ export function MetricsPanel({ multiplier: m, periodLabel, locale }: MetricsPane
                 tooltip={t("financials.metrics.profit_split.tooltip")}
               >
                 <div className="grid grid-cols-2 gap-2">
-                  {results.profitDistribution.totals.accrual.map((party) => (
+                  {results.profitDistribution.totals.accrual
+                    .filter(
+                      (p) => perspective === "general" || p.partyId === perspective,
+                    )
+                    .map((party) => (
                     <MetricCard
                       key={party.partyId}
                       label={`${party.name || t("financials.metrics.profit_split.unnamed")} (${party.percent}%)`}

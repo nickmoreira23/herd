@@ -1156,6 +1156,8 @@ export const messages: Record<MessageKey, string> = {
   "financials.toolbar.tab.cohort": "Cohort",
   "financials.toolbar.tab.metrics": "Metrics",
   "financials.toolbar.tab.charts": "Charts",
+  "financials.toolbar.perspective.label": "View as",
+  "financials.toolbar.perspective.general": "General",
   "financials.toolbar.time_period.month": "Month",
   "financials.toolbar.time_period.quarter": "Quarter",
   "financials.toolbar.time_period.semester": "Semester",

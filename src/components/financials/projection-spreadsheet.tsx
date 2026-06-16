@@ -21,6 +21,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 interface ProjectionSpreadsheetProps {
   months?: number;
   locale: Locale;
+  /** Perspective filter (S4): "general" (all parties) | partyId. */
+  perspective?: string;
 }
 
 type RowType = "currency" | "number" | "decimal" | "percent";
@@ -76,7 +78,7 @@ function computeTotal(values: number[], mode: TotalMode): number {
   }
 }
 
-export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreadsheetProps) {
+export function ProjectionSpreadsheet({ months = 12, locale, perspective = "general" }: ProjectionSpreadsheetProps) {
   const t = useT();
   const results = useFinancialStore((s) => s.results);
   const inputs = useFinancialStore((s) => s.inputs);
@@ -615,15 +617,29 @@ export function ProjectionSpreadsheet({ months = 12, locale }: ProjectionSpreads
         { label: t("financials.projection.row.net_margin_pct"), type: "percent", totalMode: "average", values: netMarginPct },
       ],
     },
-    ...(cascadeRows.length > 0
-      ? [
-          {
-            id: "profit-cascade",
-            header: t("financials.projection.section.profit_split"),
-            rows: cascadeRows,
-          },
-        ]
-      : []),
+    ...(() => {
+      // Perspective filter (S4): in "general" show all parties; in a party
+      // view keep only that party's subtree — channel/header rows (non
+      // `cascade-party--`) are always integral.
+      const rows =
+        perspective === "general"
+          ? cascadeRows
+          : cascadeRows.filter(
+              (r) =>
+                !r.id?.startsWith("cascade-party--") ||
+                r.id === `cascade-party--${perspective}` ||
+                r.id.startsWith(`cascade-party--${perspective}--`),
+            );
+      return rows.length > 0
+        ? [
+            {
+              id: "profit-cascade",
+              header: t("financials.projection.section.profit_split"),
+              rows,
+            },
+          ]
+        : [];
+    })(),
   ];
 
   // Reconciliation series — accrual is what this view displays

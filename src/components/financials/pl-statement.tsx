@@ -16,9 +16,11 @@ interface PLStatementProps {
   multiplier: number;
   periodLabel: string;
   locale: Locale;
+  /** Perspective filter (S4): "general" (all parties) | partyId. */
+  perspective?: string;
 }
 
-export function PLStatement({ multiplier, periodLabel, locale }: PLStatementProps) {
+export function PLStatement({ multiplier, periodLabel, locale, perspective = "general" }: PLStatementProps) {
   const t = useT();
   const results = useFinancialStore((s) => s.results);
   const inputs = useFinancialStore((s) => s.inputs);
@@ -89,6 +91,13 @@ export function PLStatement({ multiplier, periodLabel, locale }: PLStatementProp
   // result == net profit), so the section footer matches the Net Income box.
   const dist = results.profitDistribution.accrual.slice(0, m);
   const cascadeParties = results.profitDistribution.totals.accrual;
+  // Perspective filter (S4): general → all parties; party view → only that one.
+  // Channel lines (revenue / shared / distributable / undistributed / channel)
+  // stay integral in both.
+  const visibleParties =
+    perspective === "general"
+      ? cascadeParties
+      : cascadeParties.filter((p) => p.partyId === perspective);
   const cascadeRevenue = totalRevenue;
   const cascadeShared = dist.reduce((s, d) => s + d.sharedCosts, 0);
   const cascadeDistributable = dist.reduce((s, d) => s + d.distributable, 0);
@@ -243,7 +252,7 @@ export function PLStatement({ multiplier, periodLabel, locale }: PLStatementProp
           <LineItem label={t("financials.cascade.revenue")} value={cascadeRevenue} locale={locale} />
           <LineItem label={t("financials.cascade.shared_costs")} value={cascadeShared} locale={locale} />
           <LineItem label={t("financials.cascade.distributable")} value={cascadeDistributable} locale={locale} />
-          {cascadeParties.map((party) => (
+          {visibleParties.map((party) => (
             <Fragment key={party.partyId}>
               <LineItem
                 level={1}
