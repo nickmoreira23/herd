@@ -4,6 +4,7 @@ import {
   PROJECTION_MONTHS,
   type FinancialInputs,
   type ProfitSplitParty,
+  type MonthlyPartyDistribution,
 } from "./financial-engine";
 
 // Same audit scenario pinned across the engine suite (aggregate-scalars),
@@ -92,5 +93,91 @@ describe("S1 — monthly profit distribution per basis (additive plumbing)", () 
     const distributable = sum(pd.accrual.map((m) => m.distributable));
     const undistributed = sum(pd.accrual.map((m) => m.undistributed));
     expect(Math.abs(undistributed - distributable * 0.1)).toBeLessThan(TOL);
+  });
+});
+
+describe("S2 — cost attribution cascade (shared/party)", () => {
+  // Same audit scenario, parameterized by attribution. Σpercent = 90 (PARTIES)
+  // keeps `undistributed` (10%) live so its share of attribution is exercised.
+  const baseInputs = buildAuditScenario(PARTIES);
+  const allShared = calculateScenario(baseInputs).profitDistribution;
+  // buckPlatform → "bu" (a real party); single rubric so the add-back is clean.
+  const attributed = calculateScenario({
+    ...baseInputs,
+    costAttribution: { buckPlatform: { partyId: "bu" } },
+  }).profitDistribution;
+
+  const partyNet = (basis: MonthlyPartyDistribution[], partyId: string) =>
+    sum(basis.map((m) => m.byParty.find((b) => b.partyId === partyId)?.net ?? 0));
+
+  it("[S2-P1] all-shared ⇒ S1: channelResult=distributable, partyCost=0, net=amount", () => {
+    for (const basis of [allShared.accrual, allShared.cash]) {
+      for (const m of basis) {
+        expect(Math.abs(m.channelResult - m.distributable)).toBeLessThan(TOL);
+        for (const b of m.byParty) {
+          expect(b.partyCost).toBe(0);
+          expect(Math.abs(b.net - b.amount)).toBeLessThan(TOL);
+        }
+      }
+    }
+  });
+
+  it("[S2-P2] channel invariant: Σ channelResult == Σ netProfit_S1 (both bases), with costs attributed", () => {
+    const r = calculateScenario({
+      ...baseInputs,
+      costAttribution: { buckPlatform: { partyId: "bu" }, welcomeKit: { partyId: "mitch" } },
+    });
+    const accrualNet = sum(r.cohortProjection.map((m) => m.netProfit));
+    const accrualChannel = sum(r.profitDistribution.accrual.map((m) => m.channelResult));
+    expect(Math.abs(accrualChannel - accrualNet)).toBeLessThan(TOL);
+
+    const cohortNet = sum(r.cohortLifecycles.flatMap((c) => c.months.map((mo) => mo.netProfit)));
+    const overhead = sum(r.cohortProjection.map((m) => m.operationalOverhead));
+    const cashChannel = sum(r.profitDistribution.cash.map((m) => m.channelResult));
+    expect(Math.abs(cashChannel - (cohortNet - overhead))).toBeLessThan(TOL);
+  });
+
+  it("[S2-P3] conservation per month/basis: Σ net + undistributed == channelResult", () => {
+    for (const basis of [attributed.accrual, attributed.cash]) {
+      for (const m of basis) {
+        const netSum = sum(m.byParty.map((b) => b.net));
+        expect(Math.abs(netSum + m.undistributed - m.channelResult)).toBeLessThan(TOL);
+      }
+    }
+  });
+
+  it("[S2-P4] economics of attribution: channel unchanged; net[bu] −(1−%)·c; net[other] +%·c; undist +undistPct·c", () => {
+    for (const key of ["accrual", "cash"] as const) {
+      const base = allShared[key];
+      const attr = attributed[key];
+      // The add-back equals the buckPlatform cost per month → its sum.
+      const cTotal = sum(attr.map((m, i) => m.distributable - base[i].distributable));
+      expect(cTotal).toBeGreaterThan(1); // buckPlatform is materially nonzero
+
+      const channelDelta = sum(attr.map((m, i) => m.channelResult - base[i].channelResult));
+      expect(Math.abs(channelDelta)).toBeLessThan(TOL);
+
+      expect(Math.abs(partyNet(attr, "bu") - partyNet(base, "bu") - -(1 - 0.6) * cTotal)).toBeLessThan(TOL);
+      expect(Math.abs(partyNet(attr, "mitch") - partyNet(base, "mitch") - 0.3 * cTotal)).toBeLessThan(TOL);
+
+      const undDelta = sum(attr.map((m) => m.undistributed)) - sum(base.map((m) => m.undistributed));
+      expect(Math.abs(undDelta - 0.1 * cTotal)).toBeLessThan(TOL);
+    }
+  });
+
+  it("[S2-P5] migration: absent == empty map == ghost partyId (all collapse to S1)", () => {
+    const absent = allShared;
+    const empty = calculateScenario({ ...baseInputs, costAttribution: {} }).profitDistribution;
+    const ghost = calculateScenario({
+      ...baseInputs,
+      costAttribution: { cogs: { partyId: "ghost" } },
+    }).profitDistribution;
+    for (const key of ["accrual", "cash"] as const) {
+      const netOf = (pd: typeof absent) => sum(pd[key].flatMap((m) => m.byParty.map((b) => b.net)));
+      expect(Math.abs(netOf(empty) - netOf(absent))).toBeLessThan(TOL);
+      expect(Math.abs(netOf(ghost) - netOf(absent))).toBeLessThan(TOL);
+      // ghost partyId is treated as shared → no party is charged
+      for (const m of ghost[key]) for (const b of m.byParty) expect(b.partyCost).toBe(0);
+    }
   });
 });

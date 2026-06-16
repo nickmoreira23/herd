@@ -236,6 +236,13 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
       migrated.profitSplitParties = [];
     }
 
+    // Migrate old snapshots missing costAttribution → all-shared (S2). Empty
+    // map ⇒ every rubric is shared (absence ⇒ "shared"), so the cascade
+    // collapses to S1 behavior for legacy snapshots.
+    if (!migrated.costAttribution) {
+      migrated.costAttribution = {};
+    }
+
     // Migrate old snapshots missing chargeback fields
     if (migrated.chargebackPercent == null) {
       migrated.chargebackPercent = 0;
