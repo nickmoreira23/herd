@@ -21,13 +21,20 @@ import {
 interface CohortSpreadsheetProps {
   months?: number;
   locale: Locale;
+  perspective?: string;
+  onPerspectiveChange?: (value: string) => void;
 }
 
 // "base" = aggregate view (all cohorts summed each month).
 // number = acquisition month (1..24) → walks that single cohort forward.
 type CohortView = "base" | number;
 
-export function CohortSpreadsheet({ months = 12, locale }: CohortSpreadsheetProps) {
+export function CohortSpreadsheet({
+  months = 12,
+  locale,
+  perspective = "general",
+  onPerspectiveChange,
+}: CohortSpreadsheetProps) {
   const t = useT();
   const results = useFinancialStore((s) => s.results);
   const inputs = useFinancialStore((s) => s.inputs);
@@ -69,6 +76,33 @@ export function CohortSpreadsheet({ months = 12, locale }: CohortSpreadsheetProp
       </select>
     </div>
   );
+
+  // Perspective selector — scoped to the aggregate view only (where the
+  // cash cascade lives). The per-cohort view has no party dimension in the
+  // cascade sense, so the selector is intentionally absent there.
+  const cashTotals = results.profitDistribution?.totals?.cash ?? [];
+  const PerspectiveSelector =
+    onPerspectiveChange && cashTotals.length > 0 ? (
+      <div className="flex items-center gap-2 pb-2">
+        <label className="text-xs text-muted-foreground">
+          {t("financials.toolbar.perspective.label")}
+        </label>
+        <select
+          value={perspective}
+          onChange={(e) => onPerspectiveChange(e.target.value)}
+          className="text-xs border rounded-md bg-background px-2 py-1 min-w-[200px] hover:bg-muted/30 transition-colors"
+        >
+          <option value="general">
+            {t("financials.toolbar.perspective.general")}
+          </option>
+          {cashTotals.map((p) => (
+            <option key={p.partyId} value={p.partyId}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+      </div>
+    ) : null;
 
   // Blended revenue-per-sub (the engine's accrual rate). Threaded into
   // both child tables so the per-cohort accrual line in the
@@ -125,15 +159,20 @@ export function CohortSpreadsheet({ months = 12, locale }: CohortSpreadsheetProp
   // a clean reconciliation benchmark across the two tabs.
   return (
     <div className="space-y-2">
-      {Selector}
+      <div className="flex flex-wrap items-center gap-4">
+        {Selector}
+        {PerspectiveSelector}
+      </div>
       <AggregateCohortTable
         cohortLifecycles={cohortLifecycles}
         cohortProjection={results.cohortProjection}
-        profitSplitParties={results.profitSplit?.parties ?? []}
         scenarioTierIds={inputs?.tiers?.map((t) => t.tierId) ?? []}
         tierBillingDistributions={tierBillingDistributions}
         months={months}
         locale={locale}
+        cashDistribution={results.profitDistribution?.cash ?? []}
+        cashTotals={cashTotals}
+        perspective={perspective}
       />
     </div>
   );
@@ -1216,11 +1255,13 @@ function CohortSectionBlock({
 function AggregateCohortTable({
   cohortLifecycles,
   cohortProjection,
-  profitSplitParties,
   scenarioTierIds,
   tierBillingDistributions,
   months,
   locale,
+  cashDistribution,
+  cashTotals,
+  perspective = "general",
 }: {
   cohortLifecycles: NonNullable<
     ReturnType<typeof useFinancialStore.getState>["results"]
@@ -1228,9 +1269,13 @@ function AggregateCohortTable({
   cohortProjection: NonNullable<
     ReturnType<typeof useFinancialStore.getState>["results"]
   >["cohortProjection"];
-  profitSplitParties: NonNullable<
+  cashDistribution: NonNullable<
     ReturnType<typeof useFinancialStore.getState>["results"]
-  >["profitSplit"]["parties"];
+  >["profitDistribution"]["cash"];
+  cashTotals: NonNullable<
+    ReturnType<typeof useFinancialStore.getState>["results"]
+  >["profitDistribution"]["totals"]["cash"];
+  perspective?: string;
   scenarioTierIds: string[];
   /** Per-tier billing distribution — drives the "(X%)" suffix in the
    *  Active by Plan & Cycle row labels. */
@@ -1405,6 +1450,7 @@ function AggregateCohortTable({
   type AggRow = {
     id?: string;
     parentId?: string;
+    level?: number;
     label: string;
     getValue: (m: AggMonth) => number;
     getTotal: () => number;
@@ -1454,45 +1500,115 @@ function AggregateCohortTable({
     }));
   };
 
-  // Profit Split — distribute aggregate net profit (only when positive
-  // for that calendar month).
-  // Two rows per party: monthly distribution and a running cumulative.
-  // The cumulative row makes it easy to read "how much has this party
-  // received through calendar month K" without manual tally.
-  const profitSplitRows: AggRow[] = (profitSplitParties ?? []).flatMap(
-    (party) => {
-      const partyShare = (m: AggMonth) =>
-        m.netProfit > 0 ? m.netProfit * (party.percent / 100) : 0;
-      return [
-        {
-          label: t("financials.pl.party_label", {
-            name: party.name,
-            percent: party.percent,
-          }),
-          getValue: (m: AggMonth) => partyShare(m),
-          getTotal: () => aggMonths.reduce((s, m) => s + partyShare(m), 0),
-          format: "currency" as const,
-          profitColor: true,
-        },
-        {
-          // Percent moves AFTER "Cumulative" — see CohortLifecycleTable
-          // for the same convention. Reads "Bucked Up — Cumulative (55%)".
-          label: `${party.name} — Cumulative (${party.percent}%)`,
-          getValue: (m: AggMonth) => {
-            let acc = 0;
-            for (const x of aggMonths) {
-              acc += partyShare(x);
-              if (x.monthIndex === m.monthIndex) return acc;
-            }
-            return acc;
-          },
-          getTotal: () => aggMonths.reduce((s, m) => s + partyShare(m), 0),
-          format: "currency" as const,
-          profitColor: true,
-        },
-      ];
-    },
-  );
+  // Profit cascade (CASH basis) — S3b. Mirrors the accrual cascade in
+  // projection-spreadsheet, sourced from `profitDistribution.cash` +
+  // `totals.cash`. Revenue → shared costs → distributable → per-party
+  // [net / gross / cost] → undistributed → channel result. The channel
+  // result is the bottom-line invariant (≡ the aggregate cash net profit,
+  // section `bottom_line`). All-shared → party costs are 0 and channel ==
+  // distributable. Cash uses `productCost` for COGS, so magnitudes differ
+  // from the accrual cascade — expected.
+  const cashByMonth = (mi: number) => cashDistribution[mi - 1];
+  const totalOf = (getVal: (m: AggMonth) => number) => () =>
+    aggMonths.reduce((s, m) => s + getVal(m), 0);
+  const profitSplitRows: AggRow[] = [];
+  if (
+    cashDistribution.length > 0 &&
+    (cashTotals.length > 0 || cashDistribution.some((d) => d.undistributed !== 0))
+  ) {
+    profitSplitRows.push({
+      id: "cascade-revenue",
+      label: t("financials.cascade.revenue"),
+      getValue: (m) => m.revenue,
+      getTotal: totalOf((m) => m.revenue),
+      format: "currency",
+    });
+    profitSplitRows.push({
+      id: "cascade-shared",
+      label: t("financials.cascade.shared_costs"),
+      getValue: (m) => cashByMonth(m.monthIndex)?.sharedCosts ?? 0,
+      getTotal: totalOf((m) => cashByMonth(m.monthIndex)?.sharedCosts ?? 0),
+      format: "currency",
+    });
+    profitSplitRows.push({
+      id: "cascade-distributable",
+      label: t("financials.cascade.distributable"),
+      getValue: (m) => cashByMonth(m.monthIndex)?.distributable ?? 0,
+      getTotal: totalOf((m) => cashByMonth(m.monthIndex)?.distributable ?? 0),
+      format: "currency",
+      bold: true,
+      profitColor: true,
+    });
+    for (const party of cashTotals) {
+      const pid = party.partyId;
+      const partyRowId = `cascade-party--${pid}`;
+      const slice = (m: AggMonth, key: "amount" | "partyCost" | "net") =>
+        cashByMonth(m.monthIndex)?.byParty.find((b) => b.partyId === pid)?.[
+          key
+        ] ?? 0;
+      profitSplitRows.push({
+        id: partyRowId,
+        parentId: "cascade-distributable",
+        level: 1,
+        label: t("financials.pl.party_label", {
+          name: party.name,
+          percent: party.percent,
+        }),
+        getValue: (m) => slice(m, "net"),
+        getTotal: totalOf((m) => slice(m, "net")),
+        format: "currency",
+        profitColor: true,
+      });
+      profitSplitRows.push({
+        id: `${partyRowId}--gross`,
+        parentId: partyRowId,
+        level: 2,
+        label: t("financials.cascade.party_gross"),
+        getValue: (m) => slice(m, "amount"),
+        getTotal: totalOf((m) => slice(m, "amount")),
+        format: "currency",
+      });
+      profitSplitRows.push({
+        id: `${partyRowId}--cost`,
+        parentId: partyRowId,
+        level: 2,
+        label: t("financials.cascade.party_cost"),
+        getValue: (m) => slice(m, "partyCost"),
+        getTotal: totalOf((m) => slice(m, "partyCost")),
+        format: "currency",
+      });
+    }
+    profitSplitRows.push({
+      id: "cascade-undistributed",
+      label: t("financials.cascade.undistributed"),
+      getValue: (m) => cashByMonth(m.monthIndex)?.undistributed ?? 0,
+      getTotal: totalOf((m) => cashByMonth(m.monthIndex)?.undistributed ?? 0),
+      format: "currency",
+      profitColor: true,
+    });
+    profitSplitRows.push({
+      id: "cascade-channel",
+      label: t("financials.cascade.channel_result"),
+      getValue: (m) => cashByMonth(m.monthIndex)?.channelResult ?? 0,
+      getTotal: totalOf((m) => cashByMonth(m.monthIndex)?.channelResult ?? 0),
+      format: "currency",
+      bold: true,
+      profitColor: true,
+    });
+  }
+
+  // Perspective filter (S3b): in "general" show all parties; in a party
+  // view keep only that party's subtree — channel/header rows (non
+  // `cascade-party--`) are always integral.
+  const visibleProfitSplitRows =
+    perspective === "general"
+      ? profitSplitRows
+      : profitSplitRows.filter(
+          (r) =>
+            !r.id?.startsWith("cascade-party--") ||
+            r.id === `cascade-party--${perspective}` ||
+            r.id.startsWith(`cascade-party--${perspective}--`),
+        );
 
   const sections: {
     id: string;
@@ -1911,12 +2027,12 @@ function AggregateCohortTable({
         },
       ],
     },
-    ...(profitSplitRows.length > 0
+    ...(visibleProfitSplitRows.length > 0
       ? [
           {
             id: "profit-split",
             section: t("financials.projection.section.profit_split"),
-            rows: profitSplitRows,
+            rows: visibleProfitSplitRows,
           },
         ]
       : []),
@@ -2043,6 +2159,7 @@ function AggSectionBlock<M extends { monthIndex: number }>({
     rows: {
       id?: string;
       parentId?: string;
+      level?: number;
       label: string;
       getValue: (m: M) => number;
       getTotal: () => number;
@@ -2117,7 +2234,12 @@ function AggSectionBlock<M extends { monthIndex: number }>({
                   row.bold && "font-semibold text-foreground",
                 )}
               >
-                <span className="inline-flex items-center gap-1">
+                <span
+                  className="inline-flex items-center gap-1"
+                  style={
+                    row.level ? { paddingLeft: `${row.level}rem` } : undefined
+                  }
+                >
                   {hasChildren ? (
                     <ChevronRight
                       className={cn(

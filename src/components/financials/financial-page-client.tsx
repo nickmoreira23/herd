@@ -769,7 +769,12 @@ export function FinancialPageClient({
                 <ProjectionSpreadsheet months={12} locale={locale} perspective={perspective} />
               </TabsContent>
               <TabsContent value="cohort" className="mt-0">
-                <CohortSpreadsheet months={36} locale={locale} />
+                <CohortSpreadsheet
+                  months={36}
+                  locale={locale}
+                  perspective={perspective}
+                  onPerspectiveChange={setPerspective}
+                />
               </TabsContent>
               <TabsContent value="metrics" className="mt-0">
                 <MetricsPanel multiplier={periodMultiplier} periodLabel={periodLabel} locale={locale} perspective={perspective} />
