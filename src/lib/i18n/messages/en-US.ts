@@ -1083,7 +1083,6 @@ export const messages: Record<MessageKey, string> = {
   "financials.projection.row.buck": "Buck",
   "financials.projection.row.add_ons": "Add-Ons",
   "financials.projection.row.path_scale": "Path Scale",
-  "financials.projection.row.profit_split_cumulative": "{name} — Cumulative ({percent}%)",
   "financials.projection.row.overhead": "Overhead",
   "financials.projection.row.total_opex": "Total OpEx",
   "financials.projection.row.net_profit": "Net Profit",

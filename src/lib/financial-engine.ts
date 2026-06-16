@@ -662,8 +662,8 @@ export interface PartyDistributionTotal {
 }
 
 /**
- * Per-month profit distribution on both accounting bases. Additive output
- * (S1): the legacy aggregate `profitSplit` is left untouched. `accrual` uses
+ * Per-month profit distribution on both accounting bases — the canonical
+ * profit-split surface. `accrual` uses
  * the fully-loaded `cohortProjection[m].netProfit`; `cash` aggregates the
  * per-cohort lifecycle net profit by calendar month and subtracts the
  * scenario-level overhead (not cohort-attributed) — the same composition the
@@ -971,23 +971,8 @@ export interface ScenarioResults {
     };
   }[];
 
-  // Profit split between parties
-  profitSplit: {
-    parties: { id: string; name: string; percent: number; monthlyAmount: number; annualAmount: number }[];
-    totalDistributedPercent: number;
-    undistributedPercent: number;
-    /** When parties sum to >100%, the engine cannot honor every share. This
-     * field surfaces the overage so the UI can flag it. 0 when balanced or
-     * under-allocated. */
-    overAllocatedPercent: number;
-    /** "balanced" (=100), "under" (<100, residual goes to operator),
-     * "over" (>100, parties cannot all be paid). */
-    status: "balanced" | "under" | "over";
-  };
-
-  /** Per-month, per-basis profit distribution (S1, additive). The legacy
-   *  `profitSplit` above stays as the canonical aggregate until consumers
-   *  migrate. */
+  /** Per-month, per-basis profit distribution: the canonical profit-split
+   *  surface (cascade with shared/party cost attribution + loss handling). */
   profitDistribution: ProfitDistributionByBasis;
 
   // Operation breakeven month (0 = already profitable, Infinity = never)
@@ -2541,38 +2526,6 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
   // operator; >100 means the configured shares can't all be paid (UI
   // should flag this). Status simplifies the consumer's branch.
   const totalSplitPercent = (profitSplitParties ?? []).reduce((s, p) => s + p.percent, 0);
-  const splitStatus: "balanced" | "under" | "over" =
-    Math.abs(totalSplitPercent - 100) < 0.01
-      ? "balanced"
-      : totalSplitPercent < 100
-        ? "under"
-        : "over";
-  // Year-1 net profit (Σ first 12 months) — drives `annualAmount` for
-  // profit-split distribution. Pre-D.2 was `monthlyAmount × 12` using
-  // Mo-1-frozen netMarginDollars; now reflects the literal "first 12
-  // months" net profit, including the ramp.
-  const yearOneNetProfit = cohortProjection
-    .slice(0, 12)
-    .reduce((s, m) => s + m.netProfit, 0);
-  const profitSplit = {
-    parties: (profitSplitParties ?? []).map((party) => ({
-      id: party.id,
-      name: party.name,
-      percent: party.percent,
-      // monthlyAmount: average month's distribution (netMarginDollars
-      // is now the avg, so this naturally reflects "typical month").
-      monthlyAmount:
-        netMarginDollars > 0 ? netMarginDollars * (party.percent / 100) : 0,
-      // annualAmount: literal Year 1 distribution from first 12 months
-      // of the projection.
-      annualAmount:
-        yearOneNetProfit > 0 ? yearOneNetProfit * (party.percent / 100) : 0,
-    })),
-    totalDistributedPercent: totalSplitPercent,
-    undistributedPercent: Math.max(0, 100 - totalSplitPercent),
-    overAllocatedPercent: Math.max(0, totalSplitPercent - 100),
-    status: splitStatus,
-  };
 
   // --- Monthly profit distribution, per accounting basis (S1 → S2 cascade) ---
   // Each cost rubric is either `shared` (deducted pre-split, lowering the
@@ -2813,7 +2766,6 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
     tierDetails: tierDetailsWithAvgSubs,
     cohortProjection,
     cohortLifecycles,
-    profitSplit,
     profitDistribution,
     operationBreakevenMonth,
   };

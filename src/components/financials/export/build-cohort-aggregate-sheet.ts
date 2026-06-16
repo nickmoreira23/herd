@@ -7,6 +7,7 @@
 
 import type { FinancialInputs, ScenarioResults } from "@/lib/financial-engine";
 import { aggregateLifecyclesByCalendarMonth, type AggMonth } from "../spreadsheet-shared";
+import { buildCascadeSection } from "./build-cascade-section";
 import type { ExportRow, ExportSection, ExportSheet, ExportTranslate } from "./types";
 
 export function buildCohortAggregateSheet(
@@ -40,26 +41,14 @@ export function buildCohortAggregateSheet(
     }),
   );
 
-  const profitSplitRows: ExportRow[] = [];
-  for (const party of results.profitSplit?.parties ?? []) {
-    const partyValues = agg.map((m) => (m.netProfit > 0 ? m.netProfit * (party.percent / 100) : 0));
-    let running = 0;
-    profitSplitRows.push({
-      label: t("financials.pl.party_label", { name: party.name, percent: party.percent }),
-      type: "currency",
-      totalMode: "sum",
-      values: partyValues,
-    });
-    profitSplitRows.push({
-      label: t("financials.projection.row.profit_split_cumulative", {
-        name: party.name,
-        percent: party.percent,
-      }),
-      type: "currency",
-      totalMode: "latest",
-      values: partyValues.map((v) => (running += v)),
-    });
-  }
+  // Profit cascade (cash) — mirrors AggregateCohortTable's on-screen cascade,
+  // sourced from profitDistribution.cash + totals.cash.
+  const cascadeSection = buildCascadeSection(
+    results.profitDistribution.cash.slice(0, agg.length),
+    results.profitDistribution.totals.cash,
+    agg.map((m) => m.revenue),
+    t,
+  );
 
   const sections: ExportSection[] = [
     {
@@ -128,9 +117,7 @@ export function buildCohortAggregateSheet(
         { label: t("financials.projection.row.net_margin_pct"), type: "percent", totalMode: "average", values: agg.map((m) => (m.revenue > 0 ? (m.netProfit / m.revenue) * 100 : 0)) },
       ],
     },
-    ...(profitSplitRows.length > 0
-      ? [{ header: t("financials.projection.section.profit_split"), rows: profitSplitRows }]
-      : []),
+    ...(cascadeSection ? [cascadeSection] : []),
   ];
 
   return {
