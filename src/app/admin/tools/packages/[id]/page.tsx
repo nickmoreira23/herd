@@ -19,25 +19,10 @@ export default async function PackageDetailPage({
     include: {
       variants: {
         include: {
-          subscriptionTier: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              monthlyCredits: true,
-              monthlyPrice: true,
-              colorAccent: true,
-              sortOrder: true,
-              iconUrl: true,
-              avgShippingCost: true,
-              avgHandlingCost: true,
-              processingFeePct: true,
-              processingFeeFlat: true,
-            },
-          },
           products: { orderBy: { sortOrder: "asc" } },
         },
-        orderBy: { subscriptionTier: { sortOrder: "asc" } },
+        // L1b.2a — relation orderBy through SubscriptionTier removed (joins the
+        // soon-RLS-strict tier without the GUC); ordered in memory below.
       },
     },
   });
@@ -69,8 +54,32 @@ export default async function PackageDetailPage({
     : [];
   const productById = new Map(catalogProducts.map((p) => [p.id, p]));
 
+  // L1b.2a — Tier joined in memory under the host org (Package family is not tenant-scoped).
+  const tierIds = [...new Set(pkg.variants.map((v) => v.subscriptionTierId))];
+  const tiers = orgId
+    ? await withTenant(orgId, () =>
+        prisma.subscriptionTier.findMany({
+          where: { id: { in: tierIds } },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            monthlyCredits: true,
+            monthlyPrice: true,
+            colorAccent: true,
+            sortOrder: true,
+            iconUrl: true,
+            avgShippingCost: true,
+            avgHandlingCost: true,
+            processingFeePct: true,
+            processingFeeFlat: true,
+          },
+        })
+      )
+    : [];
+  const tierById = new Map(tiers.map((t) => [t.id, t]));
+
   // Fetch redemption rules for all tiers in this package
-  const tierIds = pkg.variants.map((v) => v.subscriptionTierId);
   const redemptionRules = await prisma.subscriptionRedemptionRule.findMany({
     where: { subscriptionTierId: { in: tierIds } },
   });
@@ -101,35 +110,45 @@ export default async function PackageDetailPage({
   const serialized = {
     ...pkg,
     createdAt: pkg.createdAt.toISOString(),
-    variants: pkg.variants.map((v) => ({
-      ...v,
-      totalCreditsUsed: toNumber(v.totalCreditsUsed),
-      subscriptionTier: {
-        ...v.subscriptionTier,
-        monthlyCredits: toNumber(v.subscriptionTier.monthlyCredits),
-        monthlyPrice: toNumber(v.subscriptionTier.monthlyPrice),
-        avgShippingCost: toNumber(v.subscriptionTier.avgShippingCost),
-        avgHandlingCost: toNumber(v.subscriptionTier.avgHandlingCost),
-        processingFeePct: toNumber(v.subscriptionTier.processingFeePct),
-        processingFeeFlat: toNumber(v.subscriptionTier.processingFeeFlat),
-      },
-      products: v.products.flatMap((p) => {
-        const product = productById.get(p.productId);
-        if (!product) return [];
+    variants: pkg.variants
+      .flatMap((v) => {
+        // Drop variants whose tier isn't visible under the host org (mirrors
+        // the product-join drop); keeps subscriptionTier non-null for the view.
+        const tier = tierById.get(v.subscriptionTierId);
+        if (!tier) return [];
         return [
           {
-            ...p,
-            creditCost: toNumber(p.creditCost),
-            product: {
-              ...product,
-              retailPrice: toNumber(product.retailPrice),
-              memberPrice: toNumber(product.memberPrice),
-              costOfGoods: toNumber(product.costOfGoods),
+            ...v,
+            totalCreditsUsed: toNumber(v.totalCreditsUsed),
+            subscriptionTier: {
+              ...tier,
+              monthlyCredits: toNumber(tier.monthlyCredits),
+              monthlyPrice: toNumber(tier.monthlyPrice),
+              avgShippingCost: toNumber(tier.avgShippingCost),
+              avgHandlingCost: toNumber(tier.avgHandlingCost),
+              processingFeePct: toNumber(tier.processingFeePct),
+              processingFeeFlat: toNumber(tier.processingFeeFlat),
             },
+            products: v.products.flatMap((p) => {
+              const product = productById.get(p.productId);
+              if (!product) return [];
+              return [
+                {
+                  ...p,
+                  creditCost: toNumber(p.creditCost),
+                  product: {
+                    ...product,
+                    retailPrice: toNumber(product.retailPrice),
+                    memberPrice: toNumber(product.memberPrice),
+                    costOfGoods: toNumber(product.costOfGoods),
+                  },
+                },
+              ];
+            }),
           },
         ];
-      }),
-    })),
+      })
+      .sort((a, b) => a.subscriptionTier.sortOrder - b.subscriptionTier.sortOrder),
   };
 
   return <PackageDetailView pkg={serialized} redemptionRulesByTier={serializedRules} />;

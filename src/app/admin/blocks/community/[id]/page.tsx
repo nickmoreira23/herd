@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { CommunityDetailClient } from "@/components/community/community-detail-client";
 import { connection } from "next/server";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 
 export default async function EditCommunityPage({
   params,
@@ -9,6 +11,7 @@ export default async function EditCommunityPage({
   params: Promise<{ id: string }>;
 }) {
   await connection();
+  const orgId = await getOrgIdFromRequest();
   const { id } = await params;
   if (id === "new") return notFound();
 
@@ -17,10 +20,15 @@ export default async function EditCommunityPage({
       where: { id },
       include: { tierAssignments: { include: { tier: { select: { id: true, name: true } } } } },
     }),
-    prisma.subscriptionTier.findMany({
-      select: { id: true, name: true },
-      orderBy: { sortOrder: "asc" },
-    }),
+    // L1b.2a — Tier read scoped to the host org (inert until L1b.2b activation).
+    orgId
+      ? withTenant(orgId, () =>
+          prisma.subscriptionTier.findMany({
+            select: { id: true, name: true },
+            orderBy: { sortOrder: "asc" },
+          })
+        )
+      : Promise.resolve([]),
   ]);
 
   if (!benefit) return notFound();

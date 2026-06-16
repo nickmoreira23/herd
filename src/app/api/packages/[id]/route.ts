@@ -19,20 +19,8 @@ export async function GET(
       include: {
         variants: {
           include: {
-            subscriptionTier: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-                monthlyCredits: true,
-                monthlyPrice: true,
-                colorAccent: true,
-                sortOrder: true,
-              },
-            },
             products: { orderBy: { sortOrder: "asc" } },
           },
-          orderBy: { subscriptionTier: { sortOrder: "asc" } },
         },
       },
     });
@@ -60,15 +48,42 @@ export async function GET(
     );
     const productById = new Map(catalogProducts.map((p) => [p.id, p]));
 
+    // L1b.2a — Tier joined in memory under the host org (Package family is not tenant-scoped).
+    const tierIds = pkg.variants.map((v) => v.subscriptionTierId);
+    const tiers = await withTenant(orgId, () =>
+      prisma.subscriptionTier.findMany({
+        where: { id: { in: tierIds } },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          monthlyCredits: true,
+          monthlyPrice: true,
+          colorAccent: true,
+          sortOrder: true,
+        },
+      })
+    );
+    const tierById = new Map(tiers.map((t) => [t.id, t]));
+
     const joined = {
       ...pkg,
-      variants: pkg.variants.map((v) => ({
-        ...v,
-        products: v.products.flatMap((p) => {
-          const product = productById.get(p.productId);
-          return product ? [{ ...p, product }] : [];
-        }),
-      })),
+      variants: pkg.variants
+        .flatMap((v) => {
+          const subscriptionTier = tierById.get(v.subscriptionTierId);
+          if (!subscriptionTier) return [];
+          return [
+            {
+              ...v,
+              subscriptionTier,
+              products: v.products.flatMap((p) => {
+                const product = productById.get(p.productId);
+                return product ? [{ ...p, product }] : [];
+              }),
+            },
+          ];
+        })
+        .sort((a, b) => a.subscriptionTier.sortOrder - b.subscriptionTier.sortOrder),
     };
 
     return apiSuccess(joined);

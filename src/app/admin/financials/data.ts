@@ -67,7 +67,12 @@ export const getFinancialDefaults = cache(async function getFinancialDefaults() 
   const orgId = await getOrgIdFromRequest();
 
   const [tiers, opexCategories] = await Promise.all([
-    prisma.subscriptionTier.findMany({ orderBy: { sortOrder: "asc" } }),
+    // L1b.2a — Tier read scoped to the host org (inert until L1b.2b activation).
+    orgId
+      ? withTenant(orgId, () =>
+          prisma.subscriptionTier.findMany({ orderBy: { sortOrder: "asc" } })
+        )
+      : Promise.resolve([]),
     prisma.opexCategory.findMany({
       where: { isActive: true },
       orderBy: { sortOrder: "asc" },

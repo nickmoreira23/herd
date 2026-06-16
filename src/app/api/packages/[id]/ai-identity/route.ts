@@ -55,7 +55,6 @@ export async function POST(
       where: { packageId },
       include: {
         products: true,
-        subscriptionTier: { select: { name: true } },
       },
     });
 
@@ -71,15 +70,30 @@ export async function POST(
         : [];
     const productById = new Map(catalogProducts.map((p) => [p.id, p]));
 
+    // L1b.2a — Tier joined in memory under the host org (Package family is not tenant-scoped).
+    const tierIds = variants.map((v) => v.subscriptionTierId);
+    const tiers =
+      orgId && tierIds.length > 0
+        ? await withTenant(orgId, () =>
+            prisma.subscriptionTier.findMany({
+              where: { id: { in: tierIds } },
+              select: { id: true, name: true },
+            })
+          )
+        : [];
+    const tierById = new Map(tiers.map((t) => [t.id, t]));
+
     const tierSummaries = variants
       .map((v) => {
+        const subscriptionTier = tierById.get(v.subscriptionTierId);
+        if (!subscriptionTier) return "";
         const productNames = v.products
           .flatMap((p) => {
             const product = productById.get(p.productId);
             return product ? [product.name] : [];
           })
           .join(", ");
-        return productNames ? `${v.subscriptionTier.name}: ${productNames}` : "";
+        return productNames ? `${subscriptionTier.name}: ${productNames}` : "";
       })
       .filter(Boolean);
 
