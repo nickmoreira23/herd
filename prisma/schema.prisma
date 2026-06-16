@@ -377,12 +377,11 @@ model AgentTool {
 
 model SubscriptionTier {
   id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  // L1b.1 — catalog detenanting (step 1/3): additive nullable tenant_id +
-  // backfill → buckedup. Writers wired in L1b.2; NOT NULL + strict RLS + the
-  // composite slug unique land in L1b.3. Stays nullable here (no behavior change).
-  tenantId          String?  @map("tenant_id") @db.Uuid
+  // L1b — catalog detenanting. tenant_id NOT NULL + strict RLS + per-tenant
+  // slug unique (L1b.3). Backfilled → buckedup in L1b.1 (0 nulls verified).
+  tenantId          String   @map("tenant_id") @db.Uuid
   name              String
-  slug              String   @unique
+  slug              String
   tagline           String?
   colorAccent       String   @default("#6B7280")
   iconUrl           String?
@@ -480,9 +479,12 @@ model SubscriptionTier {
   // catalog plan they belong to (nullable; SET NULL on tier deletion).
   subscriptions        Subscription[]                   @relation("SubscriptionTier")
 
-  // L1b.1 — optional now (column nullable); becomes required in L1b.3 (NOT NULL).
-  tenant Organization? @relation("SubscriptionTierTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+  // L1b.3 — required now (column NOT NULL).
+  tenant Organization @relation("SubscriptionTierTenant", fields: [tenantId], references: [id], onDelete: Cascade)
 
+  // L1b.3 addendum — slug is unique per tenant, not globally (0 collisions
+  // verified in DEV/PROD before the swap).
+  @@unique([tenantId, slug])
   @@index([tenantId])
 }
 
