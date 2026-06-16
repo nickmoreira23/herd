@@ -6,6 +6,7 @@ import { requireOrgRole } from "@/lib/permissions";
 import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
 import { withTenant } from "@/lib/tenancy/context";
 import { createSectionSchema } from "@/lib/validators/marketplace";
+import { seedBlocksTaxonomy } from "@/lib/marketplace/seed-taxonomy";
 
 export async function GET() {
   const orgId = await getOrgIdFromRequest();
@@ -78,6 +79,10 @@ export async function POST(request: NextRequest) {
           })),
         });
       }
+
+      // L2a.2b — materialize the taxonomy of each bound block (idempotent;
+      // flat blocks no-op). Runs under withTenant so rows land in this org.
+      await seedBlocksTaxonomy(orgId, result.data.blockNames);
 
       const section = await prisma.marketplaceSection.findUniqueOrThrow({
         where: { id: created.id },

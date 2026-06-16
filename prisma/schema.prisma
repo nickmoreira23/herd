@@ -1777,6 +1777,8 @@ model Organization {
   marketplaceSections      MarketplaceSection[]      @relation("MarketplaceSectionTenant")
   marketplaceSectionScopes MarketplaceSectionScope[] @relation("MarketplaceSectionScopeTenant")
   marketplaceSettings      MarketplaceSettings?      @relation("MarketplaceSettingsTenant")
+  categories               Category[]                @relation("CategoryTenant")
+  subcategories            Subcategory[]             @relation("SubcategoryTenant")
 
   // L1a — catalog detenanting (Passo 1/3)
   products Product[] @relation("ProductTenant")
@@ -2765,6 +2767,57 @@ model MarketplaceSettings {
   // 1:1 per org.
   @@unique([tenantId])
   @@map("marketplace_settings")
+}
+
+// L2a.2b — materialized block taxonomy (per-org, per-block). Single source of
+// the taxonomy's IDENTITY (sourceKey + editable name), seeded from the block
+// manifest (getBlockTaxonomy) when a section binds the block. Exposure/roles
+// stay on MarketplaceSectionScope (per-section) — NOT here. Marketplace
+// scopeValue stores `sourceKey` (the slug), not a FK to these rows; the seed
+// guarantees the slug exists (integrity by construction, not referential FK).
+model Category {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  blockName String   @map("block_name")
+  // Stable, immutable slug (mirrors the manifest taxonomy key). What
+  // marketplace scopeValue stores. Never changes on rename.
+  sourceKey String   @map("source_key")
+  // Display name — editable; seeded from the manifest label.
+  name      String
+  sortOrder Int      @default(0) @map("sort_order")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant        Organization  @relation("CategoryTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+  subcategories Subcategory[]
+
+  // One category per slug per (org, block).
+  @@unique([tenantId, blockName, sourceKey])
+  @@index([tenantId])
+  @@index([tenantId, blockName])
+  @@map("categories")
+}
+
+model Subcategory {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  categoryId String   @map("category_id") @db.Uuid
+  sourceKey  String   @map("source_key")
+  name       String
+  sortOrder  Int      @default(0) @map("sort_order")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant   Organization @relation("SubcategoryTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+  category Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  // One subcategory per slug per (org, parent category).
+  @@unique([tenantId, categoryId, sourceKey])
+  @@index([tenantId])
+  @@index([categoryId])
+  @@map("subcategories")
 }
 
 enum DealStage {
