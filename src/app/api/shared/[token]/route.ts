@@ -30,21 +30,10 @@ export async function GET(
       include: {
         variants: {
           include: {
-            subscriptionTier: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-                monthlyCredits: true,
-                monthlyPrice: true,
-                colorAccent: true,
-                sortOrder: true,
-                iconUrl: true,
-              },
-            },
             products: { orderBy: { sortOrder: "asc" } },
           },
-          orderBy: { subscriptionTier: { sortOrder: "asc" } },
+          // L1b.2a — relation orderBy through SubscriptionTier removed (joins
+          // the soon-RLS-strict tier without the GUC); ordered in memory below.
         },
       },
     });
@@ -76,38 +65,67 @@ export async function GET(
       : [];
     const productById = new Map(catalogProducts.map((p) => [p.id, p]));
 
+    // L1b.2a — Tier joined in memory under the host org (Package family is not tenant-scoped).
+    const tierIds = [...new Set(pkg.variants.map((v) => v.subscriptionTierId))];
+    const tiers = orgId
+      ? await withTenant(orgId, () =>
+          prisma.subscriptionTier.findMany({
+            where: { id: { in: tierIds } },
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              monthlyCredits: true,
+              monthlyPrice: true,
+              colorAccent: true,
+              sortOrder: true,
+              iconUrl: true,
+            },
+          })
+        )
+      : [];
+    const tierById = new Map(tiers.map((t) => [t.id, t]));
+
     // Serialize Decimals
     const serialized = {
       ...pkg,
       createdAt: pkg.createdAt.toISOString(),
       updatedAt: pkg.updatedAt.toISOString(),
-      variants: pkg.variants.map((v) => ({
-        ...v,
-        totalCreditsUsed: toNumber(v.totalCreditsUsed),
-        createdAt: v.createdAt.toISOString(),
-        updatedAt: v.updatedAt.toISOString(),
-        subscriptionTier: {
-          ...v.subscriptionTier,
-          monthlyCredits: toNumber(v.subscriptionTier.monthlyCredits),
-          monthlyPrice: toNumber(v.subscriptionTier.monthlyPrice),
-        },
-        products: v.products.flatMap((p) => {
-          const product = productById.get(p.productId);
-          if (!product) return [];
+      variants: pkg.variants
+        .flatMap((v) => {
+          const tier = tierById.get(v.subscriptionTierId);
+          if (!tier) return [];
           return [
             {
-              ...p,
-              creditCost: toNumber(p.creditCost),
-              createdAt: p.createdAt.toISOString(),
-              product: {
-                ...product,
-                retailPrice: toNumber(product.retailPrice),
-                memberPrice: toNumber(product.memberPrice),
+              ...v,
+              totalCreditsUsed: toNumber(v.totalCreditsUsed),
+              createdAt: v.createdAt.toISOString(),
+              updatedAt: v.updatedAt.toISOString(),
+              subscriptionTier: {
+                ...tier,
+                monthlyCredits: toNumber(tier.monthlyCredits),
+                monthlyPrice: toNumber(tier.monthlyPrice),
               },
+              products: v.products.flatMap((p) => {
+                const product = productById.get(p.productId);
+                if (!product) return [];
+                return [
+                  {
+                    ...p,
+                    creditCost: toNumber(p.creditCost),
+                    createdAt: p.createdAt.toISOString(),
+                    product: {
+                      ...product,
+                      retailPrice: toNumber(product.retailPrice),
+                      memberPrice: toNumber(product.memberPrice),
+                    },
+                  },
+                ];
+              }),
             },
           ];
-        }),
-      })),
+        })
+        .sort((a, b) => a.subscriptionTier.sortOrder - b.subscriptionTier.sortOrder),
     };
 
     return apiSuccess({

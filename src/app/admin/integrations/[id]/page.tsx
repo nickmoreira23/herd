@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { IntegrationDetailClient } from "@/components/integrations/integration-detail-client";
 import { connection } from "next/server";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 
 export default async function IntegrationDetailPage({
   params,
@@ -10,12 +12,17 @@ export default async function IntegrationDetailPage({
 }) {
   await connection();
   const { id } = await params;
+  const orgId = await getOrgIdFromRequest();
 
   const integration = await prisma.integration.findUnique({
     where: { id },
     include: {
+      // L1b.2a — dropped the nested subscriptionTier include (joins the soon-
+      // RLS-strict tier without the GUC); tier joined in memory below.
+      // NOTE: tierMappings is itself tenant-scoped (IntegrationTierMapping) read
+      // here via the unscoped Integration parent — pre-existing, empty in PROD,
+      // out of L1b scope (its own withTenant wiring is tracked separately).
       tierMappings: {
-        include: { subscriptionTier: true },
         orderBy: { createdAt: "desc" },
       },
       syncLogs: {
@@ -31,10 +38,35 @@ export default async function IntegrationDetailPage({
 
   if (!integration) notFound();
 
-  const tiers = await prisma.subscriptionTier.findMany({
-    orderBy: { sortOrder: "asc" },
-    select: { id: true, name: true, slug: true },
-  });
+  // L1b.2a — join tier into each mapping under the host org (tier traversal).
+  const mappingTierIds = [...new Set(integration.tierMappings.map((m) => m.subscriptionTierId))];
+  const mappingTiers = orgId
+    ? await withTenant(orgId, () =>
+        prisma.subscriptionTier.findMany({
+          where: { id: { in: mappingTierIds } },
+          select: { id: true, name: true, slug: true },
+        })
+      )
+    : [];
+  const mappingTierById = new Map(mappingTiers.map((t) => [t.id, t]));
+  const integrationWithTiers = {
+    ...integration,
+    tierMappings: integration.tierMappings.flatMap((m) => {
+      const subscriptionTier = mappingTierById.get(m.subscriptionTierId);
+      if (!subscriptionTier) return [];
+      return [{ ...m, subscriptionTier }];
+    }),
+  };
+
+  // L1b.2a — Tier dropdown read scoped to the host org (inert until L1b.2b).
+  const tiers = orgId
+    ? await withTenant(orgId, () =>
+        prisma.subscriptionTier.findMany({
+          orderBy: { sortOrder: "asc" },
+          select: { id: true, name: true, slug: true },
+        })
+      )
+    : [];
 
   const [voiceJobs, videoJobs] = await Promise.all([
     integration.category === "VOICE"
@@ -76,7 +108,7 @@ export default async function IntegrationDetailPage({
 
   return (
     <IntegrationDetailClient
-      integration={JSON.parse(JSON.stringify(integration))}
+      integration={JSON.parse(JSON.stringify(integrationWithTiers))}
       tiers={JSON.parse(JSON.stringify(tiers))}
       jobs={jobs}
     />

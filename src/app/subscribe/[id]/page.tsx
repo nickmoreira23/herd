@@ -15,19 +15,25 @@ export default async function SubscribePage({
   await connection();
   const locale = await getLocale();
   const { id } = await params;
+  const orgId = await getOrgIdFromRequest();
 
-  const tier = await prisma.subscriptionTier.findUnique({
-    where: { id },
-    include: {
-      redemptionRules: true,
-      agentAccess: {
-        where: { isEnabled: true },
-        include: {
-          agent: { select: { id: true, name: true, category: true, icon: true } },
-        },
-      },
-    },
-  });
+  // L1b.2a — Tier read scoped to the host org (inert until L1b.2b activation).
+  const tier = orgId
+    ? await withTenant(orgId, () =>
+        prisma.subscriptionTier.findUnique({
+          where: { id },
+          include: {
+            redemptionRules: true,
+            agentAccess: {
+              where: { isEnabled: true },
+              include: {
+                agent: { select: { id: true, name: true, category: true, icon: true } },
+              },
+            },
+          },
+        })
+      )
+    : null;
   if (!tier) notFound();
 
   const settings = await prisma.setting.findMany({
@@ -59,7 +65,6 @@ export default async function SubscribePage({
   // L1a.4 — Product is strictly tenant-scoped; a nested include through the
   // (unscoped) Package family runs without the tenant GUC and RLS denies it.
   // Fetch the catalog directly under the host org and join in memory.
-  const orgId = await getOrgIdFromRequest();
   const productIds = variants.flatMap((v) => v.products.map((p) => p.productId));
   const catalogProducts = orgId
     ? await withTenant(orgId, () =>

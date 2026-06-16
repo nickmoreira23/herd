@@ -14,34 +14,29 @@ export default async function PackageEditPage({
   await connection();
   const { id } = await params;
 
+  // L1b.2a — Tier reads run under the host org (Package family is not tenant-scoped).
+  const orgId = await getOrgIdFromRequest();
   const [pkg, allTiers] = await Promise.all([
     prisma.package.findUnique({
       where: { id },
       include: {
         variants: {
           include: {
-            subscriptionTier: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-                monthlyCredits: true,
-                monthlyPrice: true,
-                colorAccent: true,
-                sortOrder: true,
-                iconUrl: true,
-              },
-            },
             products: { orderBy: { sortOrder: "asc" } },
           },
-          orderBy: { subscriptionTier: { sortOrder: "asc" } },
+          // L1b.2a — relation orderBy through SubscriptionTier removed (joins
+          // the soon-RLS-strict tier without the GUC); ordered in memory below.
         },
       },
     }),
-    prisma.subscriptionTier.findMany({
-      where: { status: "ACTIVE" },
-      select: { id: true },
-    }),
+    orgId
+      ? withTenant(orgId, () =>
+          prisma.subscriptionTier.findMany({
+            where: { status: "ACTIVE" },
+            select: { id: true },
+          })
+        )
+      : [],
   ]);
 
   if (!pkg) return notFound();
@@ -49,7 +44,6 @@ export default async function PackageEditPage({
   // L1a.4 — Product is strictly tenant-scoped; the nested include through the
   // unscoped Package family would run without the tenant GUC and be denied by
   // RLS. Read the catalog directly under the host org and join in memory.
-  const orgId = await getOrgIdFromRequest();
   const productIds = pkg.variants.flatMap((v) => v.products.map((p) => p.productId));
   const catalogProducts = orgId
     ? await withTenant(orgId, () =>
@@ -70,8 +64,28 @@ export default async function PackageEditPage({
     : [];
   const productById = new Map(catalogProducts.map((p) => [p.id, p]));
 
+  // L1b.2a — Tier joined in memory under the host org (Package family is not tenant-scoped).
+  const tierIds = [...new Set(pkg.variants.map((v) => v.subscriptionTierId))];
+  const tiers = orgId
+    ? await withTenant(orgId, () =>
+        prisma.subscriptionTier.findMany({
+          where: { id: { in: tierIds } },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            monthlyCredits: true,
+            monthlyPrice: true,
+            colorAccent: true,
+            sortOrder: true,
+            iconUrl: true,
+          },
+        })
+      )
+    : [];
+  const tierById = new Map(tiers.map((t) => [t.id, t]));
+
   // Fetch redemption rules for all tiers in this package
-  const tierIds = pkg.variants.map((v) => v.subscriptionTierId);
   const redemptionRules = await prisma.subscriptionRedemptionRule.findMany({
     where: { subscriptionTierId: { in: tierIds } },
   });
@@ -88,30 +102,38 @@ export default async function PackageEditPage({
   // Serialize Decimals
   const serialized = {
     ...pkg,
-    variants: pkg.variants.map((v) => ({
-      ...v,
-      totalCreditsUsed: toNumber(v.totalCreditsUsed),
-      subscriptionTier: {
-        ...v.subscriptionTier,
-        monthlyCredits: toNumber(v.subscriptionTier.monthlyCredits),
-        monthlyPrice: toNumber(v.subscriptionTier.monthlyPrice),
-      },
-      products: v.products.flatMap((p) => {
-        const product = productById.get(p.productId);
-        if (!product) return [];
+    variants: pkg.variants
+      .flatMap((v) => {
+        const tier = tierById.get(v.subscriptionTierId);
+        if (!tier) return [];
         return [
           {
-            ...p,
-            creditCost: toNumber(p.creditCost),
-            product: {
-              ...product,
-              retailPrice: toNumber(product.retailPrice),
-              memberPrice: toNumber(product.memberPrice),
+            ...v,
+            totalCreditsUsed: toNumber(v.totalCreditsUsed),
+            subscriptionTier: {
+              ...tier,
+              monthlyCredits: toNumber(tier.monthlyCredits),
+              monthlyPrice: toNumber(tier.monthlyPrice),
             },
+            products: v.products.flatMap((p) => {
+              const product = productById.get(p.productId);
+              if (!product) return [];
+              return [
+                {
+                  ...p,
+                  creditCost: toNumber(p.creditCost),
+                  product: {
+                    ...product,
+                    retailPrice: toNumber(product.retailPrice),
+                    memberPrice: toNumber(product.memberPrice),
+                  },
+                },
+              ];
+            }),
           },
         ];
-      }),
-    })),
+      })
+      .sort((a, b) => a.subscriptionTier.sortOrder - b.subscriptionTier.sortOrder),
   };
 
   const serializedRules: Record<
