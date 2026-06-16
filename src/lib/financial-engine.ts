@@ -211,6 +211,28 @@ export interface ProfitSplitParty {
   percent: number; // 0-100
 }
 
+/**
+ * The cost rubrics the projection emits each month (see the `monthCosts`
+ * block in the projection loop). Each can be left `shared` or attributed to a
+ * party in the S2 cascade. Attribution is at rubric level; per-category
+ * overhead attribution is deferred (tech debt with trigger).
+ */
+export type CostRubric =
+  | "cogs"
+  | "commission"
+  | "chargeback"
+  | "operationalOverhead"
+  | "buckPlatform"
+  | "addOn"
+  | "welcomeKit";
+
+/**
+ * Where a cost rubric lands in the cascade. `"shared"` ⇒ deducted pre-split
+ * (lowers the distributable every party shares); `{ partyId }` ⇒ deducted from
+ * that party's own slice post-split. `partyId` references `ProfitSplitParty.id`.
+ */
+export type CostTarget = "shared" | { partyId: string };
+
 export interface FinancialInputs {
   tiers: TierFinancialInput[];
   billingCycleDistribution: BillingDistribution;
@@ -225,6 +247,10 @@ export interface FinancialInputs {
   partnerKickbacks: PartnerKickbackInput[];
   operationalOverhead: OperationalOverhead;
   profitSplitParties: ProfitSplitParty[];
+  // Per-rubric cost attribution (S2). A rubric absent from the map ⇒ "shared".
+  // A `partyId` that no longer exists in `profitSplitParties` is treated as
+  // "shared" at read time, so removing a party never breaks the cascade.
+  costAttribution?: Partial<Record<CostRubric, CostTarget>>;
   // Chargebacks
   chargebackPercent: number; // percentage 0-100 of new subscribers that chargeback
   chargebackFee: number; // $ fee per chargeback (processor fee, typically $15-25)
@@ -581,18 +607,32 @@ export function resolveOverhead(overhead: OperationalOverhead, memberCount: numb
 
 /**
  * One month's profit distribution to parties, on a single accounting basis.
- * `distributable` is the month's net profit BEFORE any cascade — in S1 all
- * costs stay pre-split (see plano-mestre); the shared/party cascade lands in
- * S2. `byParty` splits `distributable` by each party's `percent`;
- * `undistributed` is the residual share `(100 − Σpercent)` left to the
- * operator. Loss months (negative `distributable`) flow through
- * proportionally, so `Σ byParty.amount + undistributed ≡ distributable`.
+ * The S2 cascade: `distributable` is net profit with party-attributed costs
+ * ADDED BACK (shared costs stay deducted); each party gets `amount` (gross
+ * slice = `distributable × percent`) minus its own attributed `partyCost`,
+ * giving `net`. With every rubric shared (default) `partyCost` is 0,
+ * `distributable` collapses to S1's net profit, and `amount ≡ net` — the
+ * cascade reduces exactly to S1. `undistributed` is the residual share
+ * `(100 − Σpercent)` left to the operator. Loss months (negative
+ * `distributable`) flow through proportionally.
+ *
+ * Invariants (pins): `Σ byParty.amount + undistributed ≡ distributable`;
+ * `Σ byParty.net + undistributed ≡ channelResult`; and
+ * `channelResult ≡ netProfit_S1` independent of attribution.
  */
 export interface MonthlyPartyDistribution {
   month: number; // 1..PROJECTION_MONTHS (calendar month)
   distributable: number;
-  byParty: { partyId: string; percent: number; amount: number }[];
+  byParty: {
+    partyId: string;
+    percent: number;
+    amount: number; // gross slice = distributable × (percent/100); the S1 value when all-shared
+    partyCost: number; // Σ cost rubrics attributed to this party this month/basis (S2)
+    net: number; // amount − partyCost (S2)
+  }[];
   undistributed: number;
+  sharedCosts: number; // Σ cost of rubrics left `shared` this month/basis (informational)
+  channelResult: number; // distributable − Σ partyCost ≡ netProfit_S1 (cascade invariant)
 }
 
 /** A party's distribution summed across the projection window, one basis. */
@@ -2516,50 +2556,150 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
     status: splitStatus,
   };
 
-  // --- Monthly profit distribution, per accounting basis (S1, additive) ---
-  // Granular plumbing for the shared/party cascade (S2+) and the per-party
-  // perspective (S4+). Costs are NOT reordered here — every cost stays
-  // pre-split, so each month's `distributable` is the same net profit the
-  // legacy aggregate already reconciles to. The split only repartitions it.
+  // --- Monthly profit distribution, per accounting basis (S1 → S2 cascade) ---
+  // Each cost rubric is either `shared` (deducted pre-split, lowering the
+  // distributable every party shares) or attributed to a party (deducted from
+  // that party's own slice, post-split). Built by ADD-BACK, not by recomputing
+  // net profit: `netProfit_S1` already nets every cost, so attributing a rubric
+  // to a party means adding it back into the distributable and charging it to
+  // the owning party. With every rubric shared (default), totalPartyCosts is 0
+  // and the cascade collapses exactly to S1 (distributable ≡ netProfit_S1,
+  // amount ≡ net). partnerKickbacks are untouched (D7) — they ride inside
+  // netProfit_S1's composition (accrual + / cash −), not as a rubric.
   const undistributedShare = (100 - totalSplitPercent) / 100;
-  const splitDistributable = (distributable: number) => ({
-    byParty: (profitSplitParties ?? []).map((p) => ({
-      partyId: p.id,
-      percent: p.percent,
-      amount: distributable * (p.percent / 100),
-    })),
-    undistributed: distributable * undistributedShare,
-  });
 
-  // Accrual: `cohortProjection[m].netProfit` is already fully loaded
-  // (revenue − every cost, incl. overhead/Buck — see the monthCosts block).
-  const accrualMonthly: MonthlyPartyDistribution[] = cohortProjection.map((m) => ({
-    month: m.month,
-    distributable: m.netProfit,
-    ...splitDistributable(m.netProfit),
-  }));
+  // A partyId no longer present in profitSplitParties is treated as `shared`,
+  // so removing a party never breaks the cascade (validation on read).
+  const validPartyIds = new Set((profitSplitParties ?? []).map((p) => p.id));
+  const rubricOwner = (rubric: CostRubric): string | null => {
+    const target = inputs.costAttribution?.[rubric];
+    return target && target !== "shared" && validPartyIds.has(target.partyId)
+      ? target.partyId
+      : null;
+  };
 
-  // Cash: aggregate the per-cohort lifecycle net profit by CALENDAR month
-  // (each cohort month is already net of its attributed costs), then subtract
-  // the scenario-level overhead pulled from `cohortProjection[K-1]` — exactly
-  // how `aggregateLifecyclesByCalendarMonth` builds the Cohort Aggregate view.
-  // Buck is cohort-attributed (already in the lifecycle netProfit); overhead
-  // is not, so it is layered in here. partnerKickbacks are intentionally NOT
-  // added on the cash side, mirroring the existing aggregate view (D7 surface).
+  const COST_RUBRICS: CostRubric[] = [
+    "cogs",
+    "commission",
+    "chargeback",
+    "operationalOverhead",
+    "buckPlatform",
+    "addOn",
+    "welcomeKit",
+  ];
+
+  // Per-rubric cost for a given accrual month — straight off cohortProjection.
+  const accrualRubricCost = (
+    m: (typeof cohortProjection)[number],
+    rubric: CostRubric,
+  ): number => {
+    // These per-rubric fields are typed optional on cohortProjection (added
+    // post-hoc) but the projection loop always emits them — `?? 0` satisfies
+    // the type and is a runtime no-op. `operationalOverhead` is required.
+    switch (rubric) {
+      case "cogs":
+        return m.cogsExpense ?? 0;
+      case "commission":
+        return m.commissionExpense ?? 0;
+      case "chargeback":
+        return m.chargebackCost ?? 0;
+      case "operationalOverhead":
+        return m.operationalOverhead;
+      case "buckPlatform":
+        return m.buckPlatformCost ?? 0;
+      case "addOn":
+        return m.addOnCost ?? 0;
+      case "welcomeKit":
+        return m.welcomeKitCost ?? 0;
+    }
+  };
+
+  // Per-calendar-month cost of each rubric on the CASH basis — aggregate the
+  // cohort lifecycle months by monthIndex (same mechanism S1 uses for
+  // netProfit). The cohort `productCost` is the cash-basis COGS (product +
+  // shipping/handling + payment). Overhead is scenario-level, taken from
+  // cohortProjection at the same calendar month (not cohort-attributed).
+  const cashRubricCost: Record<CostRubric, number[]> = {
+    cogs: Array.from({ length: PROJECTION_MONTHS }, () => 0),
+    commission: Array.from({ length: PROJECTION_MONTHS }, () => 0),
+    chargeback: Array.from({ length: PROJECTION_MONTHS }, () => 0),
+    operationalOverhead: Array.from({ length: PROJECTION_MONTHS }, () => 0),
+    buckPlatform: Array.from({ length: PROJECTION_MONTHS }, () => 0),
+    addOn: Array.from({ length: PROJECTION_MONTHS }, () => 0),
+    welcomeKit: Array.from({ length: PROJECTION_MONTHS }, () => 0),
+  };
+  for (const cohort of cohortLifecycles) {
+    for (const mo of cohort.months) {
+      const i = mo.monthIndex - 1;
+      cashRubricCost.cogs[i] += mo.productCost;
+      cashRubricCost.commission[i] += mo.commissionUpfront + mo.commissionResidual;
+      cashRubricCost.chargeback[i] += mo.chargebackCost;
+      cashRubricCost.buckPlatform[i] += mo.buckCost;
+      cashRubricCost.addOn[i] += mo.addOnCost;
+      cashRubricCost.welcomeKit[i] += mo.welcomeKitCost;
+    }
+  }
+  for (let i = 0; i < PROJECTION_MONTHS; i++) {
+    cashRubricCost.operationalOverhead[i] = cohortProjection[i]?.operationalOverhead ?? 0;
+  }
+
+  // Build one month's cascade from its S1 net profit + a per-rubric cost lookup.
+  const buildMonthDistribution = (
+    month: number,
+    netProfitS1: number,
+    rubricCost: (rubric: CostRubric) => number,
+  ): MonthlyPartyDistribution => {
+    const partyCostById = new Map<string, number>();
+    let totalPartyCosts = 0;
+    let sharedCosts = 0;
+    for (const rubric of COST_RUBRICS) {
+      const cost = rubricCost(rubric);
+      const owner = rubricOwner(rubric);
+      if (owner) {
+        partyCostById.set(owner, (partyCostById.get(owner) ?? 0) + cost);
+        totalPartyCosts += cost;
+      } else {
+        sharedCosts += cost;
+      }
+    }
+    const distributable = netProfitS1 + totalPartyCosts;
+    const byParty = (profitSplitParties ?? []).map((p) => {
+      const amount = distributable * (p.percent / 100);
+      const partyCost = partyCostById.get(p.id) ?? 0;
+      return { partyId: p.id, percent: p.percent, amount, partyCost, net: amount - partyCost };
+    });
+    return {
+      month,
+      distributable,
+      byParty,
+      undistributed: distributable * undistributedShare,
+      sharedCosts,
+      channelResult: distributable - totalPartyCosts, // ≡ netProfitS1, independent of attribution
+    };
+  };
+
+  // Accrual: netProfit_S1[m] = cohortProjection[m].netProfit (fully loaded —
+  // revenue − every cost, incl. overhead/Buck — see the monthCosts block).
+  const accrualMonthly: MonthlyPartyDistribution[] = cohortProjection.map((m) =>
+    buildMonthDistribution(m.month, m.netProfit, (rubric) => accrualRubricCost(m, rubric)),
+  );
+
+  // Cash: netProfit_S1[m] = Σ cohort-lifecycle netProfit by calendar month −
+  // scenario-level overhead — the same composition the Cohort Aggregate view
+  // reconciles to.
   const cashNetByMonth = Array.from({ length: PROJECTION_MONTHS }, () => 0);
   for (const cohort of cohortLifecycles) {
     for (const mo of cohort.months) {
       cashNetByMonth[mo.monthIndex - 1] += mo.netProfit;
     }
   }
-  const cashMonthly: MonthlyPartyDistribution[] = cashNetByMonth.map((net, i) => {
-    const distributable = net - (cohortProjection[i]?.operationalOverhead ?? 0);
-    return {
-      month: i + 1,
-      distributable,
-      ...splitDistributable(distributable),
-    };
-  });
+  const cashMonthly: MonthlyPartyDistribution[] = cashNetByMonth.map((net, i) =>
+    buildMonthDistribution(
+      i + 1,
+      net - (cohortProjection[i]?.operationalOverhead ?? 0),
+      (rubric) => cashRubricCost[rubric][i],
+    ),
+  );
 
   const partyTotals = (months: MonthlyPartyDistribution[]): PartyDistributionTotal[] =>
     (profitSplitParties ?? []).map((p) => ({
