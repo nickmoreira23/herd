@@ -26,9 +26,14 @@ export default async function DashboardPage() {
     orgId
       ? withTenant(orgId, () => prisma.product.count({ where: { isActive: true } }))
       : Promise.resolve(0),
-    prisma.subscriptionTier.findMany({
-      orderBy: { sortOrder: "asc" },
-    }),
+    // L1b.2a — Tier read scoped to the host org (inert until L1b.2b activation).
+    orgId
+      ? withTenant(orgId, () =>
+          prisma.subscriptionTier.findMany({
+            orderBy: { sortOrder: "asc" },
+          })
+        )
+      : Promise.resolve([]),
     prisma.financialSnapshot.count(),
   ]);
 

@@ -4,6 +4,7 @@ import { requireOrgRole } from "@/lib/permissions";
 import { createRedemptionRuleSchema } from "@/lib/validators/redemption-rule";
 import { recalculateTierProductCosts } from "@/lib/recalculate-tier-costs";
 import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 
 // GET: Fetch all redemption rules for a tier
 export async function GET(
@@ -37,8 +38,10 @@ export async function POST(
 
   const { tierId } = await params;
   try {
-    // Verify tier exists
-    const tier = await prisma.subscriptionTier.findUnique({ where: { id: tierId } });
+    // Verify tier exists — L1b.2a scoped to host org (inert until L1b.2b).
+    const tier = await withTenant(orgId, () =>
+      prisma.subscriptionTier.findUnique({ where: { id: tierId } })
+    );
     if (!tier) return apiError("Subscription tier not found", 404);
 
     const result = await parseAndValidate(request, createRedemptionRuleSchema);

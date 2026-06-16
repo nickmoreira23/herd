@@ -20,20 +20,38 @@ export default async function ProductsPage() {
     ? await withTenant(orgId, () => prisma.product.findMany({ orderBy: { name: "asc" } }))
     : [];
   const [tiers, redemptionRules] = await Promise.all([
-    prisma.subscriptionTier.findMany({
-      where: { isActive: true },
-      orderBy: { sortOrder: "asc" },
-      select: {
-        id: true,
-        name: true,
-        partnerDiscountPercent: true,
-        sortOrder: true,
-      },
-    }),
-    prisma.subscriptionRedemptionRule.findMany({
-      include: { subscriptionTier: { select: { name: true } } },
-    }),
+    // L1b.2a — Tier read scoped to the host org (inert until L1b.2b activation).
+    orgId
+      ? withTenant(orgId, () =>
+          prisma.subscriptionTier.findMany({
+            where: { isActive: true },
+            orderBy: { sortOrder: "asc" },
+            select: {
+              id: true,
+              name: true,
+              partnerDiscountPercent: true,
+              sortOrder: true,
+            },
+          })
+        )
+      : Promise.resolve([]),
+    // L1b.2a — drop the subscriptionTier include (SubscriptionRedemptionRule is
+    // not tenant-scoped; the join would hit the soon-RLS-strict tier without the
+    // GUC). Tier names are joined in memory from a host-scoped read below.
+    prisma.subscriptionRedemptionRule.findMany(),
   ]);
+
+  // L1b.2a — Tier names for the redemption-rule pills, read under the host org.
+  const ruleTierIds = [...new Set(redemptionRules.map((r) => r.subscriptionTierId))];
+  const ruleTierNames = orgId
+    ? await withTenant(orgId, () =>
+        prisma.subscriptionTier.findMany({
+          where: { id: { in: ruleTierIds } },
+          select: { id: true, name: true },
+        })
+      )
+    : [];
+  const ruleTierNameById = new Map(ruleTierNames.map((t) => [t.id, t.name]));
 
   const activeProducts = products.filter((p) => p.isActive);
 
@@ -95,15 +113,22 @@ export default async function ProductsPage() {
     sortOrder: t.sortOrder,
   }));
 
-  // Build a map of SKU → tier pills from redemption rules
-  const redemptionRuleData = redemptionRules.map((r) => ({
-    id: r.id,
-    tierName: r.subscriptionTier.name,
-    redemptionType: r.redemptionType,
-    discountPercent: r.discountPercent,
-    scopeType: r.scopeType,
-    scopeValue: r.scopeValue,
-  }));
+  // Build a map of SKU → tier pills from redemption rules. Drop rules whose
+  // tier isn't visible under the host org (mirrors the join-drop pattern).
+  const redemptionRuleData = redemptionRules.flatMap((r) => {
+    const tierName = ruleTierNameById.get(r.subscriptionTierId);
+    if (!tierName) return [];
+    return [
+      {
+        id: r.id,
+        tierName,
+        redemptionType: r.redemptionType,
+        discountPercent: r.discountPercent,
+        scopeType: r.scopeType,
+        scopeValue: r.scopeValue,
+      },
+    ];
+  });
 
   return (
     <ProductsListClient

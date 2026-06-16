@@ -4,6 +4,8 @@ import { TierDetailClient } from "@/components/tiers/tier-detail-client";
 import { toNumber } from "@/lib/utils";
 import { connection } from "next/server";
 import { BENEFIT_BLOCKS_SETTING_KEY, DEFAULT_BENEFIT_BLOCKS } from "@/lib/blocks/block-meta";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 
 export default async function EditTierPage({
   params,
@@ -11,22 +13,33 @@ export default async function EditTierPage({
   params: Promise<{ id: string }>;
 }) {
   await connection();
+  const orgId = await getOrgIdFromRequest();
   const { id } = await params;
 
   // "new" is handled by the /new route, skip it here
   if (id === "new") return notFound();
 
   const [tier, allTiersRaw, benefitBlocksSetting] = await Promise.all([
-    prisma.subscriptionTier.findUnique({
-      where: { id },
-      include: {
-        pricingSnapshots: { orderBy: { createdAt: "desc" }, take: 50 },
-      },
-    }),
-    prisma.subscriptionTier.findMany({
-      select: { id: true, name: true },
-      orderBy: { sortOrder: "asc" },
-    }),
+    // L1b.2a — Tier read scoped to the host org (inert until L1b.2b activation).
+    orgId
+      ? withTenant(orgId, () =>
+          prisma.subscriptionTier.findUnique({
+            where: { id },
+            include: {
+              pricingSnapshots: { orderBy: { createdAt: "desc" }, take: 50 },
+            },
+          })
+        )
+      : Promise.resolve(null),
+    // L1b.2a — Tier read scoped to the host org (inert until L1b.2b activation).
+    orgId
+      ? withTenant(orgId, () =>
+          prisma.subscriptionTier.findMany({
+            select: { id: true, name: true },
+            orderBy: { sortOrder: "asc" },
+          })
+        )
+      : Promise.resolve([]),
     prisma.setting.findUnique({ where: { key: BENEFIT_BLOCKS_SETTING_KEY } }),
   ]);
 

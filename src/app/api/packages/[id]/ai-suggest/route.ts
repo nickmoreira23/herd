@@ -194,11 +194,13 @@ export async function POST(
     return apiError("subscriptionTierId is required for products mode", 400);
   }
 
-  // Fetch tier with redemption rules
-  const tier = await prisma.subscriptionTier.findUnique({
-    where: { id: subscriptionTierId },
-    include: { redemptionRules: true },
-  });
+  // L1b.2a — Tier read under the host org (Package family is not tenant-scoped).
+  const tier = await withTenant(orgId, () =>
+    prisma.subscriptionTier.findUnique({
+      where: { id: subscriptionTierId },
+      include: { redemptionRules: true },
+    })
+  );
   if (!tier) return apiError("Tier not found", 404);
 
   // Fetch the variant to see what products are already selected
@@ -284,17 +286,19 @@ export async function POST(
   const currentSpend = variant ? Number(variant.totalCreditsUsed) : 0;
   const remainingBudget = monthlyBudget - currentSpend;
 
-  // Fetch all tiers for this package to provide tier positioning context
+  // Fetch all tiers for this package to provide tier positioning context.
+  // L1b.2a — Tier joined in memory under the host org (Package family is not tenant-scoped).
   const allVariants = await prisma.packageTierVariant.findMany({
     where: { packageId },
-    include: {
-      subscriptionTier: {
-        select: { id: true, name: true, monthlyCredits: true, sortOrder: true },
-      },
-    },
-    orderBy: { subscriptionTier: { sortOrder: "asc" } },
   });
-  const sortedTiers = allVariants.map((v) => v.subscriptionTier);
+  const allTierIds = allVariants.map((v) => v.subscriptionTierId);
+  const allTiers = await withTenant(orgId, () =>
+    prisma.subscriptionTier.findMany({
+      where: { id: { in: allTierIds } },
+      select: { id: true, name: true, monthlyCredits: true, sortOrder: true },
+    })
+  );
+  const sortedTiers = allTiers.sort((a, b) => a.sortOrder - b.sortOrder);
   const tierIndex = sortedTiers.findIndex((t) => t.id === subscriptionTierId);
   const tierPosition = tierIndex + 1;
   const totalTiers = sortedTiers.length;

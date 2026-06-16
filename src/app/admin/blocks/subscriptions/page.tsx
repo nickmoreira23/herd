@@ -3,21 +3,29 @@ import { TierPageClient } from "@/components/tiers/tier-page-client";
 import { toNumber } from "@/lib/utils";
 import { connection } from "next/server";
 import { BENEFIT_BLOCKS_SETTING_KEY, DEFAULT_BENEFIT_BLOCKS } from "@/lib/blocks/block-meta";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
+import { withTenant } from "@/lib/tenancy/context";
 
 export default async function TiersPage() {
   await connection();
+  const orgId = await getOrgIdFromRequest();
 
   const [tiers, benefitBlocksSetting] = await Promise.all([
-    prisma.subscriptionTier.findMany({
-      orderBy: { sortOrder: "asc" },
-      include: {
-        redemptionRules: true,
-        agentAccess: {
-          where: { isEnabled: true },
-          include: { agent: { select: { id: true, name: true, category: true, icon: true } } },
-        },
-      },
-    }),
+    // L1b.2a — Tier read scoped to the host org (inert until L1b.2b activation).
+    orgId
+      ? withTenant(orgId, () =>
+          prisma.subscriptionTier.findMany({
+            orderBy: { sortOrder: "asc" },
+            include: {
+              redemptionRules: true,
+              agentAccess: {
+                where: { isEnabled: true },
+                include: { agent: { select: { id: true, name: true, category: true, icon: true } } },
+              },
+            },
+          })
+        )
+      : Promise.resolve([]),
     prisma.setting.findUnique({ where: { key: BENEFIT_BLOCKS_SETTING_KEY } }),
   ]);
 
