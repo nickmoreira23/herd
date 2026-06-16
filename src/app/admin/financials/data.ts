@@ -299,11 +299,6 @@ export const getFinancialDefaults = cache(async function getFinancialDefaults() 
   };
   const hasCommissionPlan = false; // CommissionPlan removed Sub-etapa 3.5
 
-  // Fully-loaded commission data (D2D) removed in Sub-etapa 3.5 — D2D models
-  // (OrgNode, D2DPartner, CommissionPlan, etc.) dropped. Feature returns
-  // post-Fase 3 with new schema.
-  const fullyLoadedCommissionData = undefined;
-
   // ─── Sales channels (manual — no structured source yet) ────────
 
   const salesRepData: SalesRepChannel = {
@@ -431,7 +426,6 @@ export const getFinancialDefaults = cache(async function getFinancialDefaults() 
     productCOGSRatio,
     productFulfillmentCost,
     productShippingCost,
-    fullyLoadedCommissionData,
     dataSourceMeta,
     tierDisplayMeta,
     packagesCatalog,

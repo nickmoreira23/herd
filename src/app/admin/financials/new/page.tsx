@@ -17,7 +17,6 @@ export default async function NewModelPage() {
     productCOGSRatio,
     productFulfillmentCost,
     productShippingCost,
-    fullyLoadedCommissionData,
     dataSourceMeta,
     tierDisplayMeta,
     packagesCatalog,
@@ -34,7 +33,6 @@ export default async function NewModelPage() {
       productCOGSRatio={productCOGSRatio}
       productFulfillmentCost={productFulfillmentCost}
       productShippingCost={productShippingCost}
-      fullyLoadedCommissionData={fullyLoadedCommissionData}
       dataSourceMeta={dataSourceMeta}
       tierDisplayMeta={tierDisplayMeta}
       packagesCatalog={packagesCatalog}

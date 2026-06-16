@@ -12,7 +12,6 @@ import type {
   SamplerChannel,
   FinancialInputs,
   OperationalOverhead,
-  FullyLoadedCommissionInput,
 } from "@/lib/financial-engine";
 import type { OpexCategoryData } from "@/lib/opex-resolver";
 import type { DataSourceMeta, TierDisplayMeta, PackageCatalogEntry } from "@/app/admin/financials/data";
@@ -143,8 +142,6 @@ interface FinancialPageClientProps {
   productCOGSRatio?: number;
   productFulfillmentCost?: number;
   productShippingCost?: number;
-  // New: fully-loaded commission plan data
-  fullyLoadedCommissionData?: FullyLoadedCommissionInput;
   // New: data source metadata for UI indicators
   dataSourceMeta?: DataSourceMeta;
   // New: tier display metadata for read-only plan structure display
@@ -170,7 +167,6 @@ export function FinancialPageClient({
   productCOGSRatio,
   productFulfillmentCost,
   productShippingCost,
-  fullyLoadedCommissionData,
   dataSourceMeta,
   tierDisplayMeta,
   packagesCatalog,
