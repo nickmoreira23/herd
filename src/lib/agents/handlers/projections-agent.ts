@@ -281,8 +281,12 @@ ${JSON.stringify(results, null, 2)}`;
           label: "Calculated projection",
         });
 
-        const profitSplitSummary = results.profitSplit.parties.length > 0
-          ? `\n--- PROFIT SPLIT ---\n${results.profitSplit.parties.map((p) => `  ${p.name}: ${p.percent}% → $${p.monthlyAmount.toFixed(0)}/mo ($${p.annualAmount.toFixed(0)}/yr)`).join("\n")}\n  Undistributed: ${results.profitSplit.undistributedPercent}%`
+        const splitAccrual = results.profitDistribution.accrual;
+        const splitTotals = results.profitDistribution.totals.accrual;
+        const undistributedTotal = splitAccrual.reduce((s, d) => s + d.undistributed, 0);
+        const channelTotal = splitAccrual.reduce((s, d) => s + d.channelResult, 0);
+        const profitSplitSummary = splitTotals.length > 0
+          ? `\n--- PROFIT SPLIT (accrual cascade) ---\n${splitTotals.map((p) => `  ${p.name}: ${p.percent}% → net $${p.netTotal.toFixed(0)} (gross $${p.amount.toFixed(0)}, party costs $${p.partyCostTotal.toFixed(0)})`).join("\n")}\n  Undistributed: $${undistributedTotal.toFixed(0)}\n  Channel result: $${channelTotal.toFixed(0)}`
           : "";
 
         return `=== PROJECTION RESULTS ===

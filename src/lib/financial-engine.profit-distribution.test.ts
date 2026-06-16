@@ -81,15 +81,20 @@ describe("S1 — monthly profit distribution per basis (additive plumbing)", () 
     expect(Math.round(cash - accrual)).toBe(110_542);
   });
 
-  it("[P5] new accrual totals reconcile with legacy profitSplit per party", () => {
-    // Audit scenario is profitable on average, so the legacy clamp
-    // (netMarginDollars > 0) is inactive and legacy.monthlyAmount × 36
-    // equals the new path's Σ-of-months accrual total.
-    expect(r.netMarginDollars).toBeGreaterThan(0);
-    for (const legacy of r.profitSplit.parties) {
-      const fresh = pd.totals.accrual.find((p) => p.partyId === legacy.id)!;
-      expect(fresh).toBeDefined();
-      expect(Math.abs(fresh.amount - legacy.monthlyAmount * PROJECTION_MONTHS)).toBeLessThan(TOL);
+  it("[P5] totals are self-consistent with the per-month byParty series (both bases)", () => {
+    // Repointed in S5.1 (legacy `results.profitSplit` sunset): the totals
+    // must derive from the per-month `byParty` series — netTotal == Σ net,
+    // amount == Σ gross, partyCostTotal == Σ partyCost — with no dependency
+    // on the removed legacy aggregate.
+    for (const basis of ["accrual", "cash"] as const) {
+      const months = pd[basis];
+      for (const total of pd.totals[basis]) {
+        const sliceSum = (key: "amount" | "partyCost" | "net") =>
+          sum(months.map((m) => m.byParty.find((b) => b.partyId === total.partyId)?.[key] ?? 0));
+        expect(Math.abs(total.amount - sliceSum("amount"))).toBeLessThan(TOL);
+        expect(Math.abs(total.partyCostTotal - sliceSum("partyCost"))).toBeLessThan(TOL);
+        expect(Math.abs(total.netTotal - sliceSum("net"))).toBeLessThan(TOL);
+      }
     }
   });
 
