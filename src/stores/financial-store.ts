@@ -249,6 +249,13 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
       migrated.lossHandling = "absorbed";
     }
 
+    // Migrate old snapshots missing leadershipCompPlan → disabled (S6). Absent
+    // or enabled:false ⇒ cost 0 ⇒ identical behavior (the engine guards on
+    // `enabled`); the default object just gives the store a defined shape.
+    if (!migrated.leadershipCompPlan) {
+      migrated.leadershipCompPlan = { enabled: false, base: "revenue", levels: [] };
+    }
+
     // Migrate old snapshots missing chargeback fields
     if (migrated.chargebackPercent == null) {
       migrated.chargebackPercent = 0;

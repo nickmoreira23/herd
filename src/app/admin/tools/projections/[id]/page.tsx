@@ -35,7 +35,6 @@ export default async function EditProjectionPage({
       productCOGSRatio={defaults.productCOGSRatio}
       productFulfillmentCost={defaults.productFulfillmentCost}
       productShippingCost={defaults.productShippingCost}
-      fullyLoadedCommissionData={defaults.fullyLoadedCommissionData}
       dataSourceMeta={defaults.dataSourceMeta}
       tierDisplayMeta={defaults.tierDisplayMeta}
       packagesCatalog={defaults.packagesCatalog}

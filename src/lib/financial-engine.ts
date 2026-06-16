@@ -224,7 +224,37 @@ export type CostRubric =
   | "operationalOverhead"
   | "buckPlatform"
   | "addOn"
-  | "welcomeKit";
+  | "welcomeKit"
+  | "leadershipCommission";
+
+/**
+ * Leadership commission plan (S6). A hierarchy of leadership levels (e.g.
+ * local / regional / VP); each level earns an override on its downline's
+ * production. S6 assumes full coverage (the whole channel sits under the full
+ * chain), so each level's base is the channel's monthly production. The
+ * stacked cost is `base_month × Σ_levels(effectiveRate_level)` — the engine
+ * only SUMS effective rates (agnostic to level order/sign). `effectiveRate` is
+ * the headcount-weighted average of the level's bronze/prata tier rates.
+ * Headcount and tier mix are STATIC in S6 (dynamic 1-per-N + tier progression
+ * are S7). The result is a derived, attributable cost rubric
+ * (`leadershipCommission`, default shared) flowing through the S2 cascade.
+ */
+export interface LeadershipLevel {
+  id: string;
+  name: string;
+  tiers: { bronze: { ratePct: number }; prata: { ratePct: number } };
+  headcount: { bronze: number; prata: number };
+}
+
+export interface LeadershipCompPlan {
+  enabled: boolean;
+  /** What the override percentage applies to each month. Default `"revenue"`
+   *  (accrual uses recognized revenue, cash uses collected revenue — each
+   *  consistent with its cascade). `"margin"` = gross margin (revenue − COGS);
+   *  `"repCommission"` = that month's rep commission spend. */
+  base: "revenue" | "margin" | "repCommission";
+  levels: LeadershipLevel[];
+}
 
 /**
  * Where a cost rubric lands in the cascade. `"shared"` ⇒ deducted pre-split
@@ -286,6 +316,10 @@ export interface FinancialInputs {
   // subs (the kit ships before any chargeback can occur, so the spend is
   // sunk regardless of chargeback outcome).
   welcomeKitCostPerSub?: number;
+  // Leadership commission plan (S6) — stacked leadership overrides on channel
+  // production, surfaced as the derived `leadershipCommission` cost rubric.
+  // Absent or `enabled:false` ⇒ cost 0 ⇒ identical behavior (safe default).
+  leadershipCompPlan?: LeadershipCompPlan;
 }
 
 // --- Tier-level calculations ---
@@ -418,114 +452,6 @@ export function calculateTotalMonthlyCommission(
     residualPercent
   );
   return upfrontCost + residualCost;
-}
-
-// --- Fully-loaded commission calculation (D2D plan-aware) ---
-
-export interface FullyLoadedCommissionInput {
-  plan: {
-    residualPercent: number;
-    rates: { tierId: string; roleType: string; upfrontBonus: number; residualPercent: number }[];
-  };
-  overrides: { roleType: string; overrideType: string; overrideValue: number }[];
-  performanceTiers: { minSales: number; maxSales: number | null; bonusMultiplier: number; bonusFlat: number }[];
-  orgStructure: {
-    totalReps: number;
-    totalTeamLeads: number;
-    totalRegionalLeaders: number;
-    avgSalesPerRep: number;
-  };
-  tierDistribution: { tierId: string; percent: number }[]; // percent 0-100
-  blendedRevenuePerSub: number;
-}
-
-export function calculateFullyLoadedCommission(input: FullyLoadedCommissionInput): {
-  repUpfront: number;
-  repResidual: number;
-  teamLeadOverrides: number;
-  regionalLeaderOverrides: number;
-  accelerators: number;
-  totalFullyLoaded: number;
-  costPerNewSub: number;
-  percentOfRevenue: number;
-} {
-  const { plan, overrides, performanceTiers, orgStructure, tierDistribution, blendedRevenuePerSub } = input;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { totalReps, totalTeamLeads, totalRegionalLeaders, avgSalesPerRep } = orgStructure;
-  const totalNewSales = totalReps * avgSalesPerRep;
-
-  // 1. Rep upfront cost — weighted by tier distribution
-  let weightedUpfrontPerSale = 0;
-  for (const td of tierDistribution) {
-    const repRate = plan.rates.find(r => r.tierId === td.tierId && r.roleType === "REP");
-    if (repRate) {
-      weightedUpfrontPerSale += repRate.upfrontBonus * (td.percent / 100);
-    }
-  }
-  const repUpfront = totalNewSales * weightedUpfrontPerSale;
-
-  // 2. Rep residual — based on existing subscriber base (estimate: assume totalNewSales as proxy)
-  const avgResidualPercent = plan.rates
-    .filter(r => r.roleType === "REP")
-    .reduce((sum, r) => sum + r.residualPercent, 0) / Math.max(plan.rates.filter(r => r.roleType === "REP").length, 1);
-  const repResidual = totalNewSales * blendedRevenuePerSub * (avgResidualPercent / 100);
-
-  // 3. Override costs
-  const tlOverride = overrides.find(o => o.roleType === "TEAM_LEAD");
-  let teamLeadOverrides = 0;
-  if (tlOverride) {
-    if (tlOverride.overrideType === "FLAT") {
-      teamLeadOverrides = totalNewSales * tlOverride.overrideValue;
-    } else if (tlOverride.overrideType === "PERCENT_OF_BONUS") {
-      teamLeadOverrides = repUpfront * (tlOverride.overrideValue / 100);
-    } else if (tlOverride.overrideType === "PERCENT_OF_REVENUE") {
-      teamLeadOverrides = totalNewSales * blendedRevenuePerSub * (tlOverride.overrideValue / 100);
-    }
-  }
-
-  const rlOverride = overrides.find(o => o.roleType === "REGIONAL_LEADER");
-  let regionalLeaderOverrides = 0;
-  if (rlOverride) {
-    if (rlOverride.overrideType === "FLAT") {
-      regionalLeaderOverrides = totalNewSales * rlOverride.overrideValue;
-    } else if (rlOverride.overrideType === "PERCENT_OF_BONUS") {
-      regionalLeaderOverrides = repUpfront * (rlOverride.overrideValue / 100);
-    } else if (rlOverride.overrideType === "PERCENT_OF_REVENUE") {
-      regionalLeaderOverrides = totalNewSales * blendedRevenuePerSub * (rlOverride.overrideValue / 100);
-    }
-  }
-
-  // 4. Accelerator costs — estimate based on performance tier distribution
-  let accelerators = 0;
-  if (performanceTiers.length > 0 && totalReps > 0) {
-    // Distribute reps across performance tiers based on sales volume
-    for (const pt of performanceTiers) {
-      // Simple estimate: what fraction of reps fall in this tier
-      void ((pt.minSales + (pt.maxSales ?? pt.minSales + 10)) / 2); // tierSalesPerRep
-      if (avgSalesPerRep >= pt.minSales && (pt.maxSales === null || avgSalesPerRep <= pt.maxSales)) {
-        // Most reps are in this tier — apply multiplier delta + flat bonus
-        const multiplierDelta = pt.bonusMultiplier - 1.0;
-        accelerators = totalNewSales * weightedUpfrontPerSale * multiplierDelta + totalReps * pt.bonusFlat;
-        break;
-      }
-    }
-  }
-
-  const totalFullyLoaded = repUpfront + repResidual + teamLeadOverrides + regionalLeaderOverrides + accelerators;
-  const costPerNewSub = totalNewSales > 0 ? totalFullyLoaded / totalNewSales : 0;
-  const totalRevenue = totalNewSales * blendedRevenuePerSub;
-  const percentOfRevenue = totalRevenue > 0 ? (totalFullyLoaded / totalRevenue) * 100 : 0;
-
-  return {
-    repUpfront,
-    repResidual,
-    teamLeadOverrides,
-    regionalLeaderOverrides,
-    accelerators,
-    totalFullyLoaded,
-    costPerNewSub,
-    percentOfRevenue,
-  };
 }
 
 // --- Partner calculations ---
@@ -804,6 +730,7 @@ export interface ScenarioResults {
     buckTokenCost?: number;     // currentSubs × buckTokenCostPerSub (monthly recurring)
     addOnCost?: number;         // per-tier add-ons (Path Scale sale/lease)
     welcomeKitCost?: number;    // monthGrossNewSubs × welcomeKitCostPerSub (acquisition spend)
+    leadershipCommissionCost?: number; // derived leadership override (S6): monthRevenue × Σ effective rate
     /**
      * Per-month breakage profit (informational disclosure only — does NOT
      * roll into `costs`/`netProfit` because COGS already incorporates
@@ -942,6 +869,7 @@ export interface ScenarioResults {
       // `commissionUpfront` / `commissionResidual` totals above.
       commissionByTier: { tierId: string; upfront: number; residual: number }[];
       addOnCost: number;          // Path Scale lease/sale per cohort lifecycle
+      leadershipCommissionCost: number; // derived leadership override (S6), cash basis: this cohort-month's revenue × Σ effective rate
       netProfit: number;          // revenue − all attributed costs above
       cumulativeProfit: number;   // running total within this lifecycle
     }[];
@@ -1138,6 +1066,27 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
   // Commission (only on rep-acquired subs — samplers have no commission)
   const blendedRevenuePerSub =
     totalSubscribers > 0 ? mrr / totalSubscribers : 0;
+
+  // --- Leadership commission (S6) — scenario-level rate + base mode ---
+  // The stacked override rate is a fraction (sum of each level's
+  // headcount-weighted effective rate / 100). Constant across months in S6
+  // (static headcount/tier mix) — the per-month cost is `base_month × rate`,
+  // emitted inside each projection loop using THAT month's base (no
+  // scalar × period multiplier). Absent/disabled ⇒ rate 0 ⇒ no cost.
+  const leadershipPlan = inputs.leadershipCompPlan;
+  const leadershipBase = leadershipPlan?.base ?? "revenue";
+  const leadershipRate =
+    leadershipPlan?.enabled
+      ? leadershipPlan.levels.reduce((sum, lvl) => {
+          const hc = lvl.headcount.bronze + lvl.headcount.prata;
+          if (hc <= 0) return sum;
+          const effectivePct =
+            (lvl.headcount.bronze * lvl.tiers.bronze.ratePct +
+              lvl.headcount.prata * lvl.tiers.prata.ratePct) /
+            hc;
+          return sum + effectivePct / 100;
+        }, 0)
+      : 0;
 
   // --- Per-tier commission resolution ---
   // Each tier may have its own `commissionStructure` override; absent
@@ -1674,6 +1623,17 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
       return sum + tierSubs * tierBreakagePerSub[i];
     }, 0);
 
+    // Leadership commission (S6, accrual) — base × stacked rate, this month's
+    // recognized revenue / gross margin / rep commission per the plan's base.
+    const monthLeadershipBase =
+      leadershipBase === "margin"
+        ? monthRevenue - currentSubs * costPerSubscriber
+        : leadershipBase === "repCommission"
+          ? monthTotalCommission
+          : monthRevenue;
+    const monthLeadershipCommission =
+      leadershipRate > 0 ? monthLeadershipBase * leadershipRate : 0;
+
     const monthCosts =
       currentSubs * costPerSubscriber +
       monthTotalCommission +
@@ -1681,7 +1641,8 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
       monthOverhead +
       monthBuckCost +
       monthAddOnCost +
-      monthWelcomeKitCost;
+      monthWelcomeKitCost +
+      monthLeadershipCommission;
     const monthProfit = monthRevenue - monthCosts + totalKickbackRevenue;
     cumulativeProfit += monthProfit;
 
@@ -1756,6 +1717,7 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
       buckTokenCost: monthBuckTokenCost,
       addOnCost: monthAddOnCost,
       welcomeKitCost: monthWelcomeKitCost,
+      leadershipCommissionCost: monthLeadershipCommission,
       breakageProfit: monthBreakageProfit,
       newSubsByTier,
       revenueByTier,
@@ -2353,6 +2315,17 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
         }
       }
 
+      // Leadership commission (S6, cash) — this cohort-month's collected
+      // revenue / gross margin / rep commission × the stacked rate.
+      const cohortLeadershipBase =
+        leadershipBase === "margin"
+          ? revenue - productCost
+          : leadershipBase === "repCommission"
+            ? commissionUpfront + commissionResidual
+            : revenue;
+      const cohortLeadershipCommission =
+        leadershipRate > 0 ? cohortLeadershipBase * leadershipRate : 0;
+
       const netProfit =
         revenue -
         productCost -
@@ -2361,7 +2334,8 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
         chargebackCost -
         commissionUpfront -
         commissionResidual -
-        cohortAddOnCost;
+        cohortAddOnCost -
+        cohortLeadershipCommission;
 
       cohortCumulativeProfit += netProfit;
       if (paybackMonth == null && cohortCumulativeProfit >= 0) {
@@ -2422,6 +2396,7 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
         commissionResidual,
         commissionByTier,
         addOnCost: cohortAddOnCost,
+        leadershipCommissionCost: cohortLeadershipCommission,
         netProfit,
         cumulativeProfit: cohortCumulativeProfit,
       });
@@ -2565,6 +2540,7 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
     "buckPlatform",
     "addOn",
     "welcomeKit",
+    "leadershipCommission",
   ];
 
   // Per-rubric cost for a given accrual month — straight off cohortProjection.
@@ -2590,6 +2566,8 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
         return m.addOnCost ?? 0;
       case "welcomeKit":
         return m.welcomeKitCost ?? 0;
+      case "leadershipCommission":
+        return m.leadershipCommissionCost ?? 0;
     }
   };
 
@@ -2606,6 +2584,7 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
     buckPlatform: Array.from({ length: PROJECTION_MONTHS }, () => 0),
     addOn: Array.from({ length: PROJECTION_MONTHS }, () => 0),
     welcomeKit: Array.from({ length: PROJECTION_MONTHS }, () => 0),
+    leadershipCommission: Array.from({ length: PROJECTION_MONTHS }, () => 0),
   };
   for (const cohort of cohortLifecycles) {
     for (const mo of cohort.months) {
@@ -2616,6 +2595,7 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
       cashRubricCost.buckPlatform[i] += mo.buckCost;
       cashRubricCost.addOn[i] += mo.addOnCost;
       cashRubricCost.welcomeKit[i] += mo.welcomeKitCost;
+      cashRubricCost.leadershipCommission[i] += mo.leadershipCommissionCost;
     }
   }
   for (let i = 0; i < PROJECTION_MONTHS; i++) {

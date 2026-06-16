@@ -36,7 +36,6 @@ export default async function EditModelPage({
       productCOGSRatio={defaults.productCOGSRatio}
       productFulfillmentCost={defaults.productFulfillmentCost}
       productShippingCost={defaults.productShippingCost}
-      fullyLoadedCommissionData={defaults.fullyLoadedCommissionData}
       dataSourceMeta={defaults.dataSourceMeta}
       tierDisplayMeta={defaults.tierDisplayMeta}
       packagesCatalog={defaults.packagesCatalog}
