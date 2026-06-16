@@ -243,6 +243,12 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
       migrated.costAttribution = {};
     }
 
+    // Migrate old snapshots missing lossHandling → "absorbed" (S2.5 default B).
+    // Safe to change the default now: no UI surfaces loss-month distribution yet.
+    if (!migrated.lossHandling) {
+      migrated.lossHandling = "absorbed";
+    }
+
     // Migrate old snapshots missing chargeback fields
     if (migrated.chargebackPercent == null) {
       migrated.chargebackPercent = 0;
