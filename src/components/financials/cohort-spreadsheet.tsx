@@ -139,7 +139,6 @@ export function CohortSpreadsheet({
         {Selector}
         <CohortLifecycleTable
           lifecycle={lifecycle}
-          profitSplitParties={results.profitSplit?.parties ?? []}
           cohortProjection={results.cohortProjection}
           tierBillingDistributions={tierBillingDistributions}
           blendedRevenuePerSub={blendedRevenuePerSub}
@@ -208,7 +207,6 @@ function deriveBlendedRevenuePerSub(
  */
 function CohortLifecycleTable({
   lifecycle,
-  profitSplitParties,
   cohortProjection,
   tierBillingDistributions,
   blendedRevenuePerSub,
@@ -217,9 +215,6 @@ function CohortLifecycleTable({
   lifecycle: NonNullable<
     ReturnType<typeof useFinancialStore.getState>["results"]
   >["cohortLifecycles"][number];
-  profitSplitParties: NonNullable<
-    ReturnType<typeof useFinancialStore.getState>["results"]
-  >["profitSplit"]["parties"];
   /** Aggregate cohort projection — used to look up the active-rep count
    *  at each calendar month the cohort touches (reps grow scenario-level,
    *  not cohort-level, so we read them from the central series). */
@@ -426,47 +421,6 @@ function CohortLifecycleTable({
     netMarginPct:
       totals.revenue > 0 ? (totals.netProfit / totals.revenue) * 100 : 0,
   };
-
-  // Profit Split — applied to the cohort's NET PROFIT each month-of-life.
-  // (Only meaningful when split parties are configured at the scenario
-  // level. Per-cohort attribution is informational: the actual split
-  // distributes scenario-level monthly margin, not cohort-by-cohort.)
-  // Two rows per party: monthly distribution and the running cumulative.
-  // The cumulative row tells the user "how much has this party earned
-  // through month K" — useful for partner / payout reporting.
-  const profitSplitRows = (profitSplitParties ?? []).flatMap((party) => {
-    const partyShare = (m: CohortMonth) =>
-      m.netProfit > 0 ? m.netProfit * (party.percent / 100) : 0;
-    return [
-      {
-        label: t("financials.pl.party_label", {
-          name: party.name,
-          percent: party.percent,
-        }),
-        getValue: (m: CohortMonth) => partyShare(m),
-        getTotal: () => months.reduce((s, m) => s + partyShare(m), 0),
-        format: "currency" as const,
-        profitColor: true,
-      },
-      {
-        // Per user preference, the percent goes AFTER "Cumulative"
-        // (e.g. "Bucked Up — Cumulative (55%)") so the qualifier reads
-        // as a parenthetical share rather than tagging onto the name.
-        label: `${party.name} — Cumulative (${party.percent}%)`,
-        getValue: (m: CohortMonth) => {
-          let acc = 0;
-          for (const x of months) {
-            acc += partyShare(x);
-            if (x.monthOfLife === m.monthOfLife) return acc;
-          }
-          return acc;
-        },
-        getTotal: () => months.reduce((s, m) => s + partyShare(m), 0),
-        format: "currency" as const,
-        profitColor: true,
-      },
-    ];
-  });
 
   // Index lookup so the lifecycle's derived rows can be read by month
   // index in the existing CohortSectionBlock signature.
@@ -973,13 +927,6 @@ function CohortLifecycleTable({
         },
       ],
     },
-    ...(profitSplitRows.length > 0
-      ? [{
-          id: "profit-split",
-          section: t("financials.projection.section.profit_split"),
-          rows: profitSplitRows,
-        }]
-      : []),
   ];
 
   function formatValue(v: number, fmt: "currency" | "number" | "percent" | "decimal"): string {
