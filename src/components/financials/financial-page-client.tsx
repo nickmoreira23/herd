@@ -195,6 +195,9 @@ export function FinancialPageClient({
   // axis). Showing it there made it look like changing the period
   // affected those views, when it didn't.
   const [activeProjectionTab, setActiveProjectionTab] = useState("summary");
+  // Perspective filter (S4) — "general" (all parties) | partyId. Ephemeral,
+  // page-level (like the tab/period); never persisted to FinancialInputs.
+  const [perspective, setPerspective] = useState<string>("general");
   const [customMonths, setCustomMonths] = useState(6);
 
   // Remix modal state
@@ -681,6 +684,34 @@ export function FinancialPageClient({
                       )}
                     </div>
                   )}
+                  {/* Perspective filter (S4) — applies to the accrual cascade
+                      views (statement/spreadsheet/metrics). Ephemeral. */}
+                  {["statement", "spreadsheet", "metrics"].includes(
+                    activeProjectionTab,
+                  ) &&
+                    inputs.profitSplitParties.length > 0 && (
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                          {t("financials.toolbar.perspective.label")}
+                        </span>
+                        <Select value={perspective} onValueChange={setPerspective}>
+                          <SelectTrigger className="h-7 w-[130px] text-xs border-dashed">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="general" className="text-xs">
+                              {t("financials.toolbar.perspective.general")}
+                            </SelectItem>
+                            {inputs.profitSplitParties.map((p) => (
+                              <SelectItem key={p.id} value={p.id} className="text-xs">
+                                {p.name ||
+                                  t("financials.builder.profit_split.unnamed")}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                 </div>
                 <TabsList className="h-8 shrink-0 ml-auto">
                   <TabsTrigger value="summary" className="text-xs px-3 h-6 shrink-0">
@@ -732,16 +763,16 @@ export function FinancialPageClient({
                 <ExecutiveSummary locale={locale} />
               </TabsContent>
               <TabsContent value="statement" className="mt-0">
-                <PLStatement multiplier={periodMultiplier} periodLabel={periodLabel} locale={locale} />
+                <PLStatement multiplier={periodMultiplier} periodLabel={periodLabel} locale={locale} perspective={perspective} />
               </TabsContent>
               <TabsContent value="spreadsheet" className="mt-0">
-                <ProjectionSpreadsheet months={12} locale={locale} />
+                <ProjectionSpreadsheet months={12} locale={locale} perspective={perspective} />
               </TabsContent>
               <TabsContent value="cohort" className="mt-0">
                 <CohortSpreadsheet months={36} locale={locale} />
               </TabsContent>
               <TabsContent value="metrics" className="mt-0">
-                <MetricsPanel multiplier={periodMultiplier} periodLabel={periodLabel} locale={locale} />
+                <MetricsPanel multiplier={periodMultiplier} periodLabel={periodLabel} locale={locale} perspective={perspective} />
               </TabsContent>
               <TabsContent value="charts" className="mt-0">
                 <FinancialCharts multiplier={periodMultiplier} periodLabel={periodLabel} locale={locale} />

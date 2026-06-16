@@ -1182,6 +1182,8 @@ export const messages = {
   "financials.toolbar.tab.cohort": "Cohort",
   "financials.toolbar.tab.metrics": "Métricas",
   "financials.toolbar.tab.charts": "Gráficos",
+  "financials.toolbar.perspective.label": "Ver como",
+  "financials.toolbar.perspective.general": "Geral",
   "financials.toolbar.time_period.month": "Mês",
   "financials.toolbar.time_period.quarter": "Trimestre",
   "financials.toolbar.time_period.semester": "Semestre",
