@@ -307,3 +307,29 @@ describe("S2.5 — loss handling (D8)", () => {
     }
   });
 });
+
+describe("S3 — extended party totals (net / partyCost)", () => {
+  const baseInputs = buildAuditScenario(PARTIES);
+
+  it("[S3-P1] netTotal / partyCostTotal reconcile with the monthly series (both bases)", () => {
+    // Attribute a rubric so partyCostTotal is materially nonzero.
+    const r = calculateScenario({
+      ...baseInputs,
+      costAttribution: { buckPlatform: { partyId: "bu" } },
+    });
+    for (const key of ["accrual", "cash"] as const) {
+      const months = r.profitDistribution[key];
+      for (const tot of r.profitDistribution.totals[key]) {
+        const monthlyNet = sum(
+          months.map((m) => m.byParty.find((b) => b.partyId === tot.partyId)?.net ?? 0),
+        );
+        const monthlyCost = sum(
+          months.map((m) => m.byParty.find((b) => b.partyId === tot.partyId)?.partyCost ?? 0),
+        );
+        expect(Math.abs(tot.netTotal - monthlyNet)).toBeLessThan(TOL);
+        expect(Math.abs(tot.partyCostTotal - monthlyCost)).toBeLessThan(TOL);
+        expect(Math.abs(tot.amount - tot.partyCostTotal - tot.netTotal)).toBeLessThan(TOL);
+      }
+    }
+  });
+});

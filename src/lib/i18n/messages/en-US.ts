@@ -931,6 +931,18 @@ export const messages: Record<MessageKey, string> = {
   "financials.pl.unnamed": "Unnamed",
   "financials.pl.undistributed": "Undistributed ({percent}%)",
 
+  // Profit cascade (shared/party) — rendered in both the Projection
+  // Spreadsheet and the P&L Statement (S3).
+  "financials.cascade.revenue": "Revenue",
+  "financials.cascade.shared_costs": "(−) Shared costs",
+  "financials.cascade.distributable": "(=) Distributable profit",
+  "financials.cascade.party_gross": "Gross share",
+  "financials.cascade.party_cost": "(−) Party costs",
+  "financials.cascade.undistributed": "Undistributed / unallocated loss",
+  "financials.cascade.undistributed_tooltip":
+    "Positive residual when parties sum to under 100%; negative when it's an absorbed channel loss (a loss month with no designated bearer).",
+  "financials.cascade.channel_result": "(=) Channel result",
+
   // Profit split — shared between P&L Statement and Metrics panel
   "financials.profit_split.over_allocated.label": "Over-allocated:",
   "financials.profit_split.over_allocated.body":

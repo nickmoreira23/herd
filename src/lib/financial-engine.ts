@@ -656,7 +656,9 @@ export interface PartyDistributionTotal {
   partyId: string;
   name: string;
   percent: number;
-  amount: number;
+  amount: number; // Σ gross slice
+  partyCostTotal: number; // Σ partyCost across months (S3)
+  netTotal: number; // Σ net = amount − partyCostTotal (S3)
 }
 
 /**
@@ -2743,15 +2745,19 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
   );
 
   const partyTotals = (months: MonthlyPartyDistribution[]): PartyDistributionTotal[] =>
-    (profitSplitParties ?? []).map((p) => ({
-      partyId: p.id,
-      name: p.name,
-      percent: p.percent,
-      amount: months.reduce(
-        (s, m) => s + (m.byParty.find((b) => b.partyId === p.id)?.amount ?? 0),
-        0,
-      ),
-    }));
+    (profitSplitParties ?? []).map((p) => {
+      const slices = months.map((m) => m.byParty.find((b) => b.partyId === p.id));
+      const amount = slices.reduce((s, b) => s + (b?.amount ?? 0), 0);
+      const partyCostTotal = slices.reduce((s, b) => s + (b?.partyCost ?? 0), 0);
+      return {
+        partyId: p.id,
+        name: p.name,
+        percent: p.percent,
+        amount,
+        partyCostTotal,
+        netTotal: amount - partyCostTotal, // ≡ Σ monthly net
+      };
+    });
 
   const profitDistribution: ProfitDistributionByBasis = {
     accrual: accrualMonthly,
