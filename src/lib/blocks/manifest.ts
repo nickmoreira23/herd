@@ -78,6 +78,46 @@ export interface BlockManifest {
   };
   /** Optional nested block groups (R3 will introduce real ones, e.g. packages of products) */
   groups?: BlockGroupSpec[];
+  /**
+   * Optional 2-level taxonomy (category → subcategory) this block declares.
+   * UNIVERSAL contract: any block may declare its own taxonomy through this
+   * same shape, or omit it (a block without taxonomy is flat — only the ALL
+   * and ITEM marketplace scopes apply to it). NOT product-specific.
+   *
+   * L2a.2b will MATERIALIZE this into per-tenant Category/Subcategory entities
+   * (seeded from here) and anchor marketplace scopeValue to the stable `key`.
+   */
+  taxonomy?: BlockTaxonomy;
+}
+
+/**
+ * BlockTaxonomy — a block's declared 2-level category/subcategory tree.
+ * Two levels only (category → subcategory), aligned to the marketplace scope
+ * engine (#5). Static: declared in the manifest, not computed at runtime.
+ */
+export interface BlockTaxonomy {
+  categories: TaxonomyCategory[];
+}
+
+export interface TaxonomyCategory {
+  /**
+   * STABLE, IMMUTABLE identifier — serves as BOTH the source-key and the slug
+   * (one identifier, not two concepts). Slug format: lowercase, hyphen-
+   * separated (`^[a-z0-9]+(?:-[a-z0-9]+)*$`). This is what marketplace
+   * scopeValue will store (L2a.2b), so it must NEVER change — renaming the
+   * human label must not touch `key`.
+   */
+  key: string;
+  /** Display label — only SEEDS the editable entity name in L2a.2b; not stable. */
+  label: string;
+  subcategories?: TaxonomySubcategory[];
+}
+
+export interface TaxonomySubcategory {
+  /** Stable, immutable slug-format identifier (same rules as TaxonomyCategory.key). */
+  key: string;
+  /** Display label — seed only. */
+  label: string;
 }
 
 /**
