@@ -76,6 +76,7 @@ beforeAll(async () => {
 
   const tier = await adminClient.subscriptionTier.create({
     data: {
+      tenantId: org.id, // L1b.3 — SubscriptionTier.tenant_id is NOT NULL now.
       name: "Trav Tier",
       slug: `${PREFIX}-tier`,
       monthlyPrice: 10,
