@@ -243,7 +243,16 @@ export interface LeadershipLevel {
   id: string;
   name: string;
   tiers: { bronze: { ratePct: number }; prata: { ratePct: number } };
-  headcount: { bronze: number; prata: number };
+  /** Static tier mix (bronze vs prata proportion) — weights the effective
+   *  rate. Replaces S6's `headcount`: in S7 the absolute headcount is derived
+   *  from `activeReps` via `span`, so only the proportion matters here. */
+  tierMix: { bronze: number; prata: number };
+  /** Span ratio for threshold activation: reps per unit of this level (e.g.
+   *  20 reps per local). The level activates in a month when `activeReps` ≥
+   *  the cumulative product of spans from the base up to and including this
+   *  level. Levels are ordered bottom-up (index 0 = closest to the reps).
+   *  Static in S7 (no advance hiring; the threshold alone turns a level on). */
+  span: number;
 }
 
 export interface LeadershipCompPlan {
@@ -1067,26 +1076,42 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
   const blendedRevenuePerSub =
     totalSubscribers > 0 ? mrr / totalSubscribers : 0;
 
-  // --- Leadership commission (S6) — scenario-level rate + base mode ---
-  // The stacked override rate is a fraction (sum of each level's
-  // headcount-weighted effective rate / 100). Constant across months in S6
-  // (static headcount/tier mix) — the per-month cost is `base_month × rate`,
-  // emitted inside each projection loop using THAT month's base (no
-  // scalar × period multiplier). Absent/disabled ⇒ rate 0 ⇒ no cost.
+  // --- Leadership commission (S6 + S7) — per-level rate + threshold activation ---
+  // Each level's effective rate is the static tier-mix-weighted average of its
+  // bronze/prata rates (a fraction). A level ACTIVATES in a month when
+  // `activeReps` crosses its threshold — the cumulative product of spans from
+  // the base up to and including it (S7: no advance hiring; the threshold turns
+  // the level on). The per-month cost is `base_month × Σ(effective rate of the
+  // ACTIVE levels)`, emitted inside each projection loop using THAT month's base
+  // (magnitude) and `activeReps` (activation) — no scalar × period multiplier.
+  // The cost does NOT scale with manager count: once active, a level covers the
+  // whole channel. Absent/disabled ⇒ no active levels ⇒ rate 0 ⇒ no cost.
   const leadershipPlan = inputs.leadershipCompPlan;
   const leadershipBase = leadershipPlan?.base ?? "revenue";
-  const leadershipRate =
-    leadershipPlan?.enabled
-      ? leadershipPlan.levels.reduce((sum, lvl) => {
-          const hc = lvl.headcount.bronze + lvl.headcount.prata;
-          if (hc <= 0) return sum;
-          const effectivePct =
-            (lvl.headcount.bronze * lvl.tiers.bronze.ratePct +
-              lvl.headcount.prata * lvl.tiers.prata.ratePct) /
-            hc;
-          return sum + effectivePct / 100;
-        }, 0)
-      : 0;
+  const leadershipLevels: { effectiveRate: number; threshold: number }[] = [];
+  if (leadershipPlan?.enabled) {
+    let cumulativeSpan = 1;
+    for (const lvl of leadershipPlan.levels) {
+      const mixTotal = lvl.tierMix.bronze + lvl.tierMix.prata;
+      const effectiveRate =
+        mixTotal > 0
+          ? (lvl.tierMix.bronze * lvl.tiers.bronze.ratePct +
+              lvl.tierMix.prata * lvl.tiers.prata.ratePct) /
+            mixTotal /
+            100
+          : 0;
+      // Span ≤ 0 is invalid; treat as 1 so a bad value can't zero the
+      // cumulative product and force every level active from month 1.
+      cumulativeSpan *= lvl.span > 0 ? lvl.span : 1;
+      leadershipLevels.push({ effectiveRate, threshold: cumulativeSpan });
+    }
+  }
+  // Stacked rate of the levels ACTIVE at a given active-rep count.
+  const leadershipRateAt = (activeReps: number): number =>
+    leadershipLevels.reduce(
+      (sum, lvl) => sum + (activeReps >= lvl.threshold ? lvl.effectiveRate : 0),
+      0,
+    );
 
   // --- Per-tier commission resolution ---
   // Each tier may have its own `commissionStructure` override; absent
@@ -1623,8 +1648,9 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
       return sum + tierSubs * tierBreakagePerSub[i];
     }, 0);
 
-    // Leadership commission (S6, accrual) — base × stacked rate, this month's
-    // recognized revenue / gross margin / rep commission per the plan's base.
+    // Leadership commission (S6/S7, accrual) — base × the rate of the levels
+    // ACTIVE this month (activation gated by this month's activeReps). Base is
+    // recognized revenue / gross margin / rep commission per the plan.
     const monthLeadershipBase =
       leadershipBase === "margin"
         ? monthRevenue - currentSubs * costPerSubscriber
@@ -1632,7 +1658,7 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
           ? monthTotalCommission
           : monthRevenue;
     const monthLeadershipCommission =
-      leadershipRate > 0 ? monthLeadershipBase * leadershipRate : 0;
+      monthLeadershipBase * leadershipRateAt(Math.round(monthReps));
 
     const monthCosts =
       currentSubs * costPerSubscriber +
@@ -2315,8 +2341,10 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
         }
       }
 
-      // Leadership commission (S6, cash) — this cohort-month's collected
-      // revenue / gross margin / rep commission × the stacked rate.
+      // Leadership commission (S6/S7, cash) — this cohort-month's collected
+      // revenue / gross margin / rep commission × the rate of the levels ACTIVE
+      // at this calendar month (activation gated by the channel-wide activeReps
+      // at calM, read from the already-built cohortProjection).
       const cohortLeadershipBase =
         leadershipBase === "margin"
           ? revenue - productCost
@@ -2324,7 +2352,8 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
             ? commissionUpfront + commissionResidual
             : revenue;
       const cohortLeadershipCommission =
-        leadershipRate > 0 ? cohortLeadershipBase * leadershipRate : 0;
+        cohortLeadershipBase *
+        leadershipRateAt(cohortProjection[calM - 1]?.activeReps ?? 0);
 
       const netProfit =
         revenue -
