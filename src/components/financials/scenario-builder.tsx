@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState } from "react";
 import { useFinancialStore } from "@/stores/financial-store";
-import type { CostRubric } from "@/lib/financial-engine";
+import type { CostRubric, LeadershipCompPlan, LeadershipLevel } from "@/lib/financial-engine";
 // (calculateCreditCOGS / calculateTotalCOGSPerSub no longer needed here —
 // the per-sub cost calc lives entirely in the engine. The plan card no
 // longer duplicates a per-tier "Est. cost" preview.)
@@ -56,7 +56,7 @@ type TFunction = (
   params?: Record<string, string | number>,
 ) => string;
 
-// Cost rubrics surfaced in the Cost Attribution card (S3.5). Mirrors the 7
+// Cost rubrics surfaced in the Cost Attribution card (S3.5). Mirrors the 8
 // rubrics the engine attributes (financial-engine `CostRubric`).
 const COST_RUBRICS: { key: CostRubric; labelKey: MessageKey }[] = [
   { key: "cogs", labelKey: "financials.builder.attribution.rubric_cogs" },
@@ -66,6 +66,7 @@ const COST_RUBRICS: { key: CostRubric; labelKey: MessageKey }[] = [
   { key: "buckPlatform", labelKey: "financials.builder.attribution.rubric_buck" },
   { key: "addOn", labelKey: "financials.builder.attribution.rubric_addon" },
   { key: "welcomeKit", labelKey: "financials.builder.attribution.rubric_welcomeKit" },
+  { key: "leadershipCommission", labelKey: "financials.builder.attribution.rubric_leadership_commission" },
 ];
 
 const LOSS_BEARER_NONE = "__none__";
@@ -110,6 +111,19 @@ export function ScenarioBuilder({
   const partyName = (id: string) =>
     inputs.profitSplitParties.find((p) => p.id === id)?.name ||
     t("financials.builder.profit_split.unnamed");
+
+  // Leadership commission plan (S8). The levels array is BOTTOM-UP (index 0 =
+  // closest to reps) — the activation threshold is the cumulative product of
+  // spans up to each level, so the card renders/edits in array order to keep
+  // that semantics intact (no top-down inversion).
+  const leadershipPlan: LeadershipCompPlan =
+    inputs.leadershipCompPlan ?? { enabled: false, base: "revenue", levels: [] };
+  const setLeadershipPlan = (patch: Partial<LeadershipCompPlan>) =>
+    setInputs({ leadershipCompPlan: { ...leadershipPlan, ...patch } });
+  const updateLevel = (idx: number, next: LeadershipLevel) =>
+    setLeadershipPlan({
+      levels: leadershipPlan.levels.map((lvl, i) => (i === idx ? next : lvl)),
+    });
 
   const billingTotal =
     inputs.billingCycleDistribution.monthly +
@@ -857,6 +871,211 @@ export function ScenarioBuilder({
                 </div>
               </div>
             ))}
+          </div>
+        </InputCard>
+
+        {/* Leadership Commission (S8) — configures the engine's
+            leadershipCompPlan. The cost flows through the cascade as the
+            attributable `leadershipCommission` rubric (routed shared/party in
+            the Cost Attribution card above). Levels are bottom-up (base → top);
+            each activates when activeReps crosses its cumulative span. */}
+        <InputCard
+          icon={<Layers className="h-3.5 w-3.5" />}
+          title={t("financials.builder.leadership_commission.title")}
+          description={t("financials.builder.leadership_commission.description")}
+          tooltip={t("financials.builder.leadership_commission.tooltip")}
+          defaultOpen={false}
+        >
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label className="text-[11px] text-muted-foreground mb-0.5 block">
+                  {t("financials.builder.leadership_commission.enabled_label")}
+                </Label>
+                {readOnly ? (
+                  <div className="h-8 flex items-center text-sm font-medium">
+                    {t(
+                      leadershipPlan.enabled
+                        ? "financials.builder.leadership_commission.enabled_on"
+                        : "financials.builder.leadership_commission.enabled_off",
+                    )}
+                  </div>
+                ) : (
+                  <Select
+                    value={leadershipPlan.enabled ? "on" : "off"}
+                    onValueChange={(v) => setLeadershipPlan({ enabled: v === "on" })}
+                  >
+                    <SelectTrigger className="h-8 w-full text-sm">
+                      <SelectValue>
+                        {(v) =>
+                          t(
+                            v === "on"
+                              ? "financials.builder.leadership_commission.enabled_on"
+                              : "financials.builder.leadership_commission.enabled_off",
+                          )
+                        }
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="off">
+                        {t("financials.builder.leadership_commission.enabled_off")}
+                      </SelectItem>
+                      <SelectItem value="on">
+                        {t("financials.builder.leadership_commission.enabled_on")}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+              <div>
+                <Label className="text-[11px] text-muted-foreground mb-0.5 block">
+                  {t("financials.builder.leadership_commission.base_label")}
+                </Label>
+                {readOnly ? (
+                  <div className="h-8 flex items-center text-sm font-medium">
+                    {leadershipPlan.base === "margin"
+                      ? t("financials.builder.leadership_commission.base_margin")
+                      : leadershipPlan.base === "repCommission"
+                        ? t("financials.builder.leadership_commission.base_rep_commission")
+                        : t("financials.builder.leadership_commission.base_revenue")}
+                  </div>
+                ) : (
+                  <Select
+                    value={leadershipPlan.base}
+                    onValueChange={(v) =>
+                      setLeadershipPlan({ base: v as LeadershipCompPlan["base"] })
+                    }
+                  >
+                    <SelectTrigger className="h-8 w-full text-sm">
+                      <SelectValue>
+                        {(v) =>
+                          v === "margin"
+                            ? t("financials.builder.leadership_commission.base_margin")
+                            : v === "repCommission"
+                              ? t("financials.builder.leadership_commission.base_rep_commission")
+                              : t("financials.builder.leadership_commission.base_revenue")
+                        }
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="revenue">
+                        {t("financials.builder.leadership_commission.base_revenue")}
+                      </SelectItem>
+                      <SelectItem value="margin">
+                        {t("financials.builder.leadership_commission.base_margin")}
+                      </SelectItem>
+                      <SelectItem value="repCommission">
+                        {t("financials.builder.leadership_commission.base_rep_commission")}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-lg bg-muted/30 px-2.5 py-1.5 text-[11px] text-muted-foreground">
+              {t("financials.builder.leadership_commission.order_hint")}
+            </div>
+
+            {leadershipPlan.levels.map((lvl, idx) => (
+              <div key={lvl.id} className="rounded-md border border-border/50 p-2 space-y-2">
+                <div className="flex items-end gap-2">
+                  <div className="flex-1">
+                    <Label className="text-[11px] text-muted-foreground mb-0.5 block">
+                      {t("financials.builder.leadership_commission.level_name_label", { n: idx + 1 })}
+                    </Label>
+                    {readOnly ? (
+                      <div className="h-8 flex items-center text-sm font-medium">{lvl.name}</div>
+                    ) : (
+                      <Input
+                        type="text"
+                        value={lvl.name}
+                        placeholder={t("financials.builder.leadership_commission.level_name_placeholder")}
+                        onChange={(e) => updateLevel(idx, { ...lvl, name: e.target.value })}
+                        className="h-8 text-sm"
+                      />
+                    )}
+                  </div>
+                  {!readOnly && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setLeadershipPlan({
+                          levels: leadershipPlan.levels.filter((_, i) => i !== idx),
+                        })
+                      }
+                      className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors shrink-0"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <NumberField
+                    label={t("financials.builder.leadership_commission.level_bronze_rate_label")}
+                    tooltip={t("financials.builder.leadership_commission.level_bronze_rate_tooltip")}
+                    value={lvl.tiers.bronze.ratePct}
+                    step={0.5}
+                    max={100}
+                    onChange={(v) => updateLevel(idx, { ...lvl, tiers: { ...lvl.tiers, bronze: { ratePct: v } } })}
+                  />
+                  <NumberField
+                    label={t("financials.builder.leadership_commission.level_prata_rate_label")}
+                    tooltip={t("financials.builder.leadership_commission.level_prata_rate_tooltip")}
+                    value={lvl.tiers.prata.ratePct}
+                    step={0.5}
+                    max={100}
+                    onChange={(v) => updateLevel(idx, { ...lvl, tiers: { ...lvl.tiers, prata: { ratePct: v } } })}
+                  />
+                  <NumberField
+                    label={t("financials.builder.leadership_commission.level_bronze_mix_label")}
+                    tooltip={t("financials.builder.leadership_commission.level_bronze_mix_tooltip")}
+                    value={lvl.tierMix.bronze}
+                    step={1}
+                    onChange={(v) => updateLevel(idx, { ...lvl, tierMix: { ...lvl.tierMix, bronze: v } })}
+                  />
+                  <NumberField
+                    label={t("financials.builder.leadership_commission.level_prata_mix_label")}
+                    tooltip={t("financials.builder.leadership_commission.level_prata_mix_tooltip")}
+                    value={lvl.tierMix.prata}
+                    step={1}
+                    onChange={(v) => updateLevel(idx, { ...lvl, tierMix: { ...lvl.tierMix, prata: v } })}
+                  />
+                </div>
+                <NumberField
+                  label={t("financials.builder.leadership_commission.level_span_label")}
+                  tooltip={t("financials.builder.leadership_commission.level_span_tooltip")}
+                  value={lvl.span}
+                  step={1}
+                  min={1}
+                  onChange={(v) => updateLevel(idx, { ...lvl, span: v })}
+                />
+              </div>
+            ))}
+
+            {!readOnly && (
+              <button
+                type="button"
+                onClick={() =>
+                  setLeadershipPlan({
+                    levels: [
+                      ...leadershipPlan.levels,
+                      {
+                        id: crypto.randomUUID(),
+                        name: "",
+                        tiers: { bronze: { ratePct: 0 }, prata: { ratePct: 0 } },
+                        tierMix: { bronze: 1, prata: 0 },
+                        span: 1,
+                      },
+                    ],
+                  })
+                }
+                className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5 rounded-md hover:bg-muted/50 w-full justify-center border border-dashed border-border/50"
+              >
+                <Plus className="h-3 w-3" />
+                {t("financials.builder.leadership_commission.add_level")}
+              </button>
+            )}
           </div>
         </InputCard>
       </div>
