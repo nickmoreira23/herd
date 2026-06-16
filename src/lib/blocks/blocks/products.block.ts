@@ -18,6 +18,50 @@ export const productsBlock: BlockManifest = {
     validators: "src/lib/validators/product.ts",
     provider: "src/lib/chat/providers/product.provider.ts",
   },
+  // L2a.2a — products is the FIRST adopter of the universal taxonomy contract.
+  // Migrated from src/types/index.ts (PRODUCT_CATEGORIES + SUB_CATEGORIES).
+  // `key` = stable slug of the canonical value (e.g. "SUPPLEMENT" → "supplement");
+  // `label` = display seed. TECH DEBT (conscious): the truth is DUPLICATED here
+  // and in src/types for now — validator/provider still read src/types. The
+  // manifest becomes the single source in L2a.2b+; do NOT remove src/types here.
+  taxonomy: {
+    categories: [
+      {
+        key: "supplement",
+        label: "Supplement",
+        subcategories: [
+          { key: "pre-workout", label: "Pre-Workout" },
+          { key: "protein", label: "Protein" },
+          { key: "amino", label: "Amino" },
+          { key: "vitamin", label: "Vitamin" },
+          { key: "health", label: "Health" },
+          { key: "recovery", label: "Recovery" },
+          { key: "other", label: "Other" },
+        ],
+      },
+      {
+        key: "apparel",
+        label: "Apparel",
+        subcategories: [
+          { key: "tee", label: "Tee" },
+          { key: "hoodie", label: "Hoodie" },
+          { key: "shorts", label: "Shorts" },
+          { key: "hat", label: "Hat" },
+          { key: "other", label: "Other" },
+        ],
+      },
+      {
+        key: "accessory",
+        label: "Accessory",
+        subcategories: [
+          { key: "shaker", label: "Shaker" },
+          { key: "bag", label: "Bag" },
+          { key: "gear", label: "Gear" },
+          { key: "other", label: "Other" },
+        ],
+      },
+    ],
+  },
   actions: [
     {
       name: "list_products",
