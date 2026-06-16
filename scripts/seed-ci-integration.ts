@@ -36,10 +36,11 @@ async function main() {
 
   const tier = await prisma.subscriptionTier.upsert({
     where: { slug: "ci-tier" },
-    update: {},
+    update: { tenantId: parent.id }, // L1b.1 — stamp owner (forward-fix if row pre-dates the column)
     create: {
       slug: "ci-tier",
       name: "CI Tier",
+      tenantId: parent.id, // L1b.1 — tier is tenant-owned; satisfies the future NOT NULL
       monthlyPrice: "29.90",
       biannualPrice: "149.90",
       annualPrice: "299.90",

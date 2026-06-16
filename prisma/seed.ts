@@ -288,7 +288,7 @@ async function main() {
       prisma.subscriptionTier.upsert({
         where: { slug: t.slug },
         update: {}, // don't overwrite user edits
-        create: t.data,
+        create: { ...t.data, tenantId: catalogOrg.id }, // L1b.1 — stamp catalog owner
       })
     )
   );
