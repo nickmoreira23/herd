@@ -48,9 +48,17 @@ interface ScopeItem {
   subCategory: string | null;
 }
 
+// L2a.2b — categories/subCategories now carry the stable slug `key` + display
+// `label` (from the block manifest taxonomy). The wizard stores `key` as
+// scopeValue; the label is shown to the user.
+interface TaxonomyOption {
+  key: string;
+  label: string;
+}
+
 interface ScopeOptions {
-  categories: string[];
-  subCategories: string[];
+  categories: TaxonomyOption[];
+  subCategories: Array<TaxonomyOption & { categoryKey: string }>;
   items: ScopeItem[];
 }
 
@@ -416,6 +424,7 @@ function ScopeAdder({
           emptyMessage="This block has no sub-categories yet."
         />
       )}
+      {/* CategoryAdder stores the stable `key` (slug) as scopeValue (L2a.2b). */}
 
       {tab === "ITEM" && (
         <div className="space-y-2">
@@ -472,8 +481,8 @@ function CategoryAdder({
   onAdd,
   emptyMessage,
 }: {
-  values: string[];
-  onAdd: (value: string) => void;
+  values: TaxonomyOption[];
+  onAdd: (key: string) => void;
   emptyMessage?: string;
 }) {
   const [picked, setPicked] = useState<string>("");
@@ -494,8 +503,8 @@ function CategoryAdder({
         </SelectTrigger>
         <SelectContent>
           {values.map((v) => (
-            <SelectItem key={v} value={v}>
-              {v}
+            <SelectItem key={v.key} value={v.key}>
+              {v.label}
             </SelectItem>
           ))}
         </SelectContent>

@@ -6,6 +6,7 @@ import { requireOrgRole } from "@/lib/permissions";
 import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
 import { withTenant } from "@/lib/tenancy/context";
 import { updateSectionSchema } from "@/lib/validators/marketplace";
+import { seedBlocksTaxonomy } from "@/lib/marketplace/seed-taxonomy";
 
 export async function GET(
   _request: NextRequest,
@@ -142,6 +143,10 @@ export async function PATCH(
         where: { id },
         include: { scopes: true },
       });
+
+      // L2a.2b — materialize taxonomy for the section's bound blocks (idempotent;
+      // flat blocks no-op). Seeds from the current blockNames after the update.
+      await seedBlocksTaxonomy(orgId, updated.blockNames);
 
       revalidatePath("/admin/marketplace");
       revalidatePath("/explore");

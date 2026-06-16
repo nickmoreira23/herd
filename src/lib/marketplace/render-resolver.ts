@@ -10,6 +10,7 @@ import {
   getFilterFields,
   type Facet,
 } from "./block-filters";
+import { slugify } from "@/lib/slug";
 
 /** Initial number of items rendered server-side per items grid. */
 export const INITIAL_ITEMS_PAGE_SIZE = 24;
@@ -57,11 +58,17 @@ function itemMatchesScope(item: RenderItem, scope: MarketplaceSectionScope): boo
   switch (scope.scopeType) {
     case MarketplaceScopeType.ALL:
       return true;
+    // L2a.2b — scopeValue holds the stable taxonomy slug (#39); normalize the
+    // item's raw category/subcategory with the canonical slugify to compare.
     case MarketplaceScopeType.CATEGORY:
-      return scope.scopeValue ? item.category === scope.scopeValue : false;
+      return scope.scopeValue && item.category
+        ? slugify(item.category) === scope.scopeValue
+        : false;
     case MarketplaceScopeType.SUB_CATEGORY: {
       const sub = (item.meta as Record<string, unknown>)?.subCategory;
-      return sub === scope.scopeValue;
+      return scope.scopeValue && typeof sub === "string" && sub
+        ? slugify(sub) === scope.scopeValue
+        : false;
     }
     case MarketplaceScopeType.ITEM: {
       const colon = item.id.indexOf(":");
