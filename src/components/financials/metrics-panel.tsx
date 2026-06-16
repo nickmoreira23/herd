@@ -314,66 +314,63 @@ export function MetricsPanel({ multiplier: m, periodLabel, locale }: MetricsPane
         </CollapsibleCard>
 
         {/* Profit Split */}
-        {results.profitSplit.parties.length > 0 && (
-          <CollapsibleCard
-            icon={<PieChart className="h-3.5 w-3.5" />}
-            title={t("financials.metrics.profit_split.title")}
-            description={t("financials.metrics.profit_split.description")}
-            tooltip={t("financials.metrics.profit_split.tooltip")}
-          >
-            <div className="grid grid-cols-2 gap-2">
-              {results.profitSplit.parties.map((party) => (
-                <MetricCard
-                  key={party.id}
-                  label={`${party.name || t("financials.metrics.profit_split.unnamed")} (${party.percent}%)`}
-                  value={formatNumberAsMoney(
-                    // Per-party distribution: sum (netProfit × percent)
-                    // over first `m` months. Same Thread D.2 fix as
-                    // pl-statement.tsx profit-split section.
-                    results.cohortProjection
-                      .slice(0, m)
-                      .reduce(
-                        (s, mo) =>
-                          s +
-                          (mo.netProfit > 0
-                            ? mo.netProfit * (party.percent / 100)
-                            : 0),
-                        0,
-                      ),
-                    locale,
+        {/* Profit distribution (S3.6) — same cascade source as the
+            Spreadsheet/P&L. Per party: net (headline), summed over the first
+            `m` months to match the panel's period scope. Over-allocation is
+            recomputed from the parties' percents (independent of the split
+            source), keeping the banner without consuming legacy `profitSplit`. */}
+        {results.profitDistribution.totals.accrual.length > 0 &&
+          (() => {
+            const dist = results.profitDistribution.accrual.slice(0, m);
+            const partyNet = (id: string) =>
+              dist.reduce(
+                (s, mo) => s + (mo.byParty.find((b) => b.partyId === id)?.net ?? 0),
+                0,
+              );
+            const undistributed = dist.reduce((s, mo) => s + mo.undistributed, 0);
+            const totalPct = results.profitDistribution.totals.accrual.reduce(
+              (s, p) => s + p.percent,
+              0,
+            );
+            const isOver = totalPct > 100.01;
+            return (
+              <CollapsibleCard
+                icon={<PieChart className="h-3.5 w-3.5" />}
+                title={t("financials.metrics.profit_split.title")}
+                description={t("financials.metrics.profit_split.description")}
+                tooltip={t("financials.metrics.profit_split.tooltip")}
+              >
+                <div className="grid grid-cols-2 gap-2">
+                  {results.profitDistribution.totals.accrual.map((party) => (
+                    <MetricCard
+                      key={party.partyId}
+                      label={`${party.name || t("financials.metrics.profit_split.unnamed")} (${party.percent}%)`}
+                      value={formatNumberAsMoney(partyNet(party.partyId), locale)}
+                      accent="green"
+                    />
+                  ))}
+                  {Math.abs(undistributed) > 0.005 && (
+                    <MetricCard
+                      label={t("financials.cascade.undistributed")}
+                      value={formatNumberAsMoney(undistributed, locale)}
+                      accent="amber"
+                    />
                   )}
-                  accent="green"
-                />
-              ))}
-              {results.profitSplit.undistributedPercent > 0 && (
-                <MetricCard
-                  label={t("financials.metrics.profit_split.undistributed_percent", { percent: results.profitSplit.undistributedPercent })}
-                  value={formatNumberAsMoney(
-                    results.netMarginDollars > 0
-                      ? sumOver("netProfit") * (results.profitSplit.undistributedPercent / 100)
-                      : 0,
-                    locale
-                  )}
-                  accent="amber"
-                />
-              )}
-            </div>
-            {/* B.3 (Thread B) — over-allocation warning. Mirrors the
-                identical guard in `pl-statement.tsx` (line ~261).
-                Pre-fix: Metrics rendered profit-split cards
-                summing >100% silently — user saw inflated
-                distributions with no flag. Now matches Statement. */}
-            {results.profitSplit.status === "over" && (
-              <div className="px-3 py-2 mt-3 rounded-md border border-rose-300 bg-rose-50 text-rose-700 text-xs">
-                <strong>{t("financials.profit_split.over_allocated.label")}</strong>{" "}
-                {t("financials.profit_split.over_allocated.body", {
-                  total: results.profitSplit.totalDistributedPercent.toFixed(1),
-                  overage: results.profitSplit.overAllocatedPercent.toFixed(1),
-                })}
-              </div>
-            )}
-          </CollapsibleCard>
-        )}
+                </div>
+                {/* Over-allocation warning — recomputed from the parties'
+                    percents (Σ > 100), independent of the split source. */}
+                {isOver && (
+                  <div className="px-3 py-2 mt-3 rounded-md border border-rose-300 bg-rose-50 text-rose-700 text-xs">
+                    <strong>{t("financials.profit_split.over_allocated.label")}</strong>{" "}
+                    {t("financials.profit_split.over_allocated.body", {
+                      total: totalPct.toFixed(1),
+                      overage: (totalPct - 100).toFixed(1),
+                    })}
+                  </div>
+                )}
+              </CollapsibleCard>
+            );
+          })()}
 
         {/* Per-Tier Details */}
         {results.tierDetails.length > 0 && (
