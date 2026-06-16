@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState } from "react";
 import { useFinancialStore } from "@/stores/financial-store";
+import type { CostRubric } from "@/lib/financial-engine";
 // (calculateCreditCOGS / calculateTotalCOGSPerSub no longer needed here —
 // the per-sub cost calc lives entirely in the engine. The plan card no
 // longer duplicates a per-tier "Est. cost" preview.)
@@ -33,6 +34,7 @@ import {
   ShieldAlert,
   Cpu,
   Gift,
+  SlidersHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/locale-context";
@@ -44,6 +46,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Package as PackageIcon } from "lucide-react";
 import { formatNumber } from "@/lib/i18n/format-number";
@@ -52,6 +55,20 @@ type TFunction = (
   key: MessageKey,
   params?: Record<string, string | number>,
 ) => string;
+
+// Cost rubrics surfaced in the Cost Attribution card (S3.5). Mirrors the 7
+// rubrics the engine attributes (financial-engine `CostRubric`).
+const COST_RUBRICS: { key: CostRubric; labelKey: MessageKey }[] = [
+  { key: "cogs", labelKey: "financials.builder.attribution.rubric_cogs" },
+  { key: "commission", labelKey: "financials.builder.attribution.rubric_commission" },
+  { key: "chargeback", labelKey: "financials.builder.attribution.rubric_chargeback" },
+  { key: "operationalOverhead", labelKey: "financials.builder.attribution.rubric_overhead" },
+  { key: "buckPlatform", labelKey: "financials.builder.attribution.rubric_buck" },
+  { key: "addOn", labelKey: "financials.builder.attribution.rubric_addon" },
+  { key: "welcomeKit", labelKey: "financials.builder.attribution.rubric_welcomeKit" },
+];
+
+const LOSS_BEARER_NONE = "__none__";
 
 export function ScenarioBuilder({
   readOnly = false,
@@ -70,6 +87,29 @@ export function ScenarioBuilder({
 }) {
   const t = useT();
   const { inputs, setInputs } = useFinancialStore();
+
+  // Cost attribution + loss-handling read/write (S3.5). Orphaned partyId (party
+  // removed) reads back as "shared"/none — mirrors the engine's read-time guard.
+  const partyIds = new Set(inputs.profitSplitParties.map((p) => p.id));
+  const rubricTarget = (rubric: CostRubric): string => {
+    const tgt = inputs.costAttribution?.[rubric];
+    return tgt && tgt !== "shared" && partyIds.has(tgt.partyId) ? tgt.partyId : "shared";
+  };
+  const setRubricTarget = (rubric: CostRubric, value: string) =>
+    setInputs({
+      costAttribution: {
+        ...inputs.costAttribution,
+        [rubric]: value === "shared" ? "shared" : { partyId: value },
+      },
+    });
+  const lossMode = inputs.lossHandling ?? "absorbed";
+  const lossBearer =
+    inputs.lossBearerPartyId && partyIds.has(inputs.lossBearerPartyId)
+      ? inputs.lossBearerPartyId
+      : LOSS_BEARER_NONE;
+  const partyName = (id: string) =>
+    inputs.profitSplitParties.find((p) => p.id === id)?.name ||
+    t("financials.builder.profit_split.unnamed");
 
   const billingTotal =
     inputs.billingCycleDistribution.monthly +
@@ -695,6 +735,128 @@ export function ScenarioBuilder({
                 </div>
               );
             })()}
+
+            {/* Loss handling (S3.5) — how channel losses split (proportional vs absorbed) */}
+            <div className="pt-2 mt-1 border-t border-border/50 space-y-2">
+              <div>
+                <Label className="text-[11px] text-muted-foreground mb-0.5 block">
+                  {t("financials.builder.loss_handling.label")}
+                </Label>
+                {readOnly ? (
+                  <div className="h-8 flex items-center text-sm font-medium">
+                    {t(
+                      lossMode === "proportional"
+                        ? "financials.builder.loss_handling.proportional"
+                        : "financials.builder.loss_handling.absorbed",
+                    )}
+                  </div>
+                ) : (
+                  <Select
+                    value={lossMode}
+                    onValueChange={(v) =>
+                      setInputs({ lossHandling: v as "proportional" | "absorbed" })
+                    }
+                  >
+                    <SelectTrigger className="h-8 w-full text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="absorbed">
+                        {t("financials.builder.loss_handling.absorbed")}
+                      </SelectItem>
+                      <SelectItem value="proportional">
+                        {t("financials.builder.loss_handling.proportional")}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+              {lossMode === "absorbed" && (
+                <div>
+                  <Label className="text-[11px] text-muted-foreground mb-0.5 block">
+                    {t("financials.builder.loss_handling.bearer_label")}
+                  </Label>
+                  {readOnly ? (
+                    <div className="h-8 flex items-center text-sm font-medium">
+                      {lossBearer === LOSS_BEARER_NONE
+                        ? t("financials.builder.loss_handling.bearer_none")
+                        : partyName(lossBearer)}
+                    </div>
+                  ) : (
+                    <Select
+                      value={lossBearer}
+                      onValueChange={(v) =>
+                        setInputs({
+                          lossBearerPartyId:
+                            v === LOSS_BEARER_NONE ? undefined : v,
+                        })
+                      }
+                    >
+                      <SelectTrigger className="h-8 w-full text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={LOSS_BEARER_NONE}>
+                          {t("financials.builder.loss_handling.bearer_none")}
+                        </SelectItem>
+                        {inputs.profitSplitParties.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.name || t("financials.builder.profit_split.unnamed")}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </InputCard>
+
+        {/* Cost Attribution (S3.5) — each rubric shared vs. attributed to a party */}
+        <InputCard
+          icon={<SlidersHorizontal className="h-3.5 w-3.5" />}
+          title={t("financials.builder.attribution.title")}
+          description={t("financials.builder.attribution.description")}
+          tooltip={t("financials.builder.attribution.tooltip")}
+          defaultOpen={defaultOpen}
+        >
+          <div className="space-y-2">
+            {COST_RUBRICS.map(({ key, labelKey }) => (
+              <div key={key} className="flex items-center gap-2">
+                <Label className="text-[11px] text-muted-foreground flex-1">
+                  {t(labelKey)}
+                </Label>
+                <div className="w-[170px]">
+                  {readOnly ? (
+                    <div className="h-8 flex items-center justify-end text-sm font-medium">
+                      {rubricTarget(key) === "shared"
+                        ? t("financials.builder.attribution.shared")
+                        : partyName(rubricTarget(key))}
+                    </div>
+                  ) : (
+                    <Select
+                      value={rubricTarget(key)}
+                      onValueChange={(v) => setRubricTarget(key, v)}
+                    >
+                      <SelectTrigger className="h-8 w-full text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="shared">
+                          {t("financials.builder.attribution.shared")}
+                        </SelectItem>
+                        {inputs.profitSplitParties.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.name || t("financials.builder.profit_split.unnamed")}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         </InputCard>
       </div>

@@ -1299,6 +1299,30 @@ export const messages: Record<MessageKey, string> = {
   "financials.builder.profit_split.total_label": "Total",
   "financials.builder.profit_split.must_be_100": "(must be 100%)",
 
+  // Loss handling (S3.5) — controls inside the Profit Split card.
+  "financials.builder.loss_handling.label": "Loss handling",
+  "financials.builder.loss_handling.tooltip":
+    "In channel-loss months (negative distributable): Proportional splits the loss across parties by %; Absorbed pulls the loss out of the split — it goes to the chosen bearer or to 'Undistributed'.",
+  "financials.builder.loss_handling.proportional": "Proportional",
+  "financials.builder.loss_handling.absorbed": "Absorbed",
+  "financials.builder.loss_handling.bearer_label": "Who absorbs the loss",
+  "financials.builder.loss_handling.bearer_none": "Undistributed (no party)",
+
+  // Cost attribution card (S3.5) — per-rubric shared vs. party.
+  "financials.builder.attribution.title": "Cost Attribution",
+  "financials.builder.attribution.description":
+    "Which costs are shared vs. attributed to a specific party",
+  "financials.builder.attribution.tooltip":
+    "Each cost rubric can be Shared (deducted before the split, affecting all parties) or attributed to a party (deducted only from that party's slice). Default: everything Shared.",
+  "financials.builder.attribution.shared": "Shared",
+  "financials.builder.attribution.rubric_cogs": "COGS",
+  "financials.builder.attribution.rubric_commission": "Commissions",
+  "financials.builder.attribution.rubric_chargeback": "Chargebacks",
+  "financials.builder.attribution.rubric_overhead": "Operational overhead",
+  "financials.builder.attribution.rubric_buck": "Buck platform",
+  "financials.builder.attribution.rubric_addon": "Add-ons",
+  "financials.builder.attribution.rubric_welcomeKit": "Welcome Kit",
+
   "financials.builder.chargebacks.title": "Chargebacks",
   "financials.builder.chargebacks.description": "Projected chargeback rate and fees",
   "financials.builder.chargebacks.tooltip":

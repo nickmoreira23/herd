@@ -1325,6 +1325,30 @@ export const messages = {
   "financials.builder.profit_split.total_label": "Total",
   "financials.builder.profit_split.must_be_100": "(deve ser 100%)",
 
+  // Loss handling (S3.5) — controls inside the Profit Split card.
+  "financials.builder.loss_handling.label": "Tratamento de prejuízo",
+  "financials.builder.loss_handling.tooltip":
+    "Em meses de prejuízo do canal (distribuível negativo): Proporcional divide a perda entre as partes pelo %; Absorvido tira a perda do rateio — vai para o responsável escolhido ou para 'Não distribuído'.",
+  "financials.builder.loss_handling.proportional": "Proporcional",
+  "financials.builder.loss_handling.absorbed": "Absorvido",
+  "financials.builder.loss_handling.bearer_label": "Quem absorve o prejuízo",
+  "financials.builder.loss_handling.bearer_none": "Não distribuído (nenhuma parte)",
+
+  // Cost attribution card (S3.5) — per-rubric shared vs. party.
+  "financials.builder.attribution.title": "Atribuição de Custos",
+  "financials.builder.attribution.description":
+    "Quais custos são compartilhados vs. de uma parte específica",
+  "financials.builder.attribution.tooltip":
+    "Cada rubrica de custo pode ser Compartilhada (deduzida antes do rateio, afetando todas as partes) ou atribuída a uma parte (deduzida só da fatia dela). Padrão: tudo Compartilhado.",
+  "financials.builder.attribution.shared": "Compartilhado",
+  "financials.builder.attribution.rubric_cogs": "COGS",
+  "financials.builder.attribution.rubric_commission": "Comissões",
+  "financials.builder.attribution.rubric_chargeback": "Chargebacks",
+  "financials.builder.attribution.rubric_overhead": "Overhead operacional",
+  "financials.builder.attribution.rubric_buck": "Plataforma Buck",
+  "financials.builder.attribution.rubric_addon": "Add-ons",
+  "financials.builder.attribution.rubric_welcomeKit": "Welcome Kit",
+
   "financials.builder.chargebacks.title": "Chargebacks",
   "financials.builder.chargebacks.description": "Taxa projetada de chargeback e taxas",
   "financials.builder.chargebacks.tooltip":
