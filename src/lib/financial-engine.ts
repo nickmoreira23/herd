@@ -579,6 +579,44 @@ export function resolveOverhead(overhead: OperationalOverhead, memberCount: numb
 
 // --- Full scenario calculation ---
 
+/**
+ * One month's profit distribution to parties, on a single accounting basis.
+ * `distributable` is the month's net profit BEFORE any cascade — in S1 all
+ * costs stay pre-split (see plano-mestre); the shared/party cascade lands in
+ * S2. `byParty` splits `distributable` by each party's `percent`;
+ * `undistributed` is the residual share `(100 − Σpercent)` left to the
+ * operator. Loss months (negative `distributable`) flow through
+ * proportionally, so `Σ byParty.amount + undistributed ≡ distributable`.
+ */
+export interface MonthlyPartyDistribution {
+  month: number; // 1..PROJECTION_MONTHS (calendar month)
+  distributable: number;
+  byParty: { partyId: string; percent: number; amount: number }[];
+  undistributed: number;
+}
+
+/** A party's distribution summed across the projection window, one basis. */
+export interface PartyDistributionTotal {
+  partyId: string;
+  name: string;
+  percent: number;
+  amount: number;
+}
+
+/**
+ * Per-month profit distribution on both accounting bases. Additive output
+ * (S1): the legacy aggregate `profitSplit` is left untouched. `accrual` uses
+ * the fully-loaded `cohortProjection[m].netProfit`; `cash` aggregates the
+ * per-cohort lifecycle net profit by calendar month and subtracts the
+ * scenario-level overhead (not cohort-attributed) — the same composition the
+ * on-screen Cohort Aggregate view reconciles to.
+ */
+export interface ProfitDistributionByBasis {
+  accrual: MonthlyPartyDistribution[];
+  cash: MonthlyPartyDistribution[];
+  totals: { accrual: PartyDistributionTotal[]; cash: PartyDistributionTotal[] };
+}
+
 export interface ScenarioResults {
   // Revenue
   mrr: number;
@@ -888,6 +926,11 @@ export interface ScenarioResults {
      * "over" (>100, parties cannot all be paid). */
     status: "balanced" | "under" | "over";
   };
+
+  /** Per-month, per-basis profit distribution (S1, additive). The legacy
+   *  `profitSplit` above stays as the canonical aggregate until consumers
+   *  migrate. */
+  profitDistribution: ProfitDistributionByBasis;
 
   // Operation breakeven month (0 = already profitable, Infinity = never)
   operationBreakevenMonth: number;
@@ -2473,6 +2516,68 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
     status: splitStatus,
   };
 
+  // --- Monthly profit distribution, per accounting basis (S1, additive) ---
+  // Granular plumbing for the shared/party cascade (S2+) and the per-party
+  // perspective (S4+). Costs are NOT reordered here — every cost stays
+  // pre-split, so each month's `distributable` is the same net profit the
+  // legacy aggregate already reconciles to. The split only repartitions it.
+  const undistributedShare = (100 - totalSplitPercent) / 100;
+  const splitDistributable = (distributable: number) => ({
+    byParty: (profitSplitParties ?? []).map((p) => ({
+      partyId: p.id,
+      percent: p.percent,
+      amount: distributable * (p.percent / 100),
+    })),
+    undistributed: distributable * undistributedShare,
+  });
+
+  // Accrual: `cohortProjection[m].netProfit` is already fully loaded
+  // (revenue − every cost, incl. overhead/Buck — see the monthCosts block).
+  const accrualMonthly: MonthlyPartyDistribution[] = cohortProjection.map((m) => ({
+    month: m.month,
+    distributable: m.netProfit,
+    ...splitDistributable(m.netProfit),
+  }));
+
+  // Cash: aggregate the per-cohort lifecycle net profit by CALENDAR month
+  // (each cohort month is already net of its attributed costs), then subtract
+  // the scenario-level overhead pulled from `cohortProjection[K-1]` — exactly
+  // how `aggregateLifecyclesByCalendarMonth` builds the Cohort Aggregate view.
+  // Buck is cohort-attributed (already in the lifecycle netProfit); overhead
+  // is not, so it is layered in here. partnerKickbacks are intentionally NOT
+  // added on the cash side, mirroring the existing aggregate view (D7 surface).
+  const cashNetByMonth = Array.from({ length: PROJECTION_MONTHS }, () => 0);
+  for (const cohort of cohortLifecycles) {
+    for (const mo of cohort.months) {
+      cashNetByMonth[mo.monthIndex - 1] += mo.netProfit;
+    }
+  }
+  const cashMonthly: MonthlyPartyDistribution[] = cashNetByMonth.map((net, i) => {
+    const distributable = net - (cohortProjection[i]?.operationalOverhead ?? 0);
+    return {
+      month: i + 1,
+      distributable,
+      ...splitDistributable(distributable),
+    };
+  });
+
+  const partyTotals = (months: MonthlyPartyDistribution[]): PartyDistributionTotal[] =>
+    (profitSplitParties ?? []).map((p) => ({
+      partyId: p.id,
+      name: p.name,
+      percent: p.percent,
+      amount: months.reduce(
+        (s, m) => s + (m.byParty.find((b) => b.partyId === p.id)?.amount ?? 0),
+        0,
+      ),
+    }));
+
+  const profitDistribution: ProfitDistributionByBasis = {
+    accrual: accrualMonthly,
+    cash: cashMonthly,
+    totals: { accrual: partyTotals(accrualMonthly), cash: partyTotals(cashMonthly) },
+  };
+
   return {
     // Thread D.2 — these scalars are remapped to their AVERAGE-OF-PERIOD
     // versions, replacing the legacy Mo-1-frozen exports. Per-sub values
@@ -2522,6 +2627,7 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
     cohortProjection,
     cohortLifecycles,
     profitSplit,
+    profitDistribution,
     operationBreakevenMonth,
   };
 }
