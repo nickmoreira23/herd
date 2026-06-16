@@ -105,12 +105,15 @@ describe("L1.0b — plans-architect write guard", () => {
 
   it("executes a writer when canWriteCatalog=true", async () => {
     const send = vi.fn();
+    // L1b.2b — Tier is tenant-scoped; the route threads the host org as the
+    // 6th arg so the update runs under withTenant. No org → "No active org".
     const out = await handlePlanAgentToolCall(
       "update_plan_fields",
       { planId: "p1", fields: { monthlyPrice: 10 } },
       send,
       [],
-      true
+      true,
+      "org-1"
     );
     expect(out).not.toMatch(REFUSAL);
     expect(prisma.subscriptionTier.update).toHaveBeenCalledOnce();

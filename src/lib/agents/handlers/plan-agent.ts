@@ -300,7 +300,10 @@ export async function handlePlanAgentToolCall(
   input: Record<string, unknown>,
   send: SendFn,
   allPlans?: Array<{ id: string; name: string; status: string; monthlyPrice: unknown }>,
-  canWriteCatalog = false
+  canWriteCatalog = false,
+  // L1b.2b — host org threaded from the route so the tenant-scoped tier
+  // reads/writes below run under withTenant.
+  orgId: string | null = null
 ): Promise<string | null> {
   if (PLAN_WRITE_TOOLS.has(toolName) && !canWriteCatalog) {
     send("step_complete", { text: "Permission denied" });
@@ -309,11 +312,11 @@ export async function handlePlanAgentToolCall(
 
   switch (toolName) {
     case "list_plans":
-      return handleListPlans(send);
+      return handleListPlans(send, orgId);
     case "get_plan_details":
-      return handleGetPlanDetails(input, send);
+      return handleGetPlanDetails(input, send, orgId);
     case "update_plan_fields":
-      return handleUpdatePlanFields(input, send, allPlans);
+      return handleUpdatePlanFields(input, send, allPlans, orgId);
     case "search_products":
       send("step", { text: "Searching products..." });
       return handleSearchProducts(input, send);
@@ -338,14 +341,21 @@ export async function handlePlanAgentToolCall(
 
 // ─── Build Extra Context ───────────────────────────────────────
 
-export async function buildPlanAgentContext(): Promise<{
+export async function buildPlanAgentContext(orgId: string | null): Promise<{
   extraPrompt: string;
   allPlans: Array<{ id: string; name: string; status: string; monthlyPrice: unknown }>;
 }> {
-  const allPlans = await prisma.subscriptionTier.findMany({
-    select: { id: true, name: true, status: true, monthlyPrice: true },
-    orderBy: { sortOrder: "asc" },
-  });
+  // L1b.2b — Tier is tenant-scoped; the plan-agent context reads the host org's
+  // plans (orgId resolved from the request and threaded in by the route). No
+  // host → no plans, never an unscoped read (strict isolation).
+  const allPlans = orgId
+    ? await withTenant(orgId, () =>
+        prisma.subscriptionTier.findMany({
+          select: { id: true, name: true, status: true, monthlyPrice: true },
+          orderBy: { sortOrder: "asc" },
+        })
+      )
+    : [];
 
   const planList = allPlans
     .map(
@@ -391,22 +401,25 @@ IMPORTANT: Always use tools to take action. Never respond with "I would..." or "
 
 // ─── Individual Tool Handlers ──────────────────────────────────
 
-async function handleListPlans(send: SendFn): Promise<string> {
+async function handleListPlans(send: SendFn, orgId: string | null): Promise<string> {
   send("step", { text: "Loading all plans..." });
+  if (!orgId) return "Error: No active organization.";
   try {
-    const plans = await prisma.subscriptionTier.findMany({
-      select: {
-        id: true,
-        name: true,
-        status: true,
-        monthlyPrice: true,
-        monthlyCredits: true,
-        trialDays: true,
-        isFeatured: true,
-        _count: { select: { redemptionRules: true } },
-      },
-      orderBy: { sortOrder: "asc" },
-    });
+    const plans = await withTenant(orgId, () =>
+      prisma.subscriptionTier.findMany({
+        select: {
+          id: true,
+          name: true,
+          status: true,
+          monthlyPrice: true,
+          monthlyCredits: true,
+          trialDays: true,
+          isFeatured: true,
+          _count: { select: { redemptionRules: true } },
+        },
+        orderBy: { sortOrder: "asc" },
+      })
+    );
 
     send("step_complete", { text: `Found ${plans.length} plans` });
     if (plans.length === 0) return "No plans exist yet.";
@@ -424,20 +437,24 @@ async function handleListPlans(send: SendFn): Promise<string> {
 
 async function handleGetPlanDetails(
   input: Record<string, unknown>,
-  send: SendFn
+  send: SendFn,
+  orgId: string | null
 ): Promise<string> {
   const planId = String(input.planId);
   send("step", { text: "Loading plan details..." });
+  if (!orgId) return "Error: No active organization.";
 
   try {
-    const plan = await prisma.subscriptionTier.findUnique({
-      where: { id: planId },
-      include: {
-        redemptionRules: {
-          orderBy: [{ redemptionType: "asc" }, { scopeType: "asc" }],
+    const plan = await withTenant(orgId, () =>
+      prisma.subscriptionTier.findUnique({
+        where: { id: planId },
+        include: {
+          redemptionRules: {
+            orderBy: [{ redemptionType: "asc" }, { scopeType: "asc" }],
+          },
         },
-      },
-    });
+      })
+    );
 
     if (!plan) {
       send("step_complete", { text: "Not found" });
@@ -561,7 +578,8 @@ async function handleGetPlanDetails(
 async function handleUpdatePlanFields(
   input: Record<string, unknown>,
   send: SendFn,
-  allPlans?: Array<{ id: string; name: string }>
+  allPlans?: Array<{ id: string; name: string }>,
+  orgId: string | null = null
 ): Promise<string> {
   const planId = String(input.planId);
   const fields = input.fields as Record<string, unknown> | undefined;
@@ -583,12 +601,15 @@ async function handleUpdatePlanFields(
 
   const planName = allPlans?.find((p) => p.id === planId)?.name || planId;
   send("step", { text: `Updating ${planName}...` });
+  if (!orgId) return "Error: No active organization.";
 
   try {
-    await prisma.subscriptionTier.update({
-      where: { id: planId },
-      data: fields,
-    });
+    await withTenant(orgId, () =>
+      prisma.subscriptionTier.update({
+        where: { id: planId },
+        data: fields,
+      })
+    );
 
     const fieldNames = Object.keys(fields);
     send("step_complete", { text: `Updated ${fieldNames.length} field(s)` });
