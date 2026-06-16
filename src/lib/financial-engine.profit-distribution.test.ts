@@ -34,7 +34,11 @@ const TOL = 0.4;
 const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
 
 describe("S1 — monthly profit distribution per basis (additive plumbing)", () => {
-  const r = calculateScenario(buildAuditScenario(PARTIES));
+  // Pinned to "proportional" (S2.5 [S2.5-P0]): these assert the mechanism-A
+  // split, incl. loss months 1-4 (the "undistributed 10% residual" and [P5]
+  // totals checks). The default flipped to "absorbed" in S2.5; these stay on A
+  // by intent — the absorbed path is pinned separately in the S2.5 block.
+  const r = calculateScenario({ ...buildAuditScenario(PARTIES), lossHandling: "proportional" });
   const pd = r.profitDistribution;
 
   it("populates accrual + cash for every month (1..36)", () => {
@@ -147,9 +151,18 @@ describe("S2 — cost attribution cascade (shared/party)", () => {
   });
 
   it("[S2-P4] economics of attribution: channel unchanged; net[bu] −(1−%)·c; net[other] +%·c; undist +undistPct·c", () => {
+    // Pinned to "proportional" (S2.5 [S2.5-P0]): the linear-delta identity
+    // assumes mechanism A. Loss months under the new "absorbed" default would
+    // break the linearity — that path is covered by [S2.5-P2..P4] instead.
+    const baseProp = calculateScenario({ ...baseInputs, lossHandling: "proportional" }).profitDistribution;
+    const attrProp = calculateScenario({
+      ...baseInputs,
+      lossHandling: "proportional",
+      costAttribution: { buckPlatform: { partyId: "bu" } },
+    }).profitDistribution;
     for (const key of ["accrual", "cash"] as const) {
-      const base = allShared[key];
-      const attr = attributed[key];
+      const base = baseProp[key];
+      const attr = attrProp[key];
       // The add-back equals the buckPlatform cost per month → its sum.
       const cTotal = sum(attr.map((m, i) => m.distributable - base[i].distributable));
       expect(cTotal).toBeGreaterThan(1); // buckPlatform is materially nonzero
@@ -178,6 +191,119 @@ describe("S2 — cost attribution cascade (shared/party)", () => {
       expect(Math.abs(netOf(ghost) - netOf(absent))).toBeLessThan(TOL);
       // ghost partyId is treated as shared → no party is charged
       for (const m of ghost[key]) for (const b of m.byParty) expect(b.partyCost).toBe(0);
+    }
+  });
+});
+
+describe("S2.5 — loss handling (D8)", () => {
+  const baseInputs = buildAuditScenario(PARTIES);
+  // Audit scenario: accrual has loss months 1-4 (acquisition ramp); cash has
+  // none — [S2.5-P6] forges cash losses via a high-overhead override.
+  const BASES = ["accrual", "cash"] as const;
+  const run = (extra: Partial<FinancialInputs>) =>
+    calculateScenario({ ...baseInputs, ...extra }).profitDistribution;
+
+  it("[S2.5-P1] profitable months are identical under both modes", () => {
+    const prop = run({ lossHandling: "proportional" });
+    const abs = run({ lossHandling: "absorbed" });
+    for (const key of BASES) {
+      prop[key].forEach((mp, i) => {
+        if (mp.distributable < 0) return;
+        const ma = abs[key][i];
+        expect(Math.abs(ma.undistributed - mp.undistributed)).toBeLessThan(TOL);
+        ma.byParty.forEach((b, j) => {
+          expect(Math.abs(b.amount - mp.byParty[j].amount)).toBeLessThan(TOL);
+        });
+      });
+    }
+  });
+
+  it("[S2.5-P2] loss + proportional: gross = distributable × pct (negative); undistributed = distributable × residual%", () => {
+    const prop = run({ lossHandling: "proportional" });
+    const loss = prop.accrual.filter((m) => m.distributable < 0);
+    expect(loss.length).toBeGreaterThan(0); // audit accrual months 1-4
+    for (const m of loss) {
+      for (const b of m.byParty) {
+        expect(Math.abs(b.amount - m.distributable * (b.percent / 100))).toBeLessThan(TOL);
+      }
+      expect(Math.abs(m.undistributed - m.distributable * 0.1)).toBeLessThan(TOL); // Σpct=90 → 10%
+    }
+  });
+
+  it("[S2.5-P3] loss + absorbed, no bearer: gross = 0 ∀ party; undistributed = distributable; net = −partyCost", () => {
+    const abs = run({ lossHandling: "absorbed" });
+    const loss = abs.accrual.filter((m) => m.distributable < 0);
+    expect(loss.length).toBeGreaterThan(0);
+    for (const m of loss) {
+      for (const b of m.byParty) {
+        expect(b.amount).toBe(0);
+        expect(Math.abs(b.net - -b.partyCost)).toBeLessThan(TOL);
+      }
+      expect(Math.abs(m.undistributed - m.distributable)).toBeLessThan(TOL);
+    }
+  });
+
+  it("[S2.5-P4] loss + absorbed, bearer = bu: gross[bu] = distributable; gross[other] = 0; undistributed = 0", () => {
+    const abs = run({ lossHandling: "absorbed", lossBearerPartyId: "bu" });
+    const loss = abs.accrual.filter((m) => m.distributable < 0);
+    expect(loss.length).toBeGreaterThan(0);
+    for (const m of loss) {
+      const bu = m.byParty.find((b) => b.partyId === "bu")!;
+      expect(Math.abs(bu.amount - m.distributable)).toBeLessThan(TOL);
+      for (const b of m.byParty.filter((b) => b.partyId !== "bu")) expect(b.amount).toBe(0);
+      expect(m.undistributed).toBe(0);
+    }
+  });
+
+  it("[S2.5-P5] conservation Σ net + undistributed == channelResult, every mode/case/basis", () => {
+    const configs: Partial<FinancialInputs>[] = [
+      { lossHandling: "proportional" },
+      { lossHandling: "absorbed" },
+      { lossHandling: "absorbed", lossBearerPartyId: "bu" },
+      { lossHandling: "absorbed", costAttribution: { commission: { partyId: "mitch" } } },
+    ];
+    for (const cfg of configs) {
+      const pd = run(cfg);
+      for (const key of BASES) {
+        for (const m of pd[key]) {
+          const netSum = sum(m.byParty.map((b) => b.net));
+          expect(Math.abs(netSum + m.undistributed - m.channelResult)).toBeLessThan(TOL);
+        }
+      }
+    }
+  });
+
+  it("[S2.5-P6] cash loss + absorbed (forged high-overhead fixture): gross = 0; undistributed = distributable", () => {
+    const pd = calculateScenario({
+      ...baseInputs,
+      operationalOverhead: {
+        mode: "categories",
+        fixedMonthly: 100_000,
+        categories: [{ id: "ops", name: "Ops", milestones: [{ memberCount: 0, monthlyCost: 100_000 }] }],
+      },
+      lossHandling: "absorbed",
+    }).profitDistribution;
+    const loss = pd.cash.filter((m) => m.distributable < 0);
+    expect(loss.length).toBeGreaterThan(0); // forged fixture drives cash < 0
+    for (const m of loss) {
+      for (const b of m.byParty) expect(b.amount).toBe(0);
+      expect(Math.abs(m.undistributed - m.distributable)).toBeLessThan(TOL);
+    }
+  });
+
+  it("[S2.5-P7] default = absorbed when field absent; invalid lossBearerPartyId ⇒ undistributed", () => {
+    const def = run({}); // no lossHandling → engine default
+    const abs = run({ lossHandling: "absorbed" });
+    for (const key of BASES) {
+      const grossOf = (pd: typeof def) => sum(pd[key].flatMap((m) => m.byParty.map((b) => b.amount)));
+      expect(Math.abs(grossOf(def) - grossOf(abs))).toBeLessThan(TOL);
+    }
+    const ghost = run({ lossHandling: "absorbed", lossBearerPartyId: "ghost" });
+    const loss = ghost.accrual.filter((m) => m.distributable < 0);
+    expect(loss.length).toBeGreaterThan(0);
+    for (const m of loss) {
+      for (const b of m.byParty) expect(b.amount).toBe(0);
+      expect(Math.abs(m.undistributed - m.distributable)).toBeLessThan(TOL);
     }
   });
 });

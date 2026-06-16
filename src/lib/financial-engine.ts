@@ -233,6 +233,16 @@ export type CostRubric =
  */
 export type CostTarget = "shared" | { partyId: string };
 
+/**
+ * How channel losses are split (D8). `"proportional"` repartitions a negative
+ * `distributable` by each party's percent (parties share the downside, the S2
+ * behavior). `"absorbed"` (default) keeps loss months out of the proportional
+ * split — the channel loss goes to `lossBearerPartyId` if set+valid, otherwise
+ * to `undistributed`; no party receives a negative gross slice. Profitable
+ * months are identical under both modes.
+ */
+export type LossHandling = "proportional" | "absorbed";
+
 export interface FinancialInputs {
   tiers: TierFinancialInput[];
   billingCycleDistribution: BillingDistribution;
@@ -251,6 +261,12 @@ export interface FinancialInputs {
   // A `partyId` that no longer exists in `profitSplitParties` is treated as
   // "shared" at read time, so removing a party never breaks the cascade.
   costAttribution?: Partial<Record<CostRubric, CostTarget>>;
+  // Loss handling (D8). Absent ⇒ "absorbed" (default B). In "absorbed", a loss
+  // month (channel `distributable` < 0) is not split proportionally — it goes
+  // to `lossBearerPartyId` if set+valid, otherwise to `undistributed`. An
+  // invalid/removed bearer falls back to `undistributed` (validated on read).
+  lossHandling?: LossHandling;
+  lossBearerPartyId?: string;
   // Chargebacks
   chargebackPercent: number; // percentage 0-100 of new subscribers that chargeback
   chargebackFee: number; // $ fee per chargeback (processor fee, typically $15-25)
@@ -2578,6 +2594,14 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
       : null;
   };
 
+  // Loss handling (D8): mode + resolved bearer (invalid/removed bearer ⇒ null
+  // ⇒ the loss flows to `undistributed`). Resolved once; applied per loss month.
+  const lossMode: LossHandling = inputs.lossHandling ?? "absorbed";
+  const resolvedLossBearerId =
+    inputs.lossBearerPartyId && validPartyIds.has(inputs.lossBearerPartyId)
+      ? inputs.lossBearerPartyId
+      : null;
+
   const COST_RUBRICS: CostRubric[] = [
     "cogs",
     "commission",
@@ -2663,16 +2687,33 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
       }
     }
     const distributable = netProfitS1 + totalPartyCosts;
+
+    // Loss-handling branch (D8): in an "absorbed" loss month the channel loss
+    // is pulled out of the proportional split — no party gets a negative gross
+    // slice; the whole loss goes to the bearer (if valid) or to `undistributed`.
+    // Profitable months and "proportional" mode keep the S2 behavior. Note we
+    // clamp only the CHANNEL loss — a party `net` going negative because its own
+    // attributed costs exceed its slice in a profitable month is left as-is.
+    const absorbedLoss = distributable < 0 && lossMode === "absorbed";
     const byParty = (profitSplitParties ?? []).map((p) => {
-      const amount = distributable * (p.percent / 100);
+      const amount = absorbedLoss
+        ? p.id === resolvedLossBearerId
+          ? distributable
+          : 0
+        : distributable * (p.percent / 100);
       const partyCost = partyCostById.get(p.id) ?? 0;
       return { partyId: p.id, percent: p.percent, amount, partyCost, net: amount - partyCost };
     });
+    const undistributed = absorbedLoss
+      ? resolvedLossBearerId
+        ? 0
+        : distributable
+      : distributable * undistributedShare;
     return {
       month,
       distributable,
       byParty,
-      undistributed: distributable * undistributedShare,
+      undistributed,
       sharedCosts,
       channelResult: distributable - totalPartyCosts, // ≡ netProfitS1, independent of attribution
     };
