@@ -692,7 +692,14 @@ export function FinancialPageClient({
                         </span>
                         <Select value={perspective} onValueChange={setPerspective}>
                           <SelectTrigger className="h-7 w-[130px] text-xs border-dashed">
-                            <SelectValue />
+                            <SelectValue>
+                              {(v) =>
+                                v === "general"
+                                  ? t("financials.toolbar.perspective.general")
+                                  : inputs.profitSplitParties.find((p) => p.id === v)?.name ||
+                                    t("financials.builder.profit_split.unnamed")
+                              }
+                            </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="general" className="text-xs">
