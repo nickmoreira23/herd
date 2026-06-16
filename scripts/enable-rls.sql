@@ -39,7 +39,10 @@ ALTER TABLE "AgentSkill" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "AgentTool" ENABLE ROW LEVEL SECURITY;
 
 -- Subscription & Pricing
-ALTER TABLE "SubscriptionTier" ENABLE ROW LEVEL SECURITY;
+-- SubscriptionTier RLS lifecycle owned by migrations (L1b.3); do not re-add.
+-- A permissive herd_app_full_access here would OR with the strict
+-- tenant_isolation/vertical_read policies and silently disable isolation on any
+-- environment this file runs on (the bug the CI-1 job caught for Product).
 ALTER TABLE "SubscriptionRedemptionRule" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "TierPricingSnapshot" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "FinancialSnapshot" ENABLE ROW LEVEL SECURITY;
@@ -111,11 +114,9 @@ DROP POLICY IF EXISTS herd_app_full_access ON public."AgentTool";
 CREATE POLICY herd_app_full_access ON public."AgentTool"
   FOR ALL TO herd_app USING (true) WITH CHECK (true);
 
--- Subscription & Pricing (4)
-DROP POLICY IF EXISTS herd_app_full_access ON public."SubscriptionTier";
-CREATE POLICY herd_app_full_access ON public."SubscriptionTier"
-  FOR ALL TO herd_app USING (true) WITH CHECK (true);
-
+-- Subscription & Pricing (3 — SubscriptionTier RLS owned by migrations, L1b.3)
+-- SubscriptionTier herd_app_full_access intentionally NOT re-created here
+-- (strict policies live in the L1b.3 migration; see note above).
 DROP POLICY IF EXISTS herd_app_full_access ON public."SubscriptionRedemptionRule";
 CREATE POLICY herd_app_full_access ON public."SubscriptionRedemptionRule"
   FOR ALL TO herd_app USING (true) WITH CHECK (true);

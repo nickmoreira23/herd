@@ -286,7 +286,8 @@ async function main() {
   const [starter, performance, elite, legend] = await Promise.all(
     tierDefs.map((t) =>
       prisma.subscriptionTier.upsert({
-        where: { slug: t.slug },
+        // L1b.3 — slug is unique per tenant now; key on the composite.
+        where: { tenantId_slug: { tenantId: catalogOrg.id, slug: t.slug } },
         update: {}, // don't overwrite user edits
         create: { ...t.data, tenantId: catalogOrg.id }, // L1b.1 — stamp catalog owner
       })

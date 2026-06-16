@@ -35,7 +35,8 @@ async function main() {
   });
 
   const tier = await prisma.subscriptionTier.upsert({
-    where: { slug: "ci-tier" },
+    // L1b.3 — slug is unique per tenant now; key on the composite.
+    where: { tenantId_slug: { tenantId: parent.id, slug: "ci-tier" } },
     update: { tenantId: parent.id }, // L1b.1 — stamp owner (forward-fix if row pre-dates the column)
     create: {
       slug: "ci-tier",
