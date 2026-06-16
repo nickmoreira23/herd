@@ -43,6 +43,11 @@ export const TENANT_SCOPED_MODELS = [
   // L1a.2 withTenant wiring goes live from here (GUC set per op). RLS stays
   // permissive (herd_app_full_access) until L1a.4, so reads remain global for now.
   "Product",
+  // L1b.2b — activation: SubscriptionTier becomes tenant-scoped. The L1b.2a
+  // withTenant wiring + the plan-agent host-propagation go live from here (GUC
+  // set per op). RLS stays permissive until L1b.3 (strict policies + NOT NULL +
+  // composite slug), so isolation is not yet observable — same shape as L1a.3.
+  "SubscriptionTier",
 ] as const satisfies readonly string[];
 
 const READ_OPS = new Set([

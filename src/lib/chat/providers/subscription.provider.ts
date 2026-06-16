@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { requireTenantId } from "@/lib/tenancy/context";
 import type {
   ArtifactMeta,
   CatalogItem,
@@ -46,6 +47,7 @@ export class SubscriptionProvider implements DataProvider {
   types = ["subscription_tier"];
 
   async getCatalogItems(): Promise<CatalogItem[]> {
+    requireTenantId(); // L1b.2b — tenant-scoped read; fail loud without context.
     const tiers = await prisma.subscriptionTier.findMany({
       orderBy: { sortOrder: "asc" },
       take: 200,
@@ -71,6 +73,7 @@ export class SubscriptionProvider implements DataProvider {
   ): Promise<SearchResult[]> {
     const ids = grouped.subscription_tier;
     if (!ids?.length) return [];
+    requireTenantId(); // L1b.2b — tenant-scoped read; fail loud without context.
     const tiers = await prisma.subscriptionTier.findMany({
       where: { id: { in: ids } },
     });
@@ -88,6 +91,7 @@ export class SubscriptionProvider implements DataProvider {
     take: number
   ): Promise<SearchResult[]> {
     if (types.length > 0 && !types.includes("subscription_tier")) return [];
+    requireTenantId(); // L1b.2b — tenant-scoped read; fail loud without context.
     const tiers = await prisma.subscriptionTier.findMany({
       where: {
         OR: [
@@ -109,6 +113,7 @@ export class SubscriptionProvider implements DataProvider {
   }
 
   async getArtifactMeta(ids: string[]): Promise<ArtifactMeta[]> {
+    requireTenantId(); // L1b.2b — tenant-scoped read; fail loud without context.
     const tiers = await prisma.subscriptionTier.findMany({
       where: { id: { in: ids } },
     });

@@ -122,12 +122,17 @@ export async function POST(
   // gate their write-tools by it (read-tools stay open to current roles).
   const canWriteCatalog = await hasOrgRole(["OWNER", "ADMIN"]);
 
+  // L1b.2b — resolve the host org once and thread it into the specialist
+  // config; the plan-agent's tenant-scoped tier reads/writes run under it.
+  const orgId = await getOrgIdFromRequest();
+
   // Build role-specific tools and context
   const { extraTools, extraSystemPrompt, onToolCall } = await buildRoleConfig(
     agent,
     userId,
     body.context,
-    canWriteCatalog
+    canWriteCatalog,
+    orgId
   );
 
   const stream = createAgentStream({
@@ -154,7 +159,8 @@ async function buildRoleConfig(
   },
   userId: string,
   clientContext: Record<string, unknown> | undefined,
-  canWriteCatalog: boolean
+  canWriteCatalog: boolean,
+  orgId: string | null
 ): Promise<{
   extraTools: Anthropic.Tool[];
   extraSystemPrompt: string;
@@ -169,7 +175,7 @@ async function buildRoleConfig(
       return buildBlockConfig(agent.scope || agent.key, userId);
 
     case "SPECIALIST":
-      return buildSpecialistConfig(agent.key, clientContext, canWriteCatalog);
+      return buildSpecialistConfig(agent.key, clientContext, canWriteCatalog, orgId);
 
     case "ORCHESTRATOR":
       return buildOrchestratorConfig(userId);
@@ -346,7 +352,8 @@ ${actionCatalog}`;
 async function buildSpecialistConfig(
   agentKey: string,
   clientContext: Record<string, unknown> | undefined,
-  canWriteCatalog: boolean
+  canWriteCatalog: boolean,
+  orgId: string | null
 ): Promise<{
   extraTools: Anthropic.Tool[];
   extraSystemPrompt: string;
@@ -359,12 +366,12 @@ async function buildSpecialistConfig(
   // Route to specialist-specific handlers
   switch (agentKey) {
     case "plans-architect": {
-      const { extraPrompt, allPlans } = await buildPlanAgentContext();
+      const { extraPrompt, allPlans } = await buildPlanAgentContext(orgId);
       return {
         extraTools: PLAN_AGENT_TOOLS,
         extraSystemPrompt: extraPrompt,
         onToolCall: async (name, input, send) =>
-          handlePlanAgentToolCall(name, input, send, allPlans, canWriteCatalog),
+          handlePlanAgentToolCall(name, input, send, allPlans, canWriteCatalog, orgId),
       };
     }
 
