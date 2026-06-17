@@ -965,9 +965,13 @@ export interface ScenarioResults {
       accrual: { upfront: number[]; residual: number[]; total: number[] };
       cash: { upfront: number[]; residual: number[]; total: number[] };
       /** One rep's own production (drives the per-member-unit role view):
-       *  `newSubscribers` = net new subs/month, `subscribers` = active book,
-       *  `revenue` = that book's revenue (accrual smoothed, cash lumpy). Scale
-       *  by a manager's downline size (threshold) for their unit's production. */
+       *  `grossNewSubs` = gross sales/month (sales-per-rep, flat or stepped),
+       *  `chargebacks` = of those, charged back, `newSubscribers` = net new,
+       *  `subscribers` = active book, `revenue` = that book's revenue (accrual
+       *  smoothed, cash lumpy). Scale by a manager's downline size (threshold)
+       *  for their unit's production. */
+      grossNewSubs: number[];
+      chargebacks: number[];
       newSubscribers: number[];
       subscribers: number[];
       revenue: { accrual: number[]; cash: number[] };
@@ -2970,6 +2974,8 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
         residual: repResidualCash,
         total: addSeries(repUpfrontAccrual, repResidualCash),
       },
+      grossNewSubs: salesPerRepByMonth.slice(),
+      chargebacks: salesPerRepByMonth.map((s) => s * chargebackRate),
       newSubscribers: repNetNewByMonth,
       subscribers: repActiveSubs,
       revenue: { accrual: repRevenueAccrual, cash: repRevenueCash },

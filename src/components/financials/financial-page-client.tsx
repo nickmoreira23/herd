@@ -699,7 +699,7 @@ export function FinancialPageClient({
                           {t("financials.toolbar.perspective.label")}
                         </span>
                         <Select value={perspective} onValueChange={setPerspective}>
-                          <SelectTrigger className="h-7 w-[150px] text-xs border-dashed">
+                          <SelectTrigger className="h-7 w-[210px] text-xs border-dashed">
                             <SelectValue>
                               {(v) => {
                                 if (v === "general")

@@ -2180,6 +2180,11 @@ function AggregateCohortTable({
       aggMonths.reduce((s, m) => s + (arr[m.monthIndex - 1] ?? 0), 0) * teamSize;
     const latestOf = (arr: number[]) => () => (lastMi ? (arr[lastMi - 1] ?? 0) : 0) * teamSize;
     const constRow = (n: number) => ({ getValue: () => n, getTotal: () => n });
+    // Churn derived from the single-rep book: prevActive + netNew − active.
+    const repChurn = reps.subscribers.map(
+      (_, i) =>
+        (i > 0 ? reps.subscribers[i - 1] : 0) + reps.newSubscribers[i] - reps.subscribers[i],
+    );
     const downlineLevels =
       isRepRole || !selectedLevel
         ? []
@@ -2200,7 +2205,12 @@ function AggregateCohortTable({
         id: "subscribers",
         section: t("financials.projection.section.subscribers"),
         rows: [
+          { label: t("financials.projection.row.gross_new_sales"), getValue: at(reps.grossNewSubs), getTotal: sumOf(reps.grossNewSubs), format: "number" as const, bold: true },
+          ...(reps.chargebacks.some((v) => v > 0)
+            ? [{ label: t("financials.projection.row.chargebacks"), getValue: at(reps.chargebacks), getTotal: sumOf(reps.chargebacks), format: "number" as const }]
+            : []),
           { label: t("financials.projection.row.net_new_subs"), getValue: at(reps.newSubscribers), getTotal: sumOf(reps.newSubscribers), format: "number" as const, bold: true },
+          { label: t("financials.projection.row.lost_to_churn"), getValue: at(repChurn), getTotal: sumOf(repChurn), format: "number" as const },
           { label: t("financials.projection.row.total_active"), getValue: at(reps.subscribers), getTotal: latestOf(reps.subscribers), format: "number" as const, bold: true },
         ],
       },
@@ -2211,7 +2221,18 @@ function AggregateCohortTable({
           { label: t("financials.projection.row.subscription_revenue"), getValue: at(reps.revenue.cash), getTotal: sumOf(reps.revenue.cash), format: "currency" as const },
         ],
       },
-      memberEarningsSection,
+      // Rep is the only seat → Upfront + Residual directly (no rollup row).
+      // Managers keep the per-role rollup (their own + the avg below).
+      isRepRole
+        ? {
+            id: "member-earnings",
+            section: t("financials.projection.section.earnings"),
+            rows: [
+              { label: t("financials.member_earnings.upfront"), getValue: at(reps.cash.upfront), getTotal: sumOf(reps.cash.upfront), format: "currency" as const },
+              { label: t("financials.member_earnings.residual"), getValue: at(reps.cash.residual), getTotal: sumOf(reps.cash.residual), format: "currency" as const },
+            ],
+          }
+        : memberEarningsSection,
     ];
   } else if (isGeneral) {
     finalSections = [...sections, memberEarningsSection];
@@ -2265,11 +2286,13 @@ function AggregateCohortTable({
         <AccountingBasisBadge basis="cash" />
       </div>
       {summaryRow}
-      <AccountingBasisReconciliation
-        accrualSeries={accrualSeriesAgg}
-        cashSeries={cashSeriesAgg}
-        locale={locale}
-      />
+      {!isRole && (
+        <AccountingBasisReconciliation
+          accrualSeries={accrualSeriesAgg}
+          cashSeries={cashSeriesAgg}
+          locale={locale}
+        />
+      )}
       {/* The wrapper has to be a real scroll viewport (both axes, capped
           via maxH) so sticky thead anchors to its top edge. With just
           `overflow-x-auto` and no height limit, the wrapper grows to
