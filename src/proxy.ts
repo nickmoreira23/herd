@@ -60,6 +60,7 @@ function isPublicLocaleRoute(pathname: string): boolean {
 // CRON_SECRET, OAuth/token routes carry their own credential in the URL.
 const PUBLIC_API_MATCHERS: RegExp[] = [
   /^\/api\/auth\//, // NextAuth (login flow, session, csrf)
+  /^\/api\/dev\/login$/, // DEV-only passwordless login — 404s in prod (NODE_ENV-gated in the handler)
   /^\/api\/health$/, // uptime/monitor
   /^\/api\/analytics\/web-vitals$/, // telemetry beacon
   /^\/api\/cron\//, // self-protected by CRON_SECRET
