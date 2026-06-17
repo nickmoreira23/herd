@@ -1,5 +1,24 @@
 # Runbook — flipping `CAN_ENFORCEMENT` safely
 
+> **✅ FLIP EXECUTED — 4c (2026-06-17). PROD is now `CAN_ENFORCEMENT=enforce`.**
+> The promotion gate (D16) was green in-window: oracle green (104 asserts), PROD ==
+> canonical (`108` grants, 0 override/deny/custom — a residual smoke custom role
+> `auditor` + its `locations:read` grant were cleaned back to `108/0/0/0` first),
+> denies = 0, and the directed smoke (OWNER/ADMIN/MEMBER non-super in Bucked Up)
+> logged **100% `agree:true`, zero `agree:false`**.
+>
+> - **Flip:** `CAN_ENFORCEMENT=enforce` set in Railway + redeploy.
+> - **Deploy:** `bb370a6d` (commit `a551201f`), instance RUNNING.
+> - **`FLIP_START`:** `2026-06-17T00:22:51Z`.
+> - **Post-flip vigilance:** ~34 min read-only watch of `[can-enforce-block]` +
+>   server errors → **0 blocks, 0 new errors** across ~18 consecutive ticks.
+> - **Verdict:** STABLE — inert in practice (matrix == gates), no regression.
+> - **Rollback (if needed):** `CAN_ENFORCEMENT=shadow` (or `off`) in Railway +
+>   redeploy — env-only, immediate, no schema/code. See "Rollback (emergency)"
+>   below. The flip and any rollback are **deliberate human acts in the chat**;
+>   the log collector is read-only and never flips.
+
+
 > **⚠️ PROD STATE (2026-06-02) — READ BEFORE ANY FLIP.** PROD is in the safe
 > resting state: the `role_permissions` migration is **applied** and the table is
 > **seeded with the canonical matrix (97 grants)** — Step 1 (migrate) and Step 2
