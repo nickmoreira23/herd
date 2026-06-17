@@ -2151,9 +2151,11 @@ function AggregateCohortTable({
   // Perspective-driven layout (mirrors projection-spreadsheet):
   //  • general → Member Earnings is the LAST section (after Profit Split).
   //  • party   → no Member Earnings.
-  //  • role    → recruit-facing: keep Sales Team (role + downline) + Subscribers
-  //    + Revenue + an "Earnings" section at the end; hide COGS / OpEx / Bottom
-  //    Line / Profit Split (company-internal).
+  //  • role    → ONE member's unit (not the channel): a rep sees only their own
+  //    subs / revenue / earnings; a manager sees their downline headcount
+  //    (constant per span), the unit's subs / revenue (one rep × team size, cash
+  //    basis), and earnings (their own + the avg below). COGS / OpEx / Bottom
+  //    Line / Profit Split hidden.
   const isRole = memberKeep != null;
   const isGeneral = perspective === "general" || !perspective;
   const memberEarningsSection = {
@@ -2165,16 +2167,57 @@ function AggregateCohortTable({
     ),
     rows: buildMemberEarningsRows(memberEarnings, aggMonths, t, memberKeep),
   };
-  const finalSections = isRole
-    ? [
-        ...sections.filter(
-          (s) => !["cogs", "opex", "bottom-line", "profit-split"].includes(s.id),
-        ),
-        memberEarningsSection,
-      ]
-    : isGeneral
-      ? [...sections, memberEarningsSection]
-      : sections;
+  let finalSections: typeof sections;
+  if (isRole) {
+    const reps = memberEarnings.reps;
+    const roleKey = (perspective ?? "").slice(MEMBER_PREFIX.length);
+    const isRepRole = roleKey === REPS_ROLE_KEY;
+    const selectedLevel = salesTeam.levels.find((l) => l.id === roleKey);
+    const teamSize = isRepRole ? 1 : (selectedLevel?.threshold ?? 1);
+    const lastMi = aggMonths[aggMonths.length - 1]?.monthIndex;
+    const at = (arr: number[]) => (m: AggMonth) => (arr[m.monthIndex - 1] ?? 0) * teamSize;
+    const sumOf = (arr: number[]) => () =>
+      aggMonths.reduce((s, m) => s + (arr[m.monthIndex - 1] ?? 0), 0) * teamSize;
+    const latestOf = (arr: number[]) => () => (lastMi ? (arr[lastMi - 1] ?? 0) : 0) * teamSize;
+    const constRow = (n: number) => ({ getValue: () => n, getTotal: () => n });
+    const downlineLevels =
+      isRepRole || !selectedLevel
+        ? []
+        : salesTeam.levels.filter((l) => l.threshold < selectedLevel.threshold);
+    const salesTeamUnitRows: AggRow[] = [
+      ...downlineLevels.map((l) => ({
+        label: l.name || t("financials.cascade.level_unnamed"),
+        ...constRow(Math.round(teamSize / l.threshold)),
+        format: "number" as const,
+      })),
+      { label: t("financials.sales_team.reps"), ...constRow(teamSize), format: "number" as const },
+    ];
+    finalSections = [
+      ...(isRepRole
+        ? []
+        : [{ id: "sales-team", section: t("financials.projection.section.sales_team"), rows: salesTeamUnitRows }]),
+      {
+        id: "subscribers",
+        section: t("financials.projection.section.subscribers"),
+        rows: [
+          { label: t("financials.projection.row.net_new_subs"), getValue: at(reps.newSubscribers), getTotal: sumOf(reps.newSubscribers), format: "number" as const, bold: true },
+          { label: t("financials.projection.row.total_active"), getValue: at(reps.subscribers), getTotal: latestOf(reps.subscribers), format: "number" as const, bold: true },
+        ],
+      },
+      {
+        id: "revenue",
+        section: t("financials.projection.section.revenue"),
+        rows: [
+          { label: t("financials.projection.row.subscription_revenue"), getValue: at(reps.revenue.cash), getTotal: sumOf(reps.revenue.cash), format: "currency" as const },
+        ],
+      },
+      memberEarningsSection,
+    ];
+  } else if (isGeneral) {
+    finalSections = [...sections, memberEarningsSection];
+  } else {
+    finalSections = sections;
+  }
 
   function formatValue(
     v: number,

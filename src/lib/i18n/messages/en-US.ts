@@ -1056,7 +1056,7 @@ export const messages: Record<MessageKey, string> = {
   "financials.projection.row.buck_license": "Buck License",
   "financials.projection.row.buck_tokens": "Buck Tokens",
   "financials.projection.section.sales_team": "Sales Team",
-  "financials.sales_team.reps": "Sales representatives",
+  "financials.sales_team.reps": "Sales Representatives",
   "financials.sales_team.reps_tooltip": "Active reps — the base of the sales force. Each leadership level above adds 1 manager per its span of reps.",
   "financials.projection.section.member_earnings": "Member Earnings",
   "financials.projection.section.earnings": "Earnings",

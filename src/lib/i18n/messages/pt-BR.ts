@@ -1082,7 +1082,7 @@ export const messages = {
   "financials.projection.row.buck_license": "Licença Buck",
   "financials.projection.row.buck_tokens": "Tokens Buck",
   "financials.projection.section.sales_team": "Equipe de Vendas",
-  "financials.sales_team.reps": "Representantes de vendas",
+  "financials.sales_team.reps": "Representantes de Vendas",
   "financials.sales_team.reps_tooltip": "Reps ativos — a base da força de vendas. Cada nível de liderança acima adiciona 1 gestor por span de reps.",
   "financials.projection.section.member_earnings": "Ganho por Membro",
   "financials.projection.section.earnings": "Ganhos",

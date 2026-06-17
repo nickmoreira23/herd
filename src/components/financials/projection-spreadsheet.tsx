@@ -16,6 +16,7 @@ import {
   aggregateLifecyclesByCalendarMonth,
   useSpreadsheetCollapse,
   COST_RUBRIC_LABEL_KEYS,
+  MEMBER_PREFIX,
   REPS_ROLE_KEY,
   memberRoleKeys,
   memberDownlineKeys,
@@ -788,9 +789,11 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
   // Perspective-driven layout (S-member):
   //  • general → Member Earnings is the LAST section (after Profit Split).
   //  • party   → no Member Earnings (a party's view is the channel + its split).
-  //  • role    → recruit-facing: keep Sales Team (role + downline) + Subscribers
-  //    + Revenue + an "Earnings" section at the end; hide the company-internal
-  //    cost/profit sections (COGS, OpEx, Bottom Line, Profit Split).
+  //  • role    → ONE member's unit (not the channel). A rep sees only their own
+  //    subs / revenue / earnings. A manager sees their downline headcount
+  //    (constant per the span), the unit's subs / revenue (one rep × team size),
+  //    and earnings (their own + the avg below). All channel-internal sections
+  //    (COGS, OpEx, Bottom Line, Profit Split) are hidden.
   const isRole = memberKeep != null;
   const isGeneral = perspective === "general" || !perspective;
   const memberEarningsSection: SectionDef = {
@@ -802,16 +805,70 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
     ),
     rows: memberEarningsRows,
   };
-  const finalSections: SectionDef[] = isRole
-    ? [
-        ...sections.filter(
-          (s) => !["cogs", "opex", "bottom-line", "profit-cascade"].includes(s.id ?? ""),
-        ),
-        memberEarningsSection,
-      ]
-    : isGeneral
-      ? [...sections, memberEarningsSection]
-      : sections; // party view: channel + its cascade, no member earnings
+
+  let finalSections: SectionDef[];
+  if (isRole) {
+    const reps = results.memberEarnings.reps;
+    const W = projection.length;
+    const roleKey = (perspective ?? "").slice(MEMBER_PREFIX.length);
+    const isRepRole = roleKey === REPS_ROLE_KEY;
+    const selectedLevel = results.salesTeam.levels.find((l) => l.id === roleKey);
+    const teamSize = isRepRole ? 1 : (selectedLevel?.threshold ?? 1);
+    const scaled = (arr: number[]) => arr.slice(0, W).map((v) => v * teamSize);
+    const constRow = (n: number) => Array.from({ length: W }, () => n);
+    // Downline = the leadership levels BELOW the selected one (smaller span),
+    // already TOP → BASE in salesTeam.levels order.
+    const downlineLevels =
+      isRepRole || !selectedLevel
+        ? []
+        : results.salesTeam.levels.filter((l) => l.threshold < selectedLevel.threshold);
+    const salesTeamUnitRows: RowDef[] = [
+      ...downlineLevels.map((l) => ({
+        label: l.name || t("financials.cascade.level_unnamed"),
+        type: "number" as const,
+        totalMode: "latest" as const,
+        values: constRow(Math.round(teamSize / l.threshold)),
+      })),
+      {
+        label: t("financials.sales_team.reps"),
+        type: "number" as const,
+        totalMode: "latest" as const,
+        values: constRow(teamSize),
+      },
+    ];
+    finalSections = [
+      // Sales Team only for managers — a rep is the base, with no one beneath.
+      ...(isRepRole
+        ? []
+        : [
+            {
+              id: "sales-team",
+              header: t("financials.projection.section.sales_team"),
+              rows: salesTeamUnitRows,
+            },
+          ]),
+      {
+        id: "subscribers",
+        header: t("financials.projection.section.subscribers"),
+        rows: [
+          { label: t("financials.projection.row.net_new_subs"), type: "number", totalMode: "sum", values: scaled(reps.newSubscribers), bold: true },
+          { label: t("financials.projection.row.total_active"), type: "number", totalMode: "latest", values: scaled(reps.subscribers), bold: true },
+        ],
+      },
+      {
+        id: "revenue",
+        header: t("financials.projection.section.revenue"),
+        rows: [
+          { label: t("financials.projection.row.subscription_revenue"), type: "currency", totalMode: "sum", values: scaled(reps.revenue.accrual) },
+        ],
+      },
+      memberEarningsSection, // "Earnings" — the member's own + the avg below.
+    ];
+  } else if (isGeneral) {
+    finalSections = [...sections, memberEarningsSection];
+  } else {
+    finalSections = sections; // party view: channel + its cascade, no member earnings
+  }
 
   // Reconciliation series — accrual is what this view displays
   // (`cohortProjection.revenue`); cash is the calendar-month aggregate of
