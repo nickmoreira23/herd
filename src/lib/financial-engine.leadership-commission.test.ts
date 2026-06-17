@@ -31,7 +31,7 @@ const PARTIES: ProfitSplitParty[] = [
 // (the audit scenario holds activeReps = 10 flat). This reproduces S6's
 // total-coverage cost (cost = base × Σ effective rate every month) under the
 // S7 activation model — the equivalence used to migrate the S6 pins.
-// Effective rate per level = tier-mix-weighted average of bronze/prata rates:
+// Effective rate per level = mix-weighted average of its qualifications (S8.1):
 //   local    = (2·3 + 1·2)/3 = 2.6667%
 //   regional = (1·1.5 + 1·1)/2 = 1.25%
 //   Σ        = 3.9167% ⇒ rate ≈ 0.039167
@@ -39,15 +39,21 @@ const PLAN: LeadershipCompPlan = {
   enabled: true,
   base: "revenue",
   levels: [
-    { id: "local", name: "Local", tiers: { bronze: { ratePct: 3 }, prata: { ratePct: 2 } }, tierMix: { bronze: 2, prata: 1 }, span: 1 },
-    { id: "regional", name: "Regional", tiers: { bronze: { ratePct: 1.5 }, prata: { ratePct: 1 } }, tierMix: { bronze: 1, prata: 1 }, span: 1 },
+    { id: "local", name: "Local", span: 1, qualifications: [
+      { id: "l-b", name: "Bronze", ratePct: 3, mixPct: 2 },
+      { id: "l-p", name: "Prata", ratePct: 2, mixPct: 1 },
+    ] },
+    { id: "regional", name: "Regional", span: 1, qualifications: [
+      { id: "r-b", name: "Bronze", ratePct: 1.5, mixPct: 1 },
+      { id: "r-p", name: "Prata", ratePct: 1, mixPct: 1 },
+    ] },
   ],
 };
 
 // Recomputed from the fixture so the pin tracks the plan, not a hardcoded const.
 const RATE = PLAN.levels.reduce((s, lvl) => {
-  const mix = lvl.tierMix.bronze + lvl.tierMix.prata;
-  return s + (lvl.tierMix.bronze * lvl.tiers.bronze.ratePct + lvl.tierMix.prata * lvl.tiers.prata.ratePct) / mix / 100;
+  const mix = lvl.qualifications.reduce((m, q) => m + q.mixPct, 0);
+  return s + lvl.qualifications.reduce((r, q) => r + q.mixPct * q.ratePct, 0) / mix / 100;
 }, 0);
 
 const TOL = 0.5;
@@ -133,16 +139,22 @@ const RAMP_PLAN: LeadershipCompPlan = {
   enabled: true,
   base: "revenue",
   levels: [
-    { id: "local", name: "Local", tiers: { bronze: { ratePct: 3 }, prata: { ratePct: 2 } }, tierMix: { bronze: 2, prata: 1 }, span: 20 },
-    { id: "regional", name: "Regional", tiers: { bronze: { ratePct: 1.5 }, prata: { ratePct: 1 } }, tierMix: { bronze: 1, prata: 1 }, span: 2 },
+    { id: "local", name: "Local", span: 20, qualifications: [
+      { id: "l-b", name: "Bronze", ratePct: 3, mixPct: 2 },
+      { id: "l-p", name: "Prata", ratePct: 2, mixPct: 1 },
+    ] },
+    { id: "regional", name: "Regional", span: 2, qualifications: [
+      { id: "r-b", name: "Bronze", ratePct: 1.5, mixPct: 1 },
+      { id: "r-p", name: "Prata", ratePct: 1, mixPct: 1 },
+    ] },
   ],
 };
 // Mirror the engine's per-level effective rate + cumulative-span threshold.
 const RAMP_LEVELS = (() => {
   let cum = 1;
   return RAMP_PLAN.levels.map((lvl) => {
-    const mix = lvl.tierMix.bronze + lvl.tierMix.prata;
-    const effectiveRate = (lvl.tierMix.bronze * lvl.tiers.bronze.ratePct + lvl.tierMix.prata * lvl.tiers.prata.ratePct) / mix / 100;
+    const mix = lvl.qualifications.reduce((m, q) => m + q.mixPct, 0);
+    const effectiveRate = lvl.qualifications.reduce((r, q) => r + q.mixPct * q.ratePct, 0) / mix / 100;
     cum *= lvl.span;
     return { effectiveRate, threshold: cum };
   });
@@ -210,7 +222,10 @@ describe("S7 — leadership commission, dynamic threshold activation", () => {
       leadershipCompPlan: {
         enabled: true,
         base: "revenue",
-        levels: [{ id: "local", name: "Local", tiers: { bronze: { ratePct: 3 }, prata: { ratePct: 2 } }, tierMix: { bronze: 2, prata: 1 }, span: 100_000 }],
+        levels: [{ id: "local", name: "Local", span: 100_000, qualifications: [
+          { id: "l-b", name: "Bronze", ratePct: 3, mixPct: 2 },
+          { id: "l-p", name: "Prata", ratePct: 2, mixPct: 1 },
+        ] }],
       },
     });
     expect(accrualLeadership(neverActive)).toBe(0);
@@ -219,5 +234,34 @@ describe("S7 — leadership commission, dynamic threshold activation", () => {
     const full = calculateScenario({ ...buildAuditScenario(PARTIES), leadershipCompPlan: PLAN });
     const revAccrual = sum(full.cohortProjection.map((m) => m.revenue));
     expect(Math.abs(accrualLeadership(full) - revAccrual * RATE)).toBeLessThan(TOL);
+  });
+
+  it("[S8.1-P1] a level with NO qualifications contributes 0 (default-empty)", () => {
+    // New levels start with no qualifications ⇒ effective rate 0 ⇒ no cost,
+    // even when enabled + active (span 1, activeReps ≥ 1).
+    const emptyLevel = calculateScenario({
+      ...buildAuditScenario(PARTIES),
+      leadershipCompPlan: {
+        enabled: true,
+        base: "revenue",
+        levels: [{ id: "local", name: "Local", span: 1, qualifications: [] }],
+      },
+    });
+    expect(accrualLeadership(emptyLevel)).toBe(0);
+    expect(cashLeadership(emptyLevel)).toBe(0);
+    // Adding one qualification turns the level on: rate = its ratePct (single
+    // qual ⇒ mix-weighted average is just that qual's rate).
+    const oneQual = calculateScenario({
+      ...buildAuditScenario(PARTIES),
+      leadershipCompPlan: {
+        enabled: true,
+        base: "revenue",
+        levels: [{ id: "local", name: "Local", span: 1, qualifications: [
+          { id: "q1", name: "Senior", ratePct: 4, mixPct: 3 },
+        ] }],
+      },
+    });
+    const rev = sum(oneQual.cohortProjection.map((m) => m.revenue));
+    expect(Math.abs(accrualLeadership(oneQual) - rev * 0.04)).toBeLessThan(TOL);
   });
 });
