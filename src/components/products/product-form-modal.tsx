@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import type { Product } from "@/types";
-import { PRODUCT_CATEGORIES, SUB_CATEGORIES, REDEMPTION_TYPES } from "@/types";
+import { REDEMPTION_TYPES } from "@/types";
+import { PRODUCT_CATEGORIES, SUB_CATEGORIES } from "@/lib/products/taxonomy";
 import {
   Dialog,
   DialogContent,

@@ -3,7 +3,8 @@
 import { useState, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import type { Product } from "@/types";
-import { PRODUCT_CATEGORIES, SUB_CATEGORIES, REDEMPTION_TYPES } from "@/types";
+import { REDEMPTION_TYPES } from "@/types";
+import { PRODUCT_CATEGORIES, SUB_CATEGORIES } from "@/lib/products/taxonomy";
 import {
   formatPercent,
   formatCurrency,

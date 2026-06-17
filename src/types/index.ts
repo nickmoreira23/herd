@@ -76,16 +76,10 @@ export interface ApiError {
   details?: unknown;
 }
 
-// Category enum values
-export const PRODUCT_CATEGORIES = ["SUPPLEMENT", "APPAREL", "ACCESSORY"] as const;
-export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number];
-
-// Sub-category options per category
-export const SUB_CATEGORIES: Record<string, string[]> = {
-  SUPPLEMENT: ["Pre-Workout", "Protein", "Amino", "Vitamin", "Health", "Recovery", "Other"],
-  APPAREL: ["Tee", "Hoodie", "Shorts", "Hat", "Other"],
-  ACCESSORY: ["Shaker", "Bag", "Gear", "Other"],
-};
+// L2a.2c — product taxonomy moved to the block manifest as the single source.
+// Import PRODUCT_CATEGORIES / SUB_CATEGORIES from "@/lib/products/taxonomy"
+// (derived from getBlockTaxonomy("products")). The ProductCategory type had no
+// consumers and was removed with the constants.
 
 // Redemption type values
 export const REDEMPTION_TYPES = ["Members Store", "Members Rate"] as const;
