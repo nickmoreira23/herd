@@ -44,6 +44,8 @@ export const TENANT_SCOPED_MODELS = [
   // L2a.2b — materialized block taxonomy (per-org, per-block).
   "Category",
   "Subcategory",
+  // L2b.1 — curated marketplace listings (abstract block ref + own data).
+  "Listing",
   // L1a (Listing) — catalog detenanting: Product becomes tenant-scoped. The
   // L1a.2 withTenant wiring goes live from here (GUC set per op). RLS stays
   // permissive (herd_app_full_access) until L1a.4, so reads remain global for now.
