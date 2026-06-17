@@ -772,7 +772,15 @@ export function ScenarioBuilder({
                     }
                   >
                     <SelectTrigger className="h-8 w-full text-sm">
-                      <SelectValue />
+                      <SelectValue>
+                        {(v) =>
+                          t(
+                            v === "proportional"
+                              ? "financials.builder.loss_handling.proportional"
+                              : "financials.builder.loss_handling.absorbed",
+                          )
+                        }
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="absorbed">
@@ -807,7 +815,13 @@ export function ScenarioBuilder({
                       }
                     >
                       <SelectTrigger className="h-8 w-full text-sm">
-                        <SelectValue />
+                        <SelectValue>
+                          {(v) =>
+                            v === LOSS_BEARER_NONE
+                              ? t("financials.builder.loss_handling.bearer_none")
+                              : partyName(v)
+                          }
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value={LOSS_BEARER_NONE}>
@@ -854,7 +868,13 @@ export function ScenarioBuilder({
                       onValueChange={(v) => setRubricTarget(key, v)}
                     >
                       <SelectTrigger className="h-8 w-full text-sm">
-                        <SelectValue />
+                        <SelectValue>
+                          {(v) =>
+                            v === "shared"
+                              ? t("financials.builder.attribution.shared")
+                              : partyName(v)
+                          }
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="shared">
@@ -1057,8 +1077,43 @@ export function ScenarioBuilder({
                         />
                       </div>
                     </div>
-                    {/* Qualifications — dynamic, named, mix-weighted. Empty by
-                        default; a level with none contributes 0. */}
+                    {/* Base rate — what this level earns with NO qualification
+                        (implicitly 100% of the level). The Mix % field appears
+                        only once a qualification splits the level. */}
+                    <div className="border-t border-border/40 pt-1.5 flex items-end gap-1.5">
+                      <div className="flex-1 min-w-0">
+                        <Label className="text-[10px] text-muted-foreground mb-0.5 block">
+                          {t("financials.builder.leadership_commission.base_tier_label")}
+                        </Label>
+                        <div className="h-8 flex items-center text-[11px] text-muted-foreground">
+                          {t("financials.builder.leadership_commission.base_tier_hint")}
+                        </div>
+                      </div>
+                      <div className="w-[64px]">
+                        <NumberField
+                          label={t("financials.builder.leadership_commission.base_rate_label")}
+                          tooltip={t("financials.builder.leadership_commission.base_rate_tooltip")}
+                          value={lvl.baseRatePct}
+                          step={0.5}
+                          max={100}
+                          onChange={(v) => updateLevel(idx, { ...lvl, baseRatePct: v })}
+                        />
+                      </div>
+                      {lvl.qualifications.length > 0 && (
+                        <div className="w-[64px]">
+                          <NumberField
+                            label={t("financials.builder.leadership_commission.base_mix_label")}
+                            tooltip={t("financials.builder.leadership_commission.base_mix_tooltip")}
+                            value={lvl.baseMixPct}
+                            step={1}
+                            onChange={(v) => updateLevel(idx, { ...lvl, baseMixPct: v })}
+                          />
+                        </div>
+                      )}
+                      {lvl.qualifications.length > 0 && !readOnly && <div className="w-7 shrink-0" />}
+                    </div>
+                    {/* Qualifications — dynamic, named, mix-weighted, layered on
+                        top of the base. Empty by default. */}
                     <div className="border-t border-border/40 pt-1.5 space-y-1.5">
                       <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
                         {t("financials.builder.leadership_commission.qualifications_label")}
@@ -1150,7 +1205,7 @@ export function ScenarioBuilder({
                               ...lvl,
                               qualifications: [
                                 ...lvl.qualifications,
-                                { id: crypto.randomUUID(), name: "", ratePct: 0, mixPct: 1 },
+                                { id: crypto.randomUUID(), name: "", ratePct: 0, mixPct: 0 },
                               ],
                             })
                           }
@@ -1173,7 +1228,7 @@ export function ScenarioBuilder({
                   setLeadershipPlan({
                     levels: [
                       ...leadershipPlan.levels,
-                      { id: crypto.randomUUID(), name: "", qualifications: [], span: 1 },
+                      { id: crypto.randomUUID(), name: "", baseRatePct: 0, baseMixPct: 100, qualifications: [], span: 1 },
                     ],
                   })
                 }

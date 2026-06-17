@@ -39,11 +39,11 @@ const PLAN: LeadershipCompPlan = {
   enabled: true,
   base: "revenue",
   levels: [
-    { id: "local", name: "Local", span: 1, qualifications: [
+    { id: "local", name: "Local", span: 1, baseRatePct: 0, baseMixPct: 0, qualifications: [
       { id: "l-b", name: "Bronze", ratePct: 3, mixPct: 2 },
       { id: "l-p", name: "Prata", ratePct: 2, mixPct: 1 },
     ] },
-    { id: "regional", name: "Regional", span: 1, qualifications: [
+    { id: "regional", name: "Regional", span: 1, baseRatePct: 0, baseMixPct: 0, qualifications: [
       { id: "r-b", name: "Bronze", ratePct: 1.5, mixPct: 1 },
       { id: "r-p", name: "Prata", ratePct: 1, mixPct: 1 },
     ] },
@@ -139,11 +139,11 @@ const RAMP_PLAN: LeadershipCompPlan = {
   enabled: true,
   base: "revenue",
   levels: [
-    { id: "local", name: "Local", span: 20, qualifications: [
+    { id: "local", name: "Local", span: 20, baseRatePct: 0, baseMixPct: 0, qualifications: [
       { id: "l-b", name: "Bronze", ratePct: 3, mixPct: 2 },
       { id: "l-p", name: "Prata", ratePct: 2, mixPct: 1 },
     ] },
-    { id: "regional", name: "Regional", span: 2, qualifications: [
+    { id: "regional", name: "Regional", span: 2, baseRatePct: 0, baseMixPct: 0, qualifications: [
       { id: "r-b", name: "Bronze", ratePct: 1.5, mixPct: 1 },
       { id: "r-p", name: "Prata", ratePct: 1, mixPct: 1 },
     ] },
@@ -222,7 +222,7 @@ describe("S7 — leadership commission, dynamic threshold activation", () => {
       leadershipCompPlan: {
         enabled: true,
         base: "revenue",
-        levels: [{ id: "local", name: "Local", span: 100_000, qualifications: [
+        levels: [{ id: "local", name: "Local", span: 100_000, baseRatePct: 0, baseMixPct: 0, qualifications: [
           { id: "l-b", name: "Bronze", ratePct: 3, mixPct: 2 },
           { id: "l-p", name: "Prata", ratePct: 2, mixPct: 1 },
         ] }],
@@ -236,32 +236,45 @@ describe("S7 — leadership commission, dynamic threshold activation", () => {
     expect(Math.abs(accrualLeadership(full) - revAccrual * RATE)).toBeLessThan(TOL);
   });
 
-  it("[S8.1-P1] a level with NO qualifications contributes 0 (default-empty)", () => {
-    // New levels start with no qualifications ⇒ effective rate 0 ⇒ no cost,
-    // even when enabled + active (span 1, activeReps ≥ 1).
-    const emptyLevel = calculateScenario({
+  it("[S8.2-P1] base rate is the level's effective rate with no qualifications", () => {
+    // No qualifications + base rate 0 ⇒ cost 0.
+    const zeroBase = calculateScenario({
       ...buildAuditScenario(PARTIES),
       leadershipCompPlan: {
         enabled: true,
         base: "revenue",
-        levels: [{ id: "local", name: "Local", span: 1, qualifications: [] }],
+        levels: [{ id: "local", name: "Local", span: 1, baseRatePct: 0, baseMixPct: 100, qualifications: [] }],
       },
     });
-    expect(accrualLeadership(emptyLevel)).toBe(0);
-    expect(cashLeadership(emptyLevel)).toBe(0);
-    // Adding one qualification turns the level on: rate = its ratePct (single
-    // qual ⇒ mix-weighted average is just that qual's rate).
-    const oneQual = calculateScenario({
+    expect(accrualLeadership(zeroBase)).toBe(0);
+    expect(cashLeadership(zeroBase)).toBe(0);
+    // No qualifications + base rate 5% ⇒ effective rate = 5% (base is 100%).
+    const baseOnly = calculateScenario({
       ...buildAuditScenario(PARTIES),
       leadershipCompPlan: {
         enabled: true,
         base: "revenue",
-        levels: [{ id: "local", name: "Local", span: 1, qualifications: [
-          { id: "q1", name: "Senior", ratePct: 4, mixPct: 3 },
+        levels: [{ id: "local", name: "Local", span: 1, baseRatePct: 5, baseMixPct: 100, qualifications: [] }],
+      },
+    });
+    const rev = sum(baseOnly.cohortProjection.map((m) => m.revenue));
+    expect(Math.abs(accrualLeadership(baseOnly) - rev * 0.05)).toBeLessThan(TOL);
+  });
+
+  it("[S8.2-P2] base + qualification blend by mix into the effective rate", () => {
+    // Base 4% @ 60% mix + a qualification 10% @ 40% mix ⇒ effective rate
+    // = (60·4 + 40·10)/100 / 100 = 6.4% = 0.064.
+    const r = calculateScenario({
+      ...buildAuditScenario(PARTIES),
+      leadershipCompPlan: {
+        enabled: true,
+        base: "revenue",
+        levels: [{ id: "local", name: "Local", span: 1, baseRatePct: 4, baseMixPct: 60, qualifications: [
+          { id: "q1", name: "Bronze", ratePct: 10, mixPct: 40 },
         ] }],
       },
     });
-    const rev = sum(oneQual.cohortProjection.map((m) => m.revenue));
-    expect(Math.abs(accrualLeadership(oneQual) - rev * 0.04)).toBeLessThan(TOL);
+    const rev = sum(r.cohortProjection.map((m) => m.revenue));
+    expect(Math.abs(accrualLeadership(r) - rev * 0.064)).toBeLessThan(TOL);
   });
 });

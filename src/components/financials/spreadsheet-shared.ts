@@ -9,6 +9,24 @@
 
 import { useState } from "react";
 import type { useFinancialStore } from "@/stores/financial-store";
+import type { CostRubric } from "@/lib/financial-engine";
+import type { MessageKey } from "@/lib/i18n/t";
+
+/**
+ * Cost-rubric → label key, mirroring the attribution card in scenario-builder
+ * so the cascade's "(−) Party costs" drill-down (both bases) reads with the
+ * same names the user assigned attribution under.
+ */
+export const COST_RUBRIC_LABEL_KEYS = {
+  cogs: "financials.builder.attribution.rubric_cogs",
+  commission: "financials.builder.attribution.rubric_commission",
+  chargeback: "financials.builder.attribution.rubric_chargeback",
+  operationalOverhead: "financials.builder.attribution.rubric_overhead",
+  buckPlatform: "financials.builder.attribution.rubric_buck",
+  addOn: "financials.builder.attribution.rubric_addon",
+  welcomeKit: "financials.builder.attribution.rubric_welcomeKit",
+  leadershipCommission: "financials.builder.attribution.rubric_leadership_commission",
+} as const satisfies Record<CostRubric, MessageKey>;
 
 // ── Types ────────────────────────────────────────────────────────────
 
