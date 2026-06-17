@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Search, X, SlidersHorizontal, Check } from "lucide-react";
@@ -18,7 +19,7 @@ import type { RenderItem } from "@/lib/marketplace/render-resolver";
 interface Facet {
   key: string;
   label: string;
-  options: Array<{ value: string; count: number }>;
+  options: Array<{ value: string; label: string; count: number }>;
 }
 
 interface Props {
@@ -66,21 +67,35 @@ export function InfiniteItemsGrid({
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const loadingRef = useRef(false);
 
+  // L2a.2b-4b — seed the category/subCategory filter from the URL (the category
+  // chips link to ?block=<block>&category=<slug>). Only this block's grid reacts
+  // (block param must match). Values are SLUGS; applyFilters slug-matches them.
+  const searchParams = useSearchParams();
+  const urlFilters = useMemo<Record<string, string[]>>(() => {
+    if (searchParams.get("block") !== blockName) return {};
+    const f: Record<string, string[]> = {};
+    const cat = searchParams.get("category");
+    const sub = searchParams.get("subCategory");
+    if (cat) f.category = [cat];
+    if (sub) f.subCategory = [sub];
+    return f;
+  }, [searchParams, blockName]);
+
   // Search + filter state. Empty query/filters fall back to initial server payload.
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [filters, setFilters] = useState<Record<string, string[]>>({});
+  const [filters, setFilters] = useState<Record<string, string[]>>(urlFilters);
 
-  // Reset when navigating between sections.
+  // Reset when navigating between sections / when the URL filter changes.
   useEffect(() => {
     setItems(initialItems);
     setHasMore(initialHasMore);
     setTotal(initialTotal);
     setQuery("");
     setDebouncedQuery("");
-    setFilters({});
+    setFilters(urlFilters);
     setError(null);
-  }, [sectionId, blockName, initialItems, initialHasMore, initialTotal]);
+  }, [sectionId, blockName, initialItems, initialHasMore, initialTotal, urlFilters]);
 
   // Debounce search
   useEffect(() => {
@@ -248,6 +263,9 @@ export function InfiniteItemsGrid({
           {Object.entries(filters).flatMap(([key, values]) =>
             values.map((value) => {
               const facet = facets.find((f) => f.key === key);
+              // Display the option's label (slug filters carry a label).
+              const optLabel =
+                facet?.options.find((o) => o.value === value)?.label ?? value;
               return (
                 <Badge
                   key={`${key}:${value}`}
@@ -257,7 +275,7 @@ export function InfiniteItemsGrid({
                   <span className="text-muted-foreground">
                     {facet?.label ?? key}:
                   </span>
-                  {value}
+                  {optLabel}
                   <button
                     onClick={() => toggleFilter(key, value)}
                     className="ml-0.5 rounded hover:bg-accent p-0.5"
@@ -375,7 +393,7 @@ function FilterPopover({
                         >
                           {checked && <Check className="h-2.5 w-2.5" />}
                         </div>
-                        <span className="flex-1 truncate">{opt.value}</span>
+                        <span className="flex-1 truncate">{opt.label}</span>
                         <span className="text-[10px] text-muted-foreground tabular-nums">
                           {opt.count}
                         </span>

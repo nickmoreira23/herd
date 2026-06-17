@@ -1,5 +1,6 @@
 import { providers as dataProviders } from "@/lib/chat/data-retrieval";
 import { blockRegistry } from "@/lib/blocks/registry";
+import { prisma } from "@/lib/prisma";
 import type { ArtifactMeta } from "@/lib/chat/types";
 import type { MarketplaceSection, MarketplaceSectionScope, MemberRole } from "@prisma/client";
 import { MarketplaceScopeType } from "@prisma/client";
@@ -21,13 +22,26 @@ export interface RenderItem extends ArtifactMeta {
   blockName: string;
 }
 
+/**
+ * L2a.2b-4b — a taxonomy strip entry, sourced from the materialized
+ * Category/Subcategory entities (declared taxonomy, incl. zero-item ones).
+ * `key` is the stable slug (carried in ?category= / ?subCategory= and matched
+ * by the resolver + facet filter); `label` is the entity's editable name;
+ * `count` is how many resolved items slug-match this key.
+ */
+export interface TaxonomyEntry {
+  key: string;
+  label: string;
+  count: number;
+}
+
 export interface RenderContext {
   /** First-page items per block, ordered by id for paging stability. */
   itemsByBlock: Record<string, RenderItem[]>;
   hasMoreByBlock: Record<string, boolean>;
   totalByBlock: Record<string, number>;
-  categoriesByBlock: Record<string, string[]>;
-  subCategoriesByBlock: Record<string, string[]>;
+  categoriesByBlock: Record<string, TaxonomyEntry[]>;
+  subCategoriesByBlock: Record<string, TaxonomyEntry[]>;
   facetsByBlock: Record<string, Facet[]>;
 }
 
@@ -210,17 +224,80 @@ export async function buildRenderContext(
     ctx.itemsByBlock[blockName] = initial;
     ctx.hasMoreByBlock[blockName] = all.length > initial.length;
 
-    const cats = new Set<string>();
-    const subs = new Set<string>();
-    for (const it of all) {
-      if (it.category) cats.add(it.category);
-      const sub = (it.meta as Record<string, unknown>)?.subCategory;
-      if (typeof sub === "string" && sub) subs.add(sub);
-    }
-    ctx.categoriesByBlock[blockName] = Array.from(cats).sort();
-    ctx.subCategoriesByBlock[blockName] = Array.from(subs).sort();
-    ctx.facetsByBlock[blockName] = buildFacets(all, getFilterFields(blockName));
+    // L2a.2b-4b — taxonomy strips + facets come from the materialized
+    // Category/Subcategory entities (declared taxonomy, incl. zero-item ones),
+    // with counts computed by slug-matching the resolved items. Non-taxonomy
+    // facets (status/brand/type) still come from the items via buildFacets.
+    const taxonomy = await buildTaxonomy(blockName, all);
+    ctx.categoriesByBlock[blockName] = taxonomy.categories;
+    ctx.subCategoriesByBlock[blockName] = taxonomy.subCategories;
+    ctx.facetsByBlock[blockName] = [
+      ...taxonomy.facets,
+      ...buildFacets(all, getFilterFields(blockName)),
+    ];
   }
 
   return ctx;
+}
+
+/**
+ * Build the taxonomy strips + facets for a block from its materialized
+ * Category/Subcategory entities (tenant-scoped; must run under withTenant).
+ * Counts come from slug-matching the resolved items. A flat block (no entities)
+ * yields empty strips/facets — the pre-L2a.2b behavior for taxonomy-less blocks.
+ */
+async function buildTaxonomy(
+  blockName: string,
+  items: RenderItem[],
+): Promise<{ categories: TaxonomyEntry[]; subCategories: TaxonomyEntry[]; facets: Facet[] }> {
+  const entities = await prisma.category.findMany({
+    where: { blockName },
+    orderBy: { sortOrder: "asc" },
+    include: { subcategories: { orderBy: { sortOrder: "asc" } } },
+  });
+  if (entities.length === 0) {
+    return { categories: [], subCategories: [], facets: [] };
+  }
+
+  // Pre-count items by their slugified category / subcategory.
+  const catCounts = new Map<string, number>();
+  const subCounts = new Map<string, number>();
+  for (const it of items) {
+    if (it.category) {
+      const k = slugify(it.category);
+      catCounts.set(k, (catCounts.get(k) ?? 0) + 1);
+    }
+    const sub = (it.meta as Record<string, unknown>)?.subCategory;
+    if (typeof sub === "string" && sub) {
+      const k = slugify(sub);
+      subCounts.set(k, (subCounts.get(k) ?? 0) + 1);
+    }
+  }
+
+  const categories: TaxonomyEntry[] = entities.map((c) => ({
+    key: c.sourceKey,
+    label: c.name,
+    count: catCounts.get(c.sourceKey) ?? 0,
+  }));
+  const subCategories: TaxonomyEntry[] = entities
+    .flatMap((c) => c.subcategories)
+    .map((s) => ({ key: s.sourceKey, label: s.name, count: subCounts.get(s.sourceKey) ?? 0 }));
+
+  const facets: Facet[] = [];
+  if (categories.length > 0) {
+    facets.push({
+      key: "category",
+      label: "Category",
+      options: categories.map((c) => ({ value: c.key, label: c.label, count: c.count })),
+    });
+  }
+  if (subCategories.length > 0) {
+    facets.push({
+      key: "subCategory",
+      label: "Sub-category",
+      options: subCategories.map((s) => ({ value: s.key, label: s.label, count: s.count })),
+    });
+  }
+
+  return { categories, subCategories, facets };
 }

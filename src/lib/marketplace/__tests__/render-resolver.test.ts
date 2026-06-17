@@ -24,6 +24,18 @@ vi.mock("@/lib/chat/data-retrieval", () => ({
   ],
 }));
 
+// L2a.2b-4b — buildRenderContext now reads the materialized taxonomy entities
+// for strips/facets. Mock prisma.category so the unit tests stay DB-free; each
+// test sets categoryRows to control the declared taxonomy.
+let categoryRows: Array<{
+  sourceKey: string;
+  name: string;
+  subcategories: Array<{ sourceKey: string; name: string }>;
+}> = [];
+vi.mock("@/lib/prisma", () => ({
+  prisma: { category: { findMany: vi.fn(async () => categoryRows) } },
+}));
+
 import {
   resolveItemsPage,
   buildRenderContext,
@@ -338,23 +350,57 @@ describe("render-resolver — pagination, search, filters", () => {
 });
 
 describe("render-resolver — buildRenderContext", () => {
-  beforeEach(() =>
+  beforeEach(() => {
     seed([
       product("aaa", { name: "Whey", category: "supplements", subCategory: "protein" }),
       product("bbb", { name: "Tee", category: "apparel", subCategory: "shirts" }),
-    ])
-  );
+    ]);
+    // Declared taxonomy from the materialized entities — note "vitamins" has
+    // ZERO items, proving facets come from the entities, not the item distinct.
+    categoryRows = [
+      {
+        sourceKey: "supplements",
+        name: "Supplements",
+        subcategories: [{ sourceKey: "protein", name: "Protein" }],
+      },
+      { sourceKey: "apparel", name: "Apparel", subcategories: [{ sourceKey: "shirts", name: "Shirts" }] },
+      { sourceKey: "vitamins", name: "Vitamins", subcategories: [] },
+    ];
+  });
 
-  it("aggregates items, categories, sub-categories per block", async () => {
+  it("strips come from the materialized entities, with counts (incl. zero-item categories)", async () => {
     const ctx = await buildRenderContext(
       section([scope({ scopeType: MarketplaceScopeType.ALL })]),
       VIEWER
     );
     expect(ctx.totalByBlock.products).toBe(2);
     expect(ctx.itemsByBlock.products).toHaveLength(2);
-    expect(ctx.hasMoreByBlock.products).toBe(false);
-    expect(ctx.categoriesByBlock.products).toEqual(["apparel", "supplements"]);
-    expect(ctx.subCategoriesByBlock.products).toEqual(["protein", "shirts"]);
+    expect(ctx.categoriesByBlock.products).toEqual([
+      { key: "supplements", label: "Supplements", count: 1 },
+      { key: "apparel", label: "Apparel", count: 1 },
+      { key: "vitamins", label: "Vitamins", count: 0 }, // declared, no item yet
+    ]);
+    expect(ctx.subCategoriesByBlock.products).toEqual([
+      { key: "protein", label: "Protein", count: 1 },
+      { key: "shirts", label: "Shirts", count: 1 },
+    ]);
+    // The category facet carries slug values + labels (for the filter popover).
+    const catFacet = ctx.facetsByBlock.products.find((f) => f.key === "category");
+    expect(catFacet?.options).toEqual([
+      { value: "supplements", label: "Supplements", count: 1 },
+      { value: "apparel", label: "Apparel", count: 1 },
+      { value: "vitamins", label: "Vitamins", count: 0 },
+    ]);
+  });
+
+  it("flat block (no entities) yields empty taxonomy strips", async () => {
+    categoryRows = [];
+    const ctx = await buildRenderContext(
+      section([scope({ scopeType: MarketplaceScopeType.ALL })]),
+      VIEWER
+    );
+    expect(ctx.categoriesByBlock.products).toEqual([]);
+    expect(ctx.facetsByBlock.products.find((f) => f.key === "category")).toBeUndefined();
   });
 
   it("only includes blocks whose scopes are visible to the viewer", async () => {
