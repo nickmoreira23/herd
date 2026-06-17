@@ -943,6 +943,16 @@ export interface ScenarioResults {
    *  surface (cascade with shared/party cost attribution + loss handling). */
   profitDistribution: ProfitDistributionByBasis;
 
+  /** Sales-force headcount over the projection window. `levels` are the
+   *  leadership levels ordered TOP → BASE (highest cumulative span first);
+   *  each carries its per-month manager count (`floor(activeReps / threshold)`
+   *  — 1 manager per `threshold` reps). `repsByMonth` is the base (reps). Empty
+   *  `levels` when no leadership plan is active. */
+  salesTeam: {
+    levels: { id: string; name: string; threshold: number; headcountByMonth: number[] }[];
+    repsByMonth: number[];
+  };
+
   // Operation breakeven month (0 = already profitable, Infinity = never)
   operationBreakevenMonth: number;
 
@@ -2817,6 +2827,19 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
     totals: { accrual: partyTotals(accrualMonthly), cash: partyTotals(cashMonthly) },
   };
 
+  // Sales-team headcount per month. A level has `floor(activeReps / threshold)`
+  // managers (threshold = cumulative span ⇒ 1 manager per `threshold` reps).
+  // Ordered TOP → BASE so the UI reads highest level first, reps at the bottom.
+  const salesTeam: ScenarioResults["salesTeam"] = {
+    levels: [...leadershipLevels].reverse().map((lvl) => ({
+      id: lvl.id,
+      name: lvl.name,
+      threshold: lvl.threshold,
+      headcountByMonth: cohortProjection.map((m) => Math.floor(m.activeReps / lvl.threshold)),
+    })),
+    repsByMonth: cohortProjection.map((m) => m.activeReps),
+  };
+
   return {
     // Thread D.2 — these scalars are remapped to their AVERAGE-OF-PERIOD
     // versions, replacing the legacy Mo-1-frozen exports. Per-sub values
@@ -2866,6 +2889,7 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
     cohortProjection,
     cohortLifecycles,
     profitDistribution,
+    salesTeam,
     operationBreakevenMonth,
   };
 }

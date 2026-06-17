@@ -141,9 +141,9 @@ export function CohortSpreadsheet({
         {Selector}
         <CohortLifecycleTable
           lifecycle={lifecycle}
-          cohortProjection={results.cohortProjection}
           tierBillingDistributions={tierBillingDistributions}
           blendedRevenuePerSub={blendedRevenuePerSub}
+          salesTeam={results.salesTeam}
           locale={locale}
         />
       </div>
@@ -173,6 +173,7 @@ export function CohortSpreadsheet({
         locale={locale}
         cashDistribution={results.profitDistribution?.cash ?? []}
         cashTotals={cashTotals}
+        salesTeam={results.salesTeam}
         perspective={perspective}
       />
     </div>
@@ -195,6 +196,38 @@ function deriveBlendedRevenuePerSub(
   return m1.revenue / m1.subscribers;
 }
 
+/** Sales Team rows (levels top → base, then reps), keyed by calendar month
+ *  via `monthIndex`. Shared by both cohort tables (per-cohort + aggregate);
+ *  the structural shape is assignable to each table's local row type. */
+function buildSalesTeamRows(
+  salesTeam: NonNullable<ReturnType<typeof useFinancialStore.getState>["results"]>["salesTeam"],
+  months: { monthIndex: number }[],
+  t: ReturnType<typeof useT>,
+): {
+  label: string;
+  getValue: (m: { monthIndex: number }) => number;
+  getTotal: () => number;
+  format: "number";
+}[] {
+  const lastMonthIndex = months[months.length - 1]?.monthIndex;
+  const series = (arr: number[]) => ({
+    getValue: (m: { monthIndex: number }) => arr[m.monthIndex - 1] ?? 0,
+    getTotal: () => (lastMonthIndex ? (arr[lastMonthIndex - 1] ?? 0) : 0),
+  });
+  return [
+    ...salesTeam.levels.map((lvl) => ({
+      label: lvl.name || t("financials.cascade.level_unnamed"),
+      ...series(lvl.headcountByMonth),
+      format: "number" as const,
+    })),
+    {
+      label: t("financials.sales_team.reps"),
+      ...series(salesTeam.repsByMonth),
+      format: "number" as const,
+    },
+  ];
+}
+
 
 /**
  * Renders ONE acquisition cohort's lifetime in the projection window —
@@ -209,20 +242,20 @@ function deriveBlendedRevenuePerSub(
  */
 function CohortLifecycleTable({
   lifecycle,
-  cohortProjection,
   tierBillingDistributions,
   blendedRevenuePerSub,
+  salesTeam,
   locale,
 }: {
   lifecycle: NonNullable<
     ReturnType<typeof useFinancialStore.getState>["results"]
   >["cohortLifecycles"][number];
-  /** Aggregate cohort projection — used to look up the active-rep count
-   *  at each calendar month the cohort touches (reps grow scenario-level,
-   *  not cohort-level, so we read them from the central series). */
-  cohortProjection: NonNullable<
+  /** Sales-force headcount per calendar month (levels top → base + reps),
+   *  read by the cohort's `monthIndex` — reps grow scenario-level, not
+   *  cohort-level, so the series is central. */
+  salesTeam: NonNullable<
     ReturnType<typeof useFinancialStore.getState>["results"]
-  >["cohortProjection"];
+  >["salesTeam"];
   /** Per-tier billing distribution (same source the scenario builder
    *  shows). Drives the "(X%)" suffix in the "Active by Plan & Cycle"
    *  rows so the user reads each tier's mix without leaving the table. */
@@ -504,24 +537,17 @@ function CohortLifecycleTable({
   };
 
   const sections: SectionDef[] = [
+    // Sales Team — one row per leadership level (top → base), then the reps
+    // base. Reps grow scenario-level, so headcount is read by calendar month.
+    {
+      id: "sales-team",
+      section: t("financials.projection.section.sales_team"),
+      rows: buildSalesTeamRows(salesTeam, months, t),
+    },
     {
       id: "subscribers",
       section: t("financials.projection.section.subscribers"),
       rows: [
-        // Sales Reps — total reps active scenario-wide at each calendar
-        // month this cohort touches. Reps grow at a scenario-level rate
-        // (not per-cohort), so we read from the central cohortProjection
-        // series and look up by the cohort's monthIndex. Total column
-        // shows the rep count at the cohort's last month.
-        {
-          label: t("financials.cohort.row.active_reps"),
-          getValue: (m) =>
-            cohortProjection[m.monthIndex - 1]?.activeReps ?? 0,
-          getTotal: () =>
-            cohortProjection[months[months.length - 1]?.monthIndex - 1]
-              ?.activeReps ?? 0,
-          format: "number",
-        },
         // Subscribers — the cohort's gross acquisitions. Static row:
         // the cohort's size at signup is `grossNewSubs`, shown in Mo 1
         // and zero everywhere after (no new subs join an existing cohort).
@@ -1210,6 +1236,7 @@ function AggregateCohortTable({
   locale,
   cashDistribution,
   cashTotals,
+  salesTeam,
   perspective = "general",
 }: {
   cohortLifecycles: NonNullable<
@@ -1224,6 +1251,9 @@ function AggregateCohortTable({
   cashTotals: NonNullable<
     ReturnType<typeof useFinancialStore.getState>["results"]
   >["profitDistribution"]["totals"]["cash"];
+  salesTeam: NonNullable<
+    ReturnType<typeof useFinancialStore.getState>["results"]
+  >["salesTeam"];
   perspective?: string;
   scenarioTierIds: string[];
   /** Per-tier billing distribution — drives the "(X%)" suffix in the
@@ -1623,21 +1653,16 @@ function AggregateCohortTable({
     rows: AggRow[];
     defaultCollapsed?: boolean;
   }[] = [
+    // Sales Team — one row per leadership level (top → base), then reps base.
+    {
+      id: "sales-team",
+      section: t("financials.projection.section.sales_team"),
+      rows: buildSalesTeamRows(salesTeam, aggMonths, t),
+    },
     {
       id: "subscribers",
       section: t("financials.projection.section.subscribers"),
       rows: [
-        // Sales Reps — read directly from the engine's cohortProjection
-        // (the rep count grows monthly per the salesRepChannel growth
-        // rate). Total column = reps at the last month in view.
-        {
-          label: t("financials.cohort.row.active_reps"),
-          getValue: (m) =>
-            cohortProjection[m.monthIndex - 1]?.activeReps ?? 0,
-          getTotal: () =>
-            cohortProjection[aggMonths.length - 1]?.activeReps ?? 0,
-          format: "number",
-        },
         // Headline gross signups for the calendar month — parent of the
         // per-tier breakdown so the user can collapse details.
         {

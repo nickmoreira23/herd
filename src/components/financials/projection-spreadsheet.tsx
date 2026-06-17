@@ -155,7 +155,6 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
   } = useSpreadsheetCollapse(["active-by-plan-cycle"], initialCollapsedRows);
 
   // Build row data for each month
-  const activeReps: number[] = [];
   const grossNewSales: number[] = [];
   const chargebacks: number[] = [];
   const newSubs: number[] = [];
@@ -189,8 +188,6 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
     const curr = projection[i];
     const prev = i > 0 ? projection[i - 1] : null;
     const agg = aggMonths[i];
-
-    activeReps.push(curr.activeReps);
 
     const monthChargebacks = curr.chargebacks ?? 0;
     const monthGrossNew = curr.newSubsFromReps + monthChargebacks;
@@ -432,6 +429,25 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
       }))
     : [];
 
+  // Sales-team headcount — one row per leadership level (top → base), then
+  // the reps row as the base. Headcount grows as active reps cross each
+  // level's span. Total column = headcount at the last visible month.
+  const salesTeamRows: RowDef[] = [
+    ...results.salesTeam.levels.map((lvl) => ({
+      label: lvl.name || t("financials.cascade.level_unnamed"),
+      type: "number" as const,
+      totalMode: "latest" as const,
+      values: lvl.headcountByMonth.slice(0, projection.length),
+    })),
+    {
+      label: t("financials.sales_team.reps"),
+      tooltip: t("financials.sales_team.reps_tooltip"),
+      type: "number" as const,
+      totalMode: "latest" as const,
+      values: results.salesTeam.repsByMonth.slice(0, projection.length),
+    },
+  ];
+
   // Per-billing-cycle revenue breakdown. Each cycle is a parent with
   // per-tier children (when there's >1 tier) — values come from the
   // aggMonths cross-product.
@@ -542,10 +558,14 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
 
   const sections: SectionDef[] = [
     {
+      id: "sales-team",
+      header: t("financials.projection.section.sales_team"),
+      rows: salesTeamRows,
+    },
+    {
       id: "subscribers",
       header: t("financials.projection.section.subscribers"),
       rows: [
-        { label: t("financials.projection.row.active_reps"), type: "number", totalMode: "latest", values: activeReps },
         { id: "subscribers-gross", label: t("financials.projection.row.gross_new_sales"), type: "number", totalMode: "sum", values: grossNewSales, bold: true },
         ...perTierNewSalesRows,
         ...(chargebacks.some((v) => v > 0) ? [
