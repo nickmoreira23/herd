@@ -20,7 +20,7 @@ function emptyCtx(): RenderContext {
     itemsByBlock: { products: [{ id: "product:a", name: "A" }] as never },
     hasMoreByBlock: { products: false },
     totalByBlock: { products: 1 },
-    categoriesByBlock: { products: ["supplements"] },
+    categoriesByBlock: { products: [{ key: "supplements", label: "Supplements", count: 1 }] },
     subCategoriesByBlock: { products: [] },
     facetsByBlock: { products: [] },
   };
