@@ -964,6 +964,13 @@ export interface ScenarioResults {
     reps: {
       accrual: { upfront: number[]; residual: number[]; total: number[] };
       cash: { upfront: number[]; residual: number[]; total: number[] };
+      /** One rep's own production (drives the per-member-unit role view):
+       *  `newSubscribers` = net new subs/month, `subscribers` = active book,
+       *  `revenue` = that book's revenue (accrual smoothed, cash lumpy). Scale
+       *  by a manager's downline size (threshold) for their unit's production. */
+      newSubscribers: number[];
+      subscribers: number[];
+      revenue: { accrual: number[]; cash: number[] };
     };
     levels: { id: string; name: string; accrual: number[]; cash: number[] }[];
   };
@@ -2918,6 +2925,27 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
     repResidualCash.push(blendedResidualPct * rev);
   }
 
+  // One rep's own production — active book (churn-adjusted), and its revenue
+  // (accrual = book × blendedRevenuePerSub; cash = per-sub cash curve convolved
+  // with the rep's net-new stream). Scaled by a manager's downline in the role
+  // view to show one member's unit of production.
+  const repActiveSubs: number[] = [];
+  const repRevenueAccrual: number[] = [];
+  const repRevenueCash: number[] = [];
+  for (let month = 1; month <= monthsCount; month++) {
+    let subs = 0;
+    let cashRev = 0;
+    for (let m = 0; m < month; m++) {
+      const monthsActive = month - (m + 1);
+      const churnPeriods = Math.max(0, monthsActive - commitMonths + 1);
+      subs += repNetNewByMonth[m] * Math.pow(1 - avgChurn, churnPeriods);
+      cashRev += repNetNewByMonth[m] * (perSubCashByTenure[monthsActive] ?? 0);
+    }
+    repActiveSubs.push(subs);
+    repRevenueAccrual.push(subs * blendedRevenuePerSub);
+    repRevenueCash.push(cashRev);
+  }
+
   const addSeries = (a: number[], b: number[]) => a.map((x, i) => x + (b[i] ?? 0));
   // One representative manager's override on a single span = level override ×
   // threshold / activeReps (smooth; zero before the level activates).
@@ -2942,6 +2970,9 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
         residual: repResidualCash,
         total: addSeries(repUpfrontAccrual, repResidualCash),
       },
+      newSubscribers: repNetNewByMonth,
+      subscribers: repActiveSubs,
+      revenue: { accrual: repRevenueAccrual, cash: repRevenueCash },
     },
     levels: [...leadershipLevels].reverse().map((lvl) => ({
       id: lvl.id,

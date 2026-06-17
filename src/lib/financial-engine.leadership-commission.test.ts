@@ -394,4 +394,23 @@ describe("[member-earnings] individual career-trajectory earnings", () => {
     expect(me.reps.accrual.total.length).toBe(me.reps.cash.total.length);
     expect(me.reps.accrual.total.length).toBeGreaterThan(0);
   });
+
+  it("[PM-P6] single-rep production reconciles with the channel (flat reps ⇒ channel = reps × rep)", () => {
+    const r = calculateScenario(flat); // flat 10 reps from month 1
+    const reps = r.cohortProjection[0].activeReps;
+    expect(reps).toBe(10);
+    // Active subscribers: channel ≈ reps × one rep's book, month by month.
+    r.cohortProjection.forEach((m, i) => {
+      const channel = m.subscribers;
+      const fromOne = reps * r.memberEarnings.reps.subscribers[i];
+      expect(Math.abs(channel - fromOne) / Math.max(1, channel)).toBeLessThan(0.02);
+    });
+    // Accrual revenue: same reconciliation over the window.
+    const channelRev = sum(r.cohortProjection.map((m) => m.revenue));
+    const repRev = reps * sum(r.memberEarnings.reps.revenue.accrual);
+    expect(Math.abs(channelRev - repRev) / channelRev).toBeLessThan(0.02);
+    // New subscribers per month are positive and present.
+    expect(r.memberEarnings.reps.newSubscribers.length).toBe(r.cohortProjection.length);
+    expect(r.memberEarnings.reps.newSubscribers[0]).toBeGreaterThan(0);
+  });
 });
