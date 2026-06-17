@@ -93,6 +93,29 @@ describe("applyFilters", () => {
     expect(applyFilters(it1, { category: ["supplements"], brand: ["Acme"] }, fields)).toBe(true);
     expect(applyFilters(it1, { category: ["supplements"], brand: ["Other"] }, fields)).toBe(false);
   });
+
+  // L2a.2b-4b — category/subCategory are slugMatch: both sides slugified.
+  it("category is slug-matched — a SLUG filter matches a RAW item category", () => {
+    expect(
+      applyFilters(item({ id: "a", category: "SUPPLEMENT" }), { category: ["supplement"] }, fields)
+    ).toBe(true);
+    expect(
+      applyFilters(item({ id: "a", meta: { subCategory: "Pre-Workout" } }), { subCategory: ["pre-workout"] }, fields)
+    ).toBe(true);
+  });
+
+  it("category slug-match is back-compat — a stale RAW-label filter still matches", () => {
+    // an old URL carrying ?category=SUPPLEMENT still filters the slugged item
+    expect(
+      applyFilters(item({ id: "a", category: "supplement" }), { category: ["SUPPLEMENT"] }, fields)
+    ).toBe(true);
+  });
+
+  it("category slug-match rejects when slugs differ", () => {
+    expect(
+      applyFilters(item({ id: "a", category: "APPAREL" }), { category: ["supplement"] }, fields)
+    ).toBe(false);
+  });
 });
 
 describe("applySearch", () => {
@@ -123,26 +146,32 @@ describe("applySearch", () => {
 describe("buildFacets", () => {
   const fields = getFilterFields("products");
 
-  it("returns distinct values with counts, sorted, only when ≥2 options", () => {
+  it("builds NON-taxonomy facets (status) with value+label+count, sorted, ≥2 options", () => {
     const items = [
-      item({ id: "a", category: "supplements" }),
-      item({ id: "b", category: "supplements" }),
-      item({ id: "c", category: "apparel" }),
+      item({ id: "a", status: "active" }),
+      item({ id: "b", status: "active" }),
+      item({ id: "c", status: "draft" }),
     ];
-    const facets = buildFacets(items, fields);
-    const category = facets.find((f) => f.key === "category");
-    expect(category?.options).toEqual([
-      { value: "apparel", count: 1 },
-      { value: "supplements", count: 2 },
+    const status = buildFacets(items, fields).find((f) => f.key === "status");
+    expect(status?.options).toEqual([
+      { value: "active", label: "active", count: 2 },
+      { value: "draft", label: "draft", count: 1 },
     ]);
   });
 
-  it("drops facets with fewer than 2 distinct options", () => {
+  it("SKIPS taxonomy (slugMatch) facets — category/subCategory come from entities", () => {
     const items = [
       item({ id: "a", category: "supplements" }),
-      item({ id: "b", category: "supplements" }),
+      item({ id: "b", category: "apparel" }),
     ];
-    // category has only 1 distinct value → excluded entirely
+    // even with ≥2 distinct categories, buildFacets does not emit the category
+    // facet (it is built from the materialized entities in render-resolver).
     expect(buildFacets(items, fields).find((f) => f.key === "category")).toBeUndefined();
+    expect(buildFacets(items, fields).find((f) => f.key === "subCategory")).toBeUndefined();
+  });
+
+  it("drops non-taxonomy facets with fewer than 2 distinct options", () => {
+    const items = [item({ id: "a", status: "active" }), item({ id: "b", status: "active" })];
+    expect(buildFacets(items, fields).find((f) => f.key === "status")).toBeUndefined();
   });
 });

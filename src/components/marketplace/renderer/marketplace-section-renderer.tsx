@@ -196,20 +196,25 @@ function CategoriasRender({
       : ctx.subCategoriesByBlock[blockName] ?? [];
   if (values.length === 0) return null;
 
+  // L2a.2b-4b — values are TaxonomyEntry { key (slug), label, count }. The chip
+  // shows the entity label and links with the stable slug `key` in the query
+  // param (?category= / ?subCategory=); the grid reads it and filters by slug.
+  const paramName = kind === "category" ? "category" : "subCategory";
+
   return (
     <section>
       <h2 className="text-lg font-semibold mb-4">{title}</h2>
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
         {values.map((v) => (
           <Link
-            key={v}
+            key={v.key}
             href={`/explore/${sectionSlug}?block=${encodeURIComponent(
               blockName
-            )}&${kind === "category" ? "category" : "subCategory"}=${encodeURIComponent(v)}`}
+            )}&${paramName}=${encodeURIComponent(v.key)}`}
             className="group rounded-lg border bg-card hover:bg-accent transition-colors aspect-square flex flex-col items-center justify-center gap-1.5 p-3 text-center"
           >
             <Tag className="h-4 w-4 text-muted-foreground group-hover:text-foreground" />
-            <span className="text-xs font-medium truncate w-full">{v}</span>
+            <span className="text-xs font-medium truncate w-full">{v.label}</span>
           </Link>
         ))}
       </div>
