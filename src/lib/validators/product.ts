@@ -1,9 +1,15 @@
 import { z } from "zod/v4";
+import { PRODUCT_CATEGORIES } from "@/lib/products/taxonomy";
 
+// L2a.2c — valid categories derive from the block manifest (single source),
+// not an inline list. Preserves the prior contract exactly: input is upper-
+// cased, then accepted iff it is one of the manifest's raw category values
+// ("SUPPLEMENT"/"APPAREL"/"ACCESSORY"). Product.category form is unchanged.
+const VALID_CATEGORIES = new Set(PRODUCT_CATEGORIES);
 const categoryEnum = z
   .string()
   .transform((v) => v.toUpperCase())
-  .pipe(z.enum(["SUPPLEMENT", "APPAREL", "ACCESSORY"]));
+  .refine((v) => VALID_CATEGORIES.has(v), { message: "Invalid product category" });
 
 export const createProductSchema = z.object({
   name: z.string().min(1, "Name is required"),

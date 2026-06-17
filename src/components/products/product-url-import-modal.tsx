@@ -15,7 +15,7 @@ import {
 import { Link2, Loader2, ChevronDown, ChevronRight, Package } from "lucide-react";
 import { toast } from "sonner";
 import type { ScrapedProductData } from "@/lib/products/types";
-import { PRODUCT_CATEGORIES, SUB_CATEGORIES } from "@/types";
+import { PRODUCT_CATEGORIES, SUB_CATEGORIES } from "@/lib/products/taxonomy";
 
 interface ProductUrlImportModalProps {
   open: boolean;
