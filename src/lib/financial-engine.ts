@@ -233,20 +233,32 @@ export type CostRubric =
  * production. S6 assumes full coverage (the whole channel sits under the full
  * chain), so each level's base is the channel's monthly production. The
  * stacked cost is `base_month × Σ_levels(effectiveRate_level)` — the engine
- * only SUMS effective rates (agnostic to level order/sign). `effectiveRate` is
- * the headcount-weighted average of the level's bronze/prata tier rates.
- * Headcount and tier mix are STATIC in S6 (dynamic 1-per-N + tier progression
- * are S7). The result is a derived, attributable cost rubric
- * (`leadershipCommission`, default shared) flowing through the S2 cascade.
+ * only SUMS effective rates (agnostic to level order/sign). A level's
+ * `effectiveRate` is the mix-weighted average of its qualifications' rates
+ * (S8.1: qualifications are dynamic and named — no longer fixed bronze/prata).
+ * Qualification mix is STATIC (dynamic 1-per-N activation is S7; tier
+ * progression over time is the D5 follow-up). The result is a derived,
+ * attributable cost rubric (`leadershipCommission`, default shared) flowing
+ * through the S2 cascade.
  */
+export interface LeadershipQualification {
+  id: string;
+  name: string;
+  /** Override % this qualification earns on the level's base production. */
+  ratePct: number;
+  /** Relative share of managers at this qualification — weights the level's
+   *  effective rate. The qualifications blend by mix into one level rate
+   *  (generalizes S6's bronze/prata tierMix to N named qualifications). */
+  mixPct: number;
+}
+
 export interface LeadershipLevel {
   id: string;
   name: string;
-  tiers: { bronze: { ratePct: number }; prata: { ratePct: number } };
-  /** Static tier mix (bronze vs prata proportion) — weights the effective
-   *  rate. Replaces S6's `headcount`: in S7 the absolute headcount is derived
-   *  from `activeReps` via `span`, so only the proportion matters here. */
-  tierMix: { bronze: number; prata: number };
+  /** Qualifications at this level (e.g. Bronze, Prata, …) — dynamic and named.
+   *  The level's effective rate is the mix-weighted average of these rates.
+   *  EMPTY ⇒ the level contributes 0 (a new level starts with none). */
+  qualifications: LeadershipQualification[];
   /** Span ratio for threshold activation: reps per unit of this level (e.g.
    *  20 reps per local). The level activates in a month when `activeReps` ≥
    *  the cumulative product of spans from the base up to and including this
@@ -1092,13 +1104,13 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
   if (leadershipPlan?.enabled) {
     let cumulativeSpan = 1;
     for (const lvl of leadershipPlan.levels) {
-      const mixTotal = lvl.tierMix.bronze + lvl.tierMix.prata;
+      // Level effective rate = mix-weighted average of its qualifications'
+      // rates (S8.1). No qualifications (or zero total mix) ⇒ 0.
+      const quals = lvl.qualifications ?? [];
+      const mixTotal = quals.reduce((s, q) => s + q.mixPct, 0);
       const effectiveRate =
         mixTotal > 0
-          ? (lvl.tierMix.bronze * lvl.tiers.bronze.ratePct +
-              lvl.tierMix.prata * lvl.tiers.prata.ratePct) /
-            mixTotal /
-            100
+          ? quals.reduce((s, q) => s + q.mixPct * q.ratePct, 0) / mixTotal / 100
           : 0;
       // Span ≤ 0 is invalid; treat as 1 so a bad value can't zero the
       // cumulative product and force every level active from month 1.

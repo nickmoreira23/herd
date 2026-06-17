@@ -537,15 +537,16 @@ export function FinancialPageClient({
                 : t("financials.toolbar.button.save_model")}
             </Button>
           ) : (
+            <>
+              <Button size="sm" onClick={() => setEditing(true)}>
+                <Pencil className="h-3.5 w-3.5 mr-1.5" />
+                {t("common.actions.edit")}
+              </Button>
             <DropdownMenu>
               <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md border border-input bg-background h-8 w-8 text-sm font-medium shadow-xs hover:bg-accent hover:text-accent-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
                 <MoreHorizontal className="h-4 w-4" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-40">
-                <DropdownMenuItem onClick={() => setEditing(true)}>
-                  <Pencil className="h-3.5 w-3.5 mr-2" />
-                  {t("common.actions.edit")}
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setRemixOpen(true)}>
                   <Sparkles className="h-3.5 w-3.5 mr-2" />
                   {t("financials.toolbar.button.remix")}
@@ -570,6 +571,7 @@ export function FinancialPageClient({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            </>
           )}
         </div>
       </div>
@@ -692,7 +694,14 @@ export function FinancialPageClient({
                         </span>
                         <Select value={perspective} onValueChange={setPerspective}>
                           <SelectTrigger className="h-7 w-[130px] text-xs border-dashed">
-                            <SelectValue />
+                            <SelectValue>
+                              {(v) =>
+                                v === "general"
+                                  ? t("financials.toolbar.perspective.general")
+                                  : inputs.profitSplitParties.find((p) => p.id === v)?.name ||
+                                    t("financials.builder.profit_split.unnamed")
+                              }
+                            </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="general" className="text-xs">

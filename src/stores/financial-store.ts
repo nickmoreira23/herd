@@ -254,6 +254,33 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
     // `enabled`); the default object just gives the store a defined shape.
     if (!migrated.leadershipCompPlan) {
       migrated.leadershipCompPlan = { enabled: false, base: "revenue", levels: [] };
+    } else {
+      // S8.1: migrate old-shape levels (fixed bronze/prata `tiers` + `tierMix`)
+      // to dynamic named `qualifications`. A level already on the new shape
+      // passes through; a legacy level converts its two tiers; anything else
+      // defaults to no qualifications (contributes 0 until configured).
+      migrated.leadershipCompPlan = {
+        ...migrated.leadershipCompPlan,
+        levels: (migrated.leadershipCompPlan.levels ?? []).map((lvl) => {
+          const raw = lvl as unknown as {
+            id: string;
+            name: string;
+            span: number;
+            qualifications?: unknown;
+            tiers?: { bronze: { ratePct: number }; prata: { ratePct: number } };
+            tierMix?: { bronze: number; prata: number };
+          };
+          if (raw.qualifications) return lvl;
+          const qualifications =
+            raw.tiers && raw.tierMix
+              ? [
+                  { id: crypto.randomUUID(), name: "Bronze", ratePct: raw.tiers.bronze.ratePct, mixPct: raw.tierMix.bronze },
+                  { id: crypto.randomUUID(), name: "Prata", ratePct: raw.tiers.prata.ratePct, mixPct: raw.tierMix.prata },
+                ]
+              : [];
+          return { id: raw.id, name: raw.name, span: raw.span, qualifications };
+        }),
+      };
     }
 
     // Migrate old snapshots missing chargeback fields
