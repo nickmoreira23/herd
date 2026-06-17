@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
-import { PRODUCT_CATEGORIES, SUB_CATEGORIES } from "@/types";
+import { PRODUCT_CATEGORIES, SUB_CATEGORIES } from "@/lib/products/taxonomy";
 
 // ─── Types ────────────────────────────────────────────────────
 interface RedemptionRule {
