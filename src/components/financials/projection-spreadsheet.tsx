@@ -141,6 +141,7 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
     "buck",
     "addons",
     "member-rep",
+    "active-subscribers", // hide the per-plan/cycle breakdown behind the Active Subscribers total
   ];
   for (const tid of tierIds) {
     initialCollapsedRows.push(`active-by-plan-cycle--${tid}`);
@@ -157,7 +158,7 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
     collapsedRows,
     toggleSection,
     toggleRow,
-  } = useSpreadsheetCollapse(["active-by-plan-cycle"], initialCollapsedRows);
+  } = useSpreadsheetCollapse([], initialCollapsedRows);
 
   // Build row data for each month
   const grossNewSales: number[] = [];
@@ -561,72 +562,64 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
       ]
     : [];
 
-  // Active by Plan & Cycle section — per-tier parents + 3 cycle children
-  // per parent. Only rendered when there's >1 tier (single-tier scenarios
-  // collapse this into "Total Active"). Values come from aggMonths, total
-  // mode is average (active subs are a stock, not a flow).
-  const activeByPlanCycleSection: SectionDef | null = hasMultipleTiers
-    ? {
-        header: t("financials.projection.section.active_by_plan_cycle"),
-        id: "active-by-plan-cycle",
-        rows: tierIds.flatMap((tierId): RowDef[] => {
-          const parentId = `active-by-plan-cycle--${tierId}`;
-          const cycles: ("monthly" | "biannual" | "annual")[] = [
-            "monthly",
-            "biannual",
-            "annual",
-          ];
-          const cycleKeys = {
-            monthly: "financials.projection.cycle_label.monthly",
-            biannual: "financials.projection.cycle_label.biannual",
-            annual: "financials.projection.cycle_label.annual",
-          } as const satisfies Record<typeof cycles[number], MessageKey>;
-          const tierBilling = tierBillingDistributions.get(tierId);
-          const parent: RowDef = {
-            id: parentId,
-            level: 0,
-            label: t("financials.projection.tier_indent", { tier: tierId }),
-            type: "decimal",
-            totalMode: "average",
-            values: aggMonths.map((m) => {
-              const e = m.subscribersByTierAndCycle.find((x) => x.tierId === tierId);
-              return e ? e.monthly + e.biannual + e.annual : 0;
-            }),
-          };
-          const children: RowDef[] = cycles.map((cycle) => ({
-            id: `${parentId}--${cycle}`,
-            parentId,
-            level: 1,
-            label: t("financials.projection.tier_subindent", {
-              tier: `${t(cycleKeys[cycle])} (${formatNumber(
-                (tierBilling?.[cycle] ?? 0) / 100,
-                locale,
-                "percent",
-              )})`,
-            }),
-            type: "decimal",
-            totalMode: "average",
-            values: aggMonths.map(
-              (m) =>
-                m.subscribersByTierAndCycle.find((e) => e.tierId === tierId)?.[cycle] ??
-                0,
-            ),
-          }));
-          return [parent, ...children];
-        }),
-      }
-    : null;
+  // Active by Plan & Cycle — per-tier parents + 3 cycle children per parent,
+  // nested UNDER the "Active Subscribers" row (no longer its own section).
+  // Only when there's >1 tier (single-tier scenarios need no breakdown).
+  // Values come from aggMonths, total mode average (active subs are a stock).
+  const activeByPlanCycleRows: RowDef[] = hasMultipleTiers
+    ? tierIds.flatMap((tierId): RowDef[] => {
+        const parentId = `active-by-plan-cycle--${tierId}`;
+        const cycles: ("monthly" | "biannual" | "annual")[] = [
+          "monthly",
+          "biannual",
+          "annual",
+        ];
+        const cycleKeys = {
+          monthly: "financials.projection.cycle_label.monthly",
+          biannual: "financials.projection.cycle_label.biannual",
+          annual: "financials.projection.cycle_label.annual",
+        } as const satisfies Record<typeof cycles[number], MessageKey>;
+        const tierBilling = tierBillingDistributions.get(tierId);
+        const parent: RowDef = {
+          id: parentId,
+          parentId: "active-subscribers",
+          level: 1,
+          label: t("financials.projection.tier_indent", { tier: tierId }),
+          type: "decimal",
+          totalMode: "average",
+          values: aggMonths.map((m) => {
+            const e = m.subscribersByTierAndCycle.find((x) => x.tierId === tierId);
+            return e ? e.monthly + e.biannual + e.annual : 0;
+          }),
+        };
+        const children: RowDef[] = cycles.map((cycle) => ({
+          id: `${parentId}--${cycle}`,
+          parentId,
+          level: 2,
+          label: t("financials.projection.tier_subindent", {
+            tier: `${t(cycleKeys[cycle])} (${formatNumber(
+              (tierBilling?.[cycle] ?? 0) / 100,
+              locale,
+              "percent",
+            )})`,
+          }),
+          type: "decimal",
+          totalMode: "average",
+          values: aggMonths.map(
+            (m) =>
+              m.subscribersByTierAndCycle.find((e) => e.tierId === tierId)?.[cycle] ??
+              0,
+          ),
+        }));
+        return [parent, ...children];
+      })
+    : [];
 
   const sections: SectionDef[] = [
     {
       id: "sales-team",
       header: t("financials.projection.section.sales_team"),
       rows: salesTeamRows,
-    },
-    {
-      id: "member-earnings",
-      header: t("financials.projection.section.member_earnings"),
-      rows: memberEarningsRows,
     },
     {
       id: "subscribers",
@@ -639,10 +632,10 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
         ] : []),
         { label: t("financials.projection.row.net_new_subs"), type: "number", totalMode: "sum", values: newSubs, bold: true },
         { label: t("financials.projection.row.lost_to_churn"), type: "number", totalMode: "sum", values: churned },
-        { label: t("financials.projection.row.total_active"), type: "number", totalMode: "latest", values: totalActive, bold: true },
+        { id: "active-subscribers", label: t("financials.projection.row.total_active"), type: "number", totalMode: "latest", values: totalActive, bold: true },
+        ...activeByPlanCycleRows,
       ],
     },
-    ...(activeByPlanCycleSection ? [activeByPlanCycleSection] : []),
     {
       id: "revenue",
       header: t("financials.projection.section.revenue"),
@@ -792,6 +785,34 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
     })(),
   ];
 
+  // Perspective-driven layout (S-member):
+  //  • general → Member Earnings is the LAST section (after Profit Split).
+  //  • party   → no Member Earnings (a party's view is the channel + its split).
+  //  • role    → recruit-facing: keep Sales Team (role + downline) + Subscribers
+  //    + Revenue + an "Earnings" section at the end; hide the company-internal
+  //    cost/profit sections (COGS, OpEx, Bottom Line, Profit Split).
+  const isRole = memberKeep != null;
+  const isGeneral = perspective === "general" || !perspective;
+  const memberEarningsSection: SectionDef = {
+    id: "member-earnings",
+    header: t(
+      isRole
+        ? "financials.projection.section.earnings"
+        : "financials.projection.section.member_earnings",
+    ),
+    rows: memberEarningsRows,
+  };
+  const finalSections: SectionDef[] = isRole
+    ? [
+        ...sections.filter(
+          (s) => !["cogs", "opex", "bottom-line", "profit-cascade"].includes(s.id ?? ""),
+        ),
+        memberEarningsSection,
+      ]
+    : isGeneral
+      ? [...sections, memberEarningsSection]
+      : sections; // party view: channel + its cascade, no member earnings
+
   // Reconciliation series — accrual is what this view displays
   // (`cohortProjection.revenue`); cash is the calendar-month aggregate of
   // the per-cohort lifecycle revenues (which carry biannual/annual lumps).
@@ -849,7 +870,7 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
           </tr>
         </thead>
         <tbody>
-          {sections.map((section) => (
+          {finalSections.map((section) => (
             <SectionGroup
               key={section.header}
               section={section}
