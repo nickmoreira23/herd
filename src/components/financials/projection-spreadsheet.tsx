@@ -141,9 +141,13 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
     "overhead",
     "buck",
     "addons",
-    "member-rep",
     "active-subscribers", // hide the per-plan/cycle breakdown behind the Active Subscribers total
   ];
+  // In a member (role) view the earnings split is the focus — start the rep
+  // (and each manager level) expanded. Elsewhere the rep rollup stays collapsed.
+  if (!(perspective ?? "").startsWith(MEMBER_PREFIX)) {
+    initialCollapsedRows.push("member-rep");
+  }
   for (const tid of tierIds) {
     initialCollapsedRows.push(`active-by-plan-cycle--${tid}`);
     initialCollapsedRows.push(`commissions--${tid}`);
@@ -870,8 +874,10 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
           { label: t("financials.projection.row.subscription_revenue"), type: "currency", totalMode: "sum", values: scaled(reps.revenue.accrual) },
         ],
       },
-      // "Earnings" — managers see their own + the avg below (memberEarningsRows);
-      // a rep is the only seat, so show Upfront + Residual directly (no rollup).
+      // "Earnings" — a rep is the only seat, so show Upfront + Residual
+      // directly. A manager sees one expandable row per seat in the unit
+      // (their own level + each downline level, then the rep), each split
+      // into Upfront + Residual.
       isRepRole
         ? {
             id: "member-earnings",
@@ -881,7 +887,25 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
               { label: t("financials.member_earnings.residual"), type: "currency", totalMode: "sum", values: reps.accrual.residual.slice(0, W) },
             ],
           }
-        : memberEarningsSection,
+        : {
+            id: "member-earnings",
+            header: t("financials.projection.section.earnings"),
+            rows: [
+              ...me.levels
+                .filter((lvl) => !memberKeep || memberKeep.has(lvl.id))
+                .flatMap((lvl): RowDef[] => {
+                  const rowId = `member-lvl-${lvl.id}`;
+                  return [
+                    { id: rowId, label: lvl.name || t("financials.cascade.level_unnamed"), type: "currency", totalMode: "sum", values: lvl.accrual.slice(0, W), bold: true },
+                    { id: `${rowId}--upfront`, parentId: rowId, level: 1, label: t("financials.member_earnings.upfront"), type: "currency", totalMode: "sum", values: lvl.accrualUpfront.slice(0, W) },
+                    { id: `${rowId}--residual`, parentId: rowId, level: 1, label: t("financials.member_earnings.residual"), type: "currency", totalMode: "sum", values: lvl.accrualResidual.slice(0, W) },
+                  ];
+                }),
+              { id: "member-rep", label: t("financials.member_earnings.rep"), type: "currency", totalMode: "sum", values: reps.accrual.total.slice(0, W), bold: true },
+              { id: "member-rep--upfront", parentId: "member-rep", level: 1, label: t("financials.member_earnings.upfront"), type: "currency", totalMode: "sum", values: reps.accrual.upfront.slice(0, W) },
+              { id: "member-rep--residual", parentId: "member-rep", level: 1, label: t("financials.member_earnings.residual"), type: "currency", totalMode: "sum", values: reps.accrual.residual.slice(0, W) },
+            ],
+          },
     ];
   } else if (isGeneral) {
     finalSections = [...sections, memberEarningsSection];

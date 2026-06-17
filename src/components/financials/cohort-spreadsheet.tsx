@@ -1356,9 +1356,13 @@ function AggregateCohortTable({
     "overhead",
     "buck",
     "addons",
-    "member-rep",
     "active-subscribers", // hide the per-plan/cycle breakdown behind the total
   ];
+  // In a member (role) view the earnings split is the focus — start the rep
+  // (and each manager level) expanded. Elsewhere the rep rollup stays collapsed.
+  if (!(perspective ?? "").startsWith(MEMBER_PREFIX)) {
+    initialCollapsedRows.push("member-rep");
+  }
   for (const tid of scenarioTierIds) {
     initialCollapsedRows.push(`active-by-plan-cycle--${tid}`);
     initialCollapsedRows.push(`commissions--${tid}`);
@@ -2179,6 +2183,11 @@ function AggregateCohortTable({
     const sumOf = (arr: number[]) => () =>
       aggMonths.reduce((s, m) => s + (arr[m.monthIndex - 1] ?? 0), 0) * teamSize;
     const latestOf = (arr: number[]) => () => (lastMi ? (arr[lastMi - 1] ?? 0) : 0) * teamSize;
+    // Earnings are per-seat (one manager / one rep) — NOT scaled by teamSize.
+    const sraw = (arr: number[]) => ({
+      getValue: (m: AggMonth) => arr[m.monthIndex - 1] ?? 0,
+      getTotal: () => aggMonths.reduce((s, m) => s + (arr[m.monthIndex - 1] ?? 0), 0),
+    });
     const constRow = (n: number) => ({ getValue: () => n, getTotal: () => n });
     // Churn derived from the single-rep book: prevActive + netNew − active.
     const repChurn = reps.subscribers.map(
@@ -2222,17 +2231,37 @@ function AggregateCohortTable({
         ],
       },
       // Rep is the only seat → Upfront + Residual directly (no rollup row).
-      // Managers keep the per-role rollup (their own + the avg below).
+      // A manager sees one expandable row per seat in the unit (their own
+      // level + each downline level, then the rep), each split Upfront +
+      // Residual. Per-seat (cash) — not scaled by teamSize.
       isRepRole
         ? {
             id: "member-earnings",
             section: t("financials.projection.section.earnings"),
             rows: [
-              { label: t("financials.member_earnings.upfront"), getValue: at(reps.cash.upfront), getTotal: sumOf(reps.cash.upfront), format: "currency" as const },
-              { label: t("financials.member_earnings.residual"), getValue: at(reps.cash.residual), getTotal: sumOf(reps.cash.residual), format: "currency" as const },
+              { label: t("financials.member_earnings.upfront"), ...sraw(reps.cash.upfront), format: "currency" as const },
+              { label: t("financials.member_earnings.residual"), ...sraw(reps.cash.residual), format: "currency" as const },
             ],
           }
-        : memberEarningsSection,
+        : {
+            id: "member-earnings",
+            section: t("financials.projection.section.earnings"),
+            rows: [
+              ...memberEarnings.levels
+                .filter((lvl) => !memberKeep || memberKeep.has(lvl.id))
+                .flatMap((lvl) => {
+                  const rowId = `member-lvl-${lvl.id}`;
+                  return [
+                    { id: rowId, label: lvl.name || t("financials.cascade.level_unnamed"), ...sraw(lvl.cash), format: "currency" as const, bold: true },
+                    { id: `${rowId}--upfront`, parentId: rowId, level: 1, label: t("financials.member_earnings.upfront"), ...sraw(lvl.cashUpfront), format: "currency" as const },
+                    { id: `${rowId}--residual`, parentId: rowId, level: 1, label: t("financials.member_earnings.residual"), ...sraw(lvl.cashResidual), format: "currency" as const },
+                  ];
+                }),
+              { id: "member-rep", label: t("financials.member_earnings.rep"), ...sraw(reps.cash.total), format: "currency" as const, bold: true },
+              { id: "member-rep--upfront", parentId: "member-rep", level: 1, label: t("financials.member_earnings.upfront"), ...sraw(reps.cash.upfront), format: "currency" as const },
+              { id: "member-rep--residual", parentId: "member-rep", level: 1, label: t("financials.member_earnings.residual"), ...sraw(reps.cash.residual), format: "currency" as const },
+            ],
+          },
     ];
   } else if (isGeneral) {
     finalSections = [...sections, memberEarningsSection];
