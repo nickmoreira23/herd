@@ -80,13 +80,34 @@ export async function POST(request: NextRequest) {
         });
       }
 
+      // L2b.2 — curated Listings of the section (replaces ITEM-scopes).
+      const listings = result.data.listings ?? [];
+      if (listings.length > 0) {
+        await prisma.listing.createMany({
+          data: listings.map((l, idx) => ({
+            tenantId: orgId,
+            sectionId: created.id,
+            blockName: l.blockName,
+            sourceId: l.sourceId,
+            titleOverride: l.titleOverride ?? null,
+            descriptionOverride: l.descriptionOverride ?? null,
+            imageUrlOverride: l.imageUrlOverride || null,
+            priceOverrideCents:
+              l.priceOverrideCents !== undefined ? BigInt(l.priceOverrideCents) : null,
+            priceOverrideCurrency: l.priceOverrideCurrency ?? null,
+            featured: l.featured ?? false,
+            sortOrder: l.sortOrder ?? idx,
+          })),
+        });
+      }
+
       // L2a.2b — materialize the taxonomy of each bound block (idempotent;
       // flat blocks no-op). Runs under withTenant so rows land in this org.
       await seedBlocksTaxonomy(orgId, result.data.blockNames);
 
       const section = await prisma.marketplaceSection.findUniqueOrThrow({
         where: { id: created.id },
-        include: { scopes: true },
+        include: { scopes: true, listings: true },
       });
 
       revalidatePath("/admin/marketplace");

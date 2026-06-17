@@ -25,8 +25,16 @@ let parentOrg: { id: string };
 let childOrg: { id: string };
 let aListingId: string;
 
-function listingData(tenantId: string, sourceId: string) {
-  return { tenantId, blockName: "products", sourceId: `${PREFIX}-${sourceId}` };
+function listingData(tenantId: string, sectionId: string, sourceId: string) {
+  return { tenantId, sectionId, blockName: "products", sourceId: `${PREFIX}-${sourceId}` };
+}
+
+async function makeSection(tenantId: string, key: string) {
+  const s = await adminClient.marketplaceSection.create({
+    data: { tenantId, slug: `${PREFIX}-${key}`, name: `Sec ${key}` },
+    select: { id: true },
+  });
+  return s.id;
 }
 
 beforeAll(async () => {
@@ -47,11 +55,17 @@ beforeAll(async () => {
     select: { id: true },
   });
 
-  const a = await adminClient.listing.create({ data: listingData(orgA.id, "a1") });
+  const [secA, secB, secP, secC] = await Promise.all([
+    makeSection(orgA.id, "seca"),
+    makeSection(orgB.id, "secb"),
+    makeSection(parentOrg.id, "secp"),
+    makeSection(childOrg.id, "secc"),
+  ]);
+  const a = await adminClient.listing.create({ data: listingData(orgA.id, secA, "a1") });
   aListingId = a.id;
-  await adminClient.listing.create({ data: listingData(orgB.id, "b1") });
-  await adminClient.listing.create({ data: listingData(parentOrg.id, "p1") });
-  await adminClient.listing.create({ data: listingData(childOrg.id, "c1") });
+  await adminClient.listing.create({ data: listingData(orgB.id, secB, "b1") });
+  await adminClient.listing.create({ data: listingData(parentOrg.id, secP, "p1") });
+  await adminClient.listing.create({ data: listingData(childOrg.id, secC, "c1") });
 });
 
 afterAll(async () => {

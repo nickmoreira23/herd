@@ -91,12 +91,16 @@ export function StepItems({
   onNext,
   onBack,
 }: Props) {
-  const { selectedBlockNames, scopes } = useMarketplaceWizardStore();
+  const { selectedBlockNames, scopes, listings } = useMarketplaceWizardStore();
 
-  // At least one scope per block is required to proceed.
-  const blockNamesWithScope = new Set(scopes.map((s) => s.blockName));
+  // L2b.2 — a block is satisfied by at least one automatic scope OR one curated
+  // listing (a "specific item" is now a Listing, no longer an ITEM scope).
+  const blockNamesWithEntry = new Set([
+    ...scopes.map((s) => s.blockName),
+    ...listings.map((l) => l.blockName),
+  ]);
   const allBlocksHaveScope = selectedBlockNames.every((b) =>
-    blockNamesWithScope.has(b)
+    blockNamesWithEntry.has(b)
   );
 
   return (
@@ -135,8 +139,17 @@ export function StepItems({
 // ─── Per-block panel ─────────────────────────────────────
 
 function BlockScopesPanel({ block }: { block: EligibleBlock }) {
-  const { scopes, addScope, updateScope, removeScope, cacheItemSnapshot } =
-    useMarketplaceWizardStore();
+  const {
+    scopes,
+    listings,
+    itemSnapshots,
+    addScope,
+    updateScope,
+    removeScope,
+    addListing,
+    removeListing,
+    cacheItemSnapshot,
+  } = useMarketplaceWizardStore();
   const [options, setOptions] = useState<ScopeOptions | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -162,22 +175,19 @@ function BlockScopesPanel({ block }: { block: EligibleBlock }) {
   }, [block.name, block.displayName]);
 
   const blockScopes = scopes.filter((s) => s.blockName === block.name);
+  const blockListings = listings.filter((l) => l.blockName === block.name);
   const Icon = BLOCK_ICON_MAP[block.name] ?? DefaultBlockIcon;
   const label = BLOCK_LABEL_MAP[block.name] ?? block.displayName;
 
   function add(scopeType: ScopeType, scopeValue: string | null) {
-    // Avoid duplicates.
-    if (
-      blockScopes.some(
-        (s) => s.scopeType === scopeType && s.scopeValue === scopeValue
-      )
-    ) {
-      toast.info("That scope is already added.");
-      return;
-    }
-    // Cache item snapshot if this is an ITEM scope.
-    if (scopeType === "ITEM" && scopeValue && options) {
-      const item = options.items.find((i) => i.id === scopeValue);
+    // L2b.2 — "specific item" creates a curated Listing, not an ITEM scope.
+    if (scopeType === "ITEM") {
+      if (!scopeValue) return;
+      if (blockListings.some((l) => l.sourceId === scopeValue)) {
+        toast.info("That item is already added.");
+        return;
+      }
+      const item = options?.items.find((i) => i.id === scopeValue);
       if (item) {
         cacheItemSnapshot({
           fullId: `${block.primaryType}:${item.id}`,
@@ -190,6 +200,17 @@ function BlockScopesPanel({ block }: { block: EligibleBlock }) {
           subCategory: item.subCategory,
         });
       }
+      addListing({ clientId: genId(), blockName: block.name, sourceId: scopeValue });
+      return;
+    }
+    // Automatic scopes (ALL/CATEGORY/SUB_CATEGORY) — avoid duplicates.
+    if (
+      blockScopes.some(
+        (s) => s.scopeType === scopeType && s.scopeValue === scopeValue
+      )
+    ) {
+      toast.info("That scope is already added.");
+      return;
     }
     addScope({
       clientId: genId(),
@@ -210,16 +231,18 @@ function BlockScopesPanel({ block }: { block: EligibleBlock }) {
         <div className="flex-1 min-w-0">
           <p className="font-medium text-sm">{label}</p>
           <p className="text-xs text-muted-foreground">
-            {blockScopes.length} scope{blockScopes.length === 1 ? "" : "s"}
+            {blockScopes.length} rule{blockScopes.length === 1 ? "" : "s"}
+            {blockListings.length > 0 &&
+              ` · ${blockListings.length} curated item${blockListings.length === 1 ? "" : "s"}`}
           </p>
         </div>
       </div>
 
       <div className="p-4 space-y-4">
-        {/* Existing scopes */}
-        {blockScopes.length === 0 && (
+        {/* Existing automatic scopes */}
+        {blockScopes.length === 0 && blockListings.length === 0 && (
           <p className="text-xs text-muted-foreground italic">
-            No scopes added yet. Add at least one to continue.
+            Nothing added yet. Add a rule or a specific item to continue.
           </p>
         )}
         <div className="space-y-2">
@@ -232,6 +255,32 @@ function BlockScopesPanel({ block }: { block: EligibleBlock }) {
             />
           ))}
         </div>
+
+        {/* L2b.2 — curated items (Listings) */}
+        {blockListings.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+              Curated items
+            </p>
+            {blockListings.map((l) => {
+              const snap = Object.values(itemSnapshots).find(
+                (s) => s.rawId === l.sourceId && s.blockName === l.blockName
+              );
+              return (
+                <div
+                  key={l.clientId}
+                  className="flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm"
+                >
+                  <PackageIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span className="flex-1 min-w-0 truncate">{snap?.name ?? l.sourceId}</span>
+                  <Button variant="ghost" size="icon" onClick={() => removeListing(l.clientId)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Adder */}
         {loading ? (

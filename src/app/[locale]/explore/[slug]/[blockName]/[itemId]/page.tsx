@@ -4,9 +4,41 @@ import { connection } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
 import { withTenant } from "@/lib/tenancy/context";
-import { resolveItemDetail } from "@/lib/marketplace/item-detail-resolver";
+import { resolveItemDetail, type ItemDetail } from "@/lib/marketplace/item-detail-resolver";
+import { resolveListing } from "@/lib/marketplace/listing-resolver";
+import type { Money } from "@/lib/money";
 import { MarketplaceItemDetail } from "@/components/marketplace/item-detail/marketplace-item-detail";
 import { isSupportedLocale } from "@/lib/i18n/locales";
+
+/** L2b.2 — overlay a curated Listing's overrides onto the block-derived detail. */
+function applyListingOverlay(
+  detail: ItemDetail,
+  overrides: { title: string | null; description: string | null; imageUrl: string | null; price: Money | null },
+  locale: string,
+): ItemDetail {
+  const gallery = overrides.imageUrl
+    ? [{ url: overrides.imageUrl, alt: overrides.title ?? detail.name, isPrimary: true }, ...detail.gallery]
+    : detail.gallery;
+  let primaryFacts = detail.primaryFacts;
+  if (overrides.price) {
+    const formatted = new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: overrides.price.currency,
+    }).format(Number(overrides.price.amountCents) / 100);
+    // Curated price replaces the block's price facts.
+    primaryFacts = [
+      { label: "Price", value: formatted },
+      ...detail.primaryFacts.filter((f) => !/price/i.test(f.label)),
+    ];
+  }
+  return {
+    ...detail,
+    name: overrides.title ?? detail.name,
+    description: overrides.description ?? detail.description,
+    gallery,
+    primaryFacts,
+  };
+}
 
 interface PageParams {
   locale: string;
@@ -22,7 +54,7 @@ interface PageParams {
  */
 async function ItemDetailContent({ params }: { params: PageParams }) {
   await connection();
-  const { slug, blockName, itemId } = params;
+  const { locale, slug, blockName, itemId } = params;
 
   const orgId = await getOrgIdFromRequest();
   if (!orgId) notFound();
@@ -36,8 +68,22 @@ async function ItemDetailContent({ params }: { params: PageParams }) {
   );
   if (!section || section.status !== "PUBLISHED") notFound();
 
+  // L2b.2 — is this a CURATED item (a Listing) in the section?
+  const listing = await withTenant(orgId, () =>
+    prisma.listing.findFirst({
+      where: { sectionId: section.id, blockName, sourceId: itemId },
+    })
+  );
+
   // L1a.2 — resolveItemDetail reads tenant-scoped Product; run under host org.
-  const detail = await withTenant(orgId, () => resolveItemDetail(blockName, itemId));
+  let detail = await withTenant(orgId, () => resolveItemDetail(blockName, itemId));
+
+  if (listing) {
+    const resolved = await withTenant(orgId, () => resolveListing(listing));
+    if (!resolved.available) notFound(); // dangling curated item → unavailable
+    if (detail) detail = applyListingOverlay(detail, resolved, locale);
+  }
+
   if (!detail) notFound();
 
   return (
