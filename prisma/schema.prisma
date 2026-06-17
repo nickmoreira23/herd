@@ -1779,6 +1779,7 @@ model Organization {
   marketplaceSettings      MarketplaceSettings?      @relation("MarketplaceSettingsTenant")
   categories               Category[]                @relation("CategoryTenant")
   subcategories            Subcategory[]             @relation("SubcategoryTenant")
+  listings                 Listing[]                 @relation("ListingTenant")
 
   // L1a — catalog detenanting (Passo 1/3)
   products Product[] @relation("ProductTenant")
@@ -2818,6 +2819,46 @@ model Subcategory {
   @@index([tenantId])
   @@index([categoryId])
   @@map("subcategories")
+}
+
+// L2b.1 — Listing: an org's curated entry that references ONE block record
+// abstractly via (blockName, sourceId) (#11), carries its own override data,
+// and may override the block's price (#32). The reference is intentionally NOT
+// an FK (it is cross-block) — sourceId is the bare record id (rawId, the form
+// getArtifactMeta expects), validated softly at write time; a vanished record
+// resolves to an "unavailable" listing, never an error. 1 listing per block
+// record per org. NOT yet linked to a section (Listing↔Section is L2b.2).
+model Listing {
+  id        String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String @map("tenant_id") @db.Uuid
+  blockName String @map("block_name")
+  // The block record's RAW id (bare UUID, no "type:" prefix) — the id form
+  // DataProvider.getArtifactMeta resolves by. Soft ref, no cross-block FK.
+  sourceId  String @map("source_id")
+
+  // Own data — all optional; absent = inherit from the block record.
+  titleOverride       String?  @map("title_override")
+  descriptionOverride String?  @map("description_override")
+  imageUrlOverride    String?  @map("image_url_override")
+  // Price override (#32) as Money: bigint cents + currency. null = use the
+  // block's price. Reuses src/lib/money (no 4th money representation).
+  priceOverrideCents    BigInt? @map("price_override_cents")
+  priceOverrideCurrency String? @map("price_override_currency")
+
+  featured  Boolean                  @default(false)
+  sortOrder Int                      @default(0) @map("sort_order")
+  status    MarketplaceSectionStatus @default(DRAFT)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Organization @relation("ListingTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // One listing per block record per org (not global).
+  @@unique([tenantId, blockName, sourceId])
+  @@index([tenantId])
+  @@index([tenantId, blockName])
+  @@map("listings")
 }
 
 enum DealStage {
