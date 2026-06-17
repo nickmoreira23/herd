@@ -255,10 +255,13 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
     if (!migrated.leadershipCompPlan) {
       migrated.leadershipCompPlan = { enabled: false, base: "revenue", levels: [] };
     } else {
-      // S8.1: migrate old-shape levels (fixed bronze/prata `tiers` + `tierMix`)
-      // to dynamic named `qualifications`. A level already on the new shape
-      // passes through; a legacy level converts its two tiers; anything else
-      // defaults to no qualifications (contributes 0 until configured).
+      // Migrate leadership levels across model versions, preserving each level's
+      // effective rate:
+      //   S8.2 (has baseRatePct) → pass through.
+      //   S8.1 (dynamic qualifications, no base) → add a base tier; base mix 0
+      //     when qualifications exist (keeps their weighting), 100 when empty.
+      //   S6 legacy (bronze/prata tiers) → convert tiers to named qualifications
+      //     (base inert: mix 0 keeps the original weighted rate).
       migrated.leadershipCompPlan = {
         ...migrated.leadershipCompPlan,
         levels: (migrated.leadershipCompPlan.levels ?? []).map((lvl) => {
@@ -266,11 +269,23 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
             id: string;
             name: string;
             span: number;
-            qualifications?: unknown;
+            baseRatePct?: number;
+            baseMixPct?: number;
+            qualifications?: { id: string; name: string; ratePct: number; mixPct: number }[];
             tiers?: { bronze: { ratePct: number }; prata: { ratePct: number } };
             tierMix?: { bronze: number; prata: number };
           };
-          if (raw.qualifications) return lvl;
+          if (raw.baseRatePct !== undefined) return lvl;
+          if (raw.qualifications) {
+            return {
+              id: raw.id,
+              name: raw.name,
+              span: raw.span,
+              qualifications: raw.qualifications,
+              baseRatePct: 0,
+              baseMixPct: raw.qualifications.length > 0 ? 0 : 100,
+            };
+          }
           const qualifications =
             raw.tiers && raw.tierMix
               ? [
@@ -278,7 +293,14 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
                   { id: crypto.randomUUID(), name: "Prata", ratePct: raw.tiers.prata.ratePct, mixPct: raw.tierMix.prata },
                 ]
               : [];
-          return { id: raw.id, name: raw.name, span: raw.span, qualifications };
+          return {
+            id: raw.id,
+            name: raw.name,
+            span: raw.span,
+            qualifications,
+            baseRatePct: 0,
+            baseMixPct: qualifications.length > 0 ? 0 : 100,
+          };
         }),
       };
     }

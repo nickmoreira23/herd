@@ -338,3 +338,72 @@ describe("S3 — extended party totals (net / partyCost)", () => {
     }
   });
 });
+
+describe("S2.6 — per-party cost breakdown (rubric + leadership per-level)", () => {
+  const baseInputs = buildAuditScenario(PARTIES);
+  // A leadership plan whose only level activates from the first month
+  // (span 1 ⇒ threshold 1, base rate 6% @ 100% mix ⇒ a nonzero cost), plus
+  // a second rubric attributed to the same party.
+  const inputs: FinancialInputs = {
+    ...baseInputs,
+    leadershipCompPlan: {
+      enabled: true,
+      base: "revenue",
+      levels: [
+        { id: "local", name: "Local Manager", span: 1, baseRatePct: 6, baseMixPct: 100, qualifications: [] },
+      ],
+    },
+    costAttribution: {
+      buckPlatform: { partyId: "bu" },
+      leadershipCommission: { partyId: "bu" },
+    },
+  };
+
+  it("[S2.6-P1] costBreakdown sums to partyCost each month (both bases)", () => {
+    const r = calculateScenario(inputs);
+    for (const key of ["accrual", "cash"] as const) {
+      for (const month of r.profitDistribution[key]) {
+        for (const bp of month.byParty) {
+          const breakdownSum = sum(bp.costBreakdown.map((e) => e.amount));
+          expect(Math.abs(breakdownSum - bp.partyCost)).toBeLessThan(TOL);
+        }
+      }
+    }
+  });
+
+  it("[S2.6-P2] leadership per-level amounts sum to the leadership rubric amount", () => {
+    const r = calculateScenario(inputs);
+    for (const key of ["accrual", "cash"] as const) {
+      for (const month of r.profitDistribution[key]) {
+        const bu = month.byParty.find((b) => b.partyId === "bu");
+        const lead = bu?.costBreakdown.find((e) => e.rubric === "leadershipCommission");
+        if (!lead || !lead.levels || lead.levels.length === 0) continue;
+        const levelSum = sum(lead.levels.map((l) => l.amount));
+        expect(Math.abs(levelSum - lead.amount)).toBeLessThan(TOL);
+        // Single active level ⇒ it carries the whole rubric amount.
+        expect(lead.levels[0].id).toBe("local");
+      }
+    }
+  });
+
+  it("[S2.6-P3] non-leadership rubrics carry no per-level breakdown", () => {
+    const r = calculateScenario(inputs);
+    const buck = r.profitDistribution.accrual
+      .flatMap((m) => m.byParty)
+      .flatMap((b) => b.costBreakdown)
+      .filter((e) => e.rubric === "buckPlatform");
+    expect(buck.length).toBeGreaterThan(0);
+    for (const e of buck) expect(e.levels).toBeUndefined();
+  });
+
+  it("[S2.6-P4] shared rubrics produce empty breakdown for every party", () => {
+    // No attribution ⇒ all rubrics shared ⇒ each party's breakdown is empty.
+    const r = calculateScenario({ ...inputs, costAttribution: {} });
+    for (const month of r.profitDistribution.accrual) {
+      for (const bp of month.byParty) {
+        expect(bp.costBreakdown).toEqual([]);
+        expect(bp.partyCost).toBe(0);
+      }
+    }
+  });
+});

@@ -15,8 +15,10 @@ import {
 import {
   aggregateLifecyclesByCalendarMonth,
   useSpreadsheetCollapse,
+  COST_RUBRIC_LABEL_KEYS,
 } from "./spreadsheet-shared";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import type { CostRubric } from "@/lib/financial-engine";
 
 interface ProjectionSpreadsheetProps {
   months?: number;
@@ -39,8 +41,8 @@ interface RowDef {
   id?: string;
   /** Points to the parent row's `id`. Determines indent + collapse ancestry. */
   parentId?: string;
-  /** Indent depth; 0 = top, 1 = child, 2 = grandchild. Defaults to 0. */
-  level?: 0 | 1 | 2;
+  /** Indent depth; 0 = top, 1 = child, 2 = grandchild, … Defaults to 0. */
+  level?: 0 | 1 | 2 | 3 | 4;
   /** Optional help text shown on a dotted-underline label via Tooltip. */
   tooltip?: string;
 }
@@ -138,6 +140,12 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
   for (const tid of tierIds) {
     initialCollapsedRows.push(`active-by-plan-cycle--${tid}`);
     initialCollapsedRows.push(`commissions--${tid}`);
+  }
+  // Party cost drill-down (S2 breakdown) starts collapsed — the "(−) Party
+  // costs" row shows the total; expand to reveal per-rubric, then per-level.
+  for (const p of results.profitDistribution?.totals.accrual ?? []) {
+    initialCollapsedRows.push(`cascade-party--${p.partyId}--cost`);
+    initialCollapsedRows.push(`cascade-party--${p.partyId}--cost--leadershipCommission`);
   }
   const {
     collapsedSections,
@@ -271,6 +279,11 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
   const cascadeParties = results.profitDistribution.totals.accrual;
   const partySlice = (partyId: string, key: "amount" | "partyCost" | "net") =>
     dist.map((d) => d.byParty.find((b) => b.partyId === partyId)?.[key] ?? 0);
+  // Per-month cost breakdown for a party (S2): each month's [{rubric, amount,
+  // levels?}]. Used to render the "(−) Party costs" drill-down — per rubric,
+  // and per leadership level beneath the leadership rubric.
+  const partyBreakdown = (partyId: string) =>
+    dist.map((d) => d.byParty.find((b) => b.partyId === partyId)?.costBreakdown ?? []);
 
   const cascadeRows: RowDef[] = [];
   if (
@@ -324,8 +337,9 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
         totalMode: "sum",
         values: partySlice(party.partyId, "amount"),
       });
+      const costRowId = `${partyRowId}--cost`;
       cascadeRows.push({
-        id: `${partyRowId}--cost`,
+        id: costRowId,
         parentId: partyRowId,
         level: 2,
         label: t("financials.cascade.party_cost"),
@@ -333,6 +347,54 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
         totalMode: "sum",
         values: partySlice(party.partyId, "partyCost"),
       });
+      // Drill-down: one row per attributed rubric (level 3); under leadership
+      // commission, one row per level (level 4). Rubric/level sets are the
+      // union across the visible window in first-seen order.
+      const breakdownByMonth = partyBreakdown(party.partyId);
+      const rubricsSeen: CostRubric[] = [];
+      for (const month of breakdownByMonth) {
+        for (const entry of month) {
+          if (!rubricsSeen.includes(entry.rubric)) rubricsSeen.push(entry.rubric);
+        }
+      }
+      for (const rubric of rubricsSeen) {
+        const rubricRowId = `${costRowId}--${rubric}`;
+        cascadeRows.push({
+          id: rubricRowId,
+          parentId: costRowId,
+          level: 3,
+          label: t(COST_RUBRIC_LABEL_KEYS[rubric]),
+          type: "currency",
+          totalMode: "sum",
+          values: breakdownByMonth.map(
+            (month) => month.find((e) => e.rubric === rubric)?.amount ?? 0,
+          ),
+        });
+        if (rubric !== "leadershipCommission") continue;
+        const levelsSeen: { id: string; name: string }[] = [];
+        for (const month of breakdownByMonth) {
+          const lead = month.find((e) => e.rubric === "leadershipCommission");
+          for (const lv of lead?.levels ?? []) {
+            if (!levelsSeen.some((s) => s.id === lv.id)) {
+              levelsSeen.push({ id: lv.id, name: lv.name });
+            }
+          }
+        }
+        for (const lv of levelsSeen) {
+          cascadeRows.push({
+            id: `${rubricRowId}--${lv.id}`,
+            parentId: rubricRowId,
+            level: 4,
+            label: lv.name || t("financials.cascade.level_unnamed"),
+            type: "currency",
+            totalMode: "sum",
+            values: breakdownByMonth.map((month) => {
+              const lead = month.find((e) => e.rubric === "leadershipCommission");
+              return lead?.levels?.find((l) => l.id === lv.id)?.amount ?? 0;
+            }),
+          });
+        }
+      }
     }
     cascadeRows.push({
       id: "cascade-undistributed",

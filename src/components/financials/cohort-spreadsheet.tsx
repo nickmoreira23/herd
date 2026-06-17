@@ -15,8 +15,10 @@ import {
 import {
   aggregateLifecyclesByCalendarMonth,
   useSpreadsheetCollapse,
+  COST_RUBRIC_LABEL_KEYS,
   type AggMonth,
 } from "./spreadsheet-shared";
+import type { CostRubric } from "@/lib/financial-engine";
 
 interface CohortSpreadsheetProps {
   months?: number;
@@ -1253,6 +1255,12 @@ function AggregateCohortTable({
     initialCollapsedRows.push(`active-by-plan-cycle--${tid}`);
     initialCollapsedRows.push(`commissions--${tid}`);
   }
+  // Party cost drill-down (S2 breakdown) starts collapsed — the "(−) Party
+  // costs" row shows the total; expand to reveal per-rubric, then per-level.
+  for (const p of cashTotals) {
+    initialCollapsedRows.push(`cascade-party--${p.partyId}--cost`);
+    initialCollapsedRows.push(`cascade-party--${p.partyId}--cost--leadershipCommission`);
+  }
   const {
     collapsedSections,
     collapsedRows,
@@ -1515,8 +1523,9 @@ function AggregateCohortTable({
         getTotal: totalOf((m) => slice(m, "amount")),
         format: "currency",
       });
+      const costRowId = `${partyRowId}--cost`;
       profitSplitRows.push({
-        id: `${partyRowId}--cost`,
+        id: costRowId,
         parentId: partyRowId,
         level: 2,
         label: t("financials.cascade.party_cost"),
@@ -1524,6 +1533,57 @@ function AggregateCohortTable({
         getTotal: totalOf((m) => slice(m, "partyCost")),
         format: "currency",
       });
+      // Drill-down: one row per attributed rubric (level 3); under leadership
+      // commission, one row per level (level 4). Rubric/level sets are the
+      // union across the visible window in first-seen order.
+      const breakdownOf = (m: AggMonth) =>
+        cashByMonth(m.monthIndex)?.byParty.find((b) => b.partyId === pid)
+          ?.costBreakdown ?? [];
+      const rubricsSeen: CostRubric[] = [];
+      for (const m of aggMonths) {
+        for (const entry of breakdownOf(m)) {
+          if (!rubricsSeen.includes(entry.rubric)) rubricsSeen.push(entry.rubric);
+        }
+      }
+      for (const rubric of rubricsSeen) {
+        const rubricRowId = `${costRowId}--${rubric}`;
+        profitSplitRows.push({
+          id: rubricRowId,
+          parentId: costRowId,
+          level: 3,
+          label: t(COST_RUBRIC_LABEL_KEYS[rubric]),
+          getValue: (m) => breakdownOf(m).find((e) => e.rubric === rubric)?.amount ?? 0,
+          getTotal: totalOf(
+            (m) => breakdownOf(m).find((e) => e.rubric === rubric)?.amount ?? 0,
+          ),
+          format: "currency",
+        });
+        if (rubric !== "leadershipCommission") continue;
+        const levelsSeen: { id: string; name: string }[] = [];
+        for (const m of aggMonths) {
+          const lead = breakdownOf(m).find((e) => e.rubric === "leadershipCommission");
+          for (const lv of lead?.levels ?? []) {
+            if (!levelsSeen.some((s) => s.id === lv.id)) {
+              levelsSeen.push({ id: lv.id, name: lv.name });
+            }
+          }
+        }
+        for (const lv of levelsSeen) {
+          const levelAmount = (m: AggMonth) =>
+            breakdownOf(m)
+              .find((e) => e.rubric === "leadershipCommission")
+              ?.levels?.find((l) => l.id === lv.id)?.amount ?? 0;
+          profitSplitRows.push({
+            id: `${rubricRowId}--${lv.id}`,
+            parentId: rubricRowId,
+            level: 4,
+            label: lv.name || t("financials.cascade.level_unnamed"),
+            getValue: levelAmount,
+            getTotal: totalOf(levelAmount),
+            format: "currency",
+          });
+        }
+      }
     }
     profitSplitRows.push({
       id: "cascade-undistributed",

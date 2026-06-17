@@ -255,9 +255,16 @@ export interface LeadershipQualification {
 export interface LeadershipLevel {
   id: string;
   name: string;
-  /** Qualifications at this level (e.g. Bronze, Prata, …) — dynamic and named.
-   *  The level's effective rate is the mix-weighted average of these rates.
-   *  EMPTY ⇒ the level contributes 0 (a new level starts with none). */
+  /** Base override rate for this level — what someone at this level earns with
+   *  NO qualification. Always present (a level has a base rate from creation). */
+  baseRatePct: number;
+  /** Mix weight of the base tier. Only meaningful once `qualifications` exist
+   *  (base + qualifications split the level's population). With no
+   *  qualifications the base is implicitly 100% — its mix is ignored. */
+  baseMixPct: number;
+  /** Qualifications at this level (e.g. Bronze, Prata, …) — dynamic and named,
+   *  layered on top of the base. The level's effective rate is the mix-weighted
+   *  average of [base + qualifications]. EMPTY ⇒ effective rate = baseRatePct. */
   qualifications: LeadershipQualification[];
   /** Span ratio for threshold activation: reps per unit of this level (e.g.
    *  20 reps per local). The level activates in a month when `activeReps` ≥
@@ -583,6 +590,17 @@ export function resolveOverhead(overhead: OperationalOverhead, memberCount: numb
  * `Σ byParty.net + undistributed ≡ channelResult`; and
  * `channelResult ≡ netProfit_S1` independent of attribution.
  */
+/**
+ * One attributed cost rubric inside a party's `partyCost`, with an optional
+ * per-level breakdown (leadership commission only) so the UI can expand
+ * "(−) Party costs" → rubric → per-level stratification.
+ */
+export interface PartyCostBreakdownEntry {
+  rubric: CostRubric;
+  amount: number;
+  levels?: { id: string; name: string; amount: number }[];
+}
+
 export interface MonthlyPartyDistribution {
   month: number; // 1..PROJECTION_MONTHS (calendar month)
   distributable: number;
@@ -592,6 +610,7 @@ export interface MonthlyPartyDistribution {
     amount: number; // gross slice = distributable × (percent/100); the S1 value when all-shared
     partyCost: number; // Σ cost rubrics attributed to this party this month/basis (S2)
     net: number; // amount − partyCost (S2)
+    costBreakdown: PartyCostBreakdownEntry[]; // per-rubric split of partyCost (S2); leadership carries per-level
   }[];
   undistributed: number;
   sharedCosts: number; // Σ cost of rubrics left `shared` this month/basis (informational)
@@ -1100,22 +1119,32 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
   // whole channel. Absent/disabled ⇒ no active levels ⇒ rate 0 ⇒ no cost.
   const leadershipPlan = inputs.leadershipCompPlan;
   const leadershipBase = leadershipPlan?.base ?? "revenue";
-  const leadershipLevels: { effectiveRate: number; threshold: number }[] = [];
+  const leadershipLevels: { id: string; name: string; effectiveRate: number; threshold: number }[] = [];
   if (leadershipPlan?.enabled) {
     let cumulativeSpan = 1;
     for (const lvl of leadershipPlan.levels) {
-      // Level effective rate = mix-weighted average of its qualifications'
-      // rates (S8.1). No qualifications (or zero total mix) ⇒ 0.
+      // Level effective rate (S8.2): no qualifications ⇒ everyone is base ⇒
+      // effective = baseRatePct. With qualifications ⇒ mix-weighted average of
+      // [base + qualifications]. Zero total mix ⇒ 0.
       const quals = lvl.qualifications ?? [];
-      const mixTotal = quals.reduce((s, q) => s + q.mixPct, 0);
-      const effectiveRate =
-        mixTotal > 0
-          ? quals.reduce((s, q) => s + q.mixPct * q.ratePct, 0) / mixTotal / 100
-          : 0;
+      let effectiveRate: number;
+      if (quals.length === 0) {
+        effectiveRate = (lvl.baseRatePct ?? 0) / 100;
+      } else {
+        const entries = [
+          { ratePct: lvl.baseRatePct ?? 0, mixPct: lvl.baseMixPct ?? 0 },
+          ...quals.map((q) => ({ ratePct: q.ratePct, mixPct: q.mixPct })),
+        ];
+        const mixTotal = entries.reduce((s, e) => s + e.mixPct, 0);
+        effectiveRate =
+          mixTotal > 0
+            ? entries.reduce((s, e) => s + e.mixPct * e.ratePct, 0) / mixTotal / 100
+            : 0;
+      }
       // Span ≤ 0 is invalid; treat as 1 so a bad value can't zero the
       // cumulative product and force every level active from month 1.
       cumulativeSpan *= lvl.span > 0 ? lvl.span : 1;
-      leadershipLevels.push({ effectiveRate, threshold: cumulativeSpan });
+      leadershipLevels.push({ id: lvl.id, name: lvl.name, effectiveRate, threshold: cumulativeSpan });
     }
   }
   // Stacked rate of the levels ACTIVE at a given active-rep count.
@@ -2648,8 +2677,10 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
     month: number,
     netProfitS1: number,
     rubricCost: (rubric: CostRubric) => number,
+    leadershipLevelBreakdown: { id: string; name: string; amount: number }[] = [],
   ): MonthlyPartyDistribution => {
     const partyCostById = new Map<string, number>();
+    const partyBreakdownById = new Map<string, PartyCostBreakdownEntry[]>();
     let totalPartyCosts = 0;
     let sharedCosts = 0;
     for (const rubric of COST_RUBRICS) {
@@ -2657,6 +2688,13 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
       const owner = rubricOwner(rubric);
       if (owner) {
         partyCostById.set(owner, (partyCostById.get(owner) ?? 0) + cost);
+        const entry: PartyCostBreakdownEntry =
+          rubric === "leadershipCommission" && leadershipLevelBreakdown.length > 0
+            ? { rubric, amount: cost, levels: leadershipLevelBreakdown }
+            : { rubric, amount: cost };
+        const list = partyBreakdownById.get(owner) ?? [];
+        list.push(entry);
+        partyBreakdownById.set(owner, list);
         totalPartyCosts += cost;
       } else {
         sharedCosts += cost;
@@ -2678,7 +2716,14 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
           : 0
         : distributable * (p.percent / 100);
       const partyCost = partyCostById.get(p.id) ?? 0;
-      return { partyId: p.id, percent: p.percent, amount, partyCost, net: amount - partyCost };
+      return {
+        partyId: p.id,
+        percent: p.percent,
+        amount,
+        partyCost,
+        net: amount - partyCost,
+        costBreakdown: partyBreakdownById.get(p.id) ?? [],
+      };
     });
     const undistributed = absorbedLoss
       ? resolvedLossBearerId
@@ -2695,10 +2740,42 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
     };
   };
 
+  // Per calendar month, split the leadership-commission rubric cost across the
+  // active levels in proportion to each level's effective rate. Exact because
+  // all cohorts at a calendar month share the same active set (gated by that
+  // month's `activeReps`), so `costᵢ = baseᵢ × Σ effRate` and a level's slice is
+  // `costᵢ × effRate_L / Σ effRate`. Empty when no level is active or rate is 0.
+  const leadershipByLevelForMonth = (
+    rubricCostAt: (i: number) => number,
+  ): { id: string; name: string; amount: number }[][] =>
+    Array.from({ length: PROJECTION_MONTHS }, (_, i) => {
+      const reps = cohortProjection[i]?.activeReps ?? 0;
+      const active = leadershipLevels.filter((lvl) => reps >= lvl.threshold);
+      const totalRate = active.reduce((s, lvl) => s + lvl.effectiveRate, 0);
+      const total = rubricCostAt(i);
+      if (totalRate <= 0 || total === 0) return [];
+      return active.map((lvl) => ({
+        id: lvl.id,
+        name: lvl.name,
+        amount: (total * lvl.effectiveRate) / totalRate,
+      }));
+    });
+  const accrualLeadershipByLevel = leadershipByLevelForMonth((i) =>
+    accrualRubricCost(cohortProjection[i], "leadershipCommission"),
+  );
+  const cashLeadershipByLevel = leadershipByLevelForMonth(
+    (i) => cashRubricCost.leadershipCommission[i],
+  );
+
   // Accrual: netProfit_S1[m] = cohortProjection[m].netProfit (fully loaded —
   // revenue − every cost, incl. overhead/Buck — see the monthCosts block).
-  const accrualMonthly: MonthlyPartyDistribution[] = cohortProjection.map((m) =>
-    buildMonthDistribution(m.month, m.netProfit, (rubric) => accrualRubricCost(m, rubric)),
+  const accrualMonthly: MonthlyPartyDistribution[] = cohortProjection.map((m, i) =>
+    buildMonthDistribution(
+      m.month,
+      m.netProfit,
+      (rubric) => accrualRubricCost(m, rubric),
+      accrualLeadershipByLevel[i],
+    ),
   );
 
   // Cash: netProfit_S1[m] = Σ cohort-lifecycle netProfit by calendar month −
@@ -2715,6 +2792,7 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
       i + 1,
       net - (cohortProjection[i]?.operationalOverhead ?? 0),
       (rubric) => cashRubricCost[rubric][i],
+      cashLeadershipByLevel[i],
     ),
   );
 
