@@ -457,7 +457,6 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
       ? [
           {
             label: t("financials.sales_team.reps"),
-            tooltip: t("financials.sales_team.reps_tooltip"),
             type: "number" as const,
             totalMode: "latest" as const,
             values: results.salesTeam.repsByMonth.slice(0, projection.length),
@@ -484,7 +483,6 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
     {
       id: "member-rep",
       label: t("financials.member_earnings.rep"),
-      tooltip: t("financials.member_earnings.rep_tooltip"),
       type: "currency" as const,
       totalMode: "sum" as const,
       values: me.reps.accrual.total.slice(0, projection.length),
@@ -816,6 +814,11 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
     const teamSize = isRepRole ? 1 : (selectedLevel?.threshold ?? 1);
     const scaled = (arr: number[]) => arr.slice(0, W).map((v) => v * teamSize);
     const constRow = (n: number) => Array.from({ length: W }, () => n);
+    // Churn derived from the single-rep book: prevActive + netNew − active.
+    const repChurn = Array.from({ length: W }, (_, i) => {
+      const prevActive = i > 0 ? reps.subscribers[i - 1] : 0;
+      return prevActive + reps.newSubscribers[i] - reps.subscribers[i];
+    });
     // Downline = the leadership levels BELOW the selected one (smaller span),
     // already TOP → BASE in salesTeam.levels order.
     const downlineLevels =
@@ -851,7 +854,12 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
         id: "subscribers",
         header: t("financials.projection.section.subscribers"),
         rows: [
+          { label: t("financials.projection.row.gross_new_sales"), type: "number", totalMode: "sum", values: scaled(reps.grossNewSubs), bold: true },
+          ...(reps.chargebacks.some((v) => v > 0)
+            ? [{ label: t("financials.projection.row.chargebacks"), type: "number" as const, totalMode: "sum" as const, values: scaled(reps.chargebacks), colorBySign: false }]
+            : []),
           { label: t("financials.projection.row.net_new_subs"), type: "number", totalMode: "sum", values: scaled(reps.newSubscribers), bold: true },
+          { label: t("financials.projection.row.lost_to_churn"), type: "number", totalMode: "sum", values: scaled(repChurn) },
           { label: t("financials.projection.row.total_active"), type: "number", totalMode: "latest", values: scaled(reps.subscribers), bold: true },
         ],
       },
@@ -862,7 +870,18 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
           { label: t("financials.projection.row.subscription_revenue"), type: "currency", totalMode: "sum", values: scaled(reps.revenue.accrual) },
         ],
       },
-      memberEarningsSection, // "Earnings" — the member's own + the avg below.
+      // "Earnings" — managers see their own + the avg below (memberEarningsRows);
+      // a rep is the only seat, so show Upfront + Residual directly (no rollup).
+      isRepRole
+        ? {
+            id: "member-earnings",
+            header: t("financials.projection.section.earnings"),
+            rows: [
+              { label: t("financials.member_earnings.upfront"), type: "currency", totalMode: "sum", values: reps.accrual.upfront.slice(0, W) },
+              { label: t("financials.member_earnings.residual"), type: "currency", totalMode: "sum", values: reps.accrual.residual.slice(0, W) },
+            ],
+          }
+        : memberEarningsSection,
     ];
   } else if (isGeneral) {
     finalSections = [...sections, memberEarningsSection];
@@ -894,11 +913,13 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
       <div className="flex flex-wrap items-center justify-between gap-2">
         <AccountingBasisBadge basis="accrual" />
       </div>
-      <AccountingBasisReconciliation
-        accrualSeries={accrualSeries}
-        cashSeries={cashSeries}
-        locale={locale}
-      />
+      {!isRole && (
+        <AccountingBasisReconciliation
+          accrualSeries={accrualSeries}
+          cashSeries={cashSeries}
+          locale={locale}
+        />
+      )}
       <div className="overflow-auto border rounded-md max-h-[75vh]">
       <table className="w-full text-xs border-collapse">
         <thead>

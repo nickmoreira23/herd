@@ -413,4 +413,16 @@ describe("[member-earnings] individual career-trajectory earnings", () => {
     expect(r.memberEarnings.reps.newSubscribers.length).toBe(r.cohortProjection.length);
     expect(r.memberEarnings.reps.newSubscribers[0]).toBeGreaterThan(0);
   });
+
+  it("[PM-P7] single-rep gross/chargebacks reconcile to net (gross − chargebacks = net new)", () => {
+    const r = calculateScenario(flat);
+    const { grossNewSubs, chargebacks, newSubscribers } = r.memberEarnings.reps;
+    expect(grossNewSubs.length).toBe(r.cohortProjection.length);
+    expect(chargebacks.length).toBe(r.cohortProjection.length);
+    grossNewSubs.forEach((gross, i) => {
+      // net = gross − chargebacks, month by month.
+      expect(gross - chargebacks[i]).toBeCloseTo(newSubscribers[i], 6);
+      expect(gross).toBeGreaterThanOrEqual(newSubscribers[i]);
+    });
+  });
 });
