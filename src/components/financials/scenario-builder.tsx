@@ -1068,7 +1068,15 @@ export function ScenarioBuilder({
                       </span>
                       <div className="w-[120px]">
                         <NumberField
-                          label={t("financials.builder.leadership_commission.level_span_label")}
+                          label={
+                            idx === 0
+                              ? t("financials.builder.leadership_commission.level_span_label")
+                              : t("financials.builder.leadership_commission.level_span_label_nested", {
+                                  unit:
+                                    leadershipPlan.levels[idx - 1]?.name?.trim() ||
+                                    t("financials.builder.leadership_commission.level_span_prev_fallback", { n: idx }),
+                                })
+                          }
                           tooltip={t("financials.builder.leadership_commission.level_span_tooltip")}
                           value={lvl.span}
                           step={1}
