@@ -1396,7 +1396,9 @@ export const messages = {
   "financials.builder.leadership_commission.base_mix_label": "Mix %",
   "financials.builder.leadership_commission.base_mix_tooltip": "Proporção de pessoas na base (sem qualificação). Base + qualificações devem somar 100%.",
   "financials.builder.leadership_commission.level_span_label": "Span (reps/unidade)",
-  "financials.builder.leadership_commission.level_span_tooltip": "Reps por unidade deste nível (ex.: 20 = 1 gestor a cada 20 reps). O nível ativa quando os reps ativos ≥ o produto acumulado dos spans da base até aqui.",
+  "financials.builder.leadership_commission.level_span_label_nested": "Span ({unit}/unidade)",
+  "financials.builder.leadership_commission.level_span_prev_fallback": "nível {n}",
+  "financials.builder.leadership_commission.level_span_tooltip": "Quantas unidades do nível imediatamente abaixo ficam sob uma unidade deste nível. O nível 1 conta reps (ex.: 20 = 1 gestor a cada 20 reps); o próximo nível conta esses gestores, e assim por diante. O nível ativa quando os reps ativos ≥ o produto acumulado dos spans da base até aqui.",
   "financials.builder.leadership_commission.add_level": "Adicionar nível",
 
   "financials.builder.chargebacks.title": "Chargebacks",

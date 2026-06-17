@@ -1370,7 +1370,9 @@ export const messages: Record<MessageKey, string> = {
   "financials.builder.leadership_commission.base_mix_label": "Mix %",
   "financials.builder.leadership_commission.base_mix_tooltip": "Share of people at the base (no qualification). Base + qualifications should sum to 100%.",
   "financials.builder.leadership_commission.level_span_label": "Span (reps/unit)",
-  "financials.builder.leadership_commission.level_span_tooltip": "Reps per unit of this level (e.g. 20 = 1 manager per 20 reps). The level activates when active reps ≥ the cumulative product of spans from the base up to here.",
+  "financials.builder.leadership_commission.level_span_label_nested": "Span ({unit}/unit)",
+  "financials.builder.leadership_commission.level_span_prev_fallback": "level {n}",
+  "financials.builder.leadership_commission.level_span_tooltip": "How many units of the level directly below sit under one unit of this level. Level 1 counts reps (e.g. 20 = 1 manager per 20 reps); the next level counts those managers, and so on. The level activates when active reps ≥ the cumulative product of spans from the base up to here.",
   "financials.builder.leadership_commission.add_level": "Add level",
 
   "financials.builder.chargebacks.title": "Chargebacks",
