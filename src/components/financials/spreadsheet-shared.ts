@@ -28,6 +28,45 @@ export const COST_RUBRIC_LABEL_KEYS = {
   leadershipCommission: "financials.builder.attribution.rubric_leadership_commission",
 } as const satisfies Record<CostRubric, MessageKey>;
 
+// ── Member perspective (S-member, Phase 2) ──────────────────────────
+//
+// "VIEW AS <member>" reframes the projection from one sales-team seat. The
+// perspective value is `member:reps` or `member:<levelId>`; the channel
+// sections stay as context while the people-sections (Sales Team headcount +
+// Per-member earnings) focus on that seat and everyone beneath it (downline).
+
+export const MEMBER_PREFIX = "member:";
+export const REPS_ROLE_KEY = "reps";
+
+/** Ordered role keys TOP → BASE: leadership levels (highest first) then reps. */
+export function memberRoleKeys(
+  salesTeam: NonNullable<ReturnType<typeof useFinancialStore.getState>["results"]>["salesTeam"],
+): string[] {
+  return [...salesTeam.levels.map((l) => l.id), REPS_ROLE_KEY];
+}
+
+/**
+ * Role keys to KEEP for a member perspective = the selected role plus everyone
+ * beneath it (top → base slice). `null` when the perspective is not a member
+ * view (general or a profit-split party) — callers then apply no people filter.
+ */
+export function memberDownlineKeys(
+  perspective: string | undefined,
+  roleKeys: string[],
+): Set<string> | null {
+  if (!perspective || !perspective.startsWith(MEMBER_PREFIX)) return null;
+  const selected = perspective.slice(MEMBER_PREFIX.length);
+  const idx = roleKeys.indexOf(selected);
+  // Unknown role (e.g. plan changed) ⇒ keep all rather than blank the section.
+  return idx < 0 ? new Set(roleKeys) : new Set(roleKeys.slice(idx));
+}
+
+/** The cascade reads party perspectives only; a member perspective is treated
+ *  as "general" there (member ≠ profit-split party). */
+export function cascadePerspective(perspective: string | undefined): string {
+  return perspective && perspective.startsWith(MEMBER_PREFIX) ? "general" : perspective ?? "general";
+}
+
 // ── Types ────────────────────────────────────────────────────────────
 
 type Results = NonNullable<
