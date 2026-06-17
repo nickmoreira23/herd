@@ -29,10 +29,16 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  MEMBER_PREFIX,
+  REPS_ROLE_KEY,
+} from "./spreadsheet-shared";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -687,32 +693,69 @@ export function FinancialPageClient({
                   {["statement", "spreadsheet", "metrics"].includes(
                     activeProjectionTab,
                   ) &&
-                    inputs.profitSplitParties.length > 0 && (
+                    results != null && (
                       <div className="flex items-center gap-1.5 shrink-0">
                         <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
                           {t("financials.toolbar.perspective.label")}
                         </span>
                         <Select value={perspective} onValueChange={setPerspective}>
-                          <SelectTrigger className="h-7 w-[130px] text-xs border-dashed">
+                          <SelectTrigger className="h-7 w-[150px] text-xs border-dashed">
                             <SelectValue>
-                              {(v) =>
-                                v === "general"
-                                  ? t("financials.toolbar.perspective.general")
-                                  : inputs.profitSplitParties.find((p) => p.id === v)?.name ||
-                                    t("financials.builder.profit_split.unnamed")
-                              }
+                              {(v) => {
+                                if (v === "general")
+                                  return t("financials.toolbar.perspective.general");
+                                if (v.startsWith(MEMBER_PREFIX)) {
+                                  const key = v.slice(MEMBER_PREFIX.length);
+                                  if (key === REPS_ROLE_KEY)
+                                    return t("financials.member_earnings.rep");
+                                  return (
+                                    results.salesTeam.levels.find((l) => l.id === key)?.name ||
+                                    t("financials.cascade.level_unnamed")
+                                  );
+                                }
+                                return (
+                                  inputs.profitSplitParties.find((p) => p.id === v)?.name ||
+                                  t("financials.builder.profit_split.unnamed")
+                                );
+                              }}
                             </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="general" className="text-xs">
                               {t("financials.toolbar.perspective.general")}
                             </SelectItem>
-                            {inputs.profitSplitParties.map((p) => (
-                              <SelectItem key={p.id} value={p.id} className="text-xs">
-                                {p.name ||
-                                  t("financials.builder.profit_split.unnamed")}
+                            {inputs.profitSplitParties.length > 0 && (
+                              <SelectGroup>
+                                <SelectLabel className="text-[10px]">
+                                  {t("financials.toolbar.perspective.parties_group")}
+                                </SelectLabel>
+                                {inputs.profitSplitParties.map((p) => (
+                                  <SelectItem key={p.id} value={p.id} className="text-xs">
+                                    {p.name || t("financials.builder.profit_split.unnamed")}
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            )}
+                            <SelectGroup>
+                              <SelectLabel className="text-[10px]">
+                                {t("financials.toolbar.perspective.members_group")}
+                              </SelectLabel>
+                              {results.salesTeam.levels.map((l) => (
+                                <SelectItem
+                                  key={l.id}
+                                  value={`${MEMBER_PREFIX}${l.id}`}
+                                  className="text-xs"
+                                >
+                                  {l.name || t("financials.cascade.level_unnamed")}
+                                </SelectItem>
+                              ))}
+                              <SelectItem
+                                value={`${MEMBER_PREFIX}${REPS_ROLE_KEY}`}
+                                className="text-xs"
+                              >
+                                {t("financials.member_earnings.rep")}
                               </SelectItem>
-                            ))}
+                            </SelectGroup>
                           </SelectContent>
                         </Select>
                       </div>

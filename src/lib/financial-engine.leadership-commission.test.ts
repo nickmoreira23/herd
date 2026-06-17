@@ -329,3 +329,69 @@ describe("[sales-team] headcount per level over the projection window", () => {
     expect(st.repsByMonth.every((n) => n >= 0)).toBe(true);
   });
 });
+
+describe("[member-earnings] individual career-trajectory earnings", () => {
+  // Flat reps from month 1 (startingReps 10, growth 0) ⇒ the channel is exactly
+  // 10 identical reps, so channel commission must equal reps × single-rep earning.
+  const flat = buildAuditScenario(PARTIES); // no leadership plan
+
+  it("[PM-P1] rep accrual reconciles with the channel (flat reps ⇒ channel = reps × rep)", () => {
+    const r = calculateScenario(flat);
+    const me = r.memberEarnings;
+    const channelTotal = sum(r.cohortProjection.map((m) => m.commissionExpense ?? 0));
+    const reps = r.cohortProjection[0].activeReps; // flat across the window
+    const repTotal = sum(me.reps.accrual.total);
+    expect(reps).toBe(10);
+    expect(Math.abs(channelTotal - reps * repTotal) / channelTotal).toBeLessThan(0.01);
+  });
+
+  it("[PM-P2] rep upfront is steady (no payout delay), residual ramps then stays positive", () => {
+    const me = calculateScenario(flat).memberEarnings.reps.accrual;
+    // Audit: flatBonus 50 × 5 sales/mo, no chargeback ⇒ 250/mo upfront, every month.
+    for (const u of me.upfront) expect(Math.abs(u - 250)).toBeLessThan(1);
+    // Residual builds as the book grows: month 6 > month 1, and is positive late.
+    expect(me.residual[5]).toBeGreaterThan(me.residual[0]);
+    expect(me.residual[me.residual.length - 1]).toBeGreaterThan(0);
+  });
+
+  it("[PM-P3] cash total = upfront + cash residual; upfront identical across bases", () => {
+    const me = calculateScenario(flat).memberEarnings.reps;
+    expect(me.cash.upfront).toEqual(me.accrual.upfront);
+    me.cash.total.forEach((tot, i) => {
+      expect(Math.abs(tot - (me.cash.upfront[i] + me.cash.residual[i]))).toBeLessThan(1e-6);
+    });
+  });
+
+  it("[PM-P4] manager per-member = level override × threshold / reps; zero before activation; top→base", () => {
+    const plan: LeadershipCompPlan = {
+      enabled: true,
+      base: "revenue",
+      levels: [
+        { id: "local", name: "Local", span: 5, baseRatePct: 5, baseMixPct: 100, qualifications: [] },
+        { id: "regional", name: "Regional", span: 4, baseRatePct: 3, baseMixPct: 100, qualifications: [] },
+      ],
+    };
+    // Growth so reps cross thresholds (5 and 20) over the window.
+    const r = calculateScenario({
+      ...flat,
+      salesRepChannel: { startingReps: 10, salesPerRepPerMonth: 5, monthlyGrowthRate: 10 },
+      leadershipCompPlan: plan,
+    });
+    const me = r.memberEarnings;
+    // Order top→base mirrors salesTeam.levels.
+    expect(me.levels.map((l) => l.id)).toEqual(r.salesTeam.levels.map((l) => l.id));
+    expect(me.levels.map((l) => l.id)).toEqual(["regional", "local"]);
+    const regional = me.levels.find((l) => l.id === "regional")!;
+    r.cohortProjection.forEach((m, i) => {
+      if (m.activeReps < 20) expect(regional.accrual[i]).toBe(0); // not yet activated (threshold 20)
+      else expect(regional.accrual[i]).toBeGreaterThan(0);
+    });
+  });
+
+  it("[PM-P5] no leadership plan ⇒ no manager rows, rep series present on both bases", () => {
+    const me = calculateScenario(flat).memberEarnings;
+    expect(me.levels).toEqual([]);
+    expect(me.reps.accrual.total.length).toBe(me.reps.cash.total.length);
+    expect(me.reps.accrual.total.length).toBeGreaterThan(0);
+  });
+});

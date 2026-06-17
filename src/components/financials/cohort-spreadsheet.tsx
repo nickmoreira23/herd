@@ -16,6 +16,11 @@ import {
   aggregateLifecyclesByCalendarMonth,
   useSpreadsheetCollapse,
   COST_RUBRIC_LABEL_KEYS,
+  MEMBER_PREFIX,
+  REPS_ROLE_KEY,
+  memberRoleKeys,
+  memberDownlineKeys,
+  cascadePerspective,
   type AggMonth,
 } from "./spreadsheet-shared";
 import type { CostRubric } from "@/lib/financial-engine";
@@ -83,28 +88,41 @@ export function CohortSpreadsheet({
   // cash cascade lives). The per-cohort view has no party dimension in the
   // cascade sense, so the selector is intentionally absent there.
   const cashTotals = results.profitDistribution?.totals?.cash ?? [];
-  const PerspectiveSelector =
-    onPerspectiveChange && cashTotals.length > 0 ? (
-      <div className="flex items-center gap-2 pb-2">
-        <label className="text-xs text-muted-foreground">
-          {t("financials.toolbar.perspective.label")}
-        </label>
-        <select
-          value={perspective}
-          onChange={(e) => onPerspectiveChange(e.target.value)}
-          className="text-xs border rounded-md bg-background px-2 py-1 min-w-[200px] hover:bg-muted/30 transition-colors"
-        >
-          <option value="general">
-            {t("financials.toolbar.perspective.general")}
-          </option>
-          {cashTotals.map((p) => (
-            <option key={p.partyId} value={p.partyId}>
-              {p.name}
+  const PerspectiveSelector = onPerspectiveChange ? (
+    <div className="flex items-center gap-2 pb-2">
+      <label className="text-xs text-muted-foreground">
+        {t("financials.toolbar.perspective.label")}
+      </label>
+      <select
+        value={perspective}
+        onChange={(e) => onPerspectiveChange(e.target.value)}
+        className="text-xs border rounded-md bg-background px-2 py-1 min-w-[200px] hover:bg-muted/30 transition-colors"
+      >
+        <option value="general">
+          {t("financials.toolbar.perspective.general")}
+        </option>
+        {cashTotals.length > 0 && (
+          <optgroup label={t("financials.toolbar.perspective.parties_group")}>
+            {cashTotals.map((p) => (
+              <option key={p.partyId} value={p.partyId}>
+                {p.name}
+              </option>
+            ))}
+          </optgroup>
+        )}
+        <optgroup label={t("financials.toolbar.perspective.members_group")}>
+          {results.salesTeam.levels.map((l) => (
+            <option key={l.id} value={`${MEMBER_PREFIX}${l.id}`}>
+              {l.name || t("financials.cascade.level_unnamed")}
             </option>
           ))}
-        </select>
-      </div>
-    ) : null;
+          <option value={`${MEMBER_PREFIX}${REPS_ROLE_KEY}`}>
+            {t("financials.member_earnings.rep")}
+          </option>
+        </optgroup>
+      </select>
+    </div>
+  ) : null;
 
   // Blended revenue-per-sub (the engine's accrual rate). Threaded into
   // both child tables so the per-cohort accrual line in the
@@ -144,6 +162,7 @@ export function CohortSpreadsheet({
           tierBillingDistributions={tierBillingDistributions}
           blendedRevenuePerSub={blendedRevenuePerSub}
           salesTeam={results.salesTeam}
+          memberEarnings={results.memberEarnings}
           locale={locale}
         />
       </div>
@@ -174,6 +193,7 @@ export function CohortSpreadsheet({
         cashDistribution={results.profitDistribution?.cash ?? []}
         cashTotals={cashTotals}
         salesTeam={results.salesTeam}
+        memberEarnings={results.memberEarnings}
         perspective={perspective}
       />
     </div>
@@ -203,6 +223,7 @@ function buildSalesTeamRows(
   salesTeam: NonNullable<ReturnType<typeof useFinancialStore.getState>["results"]>["salesTeam"],
   months: { monthIndex: number }[],
   t: ReturnType<typeof useT>,
+  keep: Set<string> | null = null,
 ): {
   label: string;
   getValue: (m: { monthIndex: number }) => number;
@@ -214,18 +235,70 @@ function buildSalesTeamRows(
     getValue: (m: { monthIndex: number }) => arr[m.monthIndex - 1] ?? 0,
     getTotal: () => (lastMonthIndex ? (arr[lastMonthIndex - 1] ?? 0) : 0),
   });
-  return [
-    ...salesTeam.levels.map((lvl) => ({
-      label: lvl.name || t("financials.cascade.level_unnamed"),
-      ...series(lvl.headcountByMonth),
-      format: "number" as const,
-    })),
-    {
+  const rows = [
+    ...salesTeam.levels
+      .filter((lvl) => !keep || keep.has(lvl.id))
+      .map((lvl) => ({
+        label: lvl.name || t("financials.cascade.level_unnamed"),
+        ...series(lvl.headcountByMonth),
+        format: "number" as const,
+      })),
+  ];
+  if (!keep || keep.has(REPS_ROLE_KEY)) {
+    rows.push({
       label: t("financials.sales_team.reps"),
       ...series(salesTeam.repsByMonth),
       format: "number" as const,
-    },
-  ];
+    });
+  }
+  return rows;
+}
+
+/** Per-member earnings rows (CASH basis) — one representative member per role,
+ *  top → base, then the rep with an expandable upfront/residual split. Summed
+ *  over the visible window for the Total column. Shared by both cohort tables. */
+function buildMemberEarningsRows(
+  me: NonNullable<ReturnType<typeof useFinancialStore.getState>["results"]>["memberEarnings"],
+  months: { monthIndex: number }[],
+  t: ReturnType<typeof useT>,
+  keep: Set<string> | null = null,
+): {
+  id?: string;
+  parentId?: string;
+  level?: number;
+  label: string;
+  getValue: (m: { monthIndex: number }) => number;
+  getTotal: () => number;
+  format: "currency";
+}[] {
+  const series = (arr: number[]) => ({
+    getValue: (m: { monthIndex: number }) => arr[m.monthIndex - 1] ?? 0,
+    getTotal: () => months.reduce((s, m) => s + (arr[m.monthIndex - 1] ?? 0), 0),
+  });
+  type MemberRow = {
+    id?: string;
+    parentId?: string;
+    level?: number;
+    label: string;
+    getValue: (m: { monthIndex: number }) => number;
+    getTotal: () => number;
+    format: "currency";
+  };
+  const rows: MemberRow[] = me.levels
+    .filter((lvl) => !keep || keep.has(lvl.id))
+    .map((lvl) => ({
+      label: lvl.name || t("financials.cascade.level_unnamed"),
+      ...series(lvl.cash),
+      format: "currency" as const,
+    }));
+  if (!keep || keep.has(REPS_ROLE_KEY)) {
+    rows.push(
+      { id: "member-rep", label: t("financials.member_earnings.rep"), ...series(me.reps.cash.total), format: "currency" as const },
+      { id: "member-rep--upfront", parentId: "member-rep", level: 1, label: t("financials.member_earnings.upfront"), ...series(me.reps.cash.upfront), format: "currency" as const },
+      { id: "member-rep--residual", parentId: "member-rep", level: 1, label: t("financials.member_earnings.residual"), ...series(me.reps.cash.residual), format: "currency" as const },
+    );
+  }
+  return rows;
 }
 
 
@@ -245,6 +318,7 @@ function CohortLifecycleTable({
   tierBillingDistributions,
   blendedRevenuePerSub,
   salesTeam,
+  memberEarnings,
   locale,
 }: {
   lifecycle: NonNullable<
@@ -256,6 +330,10 @@ function CohortLifecycleTable({
   salesTeam: NonNullable<
     ReturnType<typeof useFinancialStore.getState>["results"]
   >["salesTeam"];
+  /** Per-member career-trajectory earnings (cash basis used in this tab). */
+  memberEarnings: NonNullable<
+    ReturnType<typeof useFinancialStore.getState>["results"]
+  >["memberEarnings"];
   /** Per-tier billing distribution (same source the scenario builder
    *  shows). Drives the "(X%)" suffix in the "Active by Plan & Cycle"
    *  rows so the user reads each tier's mix without leaving the table. */
@@ -298,6 +376,7 @@ function CohortLifecycleTable({
       "commissions", // hide per-tier commission spend behind the headline
       "buck", // hide license/tokens behind the Buck rollup
       "addons", // hide individual add-ons behind the Add-Ons rollup
+      "member-rep", // hide the rep's upfront/residual split behind the headline
     ]);
     // Active by Plan & Cycle parents AND per-tier commission parents —
     // one of each per tier. Both start collapsed so the user sees plan-
@@ -543,6 +622,12 @@ function CohortLifecycleTable({
       id: "sales-team",
       section: t("financials.projection.section.sales_team"),
       rows: buildSalesTeamRows(salesTeam, months, t),
+    },
+    // Per-member earnings — what one individual in each role earns (cash basis).
+    {
+      id: "member-earnings",
+      section: t("financials.projection.section.member_earnings"),
+      rows: buildMemberEarningsRows(memberEarnings, months, t),
     },
     {
       id: "subscribers",
@@ -1237,6 +1322,7 @@ function AggregateCohortTable({
   cashDistribution,
   cashTotals,
   salesTeam,
+  memberEarnings,
   perspective = "general",
 }: {
   cohortLifecycles: NonNullable<
@@ -1254,6 +1340,9 @@ function AggregateCohortTable({
   salesTeam: NonNullable<
     ReturnType<typeof useFinancialStore.getState>["results"]
   >["salesTeam"];
+  memberEarnings: NonNullable<
+    ReturnType<typeof useFinancialStore.getState>["results"]
+  >["memberEarnings"];
   perspective?: string;
   scenarioTierIds: string[];
   /** Per-tier billing distribution — drives the "(X%)" suffix in the
@@ -1280,6 +1369,7 @@ function AggregateCohortTable({
     "overhead",
     "buck",
     "addons",
+    "member-rep",
   ];
   for (const tid of scenarioTierIds) {
     initialCollapsedRows.push(`active-by-plan-cycle--${tid}`);
@@ -1636,16 +1726,22 @@ function AggregateCohortTable({
 
   // Perspective filter (S3b): in "general" show all parties; in a party
   // view keep only that party's subtree — channel/header rows (non
-  // `cascade-party--`) are always integral.
+  // `cascade-party--`) are always integral. A member perspective reads as
+  // "general" here (member ≠ profit-split party).
+  const cascadePersp = cascadePerspective(perspective);
   const visibleProfitSplitRows =
-    perspective === "general"
+    cascadePersp === "general"
       ? profitSplitRows
       : profitSplitRows.filter(
           (r) =>
             !r.id?.startsWith("cascade-party--") ||
-            r.id === `cascade-party--${perspective}` ||
-            r.id.startsWith(`cascade-party--${perspective}--`),
+            r.id === `cascade-party--${cascadePersp}` ||
+            r.id.startsWith(`cascade-party--${cascadePersp}--`),
         );
+
+  // Member perspective (Phase 2): focus the people-sections on the selected
+  // seat + everyone beneath it; null ⇒ no filter (general / party view).
+  const memberKeep = memberDownlineKeys(perspective, memberRoleKeys(salesTeam));
 
   const sections: {
     id: string;
@@ -1657,7 +1753,13 @@ function AggregateCohortTable({
     {
       id: "sales-team",
       section: t("financials.projection.section.sales_team"),
-      rows: buildSalesTeamRows(salesTeam, aggMonths, t),
+      rows: buildSalesTeamRows(salesTeam, aggMonths, t, memberKeep),
+    },
+    // Per-member earnings — what one individual in each role earns (cash basis).
+    {
+      id: "member-earnings",
+      section: t("financials.projection.section.member_earnings"),
+      rows: buildMemberEarningsRows(memberEarnings, aggMonths, t, memberKeep),
     },
     {
       id: "subscribers",

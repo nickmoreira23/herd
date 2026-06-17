@@ -953,6 +953,21 @@ export interface ScenarioResults {
     repsByMonth: number[];
   };
 
+  /** Per-member career-trajectory earnings (what ONE individual in each role
+   *  earns month by month), on both bases. `reps` is a single rep who joins in
+   *  month 1 and sells `salesPerRepPerMonth` — upfront on each sale plus a
+   *  residual that ramps as their book matures. `levels` (TOP → BASE, same order
+   *  as `salesTeam.levels`) is one representative manager's override on a single
+   *  span of production (`levelOverride × threshold / activeReps` — smooth, no
+   *  headcount-floor dilution), zero until the level activates. */
+  memberEarnings: {
+    reps: {
+      accrual: { upfront: number[]; residual: number[]; total: number[] };
+      cash: { upfront: number[]; residual: number[]; total: number[] };
+    };
+    levels: { id: string; name: string; accrual: number[]; cash: number[] }[];
+  };
+
   // Operation breakeven month (0 = already profitable, Infinity = never)
   operationBreakevenMonth: number;
 
@@ -2840,6 +2855,102 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
     repsByMonth: cohortProjection.map((m) => m.activeReps),
   };
 
+  // --- Per-member career-trajectory earnings (S-member) ---
+  // ONE rep present from month 1, selling `salesPerRepByMonth` each month:
+  // upfront on each sale (deferred by payoutDelay, clawback-netted) plus a
+  // residual that ramps as their churning book matures. Per tier, mirroring the
+  // channel commission loop with reps = 1.
+  const monthsCount = cohortProjection.length;
+  const repNetNewByMonth = salesPerRepByMonth.map((s) => s * (1 - chargebackRate));
+  const repUpfrontAccrual: number[] = [];
+  const repResidualAccrual: number[] = [];
+  for (let month = 1; month <= monthsCount; month++) {
+    let upfront = 0;
+    let residual = 0;
+    for (let i = 0; i < tiers.length; i++) {
+      const tc = tierCommissions[i];
+      const tierShare = tiers[i].subscriberPercent / 100;
+      const tierBlendedRev = tierDetails[i].revenuePerSub;
+      const delayed = month - tc.payoutDelay;
+      if (delayed >= 1) {
+        const repSales = salesPerRepByMonth[delayed - 1];
+        const commissionable = tc.clawbackWindow > 0 ? repSales * (1 - chargebackRate) : repSales;
+        upfront += commissionable * tierShare * tc.effectiveFlatBonus;
+      }
+      let eligible = 0;
+      for (let m = 0; m < month; m++) {
+        const monthsSince = month - (m + 1);
+        if (monthsSince >= tc.residualDelay) {
+          const churnPeriods = Math.max(0, monthsSince - commitMonths + 1);
+          eligible += repNetNewByMonth[m] * tierShare * Math.pow(1 - avgChurn, churnPeriods);
+        }
+      }
+      residual += eligible * tierBlendedRev * (tc.residualPercent / 100);
+    }
+    repUpfrontAccrual.push(upfront);
+    repResidualAccrual.push(residual);
+  }
+
+  // Cash residual: same upfront (paid at the sale, basis-independent), but the
+  // residual rides the rep's book CASH revenue — lumpy for biannual/annual. Uses
+  // the blended per-sub cash curve from the first cohort's lifecycle (churn +
+  // billing lumps already baked in) with the mix-blended residual rate/delay.
+  const firstCohort = cohortLifecycles[0];
+  const firstCohortSize = firstCohort ? firstCohort.grossNewSubs : 0;
+  const perSubCashByTenure: number[] =
+    firstCohort && firstCohortSize > 0
+      ? firstCohort.months.map((mo) => mo.revenue / firstCohortSize)
+      : [];
+  const blendedResidualPct = tiers.reduce(
+    (s, t, i) => s + (t.subscriberPercent / 100) * (tierCommissions[i].residualPercent / 100),
+    0,
+  );
+  const blendedResidualDelay = Math.round(
+    tiers.reduce((s, t, i) => s + (t.subscriberPercent / 100) * tierCommissions[i].residualDelay, 0),
+  );
+  const repResidualCash: number[] = [];
+  for (let month = 1; month <= monthsCount; month++) {
+    let rev = 0;
+    for (let m = 0; m < month; m++) {
+      const tenure = month - (m + 1);
+      if (tenure >= blendedResidualDelay) rev += repNetNewByMonth[m] * (perSubCashByTenure[tenure] ?? 0);
+    }
+    repResidualCash.push(blendedResidualPct * rev);
+  }
+
+  const addSeries = (a: number[], b: number[]) => a.map((x, i) => x + (b[i] ?? 0));
+  // One representative manager's override on a single span = level override ×
+  // threshold / activeReps (smooth; zero before the level activates).
+  const perManagerSeries = (
+    byLevel: { id: string; name: string; amount: number }[][],
+    lvl: { id: string; threshold: number },
+  ) =>
+    cohortProjection.map((m, i) => {
+      if (m.activeReps <= 0) return 0;
+      const levelTotal = byLevel[i]?.find((e) => e.id === lvl.id)?.amount ?? 0;
+      return (levelTotal * lvl.threshold) / m.activeReps;
+    });
+  const memberEarnings: ScenarioResults["memberEarnings"] = {
+    reps: {
+      accrual: {
+        upfront: repUpfrontAccrual,
+        residual: repResidualAccrual,
+        total: addSeries(repUpfrontAccrual, repResidualAccrual),
+      },
+      cash: {
+        upfront: repUpfrontAccrual,
+        residual: repResidualCash,
+        total: addSeries(repUpfrontAccrual, repResidualCash),
+      },
+    },
+    levels: [...leadershipLevels].reverse().map((lvl) => ({
+      id: lvl.id,
+      name: lvl.name,
+      accrual: perManagerSeries(accrualLeadershipByLevel, lvl),
+      cash: perManagerSeries(cashLeadershipByLevel, lvl),
+    })),
+  };
+
   return {
     // Thread D.2 — these scalars are remapped to their AVERAGE-OF-PERIOD
     // versions, replacing the legacy Mo-1-frozen exports. Per-sub values
@@ -2890,6 +3001,7 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
     cohortLifecycles,
     profitDistribution,
     salesTeam,
+    memberEarnings,
     operationBreakevenMonth,
   };
 }
