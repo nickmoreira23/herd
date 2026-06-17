@@ -377,6 +377,7 @@ function CohortLifecycleTable({
       "buck", // hide license/tokens behind the Buck rollup
       "addons", // hide individual add-ons behind the Add-Ons rollup
       "member-rep", // hide the rep's upfront/residual split behind the headline
+      "active-subscribers", // hide the per-plan/cycle breakdown behind the total
     ]);
     // Active by Plan & Cycle parents AND per-tier commission parents —
     // one of each per tier. Both start collapsed so the user sees plan-
@@ -623,12 +624,6 @@ function CohortLifecycleTable({
       section: t("financials.projection.section.sales_team"),
       rows: buildSalesTeamRows(salesTeam, months, t),
     },
-    // Per-member earnings — what one individual in each role earns (cash basis).
-    {
-      id: "member-earnings",
-      section: t("financials.projection.section.member_earnings"),
-      rows: buildMemberEarningsRows(memberEarnings, months, t),
-    },
     {
       id: "subscribers",
       section: t("financials.projection.section.subscribers"),
@@ -659,16 +654,7 @@ function CohortLifecycleTable({
           format: "number",
           lossColor: true,
         },
-        // Active Subscribers — surviving subs at this month-of-life
-        // (post-chargeback at Mo 1, then post-churn from Mo 4 onward
-        // once the commit period ends).
-        {
-          label: "Active Subscribers",
-          getValue: (m) => m.survivingSubs,
-          getTotal: () => months[months.length - 1]?.survivingSubs ?? 0,
-          format: "number",
-          bold: true,
-        },
+        // Churn — surviving subs lost this month-of-life.
         {
           label: t("financials.projection.row.lost_to_churn"),
           getValue: (m) => m.churned,
@@ -676,26 +662,21 @@ function CohortLifecycleTable({
           format: "number",
           lossColor: true,
         },
-      ],
-    },
-    // Active subs broken down by (plan × billing cycle) — answers
-    // "where are these N active subs?" so the user can audit any
-    // revenue lump in the section below. The 12 rows (4 plans × 3
-    // cycles) hold the surviving sub population each month-of-life,
-    // fractional (no rounding) so revenue × rate × cycle-months
-    // reconciles exactly with the cycle-revenue sub-rows in REVENUE.
-    // Suppressed when there's only one tier configured.
-    ...(grossNewSubsByTier && grossNewSubsByTier.length > 1
-      ? [
-          {
-            id: "active-by-plan-cycle",
-            // Section starts collapsed — the per-tier parent rows show
-            // the tier total, and each tier expands into its three cycle
-            // children (Monthly / Biannual / Annual) so the user can
-            // drill down only when they need the cycle breakdown.
-            defaultCollapsed: true,
-            section: "Active by Plan & Cycle",
-            rows: grossNewSubsByTier.flatMap((tierEntry) => {
+        // Active Subscribers — surviving subs at this month-of-life. Parent of
+        // the per-plan/cycle breakdown nested below (>1 tier only): answers
+        // "where are these N active subs?" so the user can audit any revenue
+        // lump in the section below. Counts are fractional (no rounding) so
+        // revenue × rate × cycle-months reconciles with the REVENUE sub-rows.
+        {
+          id: "active-subscribers",
+          label: "Active Subscribers",
+          getValue: (m) => m.survivingSubs,
+          getTotal: () => months[months.length - 1]?.survivingSubs ?? 0,
+          format: "number",
+          bold: true,
+        },
+        ...(grossNewSubsByTier && grossNewSubsByTier.length > 1
+          ? grossNewSubsByTier.flatMap((tierEntry) => {
               const cycles: ("monthly" | "biannual" | "annual")[] = [
                 "monthly",
                 "biannual",
@@ -708,9 +689,10 @@ function CohortLifecycleTable({
               };
               const tierBilling = tierBillingDistributions.get(tierEntry.tierId);
               const parentId = `active-by-plan-cycle--${tierEntry.tierId}`;
-              // Tier total (sum across cycles) — the parent row.
+              // Tier total (sum across cycles) — nested under Active Subscribers.
               const tierParent: RowDef = {
                 id: parentId,
+                parentId: "active-subscribers",
                 label: t("financials.projection.tier_indent", {
                   tier: tierEntry.tierId,
                 }),
@@ -734,9 +716,7 @@ function CohortLifecycleTable({
                 },
                 format: "decimal" as const,
               };
-              // Per-cycle children — only visible when the tier parent
-              // is expanded. Cycle % suffix preserved so the user can
-              // still audit which slice of the tier each row represents.
+              // Per-cycle children — visible when the tier parent is expanded.
               const cycleChildren: RowDef[] = cycles.map((cycle) => ({
                 id: `${parentId}--${cycle}`,
                 parentId,
@@ -766,10 +746,10 @@ function CohortLifecycleTable({
                 format: "decimal" as const,
               }));
               return [tierParent, ...cycleChildren];
-            }),
-          },
-        ]
-      : []),
+            })
+          : []),
+      ],
+    },
     {
       id: "revenue",
       section: t("financials.projection.section.revenue"),
@@ -1039,6 +1019,13 @@ function CohortLifecycleTable({
           format: "percent",
         },
       ],
+    },
+    // Member Earnings — last section (after the channel P&L), so earnings
+    // read as the bottom line of who-earns-what, not above revenue.
+    {
+      id: "member-earnings",
+      section: t("financials.projection.section.member_earnings"),
+      rows: buildMemberEarningsRows(memberEarnings, months, t),
     },
   ];
 
@@ -1370,6 +1357,7 @@ function AggregateCohortTable({
     "buck",
     "addons",
     "member-rep",
+    "active-subscribers", // hide the per-plan/cycle breakdown behind the total
   ];
   for (const tid of scenarioTierIds) {
     initialCollapsedRows.push(`active-by-plan-cycle--${tid}`);
@@ -1386,7 +1374,7 @@ function AggregateCohortTable({
     collapsedRows,
     toggleSection,
     toggleRow,
-  } = useSpreadsheetCollapse(["active-by-plan-cycle"], initialCollapsedRows);
+  } = useSpreadsheetCollapse([], initialCollapsedRows);
 
   // Tier id list — pulled from any cohort's grossNewSubsByTier (all
   // cohorts share the same tier shape) with a fallback to the scenario
@@ -1755,12 +1743,6 @@ function AggregateCohortTable({
       section: t("financials.projection.section.sales_team"),
       rows: buildSalesTeamRows(salesTeam, aggMonths, t, memberKeep),
     },
-    // Per-member earnings — what one individual in each role earns (cash basis).
-    {
-      id: "member-earnings",
-      section: t("financials.projection.section.member_earnings"),
-      rows: buildMemberEarningsRows(memberEarnings, aggMonths, t, memberKeep),
-    },
     {
       id: "subscribers",
       section: t("financials.projection.section.subscribers"),
@@ -1802,27 +1784,18 @@ function AggregateCohortTable({
           lossColor: true,
         },
         {
+          id: "active-subscribers",
           label: t("financials.projection.row.total_active"),
           getValue: (m) => m.survivingSubs,
           getTotal: () => totals.survivingSubsLast,
           format: "number",
           bold: true,
         },
-      ],
-    },
-    // Active by Plan & Cycle — same audit block the per-cohort uses.
-    // Sums across cohorts of (tier, cycle) sub counts at calendar K.
-    // Helps reconcile any biannual/annual revenue lump back to a count.
-    ...(hasMultipleTiers
-      ? [
-          {
-            id: "active-by-plan-cycle",
-            defaultCollapsed: true,
-            section: "Active by Plan & Cycle",
-            // Two-level: tier parents (Starter / Performance / …) +
-            // cycle children (Monthly / Biannual / Annual) per tier.
-            // Click the chevron on a tier to drill into its cycle mix.
-            rows: tierIds.flatMap((tierId) => {
+        // Active by Plan & Cycle — nested UNDER Active Subscribers (>1 tier).
+        // Sums across cohorts of (tier, cycle) sub counts at calendar K; helps
+        // reconcile any biannual/annual revenue lump back to a count.
+        ...(hasMultipleTiers
+          ? tierIds.flatMap((tierId) => {
               const cycles: ("monthly" | "biannual" | "annual")[] = [
                 "monthly",
                 "biannual",
@@ -1837,6 +1810,8 @@ function AggregateCohortTable({
               const parentId = `active-by-plan-cycle--${tierId}`;
               const parent: AggRow = {
                 id: parentId,
+                parentId: "active-subscribers",
+                level: 1,
                 label: t("financials.projection.tier_indent", { tier: tierId }),
                 getValue: (m) => {
                   const e = m.subscribersByTierAndCycle.find(
@@ -1859,6 +1834,7 @@ function AggregateCohortTable({
               const children: AggRow[] = cycles.map((cycle) => ({
                 id: `${parentId}--${cycle}`,
                 parentId,
+                level: 2,
                 label: t("financials.projection.tier_subindent", {
                   tier: `${cycleLabels[cycle]} (${formatNumber(
                     (tierBilling?.[cycle] ?? 0) / 100,
@@ -1883,10 +1859,10 @@ function AggregateCohortTable({
                 format: "decimal",
               }));
               return [parent, ...children];
-            }),
-          },
-        ]
-      : []),
+            })
+          : []),
+      ],
+    },
     {
       id: "revenue",
       section: t("financials.projection.section.revenue"),
@@ -2172,6 +2148,34 @@ function AggregateCohortTable({
       : []),
   ];
 
+  // Perspective-driven layout (mirrors projection-spreadsheet):
+  //  • general → Member Earnings is the LAST section (after Profit Split).
+  //  • party   → no Member Earnings.
+  //  • role    → recruit-facing: keep Sales Team (role + downline) + Subscribers
+  //    + Revenue + an "Earnings" section at the end; hide COGS / OpEx / Bottom
+  //    Line / Profit Split (company-internal).
+  const isRole = memberKeep != null;
+  const isGeneral = perspective === "general" || !perspective;
+  const memberEarningsSection = {
+    id: "member-earnings",
+    section: t(
+      isRole
+        ? "financials.projection.section.earnings"
+        : "financials.projection.section.member_earnings",
+    ),
+    rows: buildMemberEarningsRows(memberEarnings, aggMonths, t, memberKeep),
+  };
+  const finalSections = isRole
+    ? [
+        ...sections.filter(
+          (s) => !["cogs", "opex", "bottom-line", "profit-split"].includes(s.id),
+        ),
+        memberEarningsSection,
+      ]
+    : isGeneral
+      ? [...sections, memberEarningsSection]
+      : sections;
+
   function formatValue(
     v: number,
     fmt: "currency" | "number" | "percent" | "decimal",
@@ -2250,7 +2254,7 @@ function AggregateCohortTable({
             </tr>
           </thead>
           <tbody>
-            {sections.map((section) => (
+            {finalSections.map((section) => (
               <AggSectionBlock
                 key={section.id}
                 section={section}
