@@ -278,3 +278,54 @@ describe("S7 — leadership commission, dynamic threshold activation", () => {
     expect(Math.abs(accrualLeadership(r) - rev * 0.064)).toBeLessThan(TOL);
   });
 });
+
+describe("[sales-team] headcount per level over the projection window", () => {
+  // Two levels above the reps: Local (span 5 ⇒ threshold 5) and Regional
+  // (span 4 ⇒ cumulative threshold 20). Reps grow so headcount crosses spans.
+  const PLAN_ST: LeadershipCompPlan = {
+    enabled: true,
+    base: "revenue",
+    levels: [
+      { id: "local", name: "Local", span: 5, baseRatePct: 5, baseMixPct: 100, qualifications: [] },
+      { id: "regional", name: "Regional", span: 4, baseRatePct: 3, baseMixPct: 100, qualifications: [] },
+    ],
+  };
+  const inputs: FinancialInputs = {
+    ...buildAuditScenario(PARTIES),
+    salesRepChannel: { startingReps: 10, salesPerRepPerMonth: 5, monthlyGrowthRate: 10 },
+    leadershipCompPlan: PLAN_ST,
+  };
+
+  it("[ST-P1] levels are ordered TOP → BASE with cumulative-span thresholds", () => {
+    const st = calculateScenario(inputs).salesTeam;
+    expect(st.levels.map((l) => l.id)).toEqual(["regional", "local"]);
+    expect(st.levels.map((l) => l.threshold)).toEqual([20, 5]);
+  });
+
+  it("[ST-P2] headcount = floor(activeReps / threshold) every month; reps row mirrors activeReps", () => {
+    const r = calculateScenario(inputs);
+    const st = r.salesTeam;
+    r.cohortProjection.forEach((m, i) => {
+      expect(st.repsByMonth[i]).toBe(m.activeReps);
+      for (const lvl of st.levels) {
+        expect(lvl.headcountByMonth[i]).toBe(Math.floor(m.activeReps / lvl.threshold));
+      }
+    });
+  });
+
+  it("[ST-P3] headcount is non-decreasing while reps grow (growth ≥ 0, no rep churn)", () => {
+    const st = calculateScenario(inputs).salesTeam;
+    for (const lvl of st.levels) {
+      for (let i = 1; i < lvl.headcountByMonth.length; i++) {
+        expect(lvl.headcountByMonth[i]).toBeGreaterThanOrEqual(lvl.headcountByMonth[i - 1]);
+      }
+    }
+  });
+
+  it("[ST-P4] no leadership plan ⇒ no levels, reps row still present", () => {
+    const st = calculateScenario(buildAuditScenario(PARTIES)).salesTeam;
+    expect(st.levels).toEqual([]);
+    expect(st.repsByMonth.length).toBeGreaterThan(0);
+    expect(st.repsByMonth.every((n) => n >= 0)).toBe(true);
+  });
+});
