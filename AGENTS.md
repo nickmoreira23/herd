@@ -210,6 +210,22 @@ narrowing type change, or a backfill **must be validated against PROD's real dat
 merges — PROD ≠ DEV (demo/legacy rows). The Marketplace incident: `ADD COLUMN tenant_id NOT NULL`
 passed in DEV (0 rows) but hit `P3009` in PROD (2 demo rows violated NOT NULL).
 
+**Pre-merge checklist — the contract for any PR carrying a migration:**
+1. **Review the migration in the chat BEFORE the merge.** Merge == auto-apply to PROD; there is
+   no separate "apply" gate to catch a bad migration after the fact. The SQL is reviewed while
+   it can still be changed.
+2. **Run the data-aware pre-checks above against PROD's real data** (NOT NULL/UNIQUE/narrowing/
+   backfill — PROD ≠ DEV).
+3. **Last line of defense — `_probe` must be empty.** For any PR that should carry *no* schema
+   change (docs/code-only), run `npx prisma migrate dev --create-only --name _probe`; it MUST
+   produce an **empty** migration (zero delta). A non-empty `_probe` means the working tree (or a
+   DEV-DB drift) carries an unintended schema change — stop and reconcile. **Delete the `_probe`
+   directory after checking; never commit it.**
+
+**Seeds are a separate, MANUAL step — they do NOT auto-apply on merge.** The Railway predeploy
+runs only `migrate deploy` (schema). Data seeds (`db:seed`, `db:seed:ledger`, `seed:*`) are run
+by hand against the target environment after a migration that needs them — see "Account seeding".
+
 **Recovery playbook if an auto-applied migration fails in PROD (P3009 / partial state):**
 1. **Do NOT assume the failure rolled everything back.** On Supabase/pooler the migration is
    **not atomic** — verify the REAL schema (columns/indexes) via SQL before acting; it can leave
