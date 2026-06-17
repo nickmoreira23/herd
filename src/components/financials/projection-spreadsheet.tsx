@@ -16,6 +16,10 @@ import {
   aggregateLifecyclesByCalendarMonth,
   useSpreadsheetCollapse,
   COST_RUBRIC_LABEL_KEYS,
+  REPS_ROLE_KEY,
+  memberRoleKeys,
+  memberDownlineKeys,
+  cascadePerspective,
 } from "./spreadsheet-shared";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { CostRubric } from "@/lib/financial-engine";
@@ -136,6 +140,7 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
     "overhead",
     "buck",
     "addons",
+    "member-rep",
   ];
   for (const tid of tierIds) {
     initialCollapsedRows.push(`active-by-plan-cycle--${tid}`);
@@ -429,23 +434,79 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
       }))
     : [];
 
+  // Member perspective (Phase 2): focus the people-sections on the selected
+  // seat + everyone beneath it; null ⇒ no filter (general / party view).
+  const memberKeep = memberDownlineKeys(perspective, memberRoleKeys(results.salesTeam));
+  const keepReps = !memberKeep || memberKeep.has(REPS_ROLE_KEY);
+
   // Sales-team headcount — one row per leadership level (top → base), then
   // the reps row as the base. Headcount grows as active reps cross each
   // level's span. Total column = headcount at the last visible month.
   const salesTeamRows: RowDef[] = [
-    ...results.salesTeam.levels.map((lvl) => ({
-      label: lvl.name || t("financials.cascade.level_unnamed"),
-      type: "number" as const,
-      totalMode: "latest" as const,
-      values: lvl.headcountByMonth.slice(0, projection.length),
-    })),
+    ...results.salesTeam.levels
+      .filter((lvl) => !memberKeep || memberKeep.has(lvl.id))
+      .map((lvl) => ({
+        label: lvl.name || t("financials.cascade.level_unnamed"),
+        type: "number" as const,
+        totalMode: "latest" as const,
+        values: lvl.headcountByMonth.slice(0, projection.length),
+      })),
+    ...(keepReps
+      ? [
+          {
+            label: t("financials.sales_team.reps"),
+            tooltip: t("financials.sales_team.reps_tooltip"),
+            type: "number" as const,
+            totalMode: "latest" as const,
+            values: results.salesTeam.repsByMonth.slice(0, projection.length),
+          },
+        ]
+      : []),
+  ];
+
+  // Per-member earnings (ACCRUAL) — one representative member per role, top →
+  // base, then the rep with an expandable upfront/residual split. Total = comp
+  // earned over the visible window (sum).
+  const me = results.memberEarnings;
+  const memberEarningsRows: RowDef[] = [
+    ...me.levels
+      .filter((lvl) => !memberKeep || memberKeep.has(lvl.id))
+      .map((lvl) => ({
+        label: lvl.name || t("financials.cascade.level_unnamed"),
+        type: "currency" as const,
+        totalMode: "sum" as const,
+        values: lvl.accrual.slice(0, projection.length),
+      })),
+    ...(keepReps
+      ? [
     {
-      label: t("financials.sales_team.reps"),
-      tooltip: t("financials.sales_team.reps_tooltip"),
-      type: "number" as const,
-      totalMode: "latest" as const,
-      values: results.salesTeam.repsByMonth.slice(0, projection.length),
+      id: "member-rep",
+      label: t("financials.member_earnings.rep"),
+      tooltip: t("financials.member_earnings.rep_tooltip"),
+      type: "currency" as const,
+      totalMode: "sum" as const,
+      values: me.reps.accrual.total.slice(0, projection.length),
     },
+    {
+      id: "member-rep--upfront",
+      parentId: "member-rep",
+      level: 1 as const,
+      label: t("financials.member_earnings.upfront"),
+      type: "currency" as const,
+      totalMode: "sum" as const,
+      values: me.reps.accrual.upfront.slice(0, projection.length),
+    },
+    {
+      id: "member-rep--residual",
+      parentId: "member-rep",
+      level: 1 as const,
+      label: t("financials.member_earnings.residual"),
+      type: "currency" as const,
+      totalMode: "sum" as const,
+      values: me.reps.accrual.residual.slice(0, projection.length),
+    },
+        ]
+      : []),
   ];
 
   // Per-billing-cycle revenue breakdown. Each cycle is a parent with
@@ -561,6 +622,11 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
       id: "sales-team",
       header: t("financials.projection.section.sales_team"),
       rows: salesTeamRows,
+    },
+    {
+      id: "member-earnings",
+      header: t("financials.projection.section.member_earnings"),
+      rows: memberEarningsRows,
     },
     {
       id: "subscribers",
@@ -702,15 +768,17 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
     ...(() => {
       // Perspective filter (S4): in "general" show all parties; in a party
       // view keep only that party's subtree — channel/header rows (non
-      // `cascade-party--`) are always integral.
+      // `cascade-party--`) are always integral. A member perspective reads as
+      // "general" here (member ≠ profit-split party).
+      const cp = cascadePerspective(perspective);
       const rows =
-        perspective === "general"
+        cp === "general"
           ? cascadeRows
           : cascadeRows.filter(
               (r) =>
                 !r.id?.startsWith("cascade-party--") ||
-                r.id === `cascade-party--${perspective}` ||
-                r.id.startsWith(`cascade-party--${perspective}--`),
+                r.id === `cascade-party--${cp}` ||
+                r.id.startsWith(`cascade-party--${cp}--`),
             );
       return rows.length > 0
         ? [
