@@ -21,6 +21,8 @@ import {
   memberRoleKeys,
   memberDownlineKeys,
   cascadePerspective,
+  toTitleCase,
+  pluralizeRole,
   type AggMonth,
 } from "./spreadsheet-shared";
 import type { CostRubric } from "@/lib/financial-engine";
@@ -235,11 +237,13 @@ function buildSalesTeamRows(
     getValue: (m: { monthIndex: number }) => arr[m.monthIndex - 1] ?? 0,
     getTotal: () => (lastMonthIndex ? (arr[lastMonthIndex - 1] ?? 0) : 0),
   });
+  const levelLabel = (name: string) =>
+    name.trim() ? pluralizeRole(name) : t("financials.cascade.level_unnamed");
   const rows = [
     ...salesTeam.levels
       .filter((lvl) => !keep || keep.has(lvl.id))
       .map((lvl) => ({
-        label: lvl.name || t("financials.cascade.level_unnamed"),
+        label: levelLabel(lvl.name),
         ...series(lvl.headcountByMonth),
         format: "number" as const,
       })),
@@ -284,13 +288,18 @@ function buildMemberEarningsRows(
     getTotal: () => number;
     format: "currency";
   };
+  const levelLabel = (name: string) =>
+    name.trim() ? pluralizeRole(name) : t("financials.cascade.level_unnamed");
   const rows: MemberRow[] = me.levels
     .filter((lvl) => !keep || keep.has(lvl.id))
-    .map((lvl) => ({
-      label: lvl.name || t("financials.cascade.level_unnamed"),
-      ...series(lvl.cash),
-      format: "currency" as const,
-    }));
+    .flatMap((lvl): MemberRow[] => {
+      const rowId = `member-lvl-${lvl.id}`;
+      return [
+        { id: rowId, label: levelLabel(lvl.name), ...series(lvl.cash), format: "currency" as const },
+        { id: `${rowId}--upfront`, parentId: rowId, level: 1, label: t("financials.member_earnings.upfront"), ...series(lvl.cashUpfront), format: "currency" as const },
+        { id: `${rowId}--residual`, parentId: rowId, level: 1, label: t("financials.member_earnings.residual"), ...series(lvl.cashResidual), format: "currency" as const },
+      ];
+    });
   if (!keep || keep.has(REPS_ROLE_KEY)) {
     rows.push(
       { id: "member-rep", label: t("financials.member_earnings.rep"), ...series(me.reps.cash.total), format: "currency" as const },
@@ -387,6 +396,8 @@ function CohortLifecycleTable({
       base.add(`active-by-plan-cycle--${t.tierId}`);
       base.add(`commissions--${t.tierId}`);
     }
+    // Each leadership level's upfront/residual split starts collapsed behind its total.
+    for (const lvl of memberEarnings.levels) base.add(`member-lvl-${lvl.id}`);
     return base;
   });
   const toggleSection = (id: string) =>
@@ -1200,10 +1211,7 @@ function CohortSectionBlock({
         className="bg-muted cursor-pointer select-none hover:bg-muted/80 transition-colors"
         onClick={onToggleSection}
       >
-        <td
-          colSpan={months.length + 2}
-          className="sticky left-0 z-10 bg-muted px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground"
-        >
+        <td className="sticky left-0 z-10 bg-muted min-w-[200px] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
           <span className="inline-flex items-center gap-1">
             <ChevronRight
               className={cn(
@@ -1214,6 +1222,7 @@ function CohortSectionBlock({
             {section.section}
           </span>
         </td>
+        <td colSpan={months.length + 1} className="bg-muted" />
       </tr>
       {!isSectionCollapsed &&
         section.rows.map((row) => {
@@ -1250,7 +1259,7 @@ function CohortSectionBlock({
                   ) : (
                     <span className="w-3 shrink-0" />
                   )}
-                  {row.label}
+                  {toTitleCase(row.label)}
                 </span>
               </td>
               {months.map((m) => {
@@ -1356,9 +1365,17 @@ function AggregateCohortTable({
     "overhead",
     "buck",
     "addons",
-    "member-rep",
     "active-subscribers", // hide the per-plan/cycle breakdown behind the total
   ];
+  // In a member (role) view the earnings split is the focus — start every seat
+  // (each manager level + the rep) expanded. Elsewhere the upfront/residual
+  // breakdown exists on every row but stays collapsed behind its total.
+  if (!(perspective ?? "").startsWith(MEMBER_PREFIX)) {
+    initialCollapsedRows.push("member-rep");
+    for (const lvl of memberEarnings.levels) {
+      initialCollapsedRows.push(`member-lvl-${lvl.id}`);
+    }
+  }
   for (const tid of scenarioTierIds) {
     initialCollapsedRows.push(`active-by-plan-cycle--${tid}`);
     initialCollapsedRows.push(`commissions--${tid}`);
@@ -2179,6 +2196,11 @@ function AggregateCohortTable({
     const sumOf = (arr: number[]) => () =>
       aggMonths.reduce((s, m) => s + (arr[m.monthIndex - 1] ?? 0), 0) * teamSize;
     const latestOf = (arr: number[]) => () => (lastMi ? (arr[lastMi - 1] ?? 0) : 0) * teamSize;
+    // Earnings are per-seat (one manager / one rep) — NOT scaled by teamSize.
+    const sraw = (arr: number[]) => ({
+      getValue: (m: AggMonth) => arr[m.monthIndex - 1] ?? 0,
+      getTotal: () => aggMonths.reduce((s, m) => s + (arr[m.monthIndex - 1] ?? 0), 0),
+    });
     const constRow = (n: number) => ({ getValue: () => n, getTotal: () => n });
     // Churn derived from the single-rep book: prevActive + netNew − active.
     const repChurn = reps.subscribers.map(
@@ -2191,7 +2213,7 @@ function AggregateCohortTable({
         : salesTeam.levels.filter((l) => l.threshold < selectedLevel.threshold);
     const salesTeamUnitRows: AggRow[] = [
       ...downlineLevels.map((l) => ({
-        label: l.name || t("financials.cascade.level_unnamed"),
+        label: l.name.trim() ? pluralizeRole(l.name) : t("financials.cascade.level_unnamed"),
         ...constRow(Math.round(teamSize / l.threshold)),
         format: "number" as const,
       })),
@@ -2222,17 +2244,37 @@ function AggregateCohortTable({
         ],
       },
       // Rep is the only seat → Upfront + Residual directly (no rollup row).
-      // Managers keep the per-role rollup (their own + the avg below).
+      // A manager sees one expandable row per seat in the unit (their own
+      // level + each downline level, then the rep), each split Upfront +
+      // Residual. Per-seat (cash) — not scaled by teamSize.
       isRepRole
         ? {
             id: "member-earnings",
             section: t("financials.projection.section.earnings"),
             rows: [
-              { label: t("financials.member_earnings.upfront"), getValue: at(reps.cash.upfront), getTotal: sumOf(reps.cash.upfront), format: "currency" as const },
-              { label: t("financials.member_earnings.residual"), getValue: at(reps.cash.residual), getTotal: sumOf(reps.cash.residual), format: "currency" as const },
+              { label: t("financials.member_earnings.upfront"), ...sraw(reps.cash.upfront), format: "currency" as const },
+              { label: t("financials.member_earnings.residual"), ...sraw(reps.cash.residual), format: "currency" as const },
             ],
           }
-        : memberEarningsSection,
+        : {
+            id: "member-earnings",
+            section: t("financials.projection.section.earnings"),
+            rows: [
+              ...memberEarnings.levels
+                .filter((lvl) => !memberKeep || memberKeep.has(lvl.id))
+                .flatMap((lvl) => {
+                  const rowId = `member-lvl-${lvl.id}`;
+                  return [
+                    { id: rowId, label: lvl.name.trim() ? pluralizeRole(lvl.name) : t("financials.cascade.level_unnamed"), ...sraw(lvl.cash), format: "currency" as const, bold: true },
+                    { id: `${rowId}--upfront`, parentId: rowId, level: 1, label: t("financials.member_earnings.upfront"), ...sraw(lvl.cashUpfront), format: "currency" as const },
+                    { id: `${rowId}--residual`, parentId: rowId, level: 1, label: t("financials.member_earnings.residual"), ...sraw(lvl.cashResidual), format: "currency" as const },
+                  ];
+                }),
+              { id: "member-rep", label: t("financials.member_earnings.rep"), ...sraw(reps.cash.total), format: "currency" as const, bold: true },
+              { id: "member-rep--upfront", parentId: "member-rep", level: 1, label: t("financials.member_earnings.upfront"), ...sraw(reps.cash.upfront), format: "currency" as const },
+              { id: "member-rep--residual", parentId: "member-rep", level: 1, label: t("financials.member_earnings.residual"), ...sraw(reps.cash.residual), format: "currency" as const },
+            ],
+          },
     ];
   } else if (isGeneral) {
     finalSections = [...sections, memberEarningsSection];
@@ -2400,10 +2442,7 @@ function AggSectionBlock<M extends { monthIndex: number }>({
         className="bg-muted cursor-pointer select-none hover:bg-muted/80 transition-colors"
         onClick={onToggleSection}
       >
-        <td
-          colSpan={aggMonths.length + 2}
-          className="sticky left-0 z-10 bg-muted px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground"
-        >
+        <td className="sticky left-0 z-10 bg-muted min-w-[200px] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
           <span className="inline-flex items-center gap-1">
             <ChevronRight
               className={cn(
@@ -2414,6 +2453,7 @@ function AggSectionBlock<M extends { monthIndex: number }>({
             {section.section}
           </span>
         </td>
+        <td colSpan={aggMonths.length + 1} className="bg-muted" />
       </tr>
       {!isSectionCollapsed &&
         section.rows.map((row) => {
@@ -2454,7 +2494,7 @@ function AggSectionBlock<M extends { monthIndex: number }>({
                   ) : (
                     <span className="w-3 shrink-0" />
                   )}
-                  {row.label}
+                  {toTitleCase(row.label)}
                 </span>
               </td>
               {aggMonths.map((m) => {

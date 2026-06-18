@@ -425,4 +425,21 @@ describe("[member-earnings] individual career-trajectory earnings", () => {
       expect(gross).toBeGreaterThanOrEqual(newSubscribers[i]);
     });
   });
+
+  it("[PM-P8] manager override splits Upfront + Residual == total, upfront-heavy early", () => {
+    const r = calculateScenario({ ...buildAuditScenario(PARTIES), leadershipCompPlan: PLAN });
+    expect(r.memberEarnings.levels.length).toBeGreaterThan(0);
+    for (const lvl of r.memberEarnings.levels) {
+      lvl.accrual.forEach((total, i) => {
+        expect(lvl.accrualUpfront[i] + lvl.accrualResidual[i]).toBeCloseTo(total, 6);
+        expect(lvl.cashUpfront[i] + lvl.cashResidual[i]).toBeCloseTo(lvl.cash[i], 6);
+        expect(lvl.accrualUpfront[i]).toBeGreaterThanOrEqual(0);
+        expect(lvl.accrualResidual[i]).toBeGreaterThanOrEqual(0);
+      });
+      // Month 1 is all-new ⇒ override reads ~100% upfront; the standing book
+      // grows later ⇒ residual share rises.
+      const u0 = lvl.accrualUpfront[0], res0 = lvl.accrualResidual[0];
+      if (u0 + res0 > 0) expect(u0).toBeGreaterThan(res0);
+    }
+  });
 });

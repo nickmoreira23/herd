@@ -976,7 +976,23 @@ export interface ScenarioResults {
       subscribers: number[];
       revenue: { accrual: number[]; cash: number[] };
     };
-    levels: { id: string; name: string; accrual: number[]; cash: number[] }[];
+    /** Per-manager override series (TOP → BASE). `accrual`/`cash` are the
+     *  totals; `*Upfront`/`*Residual` split each total by the unit's
+     *  new-vs-recurring production mix that month (netNew/active) — the
+     *  override on freshly-acquired revenue reads as upfront, the override on
+     *  the standing book reads as residual. Mirrors the rep's upfront→residual
+     *  ramp; the split is an attribution convention, not two distinct streams
+     *  (leadership comp is a single override on `base × rate`). */
+    levels: {
+      id: string;
+      name: string;
+      accrual: number[];
+      cash: number[];
+      accrualUpfront: number[];
+      accrualResidual: number[];
+      cashUpfront: number[];
+      cashResidual: number[];
+    }[];
   };
 
   // Operation breakeven month (0 = already profitable, Infinity = never)
@@ -2980,12 +2996,28 @@ export function calculateScenario(inputs: FinancialInputs): ScenarioResults {
       subscribers: repActiveSubs,
       revenue: { accrual: repRevenueAccrual, cash: repRevenueCash },
     },
-    levels: [...leadershipLevels].reverse().map((lvl) => ({
-      id: lvl.id,
-      name: lvl.name,
-      accrual: perManagerSeries(accrualLeadershipByLevel, lvl),
-      cash: perManagerSeries(cashLeadershipByLevel, lvl),
-    })),
+    levels: [...leadershipLevels].reverse().map((lvl) => {
+      const accrual = perManagerSeries(accrualLeadershipByLevel, lvl);
+      const cash = perManagerSeries(cashLeadershipByLevel, lvl);
+      // Attribute the override by the unit's new-vs-recurring mix: the share
+      // of the standing book that is brand new this month reads as upfront,
+      // the rest as residual (scale-invariant, so the single-rep ratio == the
+      // channel ratio). Month 1 is ~all-new ⇒ upfront-heavy, decaying as the
+      // book matures — same shape as the rep's upfront→residual ramp.
+      const upfrontFrac = repActiveSubs.map((active, i) =>
+        active > 0 ? Math.min(1, Math.max(0, repNetNewByMonth[i] / active)) : 0,
+      );
+      return {
+        id: lvl.id,
+        name: lvl.name,
+        accrual,
+        cash,
+        accrualUpfront: accrual.map((v, i) => v * upfrontFrac[i]),
+        accrualResidual: accrual.map((v, i) => v * (1 - upfrontFrac[i])),
+        cashUpfront: cash.map((v, i) => v * upfrontFrac[i]),
+        cashResidual: cash.map((v, i) => v * (1 - upfrontFrac[i])),
+      };
+    }),
   };
 
   return {

@@ -28,9 +28,11 @@ import Link from "next/link";
 
 interface ExecutiveSummaryProps {
   locale: Locale;
+  /** Public/shared view — hides the assumption-source provenance block. */
+  hideAssumptions?: boolean;
 }
 
-export function ExecutiveSummary({ locale }: ExecutiveSummaryProps) {
+export function ExecutiveSummary({ locale, hideAssumptions = false }: ExecutiveSummaryProps) {
   const t = useT();
   const results = useFinancialStore((s) => s.results);
   const inputs = useFinancialStore((s) => s.inputs);
@@ -144,7 +146,9 @@ export function ExecutiveSummary({ locale }: ExecutiveSummaryProps) {
         </CardContent>
       </Card>
 
-      {/* Assumption Provenance */}
+      {/* Assumption Provenance — hidden in the public/shared view (it surfaces
+          the underlying inputs, which a shared projection must not reveal). */}
+      {!hideAssumptions && (
       <Card size="sm">
         <CardContent>
           <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
@@ -195,6 +199,7 @@ export function ExecutiveSummary({ locale }: ExecutiveSummaryProps) {
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* 24-Month Trajectory Summary */}
       <Card size="sm">
