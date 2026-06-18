@@ -1128,6 +1128,37 @@ export function ScenarioBuilder({
                         <p className="mt-1 text-[10px] text-muted-foreground">{spanHelp}</p>
                       </div>
 
+                      {/* Base rate — the no-qualification default, in the top section.
+                          Mix % joins it only once a qualification splits the level. */}
+                      {lvl.qualifications.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-2">
+                          <NumberField
+                            label={t("financials.builder.leadership_commission.base_rate_label")}
+                            tooltip={t("financials.builder.leadership_commission.base_rate_tooltip")}
+                            value={lvl.baseRatePct}
+                            step={0.5}
+                            max={100}
+                            onChange={(v) => updateLevel(idx, { ...lvl, baseRatePct: v })}
+                          />
+                          <NumberField
+                            label={t("financials.builder.leadership_commission.base_mix_label")}
+                            tooltip={t("financials.builder.leadership_commission.base_mix_tooltip")}
+                            value={lvl.baseMixPct}
+                            step={1}
+                            onChange={(v) => updateLevel(idx, { ...lvl, baseMixPct: v })}
+                          />
+                        </div>
+                      ) : (
+                        <NumberField
+                          label={t("financials.builder.leadership_commission.base_rate_label")}
+                          tooltip={t("financials.builder.leadership_commission.base_rate_tooltip")}
+                          value={lvl.baseRatePct}
+                          step={0.5}
+                          max={100}
+                          onChange={(v) => updateLevel(idx, { ...lvl, baseRatePct: v })}
+                        />
+                      )}
+
                       {/* Divider before qualifications */}
                       <div className="border-t border-border/40" />
 
@@ -1136,33 +1167,6 @@ export function ScenarioBuilder({
                       </Label>
 
                       <div className="space-y-2">
-                        {/* Base — the no-qualification default, shown as the first container */}
-                        <div className="rounded-md border border-border/50 bg-muted/20">
-                          <div className="border-b border-border/40 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                            {t("financials.builder.leadership_commission.base_header")}
-                          </div>
-                          <div className="p-2 space-y-2">
-                            <NumberField
-                              label={t("financials.builder.leadership_commission.base_rate_label")}
-                              tooltip={t("financials.builder.leadership_commission.base_rate_tooltip")}
-                              value={lvl.baseRatePct}
-                              step={0.5}
-                              max={100}
-                              onChange={(v) => updateLevel(idx, { ...lvl, baseRatePct: v })}
-                            />
-                            {/* Base Mix % is only meaningful once a qualification splits the level. */}
-                            {lvl.qualifications.length > 0 && (
-                              <NumberField
-                                label={t("financials.builder.leadership_commission.base_mix_label")}
-                                tooltip={t("financials.builder.leadership_commission.base_mix_tooltip")}
-                                value={lvl.baseMixPct}
-                                step={1}
-                                onChange={(v) => updateLevel(idx, { ...lvl, baseMixPct: v })}
-                              />
-                            )}
-                          </div>
-                        </div>
-
                         {/* Each qualification — its own container: header (name + delete) then fields */}
                         {lvl.qualifications.map((q, qi) => (
                           <div key={q.id} className="rounded-md border border-border/50 bg-muted/20">
