@@ -10,12 +10,30 @@ const slugSchema = z
 // Empty/omitted = unrestricted (any logged member of the org sees the scope).
 export const SECTION_SCOPE_ROLES = ["OWNER", "ADMIN", "MEMBER"] as const;
 
+// L2b.2 — ITEM removed: a "specific item" is now a curated Listing (below), not
+// a scope. Scopes are AUTOMATIC rules only (ALL/CATEGORY/SUB_CATEGORY). The DB
+// enum keeps ITEM (deprecated), but the write surface no longer accepts it.
 export const sectionScopeSchema = z.object({
   blockName: z.string().min(1),
-  scopeType: z.enum(["ALL", "CATEGORY", "SUB_CATEGORY", "ITEM"]),
+  scopeType: z.enum(["ALL", "CATEGORY", "SUB_CATEGORY"]),
   scopeValue: z.string().nullable().optional(),
   sortOrder: z.coerce.number().int().optional(),
   allowedRoles: z.array(z.enum(SECTION_SCOPE_ROLES)).optional(),
+});
+
+// L2b.2 — a curated Listing within a section (replaces the ITEM-scope). The
+// (blockName, sourceId) ref is required; override fields are optional (the L3 UI
+// fills them — the write-path accepts them now).
+export const sectionListingSchema = z.object({
+  blockName: z.string().min(1),
+  sourceId: z.string().min(1),
+  titleOverride: z.string().min(1).optional(),
+  descriptionOverride: z.string().optional(),
+  imageUrlOverride: z.string().url().optional().or(z.literal("")),
+  priceOverrideCents: z.coerce.number().int().positive().optional(),
+  priceOverrideCurrency: z.enum(["BRL", "USD"]).optional(),
+  featured: z.boolean().optional(),
+  sortOrder: z.coerce.number().int().optional(),
 });
 
 export const createSectionSchema = z.object({
@@ -30,6 +48,7 @@ export const createSectionSchema = z.object({
   components: z.array(z.unknown()).default([]),
   layout: z.record(z.string(), z.unknown()).nullish(),
   scopes: z.array(sectionScopeSchema).default([]),
+  listings: z.array(sectionListingSchema).default([]),
 });
 
 // PATCH semantics: an omitted field must mean "leave unchanged". `.partial()`
@@ -44,4 +63,5 @@ export const updateSectionSchema = createSectionSchema.partial().extend({
   blockNames: z.array(z.string()).optional(),
   components: z.array(z.unknown()).optional(),
   scopes: z.array(sectionScopeSchema).optional(),
+  listings: z.array(sectionListingSchema).optional(),
 });

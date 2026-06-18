@@ -9,7 +9,17 @@ import type { MemberRole } from "@prisma/client";
 
 export type CreationPath = "manual" | "copilot" | "autonomous";
 
+// L2b.2 — ITEM kept in the union for back-compat of any persisted draft, but the
+// wizard no longer creates ITEM scopes: "specific item" is now a curated Listing.
 export type ScopeType = "ALL" | "CATEGORY" | "SUB_CATEGORY" | "ITEM";
+
+/** L2b.2 — a curated item draft (becomes a Listing on save). */
+export interface SectionListingDraft {
+  clientId: string;
+  blockName: string;
+  /** Raw block record id (sourceId). */
+  sourceId: string;
+}
 
 export interface SectionScopeDraft {
   /** Stable client-side id used while the draft hasn't been persisted. */
@@ -51,8 +61,10 @@ interface MarketplaceWizardState {
   // Step 2 — Block
   selectedBlockNames: string[];
 
-  // Step 3 — Items (scopes per block)
+  // Step 3 — Items (automatic scopes + curated listings per block)
   scopes: SectionScopeDraft[];
+  /** L2b.2 — curated items (become Listings on save). */
+  listings: SectionListingDraft[];
   /** Per-block snapshot cache so the picker can render names/images. */
   itemSnapshots: Record<string, ItemSnapshot>; // key = fullId
 
@@ -83,6 +95,8 @@ interface MarketplaceWizardState {
   addScope: (scope: SectionScopeDraft) => void;
   updateScope: (clientId: string, patch: Partial<SectionScopeDraft>) => void;
   removeScope: (clientId: string) => void;
+  addListing: (listing: SectionListingDraft) => void;
+  removeListing: (clientId: string) => void;
   cacheItemSnapshot: (snap: ItemSnapshot) => void;
 
   setComponents: (components: ComponentNode[]) => void;
@@ -114,6 +128,7 @@ const INITIAL_STATE = {
   creationPath: "copilot" as CreationPath,
   selectedBlockNames: [] as string[],
   scopes: [] as SectionScopeDraft[],
+  listings: [] as SectionListingDraft[],
   itemSnapshots: {} as Record<string, ItemSnapshot>,
   components: [] as ComponentNode[],
   layout: null as Record<string, unknown> | null,
@@ -148,16 +163,20 @@ export const useMarketplaceWizardStore = create<MarketplaceWizardState>()(
           selectedBlockNames: s.selectedBlockNames.includes(blockName)
             ? s.selectedBlockNames.filter((n) => n !== blockName)
             : [...s.selectedBlockNames, blockName],
-          // Drop scopes that belong to the removed block.
+          // Drop scopes + listings that belong to the removed block.
           scopes: s.selectedBlockNames.includes(blockName)
             ? s.scopes.filter((sc) => sc.blockName !== blockName)
             : s.scopes,
+          listings: s.selectedBlockNames.includes(blockName)
+            ? s.listings.filter((l) => l.blockName !== blockName)
+            : s.listings,
         })),
 
       setSelectedBlocks: (selectedBlockNames) =>
         set((s) => ({
           selectedBlockNames,
           scopes: s.scopes.filter((sc) => selectedBlockNames.includes(sc.blockName)),
+          listings: s.listings.filter((l) => selectedBlockNames.includes(l.blockName)),
         })),
 
       addScope: (scope) => set((s) => ({ scopes: [...s.scopes, scope] })),
@@ -171,6 +190,11 @@ export const useMarketplaceWizardStore = create<MarketplaceWizardState>()(
 
       removeScope: (clientId) =>
         set((s) => ({ scopes: s.scopes.filter((sc) => sc.clientId !== clientId) })),
+
+      addListing: (listing) => set((s) => ({ listings: [...s.listings, listing] })),
+
+      removeListing: (clientId) =>
+        set((s) => ({ listings: s.listings.filter((l) => l.clientId !== clientId) })),
 
       cacheItemSnapshot: (snap) =>
         set((s) => ({ itemSnapshots: { ...s.itemSnapshots, [snap.fullId]: snap } })),
@@ -242,6 +266,7 @@ export const useMarketplaceWizardStore = create<MarketplaceWizardState>()(
           ...INITIAL_STATE,
           completedSteps: new Set<number>(),
           scopes: [],
+          listings: [],
           itemSnapshots: {},
           components: [],
           selectedBlockNames: [],
@@ -256,6 +281,7 @@ export const useMarketplaceWizardStore = create<MarketplaceWizardState>()(
         creationPath: state.creationPath,
         selectedBlockNames: state.selectedBlockNames,
         scopes: state.scopes,
+        listings: state.listings,
         itemSnapshots: state.itemSnapshots,
         components: state.components,
         layout: state.layout,

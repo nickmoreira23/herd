@@ -32,8 +32,15 @@ let categoryRows: Array<{
   name: string;
   subcategories: Array<{ sourceKey: string; name: string }>;
 }> = [];
+// L2b.2 — loadBlockItems also reads prisma.listing (curated items). The unit
+// tests keep it empty (the scope+listing merge is covered by an integration
+// test); always [].
+const listingRows: Array<Record<string, unknown>> = [];
 vi.mock("@/lib/prisma", () => ({
-  prisma: { category: { findMany: vi.fn(async () => categoryRows) } },
+  prisma: {
+    category: { findMany: vi.fn(async () => categoryRows) },
+    listing: { findMany: vi.fn(async () => listingRows) },
+  },
 }));
 
 import {
@@ -160,10 +167,12 @@ describe("render-resolver — scope × item matching (via resolveItemsPage)", ()
     ).toEqual(["product:aaa"]);
   });
 
-  it("ITEM scope matches by raw id (namespace prefix stripped)", async () => {
+  // L2b.2 — ITEM scope is deprecated (curated items are Listings now). The
+  // resolver no longer matches it, so an ITEM scope yields nothing.
+  it("ITEM scope is no longer matched (deprecated → empty)", async () => {
     expect(
       await idsFor([scope({ scopeType: MarketplaceScopeType.ITEM, scopeValue: "bbb" })])
-    ).toEqual(["product:bbb"]);
+    ).toEqual([]);
   });
 
   it("CATEGORY scope with a non-matching value returns nothing", async () => {

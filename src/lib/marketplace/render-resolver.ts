@@ -12,6 +12,8 @@ import {
   type Facet,
 } from "./block-filters";
 import { slugify } from "@/lib/slug";
+import { resolveBlockRecordMeta } from "./listing-resolver";
+import type { Listing } from "@prisma/client";
 
 /** Initial number of items rendered server-side per items grid. */
 export const INITIAL_ITEMS_PAGE_SIZE = 24;
@@ -20,6 +22,10 @@ export const MAX_ITEMS_PAGE_SIZE = 48;
 
 export interface RenderItem extends ArtifactMeta {
   blockName: string;
+  // L2b.2 — set when this item came from a curated Listing (not an auto scope):
+  // `featured`/`listingSortOrder` drive ordering; their presence marks curation.
+  featured?: boolean;
+  listingSortOrder?: number;
 }
 
 /**
@@ -84,18 +90,51 @@ function itemMatchesScope(item: RenderItem, scope: MarketplaceSectionScope): boo
         ? slugify(sub) === scope.scopeValue
         : false;
     }
-    case MarketplaceScopeType.ITEM: {
-      const colon = item.id.indexOf(":");
-      const rawId = colon === -1 ? item.id : item.id.slice(colon + 1);
-      return rawId === scope.scopeValue;
-    }
+    // L2b.2 (Option A, #42) — ITEM is deprecated: a "specific item in a section"
+    // is now a Listing (curated, with own data), merged in loadBlockItems. The
+    // enum value is kept (no fragile enum drop) but no longer matches anything.
+    case MarketplaceScopeType.ITEM:
     default:
       return false;
   }
 }
 
-/** Pull every candidate item for the block, then filter by scopes the
- *  viewer is allowed to see. Returns a stable, id-sorted list. */
+/** Strip the "type:" prefix from a RenderItem id → the bare record id (sourceId). */
+function rawIdOf(item: RenderItem): string {
+  const colon = item.id.indexOf(":");
+  return colon === -1 ? item.id : item.id.slice(colon + 1);
+}
+
+/**
+ * L2b.2 — project a curated Listing into a RenderItem: the block record (via the
+ * generic getArtifactMeta path) with the listing's display overrides on top.
+ * A dangling listing (block record gone) returns null → not shown in the grid
+ * (the detail page surfaces "unavailable" separately).
+ */
+async function listingToRenderItem(listing: Listing): Promise<RenderItem | null> {
+  const meta = await resolveBlockRecordMeta(listing.blockName, listing.sourceId);
+  if (!meta) return null;
+  return {
+    ...meta,
+    blockName: listing.blockName,
+    name: listing.titleOverride ?? meta.name,
+    description: listing.descriptionOverride ?? meta.description ?? null,
+    imageUrl: listing.imageUrlOverride ?? meta.imageUrl ?? null,
+    featured: listing.featured,
+    listingSortOrder: listing.sortOrder,
+  };
+}
+
+/**
+ * L2b.2 — a block's items in a section come from TWO sources, combined:
+ *  (a) AUTOMATIC scopes (ALL/CATEGORY/SUB_CATEGORY) — raw block records matched
+ *      by scope (slug-match, L2a), and
+ *  (b) curated LISTINGS of the section — resolved with their overrides.
+ * Dedupe by the bare record id: a Listing WINS over the same record arriving via
+ * an automatic scope (curation overrides the raw item). Curated/featured items
+ * sort first, then by the listing's sortOrder, then by id (stable paging). Must
+ * run under withTenant (provider + listing reads are tenant-scoped).
+ */
 async function loadBlockItems(
   section: MarketplaceSection & { scopes: MarketplaceSectionScope[] },
   blockName: string,
@@ -105,40 +144,61 @@ async function loadBlockItems(
   if (!block) return [];
   const allowedTypes = new Set(block.types);
 
+  // Automatic scopes (ITEM is deprecated → effectively ALL/CATEGORY/SUB_CATEGORY).
   const scopes = section.scopes
     .filter((s) => s.blockName === blockName)
     .filter((s) => scopeMatchesViewer(s, viewer));
-  if (scopes.length === 0) return [];
 
-  const candidates: RenderItem[] = [];
-  for (const provider of dataProviders) {
-    if (!provider.types.some((t) => allowedTypes.has(t))) continue;
-    const catalog = await provider.getCatalogItems();
-    const ids: string[] = [];
-    for (const c of catalog) {
-      if (!allowedTypes.has(c.type)) continue;
-      const colon = c.id.indexOf(":");
-      ids.push(colon === -1 ? c.id : c.id.slice(colon + 1));
+  // Curated listings for this section+block (visible to any viewer of the section).
+  const listings = await prisma.listing.findMany({
+    where: { sectionId: section.id, blockName },
+  });
+
+  if (scopes.length === 0 && listings.length === 0) return [];
+
+  // (a) Automatic-scope items — only fetch the catalog if there are auto scopes.
+  let autoItems: RenderItem[] = [];
+  if (scopes.length > 0) {
+    const candidates: RenderItem[] = [];
+    for (const provider of dataProviders) {
+      if (!provider.types.some((t) => allowedTypes.has(t))) continue;
+      const catalog = await provider.getCatalogItems();
+      const ids: string[] = [];
+      for (const c of catalog) {
+        if (!allowedTypes.has(c.type)) continue;
+        const colon = c.id.indexOf(":");
+        ids.push(colon === -1 ? c.id : c.id.slice(colon + 1));
+      }
+      if (ids.length === 0) continue;
+      const metas = await provider.getArtifactMeta(ids);
+      for (const m of metas) candidates.push({ ...m, blockName });
     }
-    if (ids.length === 0) continue;
-    const metas = await provider.getArtifactMeta(ids);
-    for (const m of metas) candidates.push({ ...m, blockName });
+    autoItems = candidates.filter((item) => scopes.some((s) => itemMatchesScope(item, s)));
   }
 
-  const filtered = candidates.filter((item) =>
-    scopes.some((s) => itemMatchesScope(item, s))
-  );
-
-  // De-dup by id and sort by id for paging stability.
-  const seen = new Set<string>();
-  const deduped: RenderItem[] = [];
-  for (const item of filtered) {
-    if (seen.has(item.id)) continue;
-    seen.add(item.id);
-    deduped.push(item);
+  // (b) Curated listing items (overrides applied; dangling → skipped).
+  const listingItems: RenderItem[] = [];
+  for (const l of listings) {
+    const ri = await listingToRenderItem(l);
+    if (ri) listingItems.push(ri);
   }
-  deduped.sort((a, b) => a.id.localeCompare(b.id));
-  return deduped;
+
+  // Merge: dedupe by bare record id; the Listing wins over the auto-scope item.
+  const byRawId = new Map<string, RenderItem>();
+  for (const item of autoItems) byRawId.set(rawIdOf(item), item);
+  for (const item of listingItems) byRawId.set(rawIdOf(item), item);
+
+  const merged = [...byRawId.values()];
+  merged.sort((a, b) => {
+    const af = a.featured ? 1 : 0;
+    const bf = b.featured ? 1 : 0;
+    if (af !== bf) return bf - af; // featured curated items first
+    const aso = a.listingSortOrder ?? Number.MAX_SAFE_INTEGER;
+    const bso = b.listingSortOrder ?? Number.MAX_SAFE_INTEGER;
+    if (aso !== bso) return aso - bso; // then by listing sortOrder
+    return a.id.localeCompare(b.id); // then stable by id (paging)
+  });
+  return merged;
 }
 
 /**
@@ -209,12 +269,20 @@ export async function buildRenderContext(
     facetsByBlock: {},
   };
 
+  // L2b.2 — blocks come from auto scopes AND from curated listings (a block may
+  // appear via listings only, with no automatic scope).
+  const listingBlocks = await prisma.listing.findMany({
+    where: { sectionId: section.id },
+    select: { blockName: true },
+    distinct: ["blockName"],
+  });
   const blockNames = Array.from(
-    new Set(
-      section.scopes
+    new Set([
+      ...section.scopes
         .filter((s) => scopeMatchesViewer(s, viewer))
-        .map((s) => s.blockName)
-    )
+        .map((s) => s.blockName),
+      ...listingBlocks.map((l) => l.blockName),
+    ])
   );
 
   for (const blockName of blockNames) {

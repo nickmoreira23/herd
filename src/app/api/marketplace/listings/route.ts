@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 
   const result = await parseAndValidate(request, createListingSchema);
   if ("error" in result) return result.error;
-  const { blockName, sourceId, priceOverrideCents, ...rest } = result.data;
+  const { sectionId, blockName, sourceId, priceOverrideCents, ...rest } = result.data;
 
   // blockName must be a known block.
   if (!blockRegistry.has(blockName)) {
@@ -44,6 +44,10 @@ export async function POST(request: NextRequest) {
 
   return withTenant(orgId, async () => {
     try {
+      // L2b.2 — the owning section must exist in this org (tenant-scoped read).
+      const section = await prisma.marketplaceSection.findUnique({ where: { id: sectionId } });
+      if (!section) return apiError("Section not found", 404);
+
       // Soft ref validation: the referenced block record must resolve (no FK).
       const meta = await resolveBlockRecordMeta(blockName, sourceId);
       if (!meta) {
@@ -53,6 +57,7 @@ export async function POST(request: NextRequest) {
       const listing = await prisma.listing.create({
         data: {
           tenantId: orgId,
+          sectionId,
           blockName,
           sourceId,
           priceOverrideCents:
