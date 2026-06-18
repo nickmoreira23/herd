@@ -288,14 +288,12 @@ function buildMemberEarningsRows(
     getTotal: () => number;
     format: "currency";
   };
-  const levelLabel = (name: string) =>
-    name.trim() ? pluralizeRole(name) : t("financials.cascade.level_unnamed");
   const rows: MemberRow[] = me.levels
     .filter((lvl) => !keep || keep.has(lvl.id))
     .flatMap((lvl): MemberRow[] => {
       const rowId = `member-lvl-${lvl.id}`;
       return [
-        { id: rowId, label: levelLabel(lvl.name), ...series(lvl.cash), format: "currency" as const },
+        { id: rowId, label: lvl.name || t("financials.cascade.level_unnamed"), ...series(lvl.cash), format: "currency" as const },
         { id: `${rowId}--upfront`, parentId: rowId, level: 1, label: t("financials.member_earnings.upfront"), ...series(lvl.cashUpfront), format: "currency" as const },
         { id: `${rowId}--residual`, parentId: rowId, level: 1, label: t("financials.member_earnings.residual"), ...series(lvl.cashResidual), format: "currency" as const },
       ];
@@ -2265,7 +2263,7 @@ function AggregateCohortTable({
                 .flatMap((lvl) => {
                   const rowId = `member-lvl-${lvl.id}`;
                   return [
-                    { id: rowId, label: lvl.name.trim() ? pluralizeRole(lvl.name) : t("financials.cascade.level_unnamed"), ...sraw(lvl.cash), format: "currency" as const, bold: true },
+                    { id: rowId, label: lvl.name || t("financials.cascade.level_unnamed"), ...sraw(lvl.cash), format: "currency" as const, bold: true },
                     { id: `${rowId}--upfront`, parentId: rowId, level: 1, label: t("financials.member_earnings.upfront"), ...sraw(lvl.cashUpfront), format: "currency" as const },
                     { id: `${rowId}--residual`, parentId: rowId, level: 1, label: t("financials.member_earnings.residual"), ...sraw(lvl.cashResidual), format: "currency" as const },
                   ];
@@ -2324,16 +2322,21 @@ function AggregateCohortTable({
 
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <AccountingBasisBadge basis="cash" />
-      </div>
-      {summaryRow}
+      {/* Cash-basis badge + channel-level aggregate summary + reconciliation are
+          meaningful for the GENERAL and PARTY views; a role view shows ONE
+          member's unit, where channel-wide totals would mislead — hide them. */}
       {!isRole && (
-        <AccountingBasisReconciliation
-          accrualSeries={accrualSeriesAgg}
-          cashSeries={cashSeriesAgg}
-          locale={locale}
-        />
+        <>
+          <div className="flex flex-wrap items-center gap-2">
+            <AccountingBasisBadge basis="cash" />
+          </div>
+          {summaryRow}
+          <AccountingBasisReconciliation
+            accrualSeries={accrualSeriesAgg}
+            cashSeries={cashSeriesAgg}
+            locale={locale}
+          />
+        </>
       )}
       {/* The wrapper has to be a real scroll viewport (both axes, capped
           via maxH) so sticky thead anchors to its top edge. With just

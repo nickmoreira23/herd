@@ -489,7 +489,7 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
       .flatMap((lvl): RowDef[] => {
         const rowId = `member-lvl-${lvl.id}`;
         return [
-          { id: rowId, label: levelRowLabel(lvl.name), type: "currency", totalMode: "sum", values: lvl.accrual.slice(0, projection.length) },
+          { id: rowId, label: lvl.name || t("financials.cascade.level_unnamed"), type: "currency", totalMode: "sum", values: lvl.accrual.slice(0, projection.length) },
           { id: `${rowId}--upfront`, parentId: rowId, level: 1, label: t("financials.member_earnings.upfront"), type: "currency", totalMode: "sum", values: lvl.accrualUpfront.slice(0, projection.length) },
           { id: `${rowId}--residual`, parentId: rowId, level: 1, label: t("financials.member_earnings.residual"), type: "currency", totalMode: "sum", values: lvl.accrualResidual.slice(0, projection.length) },
         ];
@@ -908,7 +908,7 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
                 .flatMap((lvl): RowDef[] => {
                   const rowId = `member-lvl-${lvl.id}`;
                   return [
-                    { id: rowId, label: levelRowLabel(lvl.name), type: "currency", totalMode: "sum", values: lvl.accrual.slice(0, W), bold: true },
+                    { id: rowId, label: lvl.name || t("financials.cascade.level_unnamed"), type: "currency", totalMode: "sum", values: lvl.accrual.slice(0, W), bold: true },
                     { id: `${rowId}--upfront`, parentId: rowId, level: 1, label: t("financials.member_earnings.upfront"), type: "currency", totalMode: "sum", values: lvl.accrualUpfront.slice(0, W) },
                     { id: `${rowId}--residual`, parentId: rowId, level: 1, label: t("financials.member_earnings.residual"), type: "currency", totalMode: "sum", values: lvl.accrualResidual.slice(0, W) },
                   ];

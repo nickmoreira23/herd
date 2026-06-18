@@ -41,6 +41,8 @@ export function SharedProjectionView({ token, locale }: { token: string; locale:
   const [scenarioName, setScenarioName] = useState("");
   const [perspective, setPerspective] = useState("general");
   const [sections, setSections] = useState<string[]>([]);
+  const [orgName, setOrgName] = useState<string | null>(null);
+  const [orgLogoUrl, setOrgLogoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,6 +69,8 @@ export function SharedProjectionView({ token, locale }: { token: string; locale:
         setScenarioName(data.scenarioName ?? "");
         setPerspective(data.perspective ?? "general");
         setSections(Array.isArray(data.sections) ? data.sections : []);
+        setOrgName(data.orgName ?? null);
+        setOrgLogoUrl(data.orgLogoUrl ?? null);
         setStatus("ready");
       } catch {
         if (cancelled) return;
@@ -121,10 +125,22 @@ export function SharedProjectionView({ token, locale }: { token: string; locale:
   // switching tabs never shifts the page structure.
   return (
     <div className="flex h-screen flex-col bg-background">
-      {/* Header — full-bleed: logo left, projection + perspective right. */}
+      {/* Header — full-bleed: org icon + name left, projection + perspective right. */}
       <header className="shrink-0 border-b">
         <div className="flex items-center justify-between gap-4 px-6 py-5">
-          <span className="text-lg font-bold tracking-tight">{t("common.brand_name")}</span>
+          <div className="flex min-w-0 items-center gap-2">
+            {orgLogoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- public page, arbitrary tenant logo URL
+              <img src={orgLogoUrl} alt={orgName ?? ""} className="h-7 w-7 shrink-0 rounded object-contain" />
+            ) : orgName ? (
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-muted text-xs font-bold text-muted-foreground">
+                {orgName.charAt(0).toUpperCase()}
+              </span>
+            ) : null}
+            <span className="truncate text-lg font-bold tracking-tight">
+              {orgName ?? t("common.brand_name")}
+            </span>
+          </div>
           <div className="min-w-0 text-right">
             <h1 className="truncate text-sm font-semibold">
               {scenarioName || t("financials.share.untitled")}

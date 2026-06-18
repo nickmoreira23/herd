@@ -1077,7 +1077,7 @@ export const messages: Record<MessageKey, string> = {
   "financials.projection.row.net_new_subs": "New Subscribers",
   "financials.projection.row.lost_to_churn": "Churn",
   "financials.projection.row.total_active": "Active Subscribers",
-  "financials.projection.row.subscription_revenue": "Subscription Revenue",
+  "financials.projection.row.subscription_revenue": "Subscriptions",
   "financials.projection.row.monthly_billing": "  └ Monthly Billing",
   "financials.projection.row.biannual_billing": "  └ Biannual Billing",
   "financials.projection.row.annual_billing": "  └ Annual Billing",

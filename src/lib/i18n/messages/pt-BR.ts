@@ -1103,7 +1103,7 @@ export const messages = {
   "financials.projection.row.net_new_subs": "Novos Assinantes",
   "financials.projection.row.lost_to_churn": "Churn",
   "financials.projection.row.total_active": "Assinantes Ativos",
-  "financials.projection.row.subscription_revenue": "Receita de Assinatura",
+  "financials.projection.row.subscription_revenue": "Assinaturas",
   "financials.projection.row.monthly_billing": "  └ Cobrança Mensal",
   "financials.projection.row.biannual_billing": "  └ Cobrança Semestral",
   "financials.projection.row.annual_billing": "  └ Cobrança Anual",
