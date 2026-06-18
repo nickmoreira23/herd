@@ -29,6 +29,7 @@ export async function GET(
       scenarioName: snapshot.scenarioName,
       assumptions: snapshot.assumptions,
       perspective: link.perspective,
+      sections: link.sections,
     });
   } catch (e) {
     console.error("GET /api/projections/shared/:token error:", e);

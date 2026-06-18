@@ -516,6 +516,8 @@ model ProjectionShareLink {
   id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   snapshotId  String    @db.Uuid
   perspective String    @default("general") // "general" | "party:<id>" | "member:<roleKey>"
+  // Which projection tabs the public page shows. Empty = all.
+  sections    String[]  @default([])
   token       String    @unique @default(dbgenerated("gen_random_uuid()"))
   createdAt   DateTime  @default(now())
   expiresAt   DateTime?

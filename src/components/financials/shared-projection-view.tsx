@@ -6,6 +6,7 @@ import { useFinancialStore } from "@/stores/financial-store";
 import { useT } from "@/lib/i18n/locale-context";
 import type { Locale } from "@/lib/i18n/locales";
 import type { FinancialInputs } from "@/lib/financial-engine";
+import type { MessageKey } from "@/lib/i18n/messages/pt-BR";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ExecutiveSummary } from "./executive-summary";
 import { MetricsPanel } from "./metrics-panel";
@@ -16,11 +17,21 @@ import { CohortSpreadsheet } from "./cohort-spreadsheet";
 import { getTimePeriodMultiplier, getTimePeriodLabel } from "./financial-page-client";
 import { MEMBER_PREFIX, REPS_ROLE_KEY } from "./spreadsheet-shared";
 
+/** The projection tabs a share link may include, in display order. */
+export const SHARE_TABS: { key: string; labelKey: MessageKey }[] = [
+  { key: "summary", labelKey: "financials.toolbar.tab.summary" },
+  { key: "statement", labelKey: "financials.toolbar.tab.statement" },
+  { key: "spreadsheet", labelKey: "financials.toolbar.tab.spreadsheet" },
+  { key: "cohort", labelKey: "financials.toolbar.tab.cohort" },
+  { key: "metrics", labelKey: "financials.toolbar.tab.metrics" },
+  { key: "charts", labelKey: "financials.toolbar.tab.charts" },
+];
+
 /**
  * PUBLIC, no-auth full-screen view of ONE perspective of a projection, opened
  * via a share link. Loads the snapshot's inputs into the store and renders the
- * same projection tabs as the admin page — locked to the shared perspective,
- * with NO assumptions panel and no perspective switcher.
+ * same projection tabs as the admin page — locked to the shared perspective
+ * and section set, with NO assumptions panel and no perspective switcher.
  */
 export function SharedProjectionView({ token, locale }: { token: string; locale: Locale }) {
   const t = useT();
@@ -29,6 +40,7 @@ export function SharedProjectionView({ token, locale }: { token: string; locale:
   const [errorMsg, setErrorMsg] = useState("");
   const [scenarioName, setScenarioName] = useState("");
   const [perspective, setPerspective] = useState("general");
+  const [sections, setSections] = useState<string[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -54,6 +66,7 @@ export function SharedProjectionView({ token, locale }: { token: string; locale:
         loadInputs(data.assumptions as FinancialInputs, data.scenarioName ?? "");
         setScenarioName(data.scenarioName ?? "");
         setPerspective(data.perspective ?? "general");
+        setSections(Array.isArray(data.sections) ? data.sections : []);
         setStatus("ready");
       } catch {
         if (cancelled) return;
@@ -87,7 +100,7 @@ export function SharedProjectionView({ token, locale }: { token: string; locale:
   const periodMultiplier = getTimePeriodMultiplier("month", 6);
   const periodLabel = getTimePeriodLabel("month", 6, t);
 
-  // Resolve a human label for the locked perspective for the header chip.
+  // Resolve a human label for the locked perspective for the header.
   let perspectiveLabel = t("financials.share.full_projection");
   if (perspective.startsWith(MEMBER_PREFIX)) {
     const key = perspective.slice(MEMBER_PREFIX.length);
@@ -100,48 +113,70 @@ export function SharedProjectionView({ token, locale }: { token: string; locale:
     perspectiveLabel = inputs.profitSplitParties?.find((p) => p.id === id)?.name || perspectiveLabel;
   }
 
+  const visibleTabs = sections.length ? SHARE_TABS.filter((tb) => sections.includes(tb.key)) : SHARE_TABS;
+  const has = (key: string) => visibleTabs.some((tb) => tb.key === key);
+  const defaultTab = visibleTabs[0]?.key ?? "spreadsheet";
+
+  // Full-height shell: header + tabs stay put, only the content scrolls — so
+  // switching tabs never shifts the page structure.
   return (
-    <div className="mx-auto flex min-h-screen max-w-[1400px] flex-col px-4 py-4 sm:px-6">
-      <header className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b pb-3">
-        <div className="min-w-0">
-          <h1 className="truncate text-base font-semibold">
-            {scenarioName || t("financials.share.untitled")}
-          </h1>
-          <p className="text-xs text-muted-foreground">{t("financials.share.viewing_as", { role: perspectiveLabel })}</p>
+    <div className="flex h-screen flex-col bg-background">
+      {/* Header — full-bleed: logo left, projection + perspective right. */}
+      <header className="shrink-0 border-b">
+        <div className="flex items-center justify-between gap-4 px-6 py-5">
+          <span className="text-lg font-bold tracking-tight">{t("common.brand_name")}</span>
+          <div className="min-w-0 text-right">
+            <h1 className="truncate text-sm font-semibold">
+              {scenarioName || t("financials.share.untitled")}
+            </h1>
+            <p className="truncate text-xs text-muted-foreground">
+              {t("financials.share.viewing_as", { role: perspectiveLabel })}
+            </p>
+          </div>
         </div>
-        <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {t("common.brand_name")}
-        </span>
       </header>
 
-      <Tabs defaultValue="spreadsheet" className="flex min-h-0 flex-1 flex-col">
-        <TabsList className="h-8 w-full justify-start overflow-x-auto">
-          <TabsTrigger value="summary" className="h-6 px-3 text-xs">{t("financials.toolbar.tab.summary")}</TabsTrigger>
-          <TabsTrigger value="statement" className="h-6 px-3 text-xs">{t("financials.toolbar.tab.statement")}</TabsTrigger>
-          <TabsTrigger value="spreadsheet" className="h-6 px-3 text-xs">{t("financials.toolbar.tab.spreadsheet")}</TabsTrigger>
-          <TabsTrigger value="cohort" className="h-6 px-3 text-xs">{t("financials.toolbar.tab.cohort")}</TabsTrigger>
-          <TabsTrigger value="metrics" className="h-6 px-3 text-xs">{t("financials.toolbar.tab.metrics")}</TabsTrigger>
-          <TabsTrigger value="charts" className="h-6 px-3 text-xs">{t("financials.toolbar.tab.charts")}</TabsTrigger>
-        </TabsList>
-        <div className="mt-3 flex-1 overflow-y-auto">
-          <TabsContent value="summary" className="mt-0">
-            <ExecutiveSummary locale={locale} />
-          </TabsContent>
-          <TabsContent value="statement" className="mt-0">
-            <PLStatement multiplier={periodMultiplier} periodLabel={periodLabel} locale={locale} perspective={perspective} />
-          </TabsContent>
-          <TabsContent value="spreadsheet" className="mt-0">
-            <ProjectionSpreadsheet months={12} locale={locale} perspective={perspective} />
-          </TabsContent>
-          <TabsContent value="cohort" className="mt-0">
-            <CohortSpreadsheet months={36} locale={locale} perspective={perspective} />
-          </TabsContent>
-          <TabsContent value="metrics" className="mt-0">
-            <MetricsPanel multiplier={periodMultiplier} periodLabel={periodLabel} locale={locale} perspective={perspective} />
-          </TabsContent>
-          <TabsContent value="charts" className="mt-0">
-            <FinancialCharts multiplier={periodMultiplier} periodLabel={periodLabel} locale={locale} />
-          </TabsContent>
+      <Tabs defaultValue={defaultTab} className="flex min-h-0 flex-1 flex-col">
+        <div className="shrink-0 px-6 pt-5">
+          <TabsList className="h-8 w-full justify-start overflow-x-auto">
+            {visibleTabs.map((tb) => (
+              <TabsTrigger key={tb.key} value={tb.key} className="h-6 shrink-0 px-3 text-xs">
+                {t(tb.labelKey)}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
+        <div className="min-h-0 flex-1 overflow-auto px-6 py-4">
+          {has("summary") && (
+            <TabsContent value="summary" className="mt-0">
+              <ExecutiveSummary locale={locale} hideAssumptions />
+            </TabsContent>
+          )}
+          {has("statement") && (
+            <TabsContent value="statement" className="mt-0">
+              <PLStatement multiplier={periodMultiplier} periodLabel={periodLabel} locale={locale} perspective={perspective} />
+            </TabsContent>
+          )}
+          {has("spreadsheet") && (
+            <TabsContent value="spreadsheet" className="mt-0">
+              <ProjectionSpreadsheet months={12} locale={locale} perspective={perspective} />
+            </TabsContent>
+          )}
+          {has("cohort") && (
+            <TabsContent value="cohort" className="mt-0">
+              <CohortSpreadsheet months={36} locale={locale} perspective={perspective} />
+            </TabsContent>
+          )}
+          {has("metrics") && (
+            <TabsContent value="metrics" className="mt-0">
+              <MetricsPanel multiplier={periodMultiplier} periodLabel={periodLabel} locale={locale} perspective={perspective} />
+            </TabsContent>
+          )}
+          {has("charts") && (
+            <TabsContent value="charts" className="mt-0">
+              <FinancialCharts multiplier={periodMultiplier} periodLabel={periodLabel} locale={locale} />
+            </TabsContent>
+          )}
         </div>
       </Tabs>
     </div>

@@ -1211,10 +1211,7 @@ function CohortSectionBlock({
         className="bg-muted cursor-pointer select-none hover:bg-muted/80 transition-colors"
         onClick={onToggleSection}
       >
-        <td
-          colSpan={months.length + 2}
-          className="sticky left-0 z-10 bg-muted px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground"
-        >
+        <td className="sticky left-0 z-10 bg-muted min-w-[200px] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
           <span className="inline-flex items-center gap-1">
             <ChevronRight
               className={cn(
@@ -1225,6 +1222,7 @@ function CohortSectionBlock({
             {section.section}
           </span>
         </td>
+        <td colSpan={months.length + 1} className="bg-muted" />
       </tr>
       {!isSectionCollapsed &&
         section.rows.map((row) => {
@@ -2444,10 +2442,7 @@ function AggSectionBlock<M extends { monthIndex: number }>({
         className="bg-muted cursor-pointer select-none hover:bg-muted/80 transition-colors"
         onClick={onToggleSection}
       >
-        <td
-          colSpan={aggMonths.length + 2}
-          className="sticky left-0 z-10 bg-muted px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground"
-        >
+        <td className="sticky left-0 z-10 bg-muted min-w-[200px] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
           <span className="inline-flex items-center gap-1">
             <ChevronRight
               className={cn(
@@ -2458,6 +2453,7 @@ function AggSectionBlock<M extends { monthIndex: number }>({
             {section.section}
           </span>
         </td>
+        <td colSpan={aggMonths.length + 1} className="bg-muted" />
       </tr>
       {!isSectionCollapsed &&
         section.rows.map((row) => {

@@ -1047,10 +1047,9 @@ function SectionGroup({
         className="bg-muted cursor-pointer select-none hover:bg-muted/80 transition-colors"
         onClick={() => onToggleSection(sectionId)}
       >
-        <td
-          colSpan={months + 2}
-          className="sticky left-0 z-10 bg-muted px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground"
-        >
+        {/* Label pinned on horizontal scroll (mirrors the data-row label cell)
+            so the section stays identifiable when scrolling through months. */}
+        <td className="sticky left-0 z-10 bg-muted min-w-[200px] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
           <span className="inline-flex items-center gap-1">
             <ChevronRight
               className={cn(
@@ -1061,6 +1060,7 @@ function SectionGroup({
             {section.header}
           </span>
         </td>
+        <td colSpan={months + 1} className="bg-muted" />
       </tr>
       {/* Data rows — hidden when section is collapsed */}
       {!isCollapsed &&

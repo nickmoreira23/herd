@@ -5,6 +5,8 @@ import { z } from "zod/v4";
 const createShareSchema = z.object({
   // "general" | "party:<id>" | "member:<roleKey>" — the locked view of the projection.
   perspective: z.string().min(1).default("general"),
+  // Which projection tabs the public page shows. Empty/omitted = all.
+  sections: z.array(z.string()).default([]),
 });
 
 // GET /api/financials/:id/share — list active share links for a snapshot
@@ -48,18 +50,17 @@ export async function POST(
     const snapshot = await prisma.financialSnapshot.findUnique({ where: { id: snapshotId } });
     if (!snapshot) return apiError("Projection not found", 404);
 
-    // One link per (snapshot, perspective) — reuse an existing active one so
-    // re-sharing the same view yields a stable URL instead of piling up tokens.
-    const existing = await prisma.projectionShareLink.findFirst({
-      where: { snapshotId, perspective: parsed.data.perspective, isActive: true },
+    // Always mint a NEW link — a projection can have many active links at once
+    // (different views / section sets); each stays live until explicitly revoked.
+    const link = await prisma.projectionShareLink.create({
+      data: {
+        snapshotId,
+        perspective: parsed.data.perspective,
+        sections: parsed.data.sections,
+      },
     });
-    const link =
-      existing ??
-      (await prisma.projectionShareLink.create({
-        data: { snapshotId, perspective: parsed.data.perspective },
-      }));
 
-    return apiSuccess(link, existing ? 200 : 201);
+    return apiSuccess(link, 201);
   } catch (e) {
     console.error("POST /api/financials/:id/share error:", e);
     return apiError("Failed to create share link", 500);
