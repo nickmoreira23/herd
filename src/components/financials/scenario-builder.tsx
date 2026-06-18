@@ -1020,17 +1020,59 @@ export function ScenarioBuilder({
                 const threshold = leadershipPlan.levels
                   .slice(0, idx + 1)
                   .reduce((p, l) => p * (l.span > 0 ? l.span : 1), 1);
+                // Span counts units of the level directly below (level 1 = reps).
+                const prevName =
+                  idx > 0
+                    ? leadershipPlan.levels[idx - 1]?.name?.trim() ||
+                      t("financials.builder.leadership_commission.level_span_prev_fallback", { n: idx })
+                    : null;
+                const spanHelp =
+                  idx === 0
+                    ? t("financials.builder.leadership_commission.span_help_base")
+                    : t("financials.builder.leadership_commission.span_help_nested", { unit: prevName ?? "" });
                 return (
                   <div
                     key={lvl.id}
                     style={{ marginLeft: `${(idx + 1) * 0.85}rem` }}
-                    className="rounded-md border border-border/60 bg-card p-2 space-y-2"
+                    className="rounded-md border border-border/60 bg-card overflow-hidden"
                   >
-                    <div className="flex items-end gap-2">
-                      <div className="flex-1 min-w-0">
-                        <Label className="text-[11px] text-muted-foreground mb-0.5 block">
-                          {t("financials.builder.leadership_commission.level_name_label", { n: idx + 1 })}
-                        </Label>
+                    {/* Header — level number on the left, delete on the right */}
+                    <div className="flex items-center justify-between border-b border-border/60 bg-muted/40 px-2.5 py-1.5">
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-foreground">
+                        <Layers className="h-3 w-3 text-muted-foreground" />
+                        {t("financials.builder.leadership_commission.level_name_label", { n: idx + 1 })}
+                      </span>
+                      {!readOnly && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setLeadershipPlan({
+                              levels: leadershipPlan.levels.filter((_, i) => i !== idx),
+                            })
+                          }
+                          className="h-6 w-6 flex items-center justify-center rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors shrink-0"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="p-2.5 space-y-3">
+                      {/* Role — one field per line, label + tooltip */}
+                      <div>
+                        <div className="flex items-center gap-1 mb-0.5">
+                          <Label className="text-[11px] text-muted-foreground">
+                            {t("financials.builder.leadership_commission.role_label")}
+                          </Label>
+                          <Tooltip>
+                            <TooltipTrigger className="text-muted-foreground/40 hover:text-muted-foreground transition-colors">
+                              <HelpCircle className="h-3 w-3" />
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-[220px] text-xs">
+                              {t("financials.builder.leadership_commission.role_tooltip")}
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
                         {readOnly ? (
                           <div className="h-8 flex items-center text-sm font-medium truncate">
                             {lvl.name || t("financials.builder.leadership_commission.level_name_placeholder")}
@@ -1045,184 +1087,180 @@ export function ScenarioBuilder({
                           />
                         )}
                       </div>
-                      {!readOnly && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setLeadershipPlan({
-                              levels: leadershipPlan.levels.filter((_, i) => i !== idx),
-                            })
-                          }
-                          className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors shrink-0"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="flex-1 inline-flex items-center gap-1 text-[10px] font-medium text-violet-600 dark:text-violet-400">
-                        <Layers className="h-2.5 w-2.5" />
-                        {t("financials.builder.leadership_commission.level_activates_at", {
-                          n: Math.round(threshold),
-                        })}
-                      </span>
-                      <div className="w-[120px]">
-                        <NumberField
-                          label={
-                            idx === 0
-                              ? t("financials.builder.leadership_commission.level_span_label")
-                              : t("financials.builder.leadership_commission.level_span_label_nested", {
-                                  unit:
-                                    leadershipPlan.levels[idx - 1]?.name?.trim() ||
-                                    t("financials.builder.leadership_commission.level_span_prev_fallback", { n: idx }),
-                                })
-                          }
-                          tooltip={t("financials.builder.leadership_commission.level_span_tooltip")}
-                          value={lvl.span}
-                          step={1}
-                          min={1}
-                          onChange={(v) => updateLevel(idx, { ...lvl, span: v })}
-                        />
-                      </div>
-                    </div>
-                    {/* Base rate — what this level earns with NO qualification
-                        (implicitly 100% of the level). The Mix % field appears
-                        only once a qualification splits the level. */}
-                    <div className="border-t border-border/40 pt-1.5 flex items-end gap-1.5">
-                      <div className="flex-1 min-w-0">
-                        <Label className="text-[10px] text-muted-foreground mb-0.5 block">
-                          {t("financials.builder.leadership_commission.base_tier_label")}
-                        </Label>
-                        <div className="h-8 flex items-center text-[11px] text-muted-foreground">
-                          {t("financials.builder.leadership_commission.base_tier_hint")}
+
+                      {/* Span — activation badge inside the field (right), per-unit help below */}
+                      <div>
+                        <div className="flex items-center gap-1 mb-0.5">
+                          <Label className="text-[11px] text-muted-foreground">
+                            {t("financials.builder.leadership_commission.level_span_label")}
+                          </Label>
+                          <Tooltip>
+                            <TooltipTrigger className="text-muted-foreground/40 hover:text-muted-foreground transition-colors">
+                              <HelpCircle className="h-3 w-3" />
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-[220px] text-xs">
+                              {t("financials.builder.leadership_commission.level_span_tooltip")}
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
+                        {readOnly ? (
+                          <div className="h-8 flex items-center justify-between gap-2 text-sm">
+                            <span className="font-medium tabular-nums">{lvl.span}</span>
+                            <span className="text-[10px] font-medium text-violet-600 dark:text-violet-400 whitespace-nowrap">
+                              {t("financials.builder.leadership_commission.level_activates_at", { n: Math.round(threshold) })}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="relative">
+                            <Input
+                              type="number"
+                              step={1}
+                              min={1}
+                              value={lvl.span}
+                              onChange={(e) => updateLevel(idx, { ...lvl, span: parseFloat(e.target.value) || 0 })}
+                              className="h-8 text-sm pr-44 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            />
+                            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-violet-600 dark:text-violet-400 whitespace-nowrap">
+                              {t("financials.builder.leadership_commission.level_activates_at", { n: Math.round(threshold) })}
+                            </span>
+                          </div>
+                        )}
+                        <p className="mt-1 text-[10px] text-muted-foreground">{spanHelp}</p>
                       </div>
-                      <div className="w-[64px]">
-                        <NumberField
-                          label={t("financials.builder.leadership_commission.base_rate_label")}
-                          tooltip={t("financials.builder.leadership_commission.base_rate_tooltip")}
-                          value={lvl.baseRatePct}
-                          step={0.5}
-                          max={100}
-                          onChange={(v) => updateLevel(idx, { ...lvl, baseRatePct: v })}
-                        />
-                      </div>
-                      {lvl.qualifications.length > 0 && (
-                        <div className="w-[64px]">
-                          <NumberField
-                            label={t("financials.builder.leadership_commission.base_mix_label")}
-                            tooltip={t("financials.builder.leadership_commission.base_mix_tooltip")}
-                            value={lvl.baseMixPct}
-                            step={1}
-                            onChange={(v) => updateLevel(idx, { ...lvl, baseMixPct: v })}
-                          />
-                        </div>
-                      )}
-                      {lvl.qualifications.length > 0 && !readOnly && <div className="w-7 shrink-0" />}
-                    </div>
-                    {/* Qualifications — dynamic, named, mix-weighted, layered on
-                        top of the base. Empty by default. */}
-                    <div className="border-t border-border/40 pt-1.5 space-y-1.5">
-                      <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+
+                      {/* Divider before qualifications */}
+                      <div className="border-t border-border/40" />
+
+                      <Label className="block text-[10px] uppercase tracking-wider text-muted-foreground">
                         {t("financials.builder.leadership_commission.qualifications_label")}
                       </Label>
-                      {lvl.qualifications.length === 0 && (
-                        <div className="text-[11px] text-muted-foreground">
-                          {t("financials.builder.leadership_commission.no_qualifications")}
-                        </div>
-                      )}
-                      {lvl.qualifications.map((q, qi) => (
-                        <div key={q.id} className="flex items-end gap-1.5">
-                          <div className="flex-1 min-w-0">
-                            <Label className="text-[10px] text-muted-foreground mb-0.5 block">
-                              {t("financials.builder.leadership_commission.qual_name_label")}
-                            </Label>
-                            {readOnly ? (
-                              <div className="h-8 flex items-center text-sm font-medium truncate">{q.name}</div>
-                            ) : (
-                              <Input
-                                type="text"
-                                value={q.name}
-                                placeholder={t("financials.builder.leadership_commission.qual_name_placeholder")}
-                                onChange={(e) =>
-                                  updateLevel(idx, {
-                                    ...lvl,
-                                    qualifications: lvl.qualifications.map((x, j) =>
-                                      j === qi ? { ...x, name: e.target.value } : x,
-                                    ),
-                                  })
-                                }
-                                className="h-8 text-sm"
+
+                      <div className="space-y-2">
+                        {/* Base — the no-qualification default, shown as the first container */}
+                        <div className="rounded-md border border-border/50 bg-muted/20">
+                          <div className="border-b border-border/40 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            {t("financials.builder.leadership_commission.base_header")}
+                          </div>
+                          <div className="p-2 space-y-2">
+                            <NumberField
+                              label={t("financials.builder.leadership_commission.base_rate_label")}
+                              tooltip={t("financials.builder.leadership_commission.base_rate_tooltip")}
+                              value={lvl.baseRatePct}
+                              step={0.5}
+                              max={100}
+                              onChange={(v) => updateLevel(idx, { ...lvl, baseRatePct: v })}
+                            />
+                            {/* Base Mix % is only meaningful once a qualification splits the level. */}
+                            {lvl.qualifications.length > 0 && (
+                              <NumberField
+                                label={t("financials.builder.leadership_commission.base_mix_label")}
+                                tooltip={t("financials.builder.leadership_commission.base_mix_tooltip")}
+                                value={lvl.baseMixPct}
+                                step={1}
+                                onChange={(v) => updateLevel(idx, { ...lvl, baseMixPct: v })}
                               />
                             )}
                           </div>
-                          <div className="w-[64px]">
-                            <NumberField
-                              label={t("financials.builder.leadership_commission.qual_rate_label")}
-                              tooltip={t("financials.builder.leadership_commission.qual_rate_tooltip")}
-                              value={q.ratePct}
-                              step={0.5}
-                              max={100}
-                              onChange={(v) =>
-                                updateLevel(idx, {
-                                  ...lvl,
-                                  qualifications: lvl.qualifications.map((x, j) =>
-                                    j === qi ? { ...x, ratePct: v } : x,
-                                  ),
-                                })
-                              }
-                            />
-                          </div>
-                          <div className="w-[64px]">
-                            <NumberField
-                              label={t("financials.builder.leadership_commission.qual_mix_label")}
-                              tooltip={t("financials.builder.leadership_commission.qual_mix_tooltip")}
-                              value={q.mixPct}
-                              step={1}
-                              onChange={(v) =>
-                                updateLevel(idx, {
-                                  ...lvl,
-                                  qualifications: lvl.qualifications.map((x, j) =>
-                                    j === qi ? { ...x, mixPct: v } : x,
-                                  ),
-                                })
-                              }
-                            />
-                          </div>
-                          {!readOnly && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                updateLevel(idx, {
-                                  ...lvl,
-                                  qualifications: lvl.qualifications.filter((_, j) => j !== qi),
-                                })
-                              }
-                              className="h-8 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors shrink-0"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </button>
-                          )}
                         </div>
-                      ))}
-                      {!readOnly && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            updateLevel(idx, {
-                              ...lvl,
-                              qualifications: [
-                                ...lvl.qualifications,
-                                { id: crypto.randomUUID(), name: "", ratePct: 0, mixPct: 0 },
-                              ],
-                            })
-                          }
-                          className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors px-1.5 py-1 rounded-md hover:bg-muted/50 w-full justify-center border border-dashed border-border/40"
-                        >
-                          <Plus className="h-2.5 w-2.5" />
-                          {t("financials.builder.leadership_commission.add_qualification")}
-                        </button>
-                      )}
+
+                        {/* Each qualification — its own container: header (name + delete) then fields */}
+                        {lvl.qualifications.map((q, qi) => (
+                          <div key={q.id} className="rounded-md border border-border/50 bg-muted/20">
+                            <div className="flex items-center gap-1.5 border-b border-border/40 px-2 py-1">
+                              {readOnly ? (
+                                <span className="flex-1 text-[11px] font-semibold truncate">
+                                  {q.name || t("financials.builder.leadership_commission.qual_name_placeholder")}
+                                </span>
+                              ) : (
+                                <Input
+                                  type="text"
+                                  value={q.name}
+                                  placeholder={t("financials.builder.leadership_commission.qual_name_placeholder")}
+                                  onChange={(e) =>
+                                    updateLevel(idx, {
+                                      ...lvl,
+                                      qualifications: lvl.qualifications.map((x, j) =>
+                                        j === qi ? { ...x, name: e.target.value } : x,
+                                      ),
+                                    })
+                                  }
+                                  className="h-7 flex-1 border-0 bg-transparent px-0 text-sm font-medium focus-visible:ring-0"
+                                />
+                              )}
+                              {!readOnly && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    updateLevel(idx, {
+                                      ...lvl,
+                                      qualifications: lvl.qualifications.filter((_, j) => j !== qi),
+                                    })
+                                  }
+                                  className="h-6 w-6 flex items-center justify-center rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors shrink-0"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              )}
+                            </div>
+                            <div className="p-2 space-y-2">
+                              <NumberField
+                                label={t("financials.builder.leadership_commission.qual_rate_label")}
+                                tooltip={t("financials.builder.leadership_commission.qual_rate_tooltip")}
+                                value={q.ratePct}
+                                step={0.5}
+                                max={100}
+                                onChange={(v) =>
+                                  updateLevel(idx, {
+                                    ...lvl,
+                                    qualifications: lvl.qualifications.map((x, j) =>
+                                      j === qi ? { ...x, ratePct: v } : x,
+                                    ),
+                                  })
+                                }
+                              />
+                              <NumberField
+                                label={t("financials.builder.leadership_commission.qual_mix_label")}
+                                tooltip={t("financials.builder.leadership_commission.qual_mix_tooltip")}
+                                value={q.mixPct}
+                                step={1}
+                                onChange={(v) =>
+                                  updateLevel(idx, {
+                                    ...lvl,
+                                    qualifications: lvl.qualifications.map((x, j) =>
+                                      j === qi ? { ...x, mixPct: v } : x,
+                                    ),
+                                  })
+                                }
+                              />
+                            </div>
+                          </div>
+                        ))}
+
+                        {lvl.qualifications.length === 0 && (
+                          <p className="text-[11px] text-muted-foreground">
+                            {t("financials.builder.leadership_commission.no_qualifications")}
+                          </p>
+                        )}
+
+                        {!readOnly && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateLevel(idx, {
+                                ...lvl,
+                                qualifications: [
+                                  ...lvl.qualifications,
+                                  { id: crypto.randomUUID(), name: "", ratePct: 0, mixPct: 0 },
+                                ],
+                              })
+                            }
+                            className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors px-1.5 py-1.5 rounded-md hover:bg-muted/50 w-full justify-center border border-dashed border-border/40"
+                          >
+                            <Plus className="h-2.5 w-2.5" />
+                            {t("financials.builder.leadership_commission.add_qualification")}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
