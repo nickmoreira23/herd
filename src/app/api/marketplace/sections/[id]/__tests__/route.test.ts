@@ -113,20 +113,21 @@ describe("PATCH /api/marketplace/sections/[id] — guard + tenant scoping + scop
         scopes: [
           { blockName: "products", scopeType: "ALL" }, // idx 0 → sortOrder 0 == e1, unchanged
           { blockName: "products", scopeType: "CATEGORY", scopeValue: "supplements", sortOrder: 5 }, // e2 changed
-          { blockName: "products", scopeType: "ITEM", scopeValue: "xyz" }, // new
+          // L2b.2 — ITEM is gone; a brand-new automatic scope instead.
+          { blockName: "products", scopeType: "SUB_CATEGORY", scopeValue: "protein" }, // new
         ],
       }),
       { params }
     );
     expect(res.status).toBe(200);
 
-    // create: only the brand-new ITEM scope, stamped with the host tenantId
+    // create: only the brand-new scope, stamped with the host tenantId
     expect(mockScopeCreate).toHaveBeenCalledTimes(1);
     expect(mockScopeCreate.mock.calls[0][0].data).toMatchObject({
       tenantId: "org-1",
       sectionId: "sec-1",
-      scopeType: "ITEM",
-      scopeValue: "xyz",
+      scopeType: "SUB_CATEGORY",
+      scopeValue: "protein",
     });
     // update: only the changed e2 (unchanged e1 left alone)
     expect(mockScopeUpdate).toHaveBeenCalledTimes(1);

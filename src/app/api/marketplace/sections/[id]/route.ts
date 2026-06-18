@@ -139,9 +139,49 @@ export async function PATCH(
         }
       }
 
+      // L2b.2 — reconcile curated Listings by (blockName, sourceId) within the
+      // section (same diff shape as scopes): create new, update changed
+      // overrides, delete absent. Only runs when the caller sent `listings`.
+      if (result.data.listings !== undefined) {
+        const listingKey = (l: { blockName: string; sourceId: string }) =>
+          JSON.stringify([l.blockName, l.sourceId]);
+        const existingListings = await prisma.listing.findMany({ where: { sectionId: id } });
+        const existingByKey = new Map(existingListings.map((l) => [listingKey(l), l]));
+        const desiredKeys = new Set<string>();
+
+        for (const [idx, l] of result.data.listings.entries()) {
+          desiredKeys.add(listingKey(l));
+          const data = {
+            titleOverride: l.titleOverride ?? null,
+            descriptionOverride: l.descriptionOverride ?? null,
+            imageUrlOverride: l.imageUrlOverride || null,
+            priceOverrideCents:
+              l.priceOverrideCents !== undefined ? BigInt(l.priceOverrideCents) : null,
+            priceOverrideCurrency: l.priceOverrideCurrency ?? null,
+            featured: l.featured ?? false,
+            sortOrder: l.sortOrder ?? idx,
+          };
+          const match = existingByKey.get(listingKey(l));
+          if (!match) {
+            await prisma.listing.create({
+              data: { tenantId: orgId, sectionId: id, blockName: l.blockName, sourceId: l.sourceId, ...data },
+            });
+          } else {
+            await prisma.listing.update({ where: { id: match.id }, data });
+          }
+        }
+
+        const removed = existingListings
+          .filter((l) => !desiredKeys.has(listingKey(l)))
+          .map((l) => l.id);
+        if (removed.length > 0) {
+          await prisma.listing.deleteMany({ where: { id: { in: removed } } });
+        }
+      }
+
       const updated = await prisma.marketplaceSection.findUniqueOrThrow({
         where: { id },
-        include: { scopes: true },
+        include: { scopes: true, listings: true },
       });
 
       // L2a.2b — materialize taxonomy for the section's bound blocks (idempotent;

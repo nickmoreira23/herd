@@ -18,6 +18,9 @@ const overrideFields = {
 };
 
 export const createListingSchema = z.object({
+  // L2b.2 — a listing belongs to a section; the route validates the section
+  // exists in the org. (blockName, sourceId) are the soft block-record ref.
+  sectionId: z.string().min(1),
   blockName: z.string().min(1),
   sourceId: z.string().min(1),
   ...overrideFields,

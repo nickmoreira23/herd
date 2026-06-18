@@ -41,12 +41,21 @@ export function StepReview({ onBack, goToStep }: Props) {
           blockNames: state.selectedBlockNames,
           components: state.components,
           layout: state.layout,
-          scopes: state.scopes.map((s) => ({
-            blockName: s.blockName,
-            scopeType: s.scopeType,
-            scopeValue: s.scopeValue,
-            sortOrder: s.sortOrder,
-            allowedRoles: s.allowedRoles,
+          // L2b.2 — only automatic scopes here (ITEM is gone); curated items
+          // are sent as `listings`.
+          scopes: state.scopes
+            .filter((s) => s.scopeType !== "ITEM")
+            .map((s) => ({
+              blockName: s.blockName,
+              scopeType: s.scopeType,
+              scopeValue: s.scopeValue,
+              sortOrder: s.sortOrder,
+              allowedRoles: s.allowedRoles,
+            })),
+          listings: state.listings.map((l, idx) => ({
+            blockName: l.blockName,
+            sourceId: l.sourceId,
+            sortOrder: idx,
           })),
         }),
       });
