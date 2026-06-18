@@ -38,6 +38,28 @@ export const COST_RUBRIC_LABEL_KEYS = {
 export const MEMBER_PREFIX = "member:";
 export const REPS_ROLE_KEY = "reps";
 
+/**
+ * Title-case a spreadsheet row label: uppercase the first letter of every word,
+ * preserving the rest of each word so acronyms (MRR, COGS, LTV/CAC) and symbols
+ * ("(−)", "%") survive untouched. Used at render so every row reads "Shared
+ * Costs", never "Shared costs".
+ */
+export function toTitleCase(label: string): string {
+  return label.replace(/(^|\s)(\p{L})/gu, (_m, sep, ch) => sep + ch.toLocaleUpperCase());
+}
+
+/**
+ * Pluralize a leadership-level role name for projection rows: the level is
+ * named in the singular in the editor ("Local Manager") but a spreadsheet row
+ * counts/aggregates many of them ("Local Managers"). Naive English rule — the
+ * level names in this product are English sales titles by convention.
+ */
+export function pluralizeRole(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return trimmed;
+  return /s$/i.test(trimmed) ? trimmed : `${trimmed}s`;
+}
+
 /** Ordered role keys TOP → BASE: leadership levels (highest first) then reps. */
 export function memberRoleKeys(
   salesTeam: NonNullable<ReturnType<typeof useFinancialStore.getState>["results"]>["salesTeam"],

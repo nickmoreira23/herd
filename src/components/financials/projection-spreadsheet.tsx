@@ -21,6 +21,8 @@ import {
   memberRoleKeys,
   memberDownlineKeys,
   cascadePerspective,
+  toTitleCase,
+  pluralizeRole,
 } from "./spreadsheet-shared";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { CostRubric } from "@/lib/financial-engine";
@@ -143,10 +145,14 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
     "addons",
     "active-subscribers", // hide the per-plan/cycle breakdown behind the Active Subscribers total
   ];
-  // In a member (role) view the earnings split is the focus — start the rep
-  // (and each manager level) expanded. Elsewhere the rep rollup stays collapsed.
+  // In a member (role) view the earnings split is the focus — start every seat
+  // (each manager level + the rep) expanded. Elsewhere the upfront/residual
+  // breakdown exists on every row but stays collapsed behind its total.
   if (!(perspective ?? "").startsWith(MEMBER_PREFIX)) {
     initialCollapsedRows.push("member-rep");
+    for (const lvl of results.memberEarnings.levels) {
+      initialCollapsedRows.push(`member-lvl-${lvl.id}`);
+    }
   }
   for (const tid of tierIds) {
     initialCollapsedRows.push(`active-by-plan-cycle--${tid}`);
@@ -448,11 +454,15 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
   // Sales-team headcount — one row per leadership level (top → base), then
   // the reps row as the base. Headcount grows as active reps cross each
   // level's span. Total column = headcount at the last visible month.
+  // Level rows label in the PLURAL (the editor names a level in the singular —
+  // "Local Manager" — but a projection row counts/aggregates many of them).
+  const levelRowLabel = (name: string) =>
+    name.trim() ? pluralizeRole(name) : t("financials.cascade.level_unnamed");
   const salesTeamRows: RowDef[] = [
     ...results.salesTeam.levels
       .filter((lvl) => !memberKeep || memberKeep.has(lvl.id))
       .map((lvl) => ({
-        label: lvl.name || t("financials.cascade.level_unnamed"),
+        label: levelRowLabel(lvl.name),
         type: "number" as const,
         totalMode: "latest" as const,
         values: lvl.headcountByMonth.slice(0, projection.length),
@@ -476,12 +486,14 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
   const memberEarningsRows: RowDef[] = [
     ...me.levels
       .filter((lvl) => !memberKeep || memberKeep.has(lvl.id))
-      .map((lvl) => ({
-        label: lvl.name || t("financials.cascade.level_unnamed"),
-        type: "currency" as const,
-        totalMode: "sum" as const,
-        values: lvl.accrual.slice(0, projection.length),
-      })),
+      .flatMap((lvl): RowDef[] => {
+        const rowId = `member-lvl-${lvl.id}`;
+        return [
+          { id: rowId, label: levelRowLabel(lvl.name), type: "currency", totalMode: "sum", values: lvl.accrual.slice(0, projection.length) },
+          { id: `${rowId}--upfront`, parentId: rowId, level: 1, label: t("financials.member_earnings.upfront"), type: "currency", totalMode: "sum", values: lvl.accrualUpfront.slice(0, projection.length) },
+          { id: `${rowId}--residual`, parentId: rowId, level: 1, label: t("financials.member_earnings.residual"), type: "currency", totalMode: "sum", values: lvl.accrualResidual.slice(0, projection.length) },
+        ];
+      }),
     ...(keepReps
       ? [
     {
@@ -831,7 +843,7 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
         : results.salesTeam.levels.filter((l) => l.threshold < selectedLevel.threshold);
     const salesTeamUnitRows: RowDef[] = [
       ...downlineLevels.map((l) => ({
-        label: l.name || t("financials.cascade.level_unnamed"),
+        label: levelRowLabel(l.name),
         type: "number" as const,
         totalMode: "latest" as const,
         values: constRow(Math.round(teamSize / l.threshold)),
@@ -896,7 +908,7 @@ export function ProjectionSpreadsheet({ months = 12, locale, perspective = "gene
                 .flatMap((lvl): RowDef[] => {
                   const rowId = `member-lvl-${lvl.id}`;
                   return [
-                    { id: rowId, label: lvl.name || t("financials.cascade.level_unnamed"), type: "currency", totalMode: "sum", values: lvl.accrual.slice(0, W), bold: true },
+                    { id: rowId, label: levelRowLabel(lvl.name), type: "currency", totalMode: "sum", values: lvl.accrual.slice(0, W), bold: true },
                     { id: `${rowId}--upfront`, parentId: rowId, level: 1, label: t("financials.member_earnings.upfront"), type: "currency", totalMode: "sum", values: lvl.accrualUpfront.slice(0, W) },
                     { id: `${rowId}--residual`, parentId: rowId, level: 1, label: t("financials.member_earnings.residual"), type: "currency", totalMode: "sum", values: lvl.accrualResidual.slice(0, W) },
                   ];
@@ -1119,14 +1131,14 @@ function DataRow({
                 className="cursor-help underline decoration-dotted underline-offset-2"
                 onClick={(e) => e.stopPropagation()}
               >
-                {row.label}
+                {toTitleCase(row.label)}
               </TooltipTrigger>
               <TooltipContent className="max-w-[280px] text-[11px]">
                 {row.tooltip}
               </TooltipContent>
             </Tooltip>
           ) : (
-            row.label
+            toTitleCase(row.label)
           )}
         </span>
       </td>
