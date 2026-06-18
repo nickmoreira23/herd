@@ -1084,7 +1084,7 @@ export const messages = {
   "financials.projection.section.sales_team": "Equipe de Vendas",
   "financials.sales_team.reps": "Representantes de Vendas",
   "financials.sales_team.reps_tooltip": "Reps ativos — a base da força de vendas. Cada nível de liderança acima adiciona 1 gestor por span de reps.",
-  "financials.projection.section.member_earnings": "Ganho por Membro",
+  "financials.projection.section.member_earnings": "Ganhos do Time de Vendas",
   "financials.projection.section.earnings": "Ganhos",
   "financials.member_earnings.section_tooltip": "Quanto UM indivíduo em cada papel ganha por mês — um rep presente desde o mês 1 (upfront + residual que rampa conforme o book amadurece) e um gestor representativo por nível (override sobre um span). Topo → base.",
   "financials.member_earnings.rep": "Representante de Vendas",

@@ -1058,7 +1058,7 @@ export const messages: Record<MessageKey, string> = {
   "financials.projection.section.sales_team": "Sales Team",
   "financials.sales_team.reps": "Sales Representatives",
   "financials.sales_team.reps_tooltip": "Active reps — the base of the sales force. Each leadership level above adds 1 manager per its span of reps.",
-  "financials.projection.section.member_earnings": "Member Earnings",
+  "financials.projection.section.member_earnings": "Sales Team Earnings",
   "financials.projection.section.earnings": "Earnings",
   "financials.member_earnings.section_tooltip": "What ONE individual in each role earns per month — a rep present from month 1 (upfront + a residual that ramps as their book matures), and one representative manager per level (override on a single span). Top → base.",
   "financials.member_earnings.rep": "Sales Representative",
