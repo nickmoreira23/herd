@@ -25,11 +25,35 @@ export async function GET(
     });
     if (!snapshot) return apiError("Projection not found", 404);
 
+    // Brand the public header with the org the link was created from.
+    let orgName: string | null = null;
+    let orgLogoUrl: string | null = null;
+    if (link.organizationId) {
+      const org = await prisma.organization.findUnique({
+        where: { id: link.organizationId },
+        select: {
+          name: true,
+          assets: {
+            where: { type: { in: ["LOGO_SQUARE", "LOGO_LIGHT"] } },
+            select: { type: true, url: true },
+          },
+        },
+      });
+      orgName = org?.name ?? null;
+      // Prefer a square mark for the icon slot, else the light-bg logo.
+      orgLogoUrl =
+        org?.assets.find((a) => a.type === "LOGO_SQUARE")?.url ??
+        org?.assets.find((a) => a.type === "LOGO_LIGHT")?.url ??
+        null;
+    }
+
     return apiSuccess({
       scenarioName: snapshot.scenarioName,
       assumptions: snapshot.assumptions,
       perspective: link.perspective,
       sections: link.sections,
+      orgName,
+      orgLogoUrl,
     });
   } catch (e) {
     console.error("GET /api/projections/shared/:token error:", e);

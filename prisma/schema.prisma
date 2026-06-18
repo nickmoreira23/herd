@@ -515,6 +515,9 @@ model FinancialSnapshot {
 model ProjectionShareLink {
   id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   snapshotId  String    @db.Uuid
+  // Org the link was created from — drives the public header's brand
+  // (icon + name). Plain column (no FK): the link is disposable.
+  organizationId String? @db.Uuid
   perspective String    @default("general") // "general" | "party:<id>" | "member:<roleKey>"
   // Which projection tabs the public page shows. Empty = all.
   sections    String[]  @default([])

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { apiSuccess, apiError } from "@/lib/api-utils";
+import { getOrgIdFromRequest } from "@/lib/tenant/get-org-from-request";
 import { z } from "zod/v4";
 
 const createShareSchema = z.object({
@@ -52,9 +53,12 @@ export async function POST(
 
     // Always mint a NEW link — a projection can have many active links at once
     // (different views / section sets); each stays live until explicitly revoked.
+    // Capture the host org so the public header carries its brand, not the platform's.
+    const organizationId = await getOrgIdFromRequest();
     const link = await prisma.projectionShareLink.create({
       data: {
         snapshotId,
+        organizationId,
         perspective: parsed.data.perspective,
         sections: parsed.data.sections,
       },
