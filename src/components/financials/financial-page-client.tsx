@@ -67,6 +67,7 @@ import {
   Minimize2,
   PanelLeftOpen,
   Download,
+  Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/locale-context";
@@ -216,6 +217,12 @@ export function FinancialPageClient({
   // Delete modal state
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  // Share — generate a public link to the CURRENT perspective of this projection.
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
+  const [shareCopied, setShareCopied] = useState(false);
 
   // Full-screen projection view
   const [fullScreen, setFullScreen] = useState(false);
@@ -447,6 +454,41 @@ export function FinancialPageClient({
     }
   }, [modelId, router, t]);
 
+  // Generate (or reuse) a public share link for the CURRENT perspective.
+  const handleShare = useCallback(async () => {
+    if (!modelId) return;
+    setShareOpen(true);
+    setShareLoading(true);
+    setShareUrl("");
+    setShareCopied(false);
+    try {
+      const res = await fetch(`/api/financials/${modelId}/share`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ perspective }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        notifyError("financials.share.error_generic", t);
+        setShareOpen(false);
+        return;
+      }
+      setShareUrl(`${window.location.origin}/${locale}/shared/projection/${json.data.token}`);
+    } catch {
+      notifyError("financials.share.error_generic", t);
+      setShareOpen(false);
+    } finally {
+      setShareLoading(false);
+    }
+  }, [modelId, perspective, locale, t]);
+
+  const handleCopyShare = useCallback(async () => {
+    if (!shareUrl) return;
+    await navigator.clipboard.writeText(shareUrl);
+    setShareCopied(true);
+    setTimeout(() => setShareCopied(false), 2000);
+  }, [shareUrl]);
+
   const isNewModel = !modelId;
   const subPanelId = useUIStore((s) => s.subPanelId);
   const subPanelCollapsed = useUIStore((s) => s.subPanelCollapsed);
@@ -535,6 +577,18 @@ export function FinancialPageClient({
               ? t("financials.export.exporting")
               : t("financials.export.button")}
           </Button>
+          {!isNewModel && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleShare}
+              disabled={!results}
+              title={t("financials.share.button")}
+            >
+              <Share2 className="h-3.5 w-3.5 mr-1.5" />
+              {t("financials.share.button")}
+            </Button>
+          )}
           {editing ? (
             <Button size="sm" onClick={handleSave} disabled={saving}>
               <Save className="h-3.5 w-3.5 mr-1.5" />
@@ -975,6 +1029,41 @@ export function FinancialPageClient({
                 : t("common.actions.delete")}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Share Projection Dialog */}
+      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Share2 className="h-4 w-4" />
+              {t("financials.share.dialog_title")}
+            </DialogTitle>
+            <DialogDescription>{t("financials.share.dialog_description")}</DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center gap-2">
+            <input
+              readOnly
+              value={shareLoading ? t("financials.share.generating") : shareUrl}
+              onFocus={(e) => e.currentTarget.select()}
+              className="h-9 flex-1 rounded-md border bg-muted/40 px-3 text-xs text-muted-foreground"
+            />
+            <Button size="sm" onClick={handleCopyShare} disabled={shareLoading || !shareUrl}>
+              {shareCopied ? (
+                <>
+                  <Check className="h-3.5 w-3.5 mr-1.5" />
+                  {t("financials.share.copied")}
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3.5 w-3.5 mr-1.5" />
+                  {t("financials.share.copy")}
+                </>
+              )}
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground">{t("financials.share.public_note")}</p>
         </DialogContent>
       </Dialog>
     </div>

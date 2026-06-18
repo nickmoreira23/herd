@@ -72,7 +72,8 @@ const PUBLIC_API_MATCHERS: RegExp[] = [
   /^\/api\/integrations\/oauth\/(authorize|callback)$/, // OAuth redirects
   /^\/api\/apps\/callback\/[^/]+$/, // OAuth app callback
   /^\/api\/knowledge\/apps\/callback\/[^/]+$/, // OAuth app callback
-  /^\/api\/shared\/[^/]+$/, // token-based public share
+  /^\/api\/shared\/[^/]+$/, // token-based public share (packages)
+  /^\/api\/projections\/shared\/[^/]+$/, // token-based public projection share
   /^\/api\/org\/invitations\/[^/]+$/, // view invitation by token (invitee not yet a member)
   /^\/api\/org\/invitations\/[^/]+\/accept$/, // accept invitation by token
 ];
