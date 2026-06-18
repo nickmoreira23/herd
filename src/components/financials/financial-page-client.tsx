@@ -22,6 +22,7 @@ import { FinancialCharts } from "./financial-charts";
 import { PLStatement } from "./pl-statement";
 import { ProjectionSpreadsheet } from "./projection-spreadsheet";
 import { CohortSpreadsheet } from "./cohort-spreadsheet";
+import { SHARE_TABS } from "./shared-projection-view";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,6 +68,8 @@ import {
   Minimize2,
   PanelLeftOpen,
   Download,
+  Share2,
+  Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/locale-context";
@@ -216,6 +219,16 @@ export function FinancialPageClient({
   // Delete modal state
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  // Share — public links to a chosen view + section set. Many can be active.
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareLinks, setShareLinks] = useState<
+    { id: string; token: string; perspective: string; sections: string[] }[]
+  >([]);
+  const [sharePerspective, setSharePerspective] = useState("general");
+  const [shareSections, setShareSections] = useState<string[]>(SHARE_TABS.map((tb) => tb.key));
+  const [shareBusy, setShareBusy] = useState(false);
+  const [shareCopiedId, setShareCopiedId] = useState<string | null>(null);
 
   // Full-screen projection view
   const [fullScreen, setFullScreen] = useState(false);
@@ -447,6 +460,79 @@ export function FinancialPageClient({
     }
   }, [modelId, router, t]);
 
+  // Open the share dialog: seed the view from the current perspective, all
+  // sections on, and load any links already created for this projection.
+  const handleOpenShare = useCallback(async () => {
+    if (!modelId) return;
+    setSharePerspective(perspective);
+    setShareSections(SHARE_TABS.map((tb) => tb.key));
+    setShareOpen(true);
+    try {
+      const res = await fetch(`/api/financials/${modelId}/share`, { headers: { accept: "application/json" } });
+      const json = await res.json();
+      if (res.ok) setShareLinks(json.data ?? []);
+    } catch {
+      /* non-fatal — the list just stays empty */
+    }
+  }, [modelId, perspective]);
+
+  // Mint a NEW link for the chosen view + sections (many can coexist).
+  const handleGenerate = useCallback(async () => {
+    if (!modelId || shareSections.length === 0) return;
+    setShareBusy(true);
+    try {
+      const res = await fetch(`/api/financials/${modelId}/share`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ perspective: sharePerspective, sections: shareSections }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        notifyError("financials.share.error_generic", t);
+        return;
+      }
+      setShareLinks((prev) => [json.data, ...prev]);
+    } catch {
+      notifyError("financials.share.error_generic", t);
+    } finally {
+      setShareBusy(false);
+    }
+  }, [modelId, sharePerspective, shareSections, t]);
+
+  const handleRevokeShare = useCallback(
+    async (linkId: string) => {
+      if (!modelId) return;
+      setShareLinks((prev) => prev.filter((l) => l.id !== linkId));
+      try {
+        await fetch(`/api/financials/${modelId}/share?linkId=${linkId}`, { method: "DELETE" });
+      } catch {
+        /* optimistic — already removed from the list */
+      }
+    },
+    [modelId],
+  );
+
+  const handleCopyShare = useCallback(async (linkId: string, url: string) => {
+    await navigator.clipboard.writeText(url);
+    setShareCopiedId(linkId);
+    setTimeout(() => setShareCopiedId((cur) => (cur === linkId ? null : cur)), 2000);
+  }, []);
+
+  // Human label for any perspective value ("general" | party id | "member:*").
+  const perspectiveLabelOf = useCallback(
+    (value: string): string => {
+      if (!results) return value;
+      if (value === "general") return t("financials.toolbar.perspective.general");
+      if (value.startsWith(MEMBER_PREFIX)) {
+        const key = value.slice(MEMBER_PREFIX.length);
+        if (key === REPS_ROLE_KEY) return t("financials.member_earnings.rep");
+        return results.salesTeam.levels.find((l) => l.id === key)?.name || t("financials.cascade.level_unnamed");
+      }
+      return inputs.profitSplitParties.find((p) => p.id === value)?.name || t("financials.builder.profit_split.unnamed");
+    },
+    [results, inputs, t],
+  );
+
   const isNewModel = !modelId;
   const subPanelId = useUIStore((s) => s.subPanelId);
   const subPanelCollapsed = useUIStore((s) => s.subPanelCollapsed);
@@ -535,6 +621,18 @@ export function FinancialPageClient({
               ? t("financials.export.exporting")
               : t("financials.export.button")}
           </Button>
+          {!isNewModel && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleOpenShare}
+              disabled={!results}
+              title={t("financials.share.button")}
+            >
+              <Share2 className="h-3.5 w-3.5 mr-1.5" />
+              {t("financials.share.button")}
+            </Button>
+          )}
           {editing ? (
             <Button size="sm" onClick={handleSave} disabled={saving}>
               <Save className="h-3.5 w-3.5 mr-1.5" />
@@ -975,6 +1073,159 @@ export function FinancialPageClient({
                 : t("common.actions.delete")}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Share Projection Dialog — choose a view + sections, generate links;
+          many can be active at once, each revocable. */}
+      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Share2 className="h-4 w-4" />
+              {t("financials.share.dialog_title")}
+            </DialogTitle>
+            <DialogDescription>{t("financials.share.dialog_description")}</DialogDescription>
+          </DialogHeader>
+
+          {/* Builder */}
+          <div className="space-y-3 rounded-md border p-3">
+            <div className="space-y-1">
+              <span className="text-[11px] font-medium text-muted-foreground">
+                {t("financials.share.view_label")}
+              </span>
+              <Select value={sharePerspective} onValueChange={setSharePerspective}>
+                <SelectTrigger className="h-8 w-full text-xs">
+                  <SelectValue>{(v) => perspectiveLabelOf(v)}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="general" className="text-xs">
+                    {t("financials.toolbar.perspective.general")}
+                  </SelectItem>
+                  {results && inputs.profitSplitParties.length > 0 && (
+                    <SelectGroup>
+                      <SelectLabel className="text-[10px]">
+                        {t("financials.toolbar.perspective.parties_group")}
+                      </SelectLabel>
+                      {inputs.profitSplitParties.map((p) => (
+                        <SelectItem key={p.id} value={p.id} className="text-xs">
+                          {p.name || t("financials.builder.profit_split.unnamed")}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  )}
+                  {results && (
+                    <SelectGroup>
+                      <SelectLabel className="text-[10px]">
+                        {t("financials.toolbar.perspective.members_group")}
+                      </SelectLabel>
+                      {results.salesTeam.levels.map((l) => (
+                        <SelectItem key={l.id} value={`${MEMBER_PREFIX}${l.id}`} className="text-xs">
+                          {l.name || t("financials.cascade.level_unnamed")}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value={`${MEMBER_PREFIX}${REPS_ROLE_KEY}`} className="text-xs">
+                        {t("financials.member_earnings.rep")}
+                      </SelectItem>
+                    </SelectGroup>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-[11px] font-medium text-muted-foreground">
+                {t("financials.share.sections_label")}
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {SHARE_TABS.map((tb) => {
+                  const on = shareSections.includes(tb.key);
+                  return (
+                    <button
+                      key={tb.key}
+                      type="button"
+                      onClick={() =>
+                        setShareSections((prev) =>
+                          prev.includes(tb.key) ? prev.filter((k) => k !== tb.key) : [...prev, tb.key],
+                        )
+                      }
+                      className={cn(
+                        "rounded-full border px-2.5 py-1 text-[11px] transition-colors",
+                        on
+                          ? "border-primary bg-primary/10 text-foreground"
+                          : "border-border text-muted-foreground hover:bg-muted/50",
+                      )}
+                    >
+                      {t(tb.labelKey)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <Button size="sm" onClick={handleGenerate} disabled={shareBusy || shareSections.length === 0}>
+              <Plus className="h-3.5 w-3.5 mr-1.5" />
+              {t("financials.share.generate")}
+            </Button>
+          </div>
+
+          {/* Active links */}
+          <div className="space-y-2">
+            <span className="text-[11px] font-medium text-muted-foreground">
+              {t("financials.share.active_links")}
+            </span>
+            {shareLinks.length === 0 ? (
+              <p className="text-[11px] text-muted-foreground">{t("financials.share.no_links")}</p>
+            ) : (
+              <div className="space-y-1.5">
+                {shareLinks.map((link) => {
+                  const url = `${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/shared/projection/${link.token}`;
+                  const sectionsSummary =
+                    link.sections.length === 0
+                      ? t("financials.share.all_sections")
+                      : link.sections
+                          .map((k) => SHARE_TABS.find((tb) => tb.key === k)?.labelKey)
+                          .filter((x): x is (typeof SHARE_TABS)[number]["labelKey"] => Boolean(x))
+                          .map((lk) => t(lk))
+                          .join(" · ");
+                  return (
+                    <div key={link.id} className="flex items-center gap-2 rounded-md border p-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-medium">{perspectiveLabelOf(link.perspective)}</p>
+                        <p className="truncate text-[10px] text-muted-foreground">{sectionsSummary}</p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleCopyShare(link.id, url)}
+                      >
+                        {shareCopiedId === link.id ? (
+                          <>
+                            <Check className="h-3.5 w-3.5 mr-1.5" />
+                            {t("financials.share.copied")}
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3.5 w-3.5 mr-1.5" />
+                            {t("financials.share.copy")}
+                          </>
+                        )}
+                      </Button>
+                      <button
+                        type="button"
+                        onClick={() => handleRevokeShare(link.id)}
+                        title={t("financials.share.revoke")}
+                        className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors shrink-0"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          <p className="text-[11px] text-muted-foreground">{t("financials.share.public_note")}</p>
         </DialogContent>
       </Dialog>
     </div>

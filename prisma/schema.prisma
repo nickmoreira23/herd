@@ -506,6 +506,27 @@ model FinancialSnapshot {
   updatedAt          DateTime @updatedAt
 
   subscriptionTier SubscriptionTier? @relation(fields: [subscriptionTierId], references: [id])
+  shareLinks       ProjectionShareLink[]
+}
+
+// Public, shareable link to ONE perspective of a financial projection.
+// V1 has no access control — anyone with the token sees the projection
+// full-screen (no assumptions). Mirrors PackageShareLink.
+model ProjectionShareLink {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  snapshotId  String    @db.Uuid
+  perspective String    @default("general") // "general" | "party:<id>" | "member:<roleKey>"
+  // Which projection tabs the public page shows. Empty = all.
+  sections    String[]  @default([])
+  token       String    @unique @default(dbgenerated("gen_random_uuid()"))
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime?
+  isActive    Boolean   @default(true)
+
+  snapshot FinancialSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+
+  @@index([snapshotId])
+  @@index([token])
 }
 
 model TierPricingSnapshot {
